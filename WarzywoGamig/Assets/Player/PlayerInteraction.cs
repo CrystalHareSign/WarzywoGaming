@@ -16,6 +16,13 @@ public class PlayerInteraction : MonoBehaviour
 
     void Update()
     {
+        // Check if playerCamera is assigned
+        if (playerCamera == null)
+        {
+            Debug.LogError("PlayerCamera is not assigned in the Inspector.");
+            return;
+        }
+
         // Rzutowanie promienia z pozycji gracza do przodu
         RaycastHit hit;
         if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward, out hit, interactionRange, interactableLayer))

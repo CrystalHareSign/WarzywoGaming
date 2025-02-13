@@ -22,7 +22,6 @@ public class InteractivityManager : MonoBehaviour
         }
     }
 
-
     public void RegisterInteractable(GameObject interactable, bool alwaysInteractive)
     {
         if (!interactivityStatus.ContainsKey(interactable))
