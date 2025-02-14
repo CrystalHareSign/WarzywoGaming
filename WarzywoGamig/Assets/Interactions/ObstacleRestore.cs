@@ -2,29 +2,21 @@ using UnityEngine;
 
 public class Obstacle : MonoBehaviour
 {
+    public int damageAmount = 1;
+
     private void OnTriggerEnter(Collider other)
     {
-        // SprawdŸ, czy obiekt, który wszed³ w kolizjê, jest przedmiotem interaktywnym
-
         Debug.Log("Triggered by: " + other.gameObject.name);
 
         var interactableItem = other.GetComponent<InteractableItem>();
-        if (interactableItem != null)
+        if (interactableItem != null && interactableItem.usesHealthSystem)
         {
-            // Odnów interaktywnoœæ obiektu
-            InteractivityManager.Instance.RestoreInteractivity(interactableItem.gameObject);
-            Debug.Log($"Interactivity restored for {interactableItem.gameObject.name} by {gameObject.name}");
-
-            // Ustaw isInteracted na false
-            var hoverMessage = interactableItem.GetComponent<HoverMessage>();
-            if (hoverMessage != null)
-            {
-                hoverMessage.isInteracted = false;
-            }
+            interactableItem.TakeDamage(damageAmount);
+            Debug.Log($"Dealt {damageAmount} damage to {interactableItem.gameObject.name}");
         }
         else
         {
-            Debug.Log($"Obstacle collided with non-interactable object: {other.gameObject.name}");
+            Debug.Log($"Obstacle collided with non-health-system object: {other.gameObject.name}");
         }
     }
 }

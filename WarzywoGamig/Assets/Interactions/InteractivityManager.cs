@@ -12,7 +12,7 @@ public class InteractivityManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // Upewnij siê, ¿e obiekt nie zostanie zniszczony przy zmianie sceny
+            DontDestroyOnLoad(gameObject);
             Debug.Log("InteractivityManager initialized.");
         }
         else
@@ -31,11 +31,19 @@ public class InteractivityManager : MonoBehaviour
         }
     }
 
+    public void RegisterAsNonInteractive(GameObject interactable)
+    {
+        if (!interactivityStatus.ContainsKey(interactable))
+        {
+            interactivityStatus[interactable] = false;
+            Debug.Log($"Registered {interactable.name} as non-interactive at start.");
+        }
+    }
+
     public void UpdateInteractivityStatus(GameObject interactable, bool isInteractive)
     {
         if (interactivityStatus.ContainsKey(interactable))
         {
-            // Nie aktualizujemy statusu interaktywnoœci jeœli obiekt jest zawsze interaktywny
             if (!interactivityStatus[interactable])
             {
                 interactivityStatus[interactable] = isInteractive;
@@ -46,11 +54,7 @@ public class InteractivityManager : MonoBehaviour
 
     public bool IsInteractable(GameObject interactable)
     {
-        if (interactivityStatus.ContainsKey(interactable))
-        {
-            return interactivityStatus[interactable];
-        }
-        return false;
+        return interactivityStatus.ContainsKey(interactable) && interactivityStatus[interactable];
     }
 
     public void RestoreInteractivity(GameObject interactable)
