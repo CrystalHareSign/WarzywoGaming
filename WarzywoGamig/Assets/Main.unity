@@ -752,11 +752,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6563c33366031fa4aa7f6a3b56b735a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  monsterPrefab: {fileID: 0}
-  maxMonstersAtOnce: 1
-  spawnInterval: 1
+  enemyPrefab: {fileID: 1684228584827658084, guid: 26465fc8ca58cdf42b9f3c2408b18481, type: 3}
   spawnArea: {fileID: 902798656}
-  minSpawnDistance: 1.5
+  targetArea: {fileID: 573163805}
+  enemyCount: 50
 --- !u!1 &267240524
 GameObject:
   m_ObjectHideFlags: 0
@@ -1678,6 +1677,59 @@ Transform:
   - {fileID: 811985572}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &573163803
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 573163805}
+  - component: {fileID: 573163804}
+  m_Layer: 0
+  m_Name: TargetArea
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!65 &573163804
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 573163803}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 100, y: 1, z: 100}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!4 &573163805
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 573163803}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -135.4, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2001075896}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &715916810
 GameObject:
   m_ObjectHideFlags: 0
@@ -2043,7 +2095,7 @@ Transform:
   m_GameObject: {fileID: 902798654}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1000, y: 0, z: 0}
+  m_LocalPosition: {x: -900, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2068,7 +2120,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 100, y: 1, z: 1000}
+  m_Size: {x: 200, y: 1, z: 200}
   m_Center: {x: 50, y: 0, z: 0}
 --- !u!1 &905466875
 GameObject:
@@ -2129,6 +2181,7 @@ MonoBehaviour:
   - {fileID: 905466875}
   - {fileID: 7351473872481356819}
   - {fileID: 715916810}
+  - {fileID: 573163803}
   moveDistance: 10
   moveDuration: 2
 --- !u!1 &953873634
@@ -2588,6 +2641,7 @@ GameObject:
   - component: {fileID: 1239174464}
   - component: {fileID: 1239174463}
   - component: {fileID: 1239174462}
+  - component: {fileID: 1239174466}
   m_Layer: 0
   m_Name: Plane
   m_TagString: Untagged
@@ -2685,6 +2739,38 @@ Transform:
   m_Children: []
   m_Father: {fileID: 209043320}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1239174466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1239174461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a5ac11cc976e418e8d13136b07e1f52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SerializedVersion: 0
+  m_AgentTypeID: 0
+  m_CollectObjects: 0
+  m_Size: {x: 10, y: 10, z: 10}
+  m_Center: {x: 0, y: 2, z: 0}
+  m_LayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_UseGeometry: 0
+  m_DefaultArea: 0
+  m_GenerateLinks: 0
+  m_IgnoreNavMeshAgent: 1
+  m_IgnoreNavMeshObstacle: 1
+  m_OverrideTileSize: 0
+  m_TileSize: 256
+  m_OverrideVoxelSize: 0
+  m_VoxelSize: 0.16666667
+  m_MinRegionArea: 2
+  m_NavMeshData: {fileID: 23800000, guid: 833d8fbf82dd0324583e24e5ec7d8f51, type: 2}
+  m_BuildHeightMesh: 0
 --- !u!224 &1298400103 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 4426344313218088106, guid: a700656eef90df54db4cb2b4ef8f97e4, type: 3}
@@ -4224,6 +4310,7 @@ Transform:
   m_Children:
   - {fileID: 247607249}
   - {fileID: 902798655}
+  - {fileID: 573163805}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2005437069
