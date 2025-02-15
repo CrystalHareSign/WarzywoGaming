@@ -6,17 +6,17 @@ public class Obstacle : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log("Triggered by: " + other.gameObject.name);
+        //Debug.Log("Triggered by: " + other.gameObject.name);
 
         var interactableItem = other.GetComponent<InteractableItem>();
         if (interactableItem != null && interactableItem.usesHealthSystem)
         {
             interactableItem.TakeDamage(damageAmount);
-            Debug.Log($"Dealt {damageAmount} damage to {interactableItem.gameObject.name}");
+            //Debug.Log($"Dealt {damageAmount} damage to {interactableItem.gameObject.name}");
         }
         else
         {
-            Debug.Log($"Obstacle collided with non-health-system object: {other.gameObject.name}");
+            //Debug.Log($"Obstacle collided with non-health-system object: {other.gameObject.name}");
         }
     }
 }

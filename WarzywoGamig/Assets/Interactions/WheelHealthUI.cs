@@ -15,11 +15,11 @@ public class WheelHealthUI : MonoBehaviour
         {
             if (wheelImages[i] == null)
             {
-                Debug.LogError($"[ERROR] WheelHealthUI: Brak przypisanego obrazu dla ko³a {i}!");
+                //Debug.LogError($"[ERROR] WheelHealthUI: Brak przypisanego obrazu dla ko³a {i}!");
             }
             else
             {
-                Debug.Log($"WheelHealthUI: Ko³o {i} przypisane do obrazu {wheelImages[i].name}");
+                //Debug.Log($"WheelHealthUI: Ko³o {i} przypisane do obrazu {wheelImages[i].name}");
             }
         }
     }
@@ -49,6 +49,6 @@ public class WheelHealthUI : MonoBehaviour
 
         // Zmiana koloru obrazu
         wheelImages[wheelIndex].color = newColor;
-        Debug.Log($"WheelHealthUI: Zmieniono kolor ko³a {wheelIndex} na {newColor} (zdrowie: {health})");
+        //Debug.Log($"WheelHealthUI: Zmieniono kolor ko³a {wheelIndex} na {newColor} (zdrowie: {health})");
     }
 }
