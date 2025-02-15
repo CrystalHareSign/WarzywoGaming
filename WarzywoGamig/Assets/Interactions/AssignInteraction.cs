@@ -51,6 +51,6 @@ public class AssignInteraction : MonoBehaviour
         }
 
         item.transform.position = endPosition;
-        Debug.Log($"Moved {item.name} in direction {direction} by {moveDistance} units.");
+        //Debug.Log($"Moved {item.name} in direction {direction} by {moveDistance} units.");
     }
 }

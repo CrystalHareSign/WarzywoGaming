@@ -17,7 +17,7 @@ public class InteractivityManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Another instance of InteractivityManager found. Destroying this instance.");
+            //Debug.LogWarning("Another instance of InteractivityManager found. Destroying this instance.");
             Destroy(gameObject);
         }
     }
@@ -27,7 +27,7 @@ public class InteractivityManager : MonoBehaviour
         if (!interactivityStatus.ContainsKey(interactable))
         {
             interactivityStatus[interactable] = alwaysInteractive;
-            Debug.Log($"Registered interactable: {interactable.name}, always interactive: {alwaysInteractive}");
+            //Debug.Log($"Registered interactable: {interactable.name}, always interactive: {alwaysInteractive}");
         }
     }
 
@@ -36,7 +36,7 @@ public class InteractivityManager : MonoBehaviour
         if (!interactivityStatus.ContainsKey(interactable))
         {
             interactivityStatus[interactable] = false;
-            Debug.Log($"Registered {interactable.name} as non-interactive at start.");
+            //Debug.Log($"Registered {interactable.name} as non-interactive at start.");
         }
     }
 
@@ -44,11 +44,12 @@ public class InteractivityManager : MonoBehaviour
     {
         if (interactivityStatus.ContainsKey(interactable))
         {
-            if (!interactivityStatus[interactable])
-            {
-                interactivityStatus[interactable] = isInteractive;
-                Debug.Log($"Updated interactivity status for {interactable.name} to {isInteractive}");
-            }
+            interactivityStatus[interactable] = isInteractive;
+            //Debug.Log($"Updated interactivity status for {interactable.name} to {isInteractive}");
+        }
+        else
+        {
+            //Debug.LogWarning($"Tried to update interactivity for unregistered object: {interactable.name}");
         }
     }
 
@@ -67,7 +68,7 @@ public class InteractivityManager : MonoBehaviour
             {
                 hoverMessage.isInteracted = false;
             }
-            Debug.Log($"Restored interactivity for {interactable.name}");
+            //Debug.Log($"Restored interactivity for {interactable.name}");
         }
     }
 }

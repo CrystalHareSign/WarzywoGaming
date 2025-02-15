@@ -89,13 +89,37 @@ public class SpawnManager : MonoBehaviour
         GameObject selectedPrefab = ChoosePrefabByChance(spawnablePrefabs);
         if (selectedPrefab == null) return;
 
-        int randomIndex = Random.Range(0, spawnPoints.Length);
-        GameObject spawnPoint = spawnPoints[randomIndex];
+        int maxAttempts = spawnPoints.Length; // Ograniczamy liczbę prób znalezienia wolnego miejsca
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            int randomIndex = Random.Range(0, spawnPoints.Length);
+            GameObject spawnPoint = spawnPoints[randomIndex];
 
-        GameObject spawnedObject = Instantiate(selectedPrefab, spawnPoint.transform.position, spawnPoint.transform.rotation);
-        ApplyVelocity(spawnedObject, spawnPoint);
-        Destroy(spawnedObject, globalObjectLifetime);
+            // Pobranie rozmiaru collidiera prefabrykatów
+            Collider prefabCollider = selectedPrefab.GetComponent<Collider>();
+            if (prefabCollider == null)
+            {
+                Debug.LogError($"Prefab {selectedPrefab.name} nie ma colliddera!");
+                continue;
+            }
+
+            Vector3 spawnPosition = spawnPoint.transform.position;
+            Vector3 halfExtents = prefabCollider.bounds.extents; // Połowa rozmiaru collidra
+
+            // Sprawdzenie, czy w miejscu spawnu jest już jakiś obiekt
+            Collider[] colliders = Physics.OverlapBox(spawnPosition, halfExtents, Quaternion.identity);
+            if (colliders.Length == 0)
+            {
+                GameObject spawnedObject = Instantiate(selectedPrefab, spawnPosition, spawnPoint.transform.rotation);
+                ApplyVelocity(spawnedObject, spawnPoint);
+                Destroy(spawnedObject, globalObjectLifetime);
+                return;
+            }
+        }
+
+        Debug.LogWarning("Nie znaleziono wolnego miejsca do spawnowania.");
     }
+
 
     GameObject ChoosePrefabByChance(List<SpawnablePrefab> spawnablePrefabs)
     {
