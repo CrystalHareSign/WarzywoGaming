@@ -6,22 +6,27 @@ public class MonsterMovement : MonoBehaviour
     private NavMeshAgent agent;
     private Vector3 targetOffset;
     public float randomOffsetRange = 2f;
+    private Transform targetArea;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        agent.updateRotation = false; // Nie obracaj automatycznie
-        transform.rotation = Quaternion.Euler(0, 90, 0); // Naprawiony obrót
+        agent.updateRotation = false;
+        transform.rotation = Quaternion.Euler(0, 90, 0);
         SetRandomOffset();
         InvokeRepeating(nameof(SetRandomOffset), 3f, 3f);
     }
 
     void Update()
     {
-        if (MonsterSpawner.TargetArea == null) return; // Sprawdzamy tylko raz
+        if (targetArea == null) return;
 
-        // Cel + losowe przesunięcie
-        Vector3 targetPosition = MonsterSpawner.TargetArea.position + targetOffset;
+        Vector3 targetPosition = targetArea.position + targetOffset;
+
+        // Sprawdzamy, czy w pobliżu są inni wrogowie i omijamy ich
+        Vector3 avoidanceVector = GetSeparationVector();
+        targetPosition += avoidanceVector;
+
         agent.SetDestination(targetPosition);
     }
 
@@ -32,5 +37,34 @@ public class MonsterMovement : MonoBehaviour
             0,
             Random.Range(-randomOffsetRange, randomOffsetRange)
         );
+    }
+
+    public void SetTarget(Transform target)
+    {
+        targetArea = target;
+    }
+
+    Vector3 GetSeparationVector()
+    {
+        Collider[] nearbyEnemies = Physics.OverlapSphere(transform.position, 1f);
+        Vector3 separationVector = Vector3.zero;
+        int count = 0;
+
+        foreach (Collider col in nearbyEnemies)
+        {
+            if (col.gameObject != gameObject && col.CompareTag("Enemy"))
+            {
+                separationVector += (transform.position - col.transform.position).normalized;
+                count++;
+            }
+        }
+
+        if (count > 0)
+        {
+            separationVector /= count;
+            separationVector *= 2f; // Jak mocno omijają innych
+        }
+
+        return separationVector;
     }
 }

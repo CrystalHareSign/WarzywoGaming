@@ -752,10 +752,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6563c33366031fa4aa7f6a3b56b735a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemyPrefabs:
-  - {fileID: 3195005713323969221, guid: 78b2b0b940b49bb4d9e430db34ee1cda, type: 3}
+  enemies:
+  - enemyPrefab: {fileID: 3195005713323969221, guid: 78b2b0b940b49bb4d9e430db34ee1cda, type: 3}
+    amount: 50
   targetArea: {fileID: 573163805}
-  enemyCount: 20
   spawnAreaSize: {x: 10, y: 1, z: 10}
 --- !u!1 &267240524
 GameObject:
@@ -2130,7 +2130,6 @@ MonoBehaviour:
   - {fileID: 7351473872481356819}
   - {fileID: 715916810}
   - {fileID: 573163803}
-  - {fileID: 1684228584827658084, guid: 26465fc8ca58cdf42b9f3c2408b18481, type: 3}
   moveDistance: 10
   moveDuration: 2
 --- !u!1 &953873634

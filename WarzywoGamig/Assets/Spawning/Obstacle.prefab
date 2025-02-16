@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 2395621303816578896}
   - component: {fileID: 8961573777567142379}
   - component: {fileID: 7746927379127201747}
+  - component: {fileID: 1338918824491255918}
   m_Layer: 0
   m_Name: Obstacle
   m_TagString: Obstacle
@@ -150,3 +151,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   damageAmount: 1
+--- !u!208 &1338918824491255918
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4385719690331741413}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 0
+  m_Extents: {x: 0.5, y: 0.5, z: 0.5}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: -2, y: 0, z: 0}
+  m_TimeToStationary: 0.5
