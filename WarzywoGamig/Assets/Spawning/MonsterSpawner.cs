@@ -1,51 +1,61 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-
-[System.Serializable]
-public class EnemyData
-{
-    public GameObject enemyPrefab;
-    public int amount; // Liczba sztuk tego typu
-}
+﻿using UnityEngine;
+using UnityEngine.AI;
 
 public class MonsterSpawner : MonoBehaviour
 {
-    public List<EnemyData> enemies; // Lista prefabów + liczba sztuk
-    public Transform targetArea;
+    public Transform targetArea; // ✅ TargetArea teraz jest publiczne i dostępne w Inspectorze
     public Vector3 spawnAreaSize = new Vector3(10, 1, 10);
 
     public static Transform TargetArea;
-    private List<GameObject> spawnedEnemies = new List<GameObject>();
 
     void Start()
     {
-        TargetArea = targetArea; // Przypisujemy globalne TargetArea
-        SpawnEnemies();
+        if (targetArea == null)
+        {
+            Debug.LogError("[MonsterSpawner] ❌ TargetArea nie jest przypisane w Inspectorze!");
+        }
+        else
+        {
+            TargetArea = targetArea;
+            Debug.Log("[MonsterSpawner] ✅ TargetArea ustawione na start!");
+        }
     }
 
-    void SpawnEnemies()
+    public void SetTarget(Transform newTarget)
     {
-        if (enemies.Count == 0)
+        TargetArea = newTarget;
+        Debug.Log("[MonsterSpawner] ✅ TargetArea ustawione przez RoundManager!");
+    }
+
+    public void SpawnEnemyGroup(GameObject enemyPrefab, int count)
+    {
+        if (enemyPrefab == null)
         {
-            Debug.LogError("Brak prefabów potworów w MonsterSpawner!");
+            Debug.LogError("[MonsterSpawner] ❌ enemyPrefab jest NULL! Nie można zespawnować wrogów.");
             return;
         }
 
-        foreach (EnemyData enemyData in enemies)
+        Debug.Log($"[MonsterSpawner] 🧟 Otrzymano żądanie spawnu: {count}x {enemyPrefab.name}");
+
+        for (int i = 0; i < count; i++)
         {
-            for (int i = 0; i < enemyData.amount; i++)
-            {
-                SpawnEnemy(enemyData.enemyPrefab);
-            }
+            SpawnEnemy(enemyPrefab);
         }
     }
 
-    void SpawnEnemy(GameObject enemyPrefab)
+    public void SpawnEnemy(GameObject enemyPrefab)
     {
-        Vector3 spawnPosition = GetSpawnPosition();
+        Vector3 spawnPosition = GetRandomSpawnPosition();
+
+        if (spawnPosition == Vector3.zero)
+        {
+            Debug.LogWarning("[MonsterSpawner] ⚠️ Nie znaleziono odpowiedniego miejsca do spawnu!");
+            return;
+        }
 
         GameObject newEnemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.Euler(0, 90, 0));
-        spawnedEnemies.Add(newEnemy);
+
+        Debug.Log($"[MonsterSpawner] ✅ Zespawnowano {enemyPrefab.name} na pozycji {spawnPosition}");
 
         MonsterMovement movement = newEnemy.GetComponent<MonsterMovement>();
         if (movement != null)
@@ -54,20 +64,23 @@ public class MonsterSpawner : MonoBehaviour
         }
     }
 
-    Vector3 GetSpawnPosition()
+    Vector3 GetRandomSpawnPosition()
     {
-        Vector3 position;
-        int attempts = 10;
-        do
-        {
-            position = new Vector3(
-                transform.position.x + Random.Range(-spawnAreaSize.x / 2, spawnAreaSize.x / 2),
-                transform.position.y,
-                transform.position.z + Random.Range(-spawnAreaSize.z / 2, spawnAreaSize.z / 2)
-            );
-            attempts--;
-        } while (Physics.CheckSphere(position, 1f) && attempts > 0);
+        Vector3 spawnCenter = transform.position;
+        Vector3 randomPosition = spawnCenter + new Vector3(
+            Random.Range(-spawnAreaSize.x / 2, spawnAreaSize.x / 2),
+            0,
+            Random.Range(-spawnAreaSize.z / 2, spawnAreaSize.z / 2)
+        );
 
-        return position;
+        NavMeshHit hit;
+        if (NavMesh.SamplePosition(randomPosition, out hit, 5f, NavMesh.AllAreas))
+        {
+            Debug.Log($"[MonsterSpawner] ✅ Spawnuję wroga na {hit.position} (NavMesh)");
+            return hit.position;
+        }
+
+        Debug.LogWarning("[MonsterSpawner] ⚠️ Nie znaleziono miejsca na NavMesh, spawnuję na pozycji spawnera!");
+        return spawnCenter;
     }
 }

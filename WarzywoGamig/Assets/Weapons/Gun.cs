@@ -1,75 +1,91 @@
-using System.Collections; // To jest wymagane dla IEnumerator
-using System.Collections.Generic;
+ï»¿using System.Collections;
 using UnityEngine;
-using UnityEngine.UI;
+using TMPro; // âœ… Import TextMeshPro
 
 public class Gun : MonoBehaviour
 {
     [Header("Gun Settings")]
-    public int maxAmmo = 10;  // Maksymalna iloœæ pocisków w magazynku
-    public int currentAmmo;  // Aktualna iloœæ pocisków
-    public float reloadTime = 2f;  // Czas prze³adowania
-    public int damage = 20;  // Obra¿enia zadawane przez pocisk
+    public int maxAmmo = 10;
+    public int currentAmmo;
+    public int totalAmmo = 30;
+    public float reloadTime = 2f;
+    public int damage = 20;
 
     [Header("Shooting Settings")]
-    public GameObject bulletPrefab;  // Prefab pocisku
-    public Transform shootingPoint;  // Punkt, z którego wychodz¹ pociski
+    public GameObject bulletPrefab;
+    public Transform shootingPoint;
 
-    private bool isReloading = false;  // Czy pistolet jest w trakcie prze³adowania
+    private bool isReloading = false;
+
+    [Header("Ammo Settings")]
+    public bool unlimitedAmmo = false;  // âœ… Teraz moÅ¼esz wÅ‚Ä…czaÄ‡/wyÅ‚Ä…czaÄ‡ w `Inspectorze`
 
     [Header("UI Settings")]
-    public Text reloadingText;  // Odwo³anie do napisu "Reloading..."
+    public TextMeshProUGUI ammoText;
+    public TextMeshProUGUI totalAmmoText;
+    public TextMeshProUGUI reloadingText;
 
     void Start()
     {
-        currentAmmo = maxAmmo;  // Na pocz¹tku pistolet ma pe³ny magazynek
-        reloadingText.gameObject.SetActive(false);  // Ukryj napis na pocz¹tku
+        currentAmmo = maxAmmo;
+        reloadingText.gameObject.SetActive(false);
+        UpdateAmmoUI();
     }
 
     void Update()
     {
         if (isReloading) return;
 
-        if (Input.GetButtonDown("Fire1") && currentAmmo > 0)  // Sprawdzanie przycisku strza³u (zwykle lewy przycisk myszy)
+        if (Input.GetButtonDown("Fire1") && (currentAmmo > 0 || unlimitedAmmo))
         {
             Shoot();
         }
 
-        if (Input.GetKeyDown(KeyCode.R) && currentAmmo < maxAmmo)  // Prze³adowanie (przycisk R)
+        if (Input.GetKeyDown(KeyCode.R) && !unlimitedAmmo && currentAmmo < maxAmmo && totalAmmo > 0)
         {
             StartCoroutine(Reload());
         }
     }
 
-    // Funkcja do strzelania
     void Shoot()
     {
-        currentAmmo--;  // Zmniejszamy iloœæ pocisków w magazynku
+        if (!unlimitedAmmo)
+        {
+            currentAmmo--;
+        }
 
-        // Tworzenie pocisku
         Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
-
         Debug.Log("Ammo: " + currentAmmo);
 
-        // Sprawdzenie, czy trzeba prze³adowaæ
-        if (currentAmmo <= 0)
+        UpdateAmmoUI();
+
+        if (currentAmmo <= 0 && !unlimitedAmmo)
         {
             StartCoroutine(Reload());
         }
     }
 
-    // Funkcja prze³adowania
     IEnumerator Reload()
     {
         isReloading = true;
-        reloadingText.gameObject.SetActive(true);  // Pokazujemy napis "Reloading..."
+        reloadingText.gameObject.SetActive(true);
 
-        // Czekanie na zakoñczenie prze³adowania
         yield return new WaitForSeconds(reloadTime);
 
-        currentAmmo = maxAmmo;  // Nape³niamy magazynek
+        int bulletsToReload = Mathf.Min(maxAmmo - currentAmmo, totalAmmo);
+        currentAmmo += bulletsToReload;
+        totalAmmo -= bulletsToReload;
+
         isReloading = false;
-        reloadingText.gameObject.SetActive(false);  // Ukrywamy napis "Reloading..."
+        reloadingText.gameObject.SetActive(false);
+
+        UpdateAmmoUI();
         Debug.Log("Reloaded!");
+    }
+
+    void UpdateAmmoUI()
+    {
+        ammoText.text = currentAmmo.ToString();
+        totalAmmoText.text = unlimitedAmmo ? "âˆž" : totalAmmo.ToString();
     }
 }

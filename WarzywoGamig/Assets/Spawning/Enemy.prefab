@@ -120,7 +120,7 @@ GameObject:
   - component: {fileID: 5105419494585357221}
   m_Layer: 0
   m_Name: Enemy
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -290,8 +290,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 744ed7c1975d07745aa624ae45335be1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 0
+  baseHealth: 100
   healthText: {fileID: 3805117149159587839}
   head: {fileID: 1394560146507854816}
 --- !u!1 &7646571307560063967
