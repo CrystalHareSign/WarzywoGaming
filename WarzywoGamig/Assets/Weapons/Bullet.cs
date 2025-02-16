@@ -2,15 +2,21 @@ using UnityEngine;
 
 public class Bullet : MonoBehaviour
 {
-    [Header ("Bullet Settings")]
+    [Header("Bullet Settings")]
     public float speed = 20f;
     public int damage = 20; // Obrażenia zadawane przez pocisk
     public float lifeTime = 5f; // Czas życia pocisku w sekundach
     public Rigidbody rb;
+    public GameObject impactEffect; // Efekt trafienia (przypisany w Inspectorze)
 
     void Start()
     {
-        rb.linearVelocity = transform.forward * speed;  // Pocisk porusza się w kierunku przodu
+        if (rb == null)
+        {
+            rb = GetComponent<Rigidbody>(); // Pobranie Rigidbody, jeśli nie jest przypisane
+        }
+
+        rb.linearVelocity = transform.forward * speed;  // ✅ Naprawione poruszanie się pocisku
 
         // Zniszczenie pocisku po określonym czasie
         Destroy(gameObject, lifeTime);
@@ -18,11 +24,20 @@ public class Bullet : MonoBehaviour
 
     void OnCollisionEnter(Collision hit)
     {
-        Zombie zombie = hit.collider.GetComponent<Zombie>(); // Sprawdzamy, czy pocisk trafił w zombie
-        if (zombie != null)
+        if (hit.collider.CompareTag("Enemy")) // ✅ Upewniamy się, że trafiliśmy we wroga
         {
-            zombie.TakeDamage(damage);  // Zadaj obrażenia zombie
+            EnemyHealth enemy = hit.collider.GetComponent<EnemyHealth>(); // ✅ Zamieniamy `Zombie` na `EnemyHealth`
+            if (enemy != null)
+            {
+                enemy.TakeDamage(damage);  // Zadaj obrażenia wrogowi
+            }
         }
-        Destroy(gameObject);  // Zniszczenie pocisku po kolizji
+
+        if (impactEffect != null) // ✅ Dodajemy efekt trafienia (jeśli przypisany)
+        {
+            Instantiate(impactEffect, transform.position, Quaternion.identity);
+        }
+
+        Destroy(gameObject); // ✅ Zniszczenie pocisku po trafieniu
     }
 }
