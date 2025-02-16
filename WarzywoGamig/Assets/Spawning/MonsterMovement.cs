@@ -1,85 +1,36 @@
 ﻿using UnityEngine;
 using UnityEngine.AI;
-using System.Collections;
 
 public class MonsterMovement : MonoBehaviour
 {
-    private NavMeshAgent navMeshAgent;
-    private Transform targetArea;
+    private NavMeshAgent agent;
+    private Vector3 targetOffset;
+    public float randomOffsetRange = 2f;
 
-    [Header("Unikanie przeszkód")]
-    public float detectionRadius = 5.0f;  // Promień wykrywania przeszkód
-    public float reactionDistance = 2.0f; // Dystans natychmiastowej reakcji
-    public float avoidanceStrength = 4.0f; // Jak mocno skręca przy unikaniu
-    public float avoidanceSpeedFactor = 1.5f; // Jak bardzo przyspiesza podczas uniku
-    public float avoidanceTime = 0.2f; // Czas trwania uniku
-
-    private bool isAvoiding = false;
-
-    public void Initialize(Transform target)
+    void Start()
     {
-        targetArea = target;
-    }
-
-    void Awake()
-    {
-        navMeshAgent = GetComponent<NavMeshAgent>();
-        if (navMeshAgent == null)
-        {
-            Debug.LogError(gameObject.name + " nie ma NavMeshAgent!");
-        }
+        agent = GetComponent<NavMeshAgent>();
+        agent.updateRotation = false; // Nie obracaj automatycznie
+        transform.rotation = Quaternion.Euler(0, 90, 0); // Naprawiony obrót
+        SetRandomOffset();
+        InvokeRepeating(nameof(SetRandomOffset), 3f, 3f);
     }
 
     void Update()
     {
-        if (targetArea != null)
-        {
-            navMeshAgent.SetDestination(targetArea.position);
-            if (!isAvoiding)
-            {
-                DetectAndAvoidObstacles();
-            }
-        }
+        if (MonsterSpawner.TargetArea == null) return; // Sprawdzamy tylko raz
+
+        // Cel + losowe przesunięcie
+        Vector3 targetPosition = MonsterSpawner.TargetArea.position + targetOffset;
+        agent.SetDestination(targetPosition);
     }
 
-    void DetectAndAvoidObstacles()
+    void SetRandomOffset()
     {
-        Collider[] obstacles = Physics.OverlapSphere(transform.position, detectionRadius);
-
-        foreach (Collider obstacle in obstacles)
-        {
-            if (obstacle.CompareTag("Obstacle") || obstacle.CompareTag("Enemy"))
-            {
-                float distanceToObstacle = Vector3.Distance(transform.position, obstacle.transform.position);
-                if (distanceToObstacle < reactionDistance)
-                {
-                    StartCoroutine(AvoidObstacle(obstacle.transform.position));
-                    return;
-                }
-            }
-        }
-    }
-
-    IEnumerator AvoidObstacle(Vector3 obstaclePosition)
-    {
-        isAvoiding = true;
-
-        // Oblicz wektor uniku w stronę przeciwną do przeszkody
-        Vector3 avoidanceDirection = (transform.position - obstaclePosition).normalized;
-        avoidanceDirection.y = 0; // Nie zmieniamy wysokości
-
-        // Dodaj losowy czynnik, aby unik był bardziej dynamiczny
-        float randomOffset = Random.Range(-0.5f, 0.5f);
-        avoidanceDirection += new Vector3(randomOffset, 0, randomOffset);
-
-        Vector3 newTarget = transform.position + avoidanceDirection * avoidanceStrength;
-
-        navMeshAgent.speed *= avoidanceSpeedFactor; // Tymczasowe zwiększenie prędkości
-        navMeshAgent.SetDestination(newTarget);
-
-        yield return new WaitForSeconds(avoidanceTime);
-
-        navMeshAgent.speed /= avoidanceSpeedFactor; // Powrót do normalnej prędkości
-        isAvoiding = false;
+        targetOffset = new Vector3(
+            Random.Range(-randomOffsetRange, randomOffsetRange),
+            0,
+            Random.Range(-randomOffsetRange, randomOffsetRange)
+        );
     }
 }

@@ -1,63 +1,47 @@
-﻿using UnityEngine;
-using UnityEngine.AI;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class MonsterSpawner : MonoBehaviour
 {
-    public GameObject enemyPrefab;
-    public Collider spawnArea;
-    public Transform targetArea;
-    public int enemyCount = 5;
+    public List<GameObject> enemyPrefabs;
+    public Transform targetArea; // Teraz to będzie globalne dla wszystkich potworów
+    public int enemyCount = 10;
+    public Vector3 spawnAreaSize = new Vector3(10, 1, 10);
+
+    public static Transform TargetArea; // Statyczne pole dla potworów
+
+    private List<GameObject> spawnedEnemies = new List<GameObject>();
 
     void Start()
     {
-        SpawnMonsters();
+        TargetArea = targetArea; // Przypisujemy target globalnie
+        SpawnEnemies();
     }
 
-    void SpawnMonsters()
+    void SpawnEnemies()
     {
+        if (enemyPrefabs.Count == 0)
+        {
+            Debug.LogError("Brak prefabów potworów w MonsterSpawner!");
+            return;
+        }
+
         for (int i = 0; i < enemyCount; i++)
         {
-            Vector3 spawnPosition = GetValidSpawnPosition();
-            if (spawnPosition == Vector3.zero)
-            {
-                Debug.LogWarning("Nie znaleziono poprawnej pozycji na NavMesh, używam domyślnej pozycji spawnu.");
-                spawnPosition = transform.position; // Awaryjna pozycja
-            }
-
-            GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
-            MonsterMovement movement = enemy.GetComponent<MonsterMovement>();
-            if (movement != null)
-            {
-                movement.Initialize(targetArea);
-            }
+            SpawnEnemy();
         }
     }
 
-    Vector3 GetValidSpawnPosition()
+    void SpawnEnemy()
     {
-        for (int attempt = 0; attempt < 10; attempt++)
-        {
-            Vector3 randomPoint = GetRandomPointInBounds(spawnArea.bounds);
-            //Debug.Log($"Próbuję znaleźć pozycję na NavMesh: {randomPoint}");
-
-            if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, 2.0f, NavMesh.AllAreas))
-            {
-                return hit.position;
-            }
-            else
-            {
-                Debug.LogWarning($"Nie znaleziono pozycji na NavMesh dla punktu: {randomPoint}");
-            }
-        }
-        return Vector3.zero; // Brak poprawnej pozycji
-    }
-
-    Vector3 GetRandomPointInBounds(Bounds bounds)
-    {
-        return new Vector3(
-            Random.Range(bounds.min.x, bounds.max.x),
-            bounds.center.y,
-            Random.Range(bounds.min.z, bounds.max.z)
+        GameObject enemyPrefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Count)];
+        Vector3 spawnPosition = new Vector3(
+            transform.position.x + Random.Range(-spawnAreaSize.x / 2, spawnAreaSize.x / 2),
+            transform.position.y,
+            transform.position.z + Random.Range(-spawnAreaSize.z / 2, spawnAreaSize.z / 2)
         );
+
+        GameObject newEnemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.Euler(0, 90, 0));
+        spawnedEnemies.Add(newEnemy);
     }
 }
