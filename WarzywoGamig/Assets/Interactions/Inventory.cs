@@ -23,9 +23,11 @@ public class Inventory : MonoBehaviour
     private Dictionary<string, GameObject> weaponPrefabs = new Dictionary<string, GameObject>(); // S³ownik prefabów broni
 
     private GameObject currentWeaponPrefab; // Przechowuje aktualnie wyposa¿on¹ broñ
+    private bool isWeaponEquipped = false; // Flaga do sprawdzenia, czy broñ jest wyposa¿ona
 
     public Vector3 weaponPositionOffset = new Vector3(0.5f, -0.3f, 1.0f); // Przesuniêcie broni wzglêdem gracza
     public Vector3 weaponRotationOffset = new Vector3(0, 90, 0); // Rotacja broni wzglêdem gracza
+
 
     void Start()
     {
@@ -127,6 +129,16 @@ public class Inventory : MonoBehaviour
             currentWeaponPrefab.transform.localRotation = Quaternion.Euler(weaponRotationOffset); // Rotacja lokalna
 
             currentWeaponPrefab.SetActive(true);
+
+            // ZnajdŸ skrypt Gun i przypisz go do broni
+            Gun gunScript = currentWeaponPrefab.GetComponent<Gun>();
+            if (gunScript != null)
+            {
+                gunScript.enabled = true; // Aktywuj strzelanie
+                gunScript.EquipWeapon(); // Aktywuj broñ do strzelania
+            }
+
+            isWeaponEquipped = true; // Broñ jest teraz wyposa¿ona
         }
         else
         {

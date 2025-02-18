@@ -988,8 +988,16 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1260716534702189861, guid: 188c18add269d2f4dad7bf975a8d030b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1532319656}
   m_SourcePrefab: {fileID: 100100000, guid: 188c18add269d2f4dad7bf975a8d030b, type: 3}
+--- !u!4 &299235532 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 524849640838388491, guid: 188c18add269d2f4dad7bf975a8d030b, type: 3}
+  m_PrefabInstance: {fileID: 299235531}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &300085335
 GameObject:
   m_ObjectHideFlags: 0
@@ -4327,6 +4335,29 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 1260716534702189861, guid: 188c18add269d2f4dad7bf975a8d030b, type: 3}
   m_PrefabInstance: {fileID: 299235531}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1532319656
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1532319655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6050ac94f9c95ea40b78d5d3a000c623, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxAmmo: 10
+  currentAmmo: 0
+  totalAmmo: 30
+  reloadTime: 2
+  damage: 20
+  bulletPrefab: {fileID: 8266724109241798289, guid: 5b0ad2da9c75cd246bffe94891b117b8, type: 3}
+  shootingPoint: {fileID: 299235532}
+  unlimitedAmmo: 0
+  ammoText: {fileID: 1053627910}
+  totalAmmoText: {fileID: 962743395}
+  reloadingText: {fileID: 1368599207}
 --- !u!1 &1582969583
 GameObject:
   m_ObjectHideFlags: 0
@@ -5791,7 +5822,7 @@ MonoBehaviour:
   - weaponName: Pistol
     weaponPrefab: {fileID: 1532319655}
   weaponPositionOffset: {x: 0.5, y: -0.3, z: 1}
-  weaponRotationOffset: {x: 5, y: 175, z: 0}
+  weaponRotationOffset: {x: 185, y: 175, z: 0}
 --- !u!1001 &70671304840066653
 PrefabInstance:
   m_ObjectHideFlags: 0
