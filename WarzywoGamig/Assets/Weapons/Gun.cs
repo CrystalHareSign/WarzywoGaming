@@ -25,6 +25,9 @@ public class Gun : MonoBehaviour
     public TextMeshProUGUI totalAmmoText;
     public TextMeshProUGUI reloadingText;
 
+    // Nowa flaga do sprawdzania, czy broń jest aktywna
+    private bool isWeaponEquipped = false;
+
     void Start()
     {
         currentAmmo = maxAmmo;
@@ -34,7 +37,7 @@ public class Gun : MonoBehaviour
 
     void Update()
     {
-        if (isReloading) return;
+        if (!isWeaponEquipped || isReloading) return;
 
         if (Input.GetButtonDown("Fire1") && (currentAmmo > 0 || unlimitedAmmo))
         {
@@ -45,6 +48,12 @@ public class Gun : MonoBehaviour
         {
             StartCoroutine(Reload());
         }
+    }
+
+    public void EquipWeapon()
+    {
+        // Po wywołaniu tej metody broń staje się aktywna
+        isWeaponEquipped = true;
     }
 
     void Shoot()
