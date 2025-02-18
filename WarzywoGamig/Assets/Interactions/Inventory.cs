@@ -10,10 +10,35 @@ public class Inventory : MonoBehaviour
     public LayerMask interactableLayer; // Warstwa interaktywnych przedmiotów
     public InventoryUI inventoryUI; // Odniesienie do skryptu InventoryUI
 
+    public Transform weaponParent; // Transform, do którego bêd¹ przypisywane bronie jako dzieci
+
+    [System.Serializable]
+    public class WeaponPrefabEntry
+    {
+        public string weaponName; // Nazwa broni
+        public GameObject weaponPrefab; // Prefab broni
+    }
+
+    public List<WeaponPrefabEntry> weaponPrefabsList = new List<WeaponPrefabEntry>(); // Lista, któr¹ edytujesz w inspektorze
+    private Dictionary<string, GameObject> weaponPrefabs = new Dictionary<string, GameObject>(); // S³ownik prefabów broni
+
+    private GameObject currentWeaponPrefab; // Przechowuje aktualnie wyposa¿on¹ broñ
+
+    public Vector3 weaponPositionOffset = new Vector3(0.5f, -0.3f, 1.0f); // Przesuniêcie broni wzglêdem gracza
+    public Vector3 weaponRotationOffset = new Vector3(0, 90, 0); // Rotacja broni wzglêdem gracza
+
     void Start()
     {
         weapons.Clear();
         items.Clear();
+
+        // Zbuduj s³ownik weaponPrefabs z listy
+        weaponPrefabs.Clear();
+        foreach (WeaponPrefabEntry entry in weaponPrefabsList)
+        {
+            weaponPrefabs[entry.weaponName] = entry.weaponPrefab;
+        }
+
         UpdateInventoryUI();
     }
 
@@ -46,6 +71,10 @@ public class Inventory : MonoBehaviour
                     {
                         weapons.Add(hit.collider.gameObject);
                         hit.collider.gameObject.SetActive(false); // Deaktywuj zebrany przedmiot
+
+                        // Aktywuj prefab broni
+                        EquipWeapon(interactableItem);
+
                         Debug.Log($"Collected weapon: {interactableItem.itemName}");
                         UpdateInventoryUI();
                     }
@@ -80,6 +109,31 @@ public class Inventory : MonoBehaviour
         }
     }
 
+    void EquipWeapon(InteractableItem interactableItem)
+    {
+        // Sprawdzamy, czy istnieje prefab broni dla tej broni
+        if (weaponPrefabs.ContainsKey(interactableItem.itemName))
+        {
+            if (currentWeaponPrefab != null)
+            {
+                Destroy(currentWeaponPrefab); // Usuwamy poprzedni¹ broñ, jeœli by³a
+            }
+
+            // Instaluje now¹ broñ
+            currentWeaponPrefab = Instantiate(weaponPrefabs[interactableItem.itemName], weaponParent);
+
+            // Ustawienie pozycji i rotacji broni w stosunku do gracza
+            currentWeaponPrefab.transform.localPosition = weaponPositionOffset; // Przesuniêcie lokalne
+            currentWeaponPrefab.transform.localRotation = Quaternion.Euler(weaponRotationOffset); // Rotacja lokalna
+
+            currentWeaponPrefab.SetActive(true);
+        }
+        else
+        {
+            Debug.LogWarning("Weapon prefab not found for this weapon.");
+        }
+    }
+
     void DropItem()
     {
         if (weapons.Count > 0)
@@ -96,6 +150,13 @@ public class Inventory : MonoBehaviour
                     // Ustaw pozycjê upuszczonego przedmiotu przed graczem
                     Vector3 dropPosition = new Vector3(transform.position.x, transform.position.y + 1.0f, transform.position.z);
                     itemToDrop.transform.position = dropPosition;
+
+                    // Zniszcz prefab broni, jeœli by³ przypisany
+                    if (currentWeaponPrefab != null)
+                    {
+                        Destroy(currentWeaponPrefab);
+                        currentWeaponPrefab = null;
+                    }
 
                     Debug.Log($"Dropped weapon: {itemToDrop.name}");
                     UpdateInventoryUI();
