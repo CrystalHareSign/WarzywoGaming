@@ -1,21 +1,35 @@
-using System.Collections.Generic;
+Ôªøusing System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class InventoryUI : MonoBehaviour
 {
     public Image weaponImage; // Ikona broni
     public Image itemImage; // Ikona innego przedmiotu
 
-    public Sprite defaultWeaponSprite; // Domyúlny obrazek broni
-    public Sprite defaultItemSprite; // Domyúlny obrazek przedmiotu
+    public Sprite defaultWeaponSprite; // Domy≈õlny obrazek broni
+    public Sprite defaultItemSprite; // Domy≈õlny obrazek przedmiotu
 
     public Dictionary<string, Sprite> weaponIcons = new Dictionary<string, Sprite>(); // Ikony broni
-    public Dictionary<string, Sprite> itemIcons = new Dictionary<string, Sprite>(); // Ikony przedmiotÛw
+    public Dictionary<string, Sprite> itemIcons = new Dictionary<string, Sprite>(); // Ikony przedmiot√≥w
+
+    // UI dla amunicji
+    public TextMeshProUGUI ammoText;
+    public TextMeshProUGUI totalAmmoText;
+    public TextMeshProUGUI reloadingText;
+    public TextMeshProUGUI slashText;
+
+    private Gun currentWeapon; // Zmienna do przechowywania aktualnie wybranej broni
 
     void Start()
     {
+        // Domy≈õlnie ukrywamy wszystkie elementy UI
         weaponImage.enabled = false;
+        ammoText.gameObject.SetActive(false);
+        totalAmmoText.gameObject.SetActive(false);
+        reloadingText.gameObject.SetActive(false);
+        slashText.gameObject.SetActive(false);
         itemImage.enabled = false;
     }
 
@@ -34,6 +48,14 @@ public class InventoryUI : MonoBehaviour
                 weaponImage.sprite = weaponIcons.ContainsKey(weapon.itemName) ? weaponIcons[weapon.itemName] : defaultWeaponSprite;
                 weaponImage.enabled = true;
                 weaponEquipped = true;
+
+                // Przypisanie broni do UI
+                Gun gun = weapons[i].GetComponent<Gun>();
+                if (gun != null)
+                {
+                    currentWeapon = gun;
+                    UpdateWeaponUI(gun);
+                }
             }
         }
 
@@ -49,16 +71,35 @@ public class InventoryUI : MonoBehaviour
             }
         }
 
-        // Jeúli gracz nie ma broni, ukrywamy ikony broni
+        // Je≈õli gracz nie ma broni, ukrywamy UI broni
         if (!weaponEquipped)
         {
             weaponImage.enabled = false;
+            ammoText.gameObject.SetActive(false);
+            totalAmmoText.gameObject.SetActive(false);
+            reloadingText.gameObject.SetActive(false);
+            slashText.gameObject.SetActive(false);
         }
 
-        // Jeúli gracz nie ma øadnych przedmiotÛw, ukrywamy ikony przedmiotÛw
+        // Je≈õli gracz nie ma ≈ºadnych przedmiot√≥w, ukrywamy ikony przedmiot√≥w
         if (!itemEquipped)
         {
             itemImage.enabled = false;
         }
+    }
+
+    // Nowa metoda do aktualizacji UI broni
+    public void UpdateWeaponUI(Gun gun)
+    {
+        if (gun == null) return;
+
+        // Aktywujemy UI broni tylko wtedy, gdy bro≈Ñ jest trzymana
+        ammoText.gameObject.SetActive(true);
+        totalAmmoText.gameObject.SetActive(true);
+        slashText.gameObject.SetActive(true);
+        reloadingText.gameObject.SetActive(gun.IsReloading());
+
+        ammoText.text = gun.currentAmmo.ToString();
+        totalAmmoText.text = gun.unlimitedAmmo ? "‚àû" : gun.totalAmmo.ToString();
     }
 }

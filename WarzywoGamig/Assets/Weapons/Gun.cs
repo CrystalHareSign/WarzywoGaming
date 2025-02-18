@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using UnityEngine;
-using TMPro; // ✅ Import TextMeshPro
 
 public class Gun : MonoBehaviour
 {
@@ -20,19 +19,15 @@ public class Gun : MonoBehaviour
     [Header("Ammo Settings")]
     public bool unlimitedAmmo = false;  // ✅ Teraz możesz włączać/wyłączać w `Inspectorze`
 
-    [Header("UI Settings")]
-    public TextMeshProUGUI ammoText;
-    public TextMeshProUGUI totalAmmoText;
-    public TextMeshProUGUI reloadingText;
-
     // Nowa flaga do sprawdzania, czy broń jest aktywna
     private bool isWeaponEquipped = false;
+
+    private InventoryUI inventoryUI; // Odwołanie do InventoryUI
 
     void Start()
     {
         currentAmmo = maxAmmo;
-        reloadingText.gameObject.SetActive(false);
-        UpdateAmmoUI();
+        inventoryUI = Object.FindFirstObjectByType<InventoryUI>(); // Pobranie referencji do InventoryUI
     }
 
     void Update()
@@ -66,7 +61,10 @@ public class Gun : MonoBehaviour
         Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
         Debug.Log("Ammo: " + currentAmmo);
 
-        UpdateAmmoUI();
+        if (inventoryUI != null)
+        {
+            inventoryUI.UpdateWeaponUI(this); // Powiadomienie UI o zmianie stanu broni
+        }
 
         if (currentAmmo <= 0 && !unlimitedAmmo)
         {
@@ -77,7 +75,6 @@ public class Gun : MonoBehaviour
     IEnumerator Reload()
     {
         isReloading = true;
-        reloadingText.gameObject.SetActive(true);
 
         yield return new WaitForSeconds(reloadTime);
 
@@ -86,15 +83,18 @@ public class Gun : MonoBehaviour
         totalAmmo -= bulletsToReload;
 
         isReloading = false;
-        reloadingText.gameObject.SetActive(false);
 
-        UpdateAmmoUI();
         Debug.Log("Reloaded!");
+
+        if (inventoryUI != null)
+        {
+            inventoryUI.UpdateWeaponUI(this); // Powiadomienie UI o zakończeniu przeładowania
+        }
     }
 
-    void UpdateAmmoUI()
+    // Nowa metoda do sprawdzania, czy broń jest w trakcie przeładowania
+    public bool IsReloading()
     {
-        ammoText.text = currentAmmo.ToString();
-        totalAmmoText.text = unlimitedAmmo ? "∞" : totalAmmo.ToString();
+        return isReloading;
     }
 }

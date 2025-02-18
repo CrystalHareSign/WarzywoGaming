@@ -1388,6 +1388,10 @@ MonoBehaviour:
   itemImage: {fileID: 300085337}
   defaultWeaponSprite: {fileID: 21300000, guid: 640d82297f17d1b469a1d14a4c37d48d, type: 3}
   defaultItemSprite: {fileID: 21300000, guid: 640d82297f17d1b469a1d14a4c37d48d, type: 3}
+  ammoText: {fileID: 1053627910}
+  totalAmmoText: {fileID: 962743395}
+  reloadingText: {fileID: 1368599207}
+  slashText: {fileID: 1586687961}
 --- !u!114 &351697966
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4355,9 +4359,6 @@ MonoBehaviour:
   bulletPrefab: {fileID: 8266724109241798289, guid: 5b0ad2da9c75cd246bffe94891b117b8, type: 3}
   shootingPoint: {fileID: 299235532}
   unlimitedAmmo: 0
-  ammoText: {fileID: 1053627910}
-  totalAmmoText: {fileID: 962743395}
-  reloadingText: {fileID: 1368599207}
 --- !u!1 &1582969583
 GameObject:
   m_ObjectHideFlags: 0

@@ -23,7 +23,7 @@ public class Inventory : MonoBehaviour
     private Dictionary<string, GameObject> weaponPrefabs = new Dictionary<string, GameObject>(); // S³ownik prefabów broni
 
     private GameObject currentWeaponPrefab; // Przechowuje aktualnie wyposa¿on¹ broñ
-    private bool isWeaponEquipped = false; // Flaga do sprawdzenia, czy broñ jest wyposa¿ona
+    //private bool isWeaponEquipped = false; // Flaga do sprawdzenia, czy broñ jest wyposa¿ona
 
     public Vector3 weaponPositionOffset = new Vector3(0.5f, -0.3f, 1.0f); // Przesuniêcie broni wzglêdem gracza
     public Vector3 weaponRotationOffset = new Vector3(0, 90, 0); // Rotacja broni wzglêdem gracza
@@ -138,7 +138,7 @@ public class Inventory : MonoBehaviour
                 gunScript.EquipWeapon(); // Aktywuj broñ do strzelania
             }
 
-            isWeaponEquipped = true; // Broñ jest teraz wyposa¿ona
+            //isWeaponEquipped = true; // Broñ jest teraz wyposa¿ona
         }
         else
         {
