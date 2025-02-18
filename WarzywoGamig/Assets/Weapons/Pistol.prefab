@@ -128,6 +128,7 @@ MonoBehaviour:
   startAsNonInteractive: 0
   canBePickedUp: 0
   canBeDropped: 1
+  isWeapon: 1
   alwaysInteractive: 1
   hasCooldown: 0
   usesHealthSystem: 0
