@@ -12,19 +12,19 @@ public class MonsterSpawner : MonoBehaviour
     {
         if (targetArea == null)
         {
-            Debug.LogError("[MonsterSpawner] ❌ TargetArea nie jest przypisane w Inspectorze!");
+            //Debug.LogError("[MonsterSpawner] ❌ TargetArea nie jest przypisane w Inspectorze!");
         }
         else
         {
             TargetArea = targetArea;
-            Debug.Log("[MonsterSpawner] ✅ TargetArea ustawione na start!");
+            //Debug.Log("[MonsterSpawner] ✅ TargetArea ustawione na start!");
         }
     }
 
     public void SetTarget(Transform newTarget)
     {
         TargetArea = newTarget;
-        Debug.Log("[MonsterSpawner] ✅ TargetArea ustawione przez RoundManager!");
+        //Debug.Log("[MonsterSpawner] ✅ TargetArea ustawione przez RoundManager!");
     }
 
     public void SpawnEnemyGroup(GameObject enemyPrefab, int count)
@@ -35,7 +35,7 @@ public class MonsterSpawner : MonoBehaviour
             return;
         }
 
-        Debug.Log($"[MonsterSpawner] 🧟 Otrzymano żądanie spawnu: {count}x {enemyPrefab.name}");
+        //Debug.Log($"[MonsterSpawner] 🧟 Otrzymano żądanie spawnu: {count}x {enemyPrefab.name}");
 
         for (int i = 0; i < count; i++)
         {
@@ -49,13 +49,13 @@ public class MonsterSpawner : MonoBehaviour
 
         if (spawnPosition == Vector3.zero)
         {
-            Debug.LogWarning("[MonsterSpawner] ⚠️ Nie znaleziono odpowiedniego miejsca do spawnu!");
+            //Debug.LogWarning("[MonsterSpawner] ⚠️ Nie znaleziono odpowiedniego miejsca do spawnu!");
             return;
         }
 
         GameObject newEnemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.Euler(0, 90, 0));
 
-        Debug.Log($"[MonsterSpawner] ✅ Zespawnowano {enemyPrefab.name} na pozycji {spawnPosition}");
+        //Debug.Log($"[MonsterSpawner] ✅ Zespawnowano {enemyPrefab.name} na pozycji {spawnPosition}");
 
         MonsterMovement movement = newEnemy.GetComponent<MonsterMovement>();
         if (movement != null)
@@ -76,11 +76,11 @@ public class MonsterSpawner : MonoBehaviour
         NavMeshHit hit;
         if (NavMesh.SamplePosition(randomPosition, out hit, 5f, NavMesh.AllAreas))
         {
-            Debug.Log($"[MonsterSpawner] ✅ Spawnuję wroga na {hit.position} (NavMesh)");
+            //Debug.Log($"[MonsterSpawner] ✅ Spawnuję wroga na {hit.position} (NavMesh)");
             return hit.position;
         }
 
-        Debug.LogWarning("[MonsterSpawner] ⚠️ Nie znaleziono miejsca na NavMesh, spawnuję na pozycji spawnera!");
+        //Debug.LogWarning("[MonsterSpawner] ⚠️ Nie znaleziono miejsca na NavMesh, spawnuję na pozycji spawnera!");
         return spawnCenter;
     }
 }
