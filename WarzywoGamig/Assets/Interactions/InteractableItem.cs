@@ -15,6 +15,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
     [Header("System Itemów")]
     public bool canBePickedUp = true;
     public bool canBeDropped = true;
+    public bool isWeapon;    // Okreœla, czy przedmiot jest broni¹
 
     [Header("System kierowczy")]
     public bool alwaysInteractive = false;
