@@ -24,6 +24,12 @@ public class Gun : MonoBehaviour
 
     private InventoryUI inventoryUI; // Odwołanie do InventoryUI
 
+    [Header("Full Auto Settings")]
+    public bool isFullAuto = false; // Dodanie zmiennej, która kontroluje tryb full auto
+    public float fireRate = 0.1f; // Czas między kolejnymi strzałami w trybie full auto
+
+    private float nextFireTime = 0f; // Zmienna do kontrolowania tempa strzelania w trybie full auto
+
     void Start()
     {
         currentAmmo = maxAmmo;
@@ -34,12 +40,30 @@ public class Gun : MonoBehaviour
     {
         if (!isWeaponEquipped || isReloading) return;
 
-        if (Input.GetButtonDown("Fire1") && (currentAmmo > 0 || unlimitedAmmo))
+        if (isFullAuto)
         {
-            Shoot();
+            // Strzelanie w trybie full auto
+            if (Input.GetButton("Fire1") && (currentAmmo > 0 || unlimitedAmmo) && Time.time >= nextFireTime)
+            {
+                nextFireTime = Time.time + fireRate; // Opóźnienie między strzałami
+                Shoot();
+            }
+        }
+        else
+        {
+            // Strzelanie w trybie semi-auto (kliknięcie raz)
+            if (Input.GetButtonDown("Fire1") && (currentAmmo > 0 || unlimitedAmmo))
+            {
+                Shoot();
+            }
         }
 
+        // Obsługa przeładowania
         if (Input.GetKeyDown(KeyCode.R) && !unlimitedAmmo && currentAmmo < maxAmmo && totalAmmo > 0)
+        {
+            StartCoroutine(Reload());
+        }
+        else if (currentAmmo <= 0 && !unlimitedAmmo)  // Sprawdzenie, czy trzeba rozpocząć przeładowanie
         {
             StartCoroutine(Reload());
         }
@@ -59,7 +83,7 @@ public class Gun : MonoBehaviour
         }
 
         Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
-        Debug.Log("Ammo: " + currentAmmo);
+        //Debug.Log("Ammo: " + currentAmmo);
 
         if (inventoryUI != null)
         {
@@ -76,6 +100,12 @@ public class Gun : MonoBehaviour
     {
         isReloading = true;
 
+        // Uaktualnienie UI w momencie rozpoczęcia przeładowania
+        if (inventoryUI != null)
+        {
+            inventoryUI.UpdateWeaponUI(this); // Odświeżenie UI przy rozpoczęciu przeładowania
+        }
+
         yield return new WaitForSeconds(reloadTime);
 
         int bulletsToReload = Mathf.Min(maxAmmo - currentAmmo, totalAmmo);
@@ -84,12 +114,13 @@ public class Gun : MonoBehaviour
 
         isReloading = false;
 
-        Debug.Log("Reloaded!");
-
+        // Uaktualnienie UI po zakończeniu przeładowania
         if (inventoryUI != null)
         {
-            inventoryUI.UpdateWeaponUI(this); // Powiadomienie UI o zakończeniu przeładowania
+            inventoryUI.UpdateWeaponUI(this); // Odświeżenie UI po zakończeniu przeładowania
         }
+
+        Debug.Log("Reloaded!");
     }
 
     // Nowa metoda do sprawdzania, czy broń jest w trakcie przeładowania

@@ -8,6 +8,7 @@ public class InventoryUI : MonoBehaviour
     public Image weaponImage; // Ikona broni
     public Image itemImage; // Ikona innego przedmiotu
 
+
     public Sprite defaultWeaponSprite; // Domyślny obrazek broni
     public Sprite defaultItemSprite; // Domyślny obrazek przedmiotu
 
@@ -15,42 +16,49 @@ public class InventoryUI : MonoBehaviour
     public Dictionary<string, Sprite> itemIcons = new Dictionary<string, Sprite>(); // Ikony przedmiotów
 
     // UI dla amunicji
+    public TextMeshProUGUI weaponNameText; // Tekst wyświetlający nazwę broni
     public TextMeshProUGUI ammoText;
     public TextMeshProUGUI totalAmmoText;
     public TextMeshProUGUI reloadingText;
     public TextMeshProUGUI slashText;
 
-    private Gun currentWeapon; // Zmienna do przechowywania aktualnie wybranej broni
+    private Gun currentWeapon; // Aktualnie trzymana broń
 
     void Start()
     {
         // Domyślnie ukrywamy wszystkie elementy UI
         weaponImage.enabled = false;
+        itemImage.enabled = false;
+        weaponNameText.gameObject.SetActive(false);
+
         ammoText.gameObject.SetActive(false);
         totalAmmoText.gameObject.SetActive(false);
         reloadingText.gameObject.SetActive(false);
         slashText.gameObject.SetActive(false);
-        itemImage.enabled = false;
     }
 
-    // Nowa metoda do aktualizacji UI
+    // Aktualizacja UI ekwipunku
     public void UpdateInventoryUI(List<GameObject> weapons, List<GameObject> items)
     {
         bool weaponEquipped = false;
         bool itemEquipped = false;
 
-        // Sprawdzamy, czy gracz ma jakiekolwiek bronie
-        for (int i = 0; i < weapons.Count; i++)
+        // Sprawdzamy, czy gracz trzyma broń
+        foreach (var weaponObj in weapons)
         {
-            InteractableItem weapon = weapons[i].GetComponent<InteractableItem>();
+            InteractableItem weapon = weaponObj.GetComponent<InteractableItem>();
             if (weapon != null)
             {
                 weaponImage.sprite = weaponIcons.ContainsKey(weapon.itemName) ? weaponIcons[weapon.itemName] : defaultWeaponSprite;
                 weaponImage.enabled = true;
                 weaponEquipped = true;
 
-                // Przypisanie broni do UI
-                Gun gun = weapons[i].GetComponent<Gun>();
+                // Aktualizacja nazwy broni
+                weaponNameText.text = weapon.itemName;
+                weaponNameText.gameObject.SetActive(true);
+
+                // Aktualizacja UI amunicji
+                Gun gun = weaponObj.GetComponent<Gun>();
                 if (gun != null)
                 {
                     currentWeapon = gun;
@@ -59,10 +67,10 @@ public class InventoryUI : MonoBehaviour
             }
         }
 
-        // Sprawdzamy, czy gracz ma jakiekolwiek przedmioty
-        for (int i = 0; i < items.Count; i++)
+        // Sprawdzamy, czy gracz trzyma przedmioty
+        foreach (var itemObj in items)
         {
-            InteractableItem item = items[i].GetComponent<InteractableItem>();
+            InteractableItem item = itemObj.GetComponent<InteractableItem>();
             if (item != null)
             {
                 itemImage.sprite = itemIcons.ContainsKey(item.itemName) ? itemIcons[item.itemName] : defaultItemSprite;
@@ -71,34 +79,37 @@ public class InventoryUI : MonoBehaviour
             }
         }
 
-        // Jeśli gracz nie ma broni, ukrywamy UI broni
+        // Ukrywanie UI, jeśli gracz nie trzyma broni
         if (!weaponEquipped)
         {
             weaponImage.enabled = false;
+            weaponNameText.gameObject.SetActive(false);
+
             ammoText.gameObject.SetActive(false);
             totalAmmoText.gameObject.SetActive(false);
             reloadingText.gameObject.SetActive(false);
             slashText.gameObject.SetActive(false);
         }
 
-        // Jeśli gracz nie ma żadnych przedmiotów, ukrywamy ikony przedmiotów
+        // Ukrywanie UI, jeśli gracz nie trzyma żadnych przedmiotów
         if (!itemEquipped)
         {
             itemImage.enabled = false;
         }
     }
 
-    // Nowa metoda do aktualizacji UI broni
+    // Aktualizacja UI broni (amunicja + nazwa)
     public void UpdateWeaponUI(Gun gun)
     {
         if (gun == null) return;
 
-        // Aktywujemy UI broni tylko wtedy, gdy broń jest trzymana
+        // Pokazanie UI amunicji
         ammoText.gameObject.SetActive(true);
         totalAmmoText.gameObject.SetActive(true);
         slashText.gameObject.SetActive(true);
         reloadingText.gameObject.SetActive(gun.IsReloading());
 
+        // Aktualizacja wartości amunicji
         ammoText.text = gun.currentAmmo.ToString();
         totalAmmoText.text = gun.unlimitedAmmo ? "∞" : gun.totalAmmo.ToString();
     }
