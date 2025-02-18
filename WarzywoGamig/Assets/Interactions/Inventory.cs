@@ -11,7 +11,6 @@ public class Inventory : MonoBehaviour
 
     void Start()
     {
-        // Upewnij siê, ¿e lista collectedItems jest pusta na starcie
         collectedItems.Clear();
         UpdateInventoryUI();
     }
