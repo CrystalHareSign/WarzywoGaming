@@ -121,7 +121,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
         if (usesHealthSystem)
         {
             currentHealth = Mathf.Max(currentHealth - amount, 0);
-            Debug.Log($"[LOG] {itemName} otrzyma³ {amount} obra¿eñ. Aktualne zdrowie: {currentHealth}/{maxHealth}");
+            //Debug.Log($"[LOG] {itemName} otrzyma³ {amount} obra¿eñ. Aktualne zdrowie: {currentHealth}/{maxHealth}");
 
             // Upewnij siê, ¿e mo¿na naprawiaæ od razu po obra¿eniach
             if (currentHealth < maxHealth)
