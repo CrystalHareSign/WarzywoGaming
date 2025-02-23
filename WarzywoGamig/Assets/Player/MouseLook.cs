@@ -1,17 +1,17 @@
 using UnityEngine;
 
-public class CameraController : MonoBehaviour
+public class MouseLook : MonoBehaviour
 {
     [Header("Mouse Settings")]
-    [SerializeField] private float mouseSensitivity = 100f;
+    [SerializeField] private float mouseSensitivity = 3f; // Ustawienie ni¿szej czu³oœci
     [SerializeField] private Transform playerBody;
 
     private float xRotation = 0f;
 
     private void Start()
     {
-        // Ukryj i zablokuj kursor na œrodku ekranu
         Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     private void Update()
@@ -21,18 +21,21 @@ public class CameraController : MonoBehaviour
 
     private void RotateCamera()
     {
-        // Pobierz ruch myszy
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
+        // Pobierz ruch myszy, ale bez skalowania przez Time.deltaTime
+        float mouseX = Input.GetAxisRaw("Mouse X") * mouseSensitivity;
+        float mouseY = Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
 
-        // Obróæ kamerê w osi X (góra/dó³)
+        // Zmniejszanie wp³ywu niestabilnych ruchów myszy
+        if (Mathf.Abs(mouseX) < 0.01f) mouseX = 0f;
+        if (Mathf.Abs(mouseY) < 0.01f) mouseY = 0f;
+
+        // Obrót kamery w osi X (góra/dó³)
         xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -90f, 90f); // Ogranicz obrót kamery, aby unikn¹æ obrotu o 360 stopni
+        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
 
-        // Zastosuj obrót kamery
         transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
 
-        // Obróæ gracza w osi Y (lewo/prawo)
+        // Obrót gracza w osi Y
         playerBody.Rotate(Vector3.up * mouseX);
     }
 }
