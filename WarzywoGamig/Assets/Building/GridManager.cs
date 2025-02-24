@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;  // Dodajemy przestrzeñ nazw dla list
 
 public class GridManager : MonoBehaviour
 {
@@ -12,11 +13,13 @@ public class GridManager : MonoBehaviour
     private GameObject previewObject; // Obiekt podgl¹du
     private float gridAreaWidth;
     private float gridAreaHeight;
+    private HashSet<Vector3> occupiedTiles; // Zbiór zajêtych kafelków (unikanie duplikatów)
 
     void Start()
     {
         gridAreaWidth = gridArea.localScale.x;
         gridAreaHeight = gridArea.localScale.z;
+        occupiedTiles = new HashSet<Vector3>(); // Inicjalizujemy zbiór
         CreateGrid();
     }
 
@@ -42,21 +45,44 @@ public class GridManager : MonoBehaviour
                 PlaceObject();
         }
     }
-    // Snappowanie pozycji do siatki uwzglêdniaj¹c tileSpacing
+
+    // Snappowanie pozycji do siatki uwzglêdniaj¹c tileSpacing, omijaj¹c zajête miejsca
     public Vector3 SnapToGrid(Vector3 position)
     {
-        // Uwzglêdniamy tileSpacing przy obliczeniach pozycji
         float snappedX = Mathf.Floor((position.x - gridArea.position.x + (gridSize / 2) + (tileSpacing / 2)) / (gridSize + tileSpacing)) * (gridSize + tileSpacing) + gridArea.position.x;
         float snappedZ = Mathf.Floor((position.z - gridArea.position.z + (gridSize / 2) + (tileSpacing / 2)) / (gridSize + tileSpacing)) * (gridSize + tileSpacing) + gridArea.position.z;
 
-        // Ustawiamy wysokoœæ na poziomie siatki
-        float gridHeight = gridArea.position.y;
+        Vector3 snappedPosition = new Vector3(snappedX, gridArea.position.y, snappedZ);
 
-        // Zwracamy now¹ skorygowan¹ pozycjê
-        return new Vector3(snappedX, gridHeight, snappedZ);
+        // Sprawdzanie, czy kafelek jest zajêty
+        if (occupiedTiles.Contains(snappedPosition))
+        {
+            // Jeœli zajêty, przesuñ obiekt w inne miejsce
+            snappedPosition = GetNextAvailablePosition(snappedPosition);
+        }
+
+        return snappedPosition;
     }
 
-    // Pobiera pozycjê myszy w œwiecie
+    // Zwraca kolejn¹ dostêpn¹ pozycjê na siatce
+    private Vector3 GetNextAvailablePosition(Vector3 position)
+    {
+        Vector3 offset = new Vector3(gridSize + tileSpacing, 0, 0); // Przesuniêcie do nastêpnej pozycji
+        Vector3 newPosition = position;
+
+        // Sprawdzamy kolejno ró¿ne pozycje wokó³ aktualnej
+        for (int i = 0; i < 10; i++) // Ograniczamy liczbê prób
+        {
+            newPosition += offset;
+            if (!occupiedTiles.Contains(newPosition))
+            {
+                break;
+            }
+        }
+
+        return newPosition;
+    }
+
     private Vector3 GetMouseWorldPosition()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -67,7 +93,6 @@ public class GridManager : MonoBehaviour
         return Vector3.zero;
     }
 
-    // Tworzy podgl¹d budowanego obiektu
     private void CreatePreviewObject()
     {
         if (objectPreviewPrefab == null) return;
@@ -76,7 +101,6 @@ public class GridManager : MonoBehaviour
         DisableColliders(previewObject);
     }
 
-    // Usuwa podgl¹d obiektu
     private void DestroyPreviewObject()
     {
         if (previewObject != null)
@@ -85,16 +109,18 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    // Umieszcza obiekt na siatce
     private void PlaceObject()
     {
         if (previewObject != null)
         {
-            Instantiate(objectPreviewPrefab, previewObject.transform.position, Quaternion.identity);
+            Vector3 placementPosition = previewObject.transform.position;
+            Instantiate(objectPreviewPrefab, placementPosition, Quaternion.identity);
+
+            // Zajmujemy kafelek, na którym postawiono obiekt
+            occupiedTiles.Add(placementPosition);
         }
     }
 
-    // Wy³¹cza wszystkie collidery w obiekcie i jego childach
     private void DisableColliders(GameObject obj)
     {
         Collider[] colliders = obj.GetComponentsInChildren<Collider>();
@@ -104,7 +130,6 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    // Tworzenie siatki z bia³ymi kafelkami
     private void CreateGrid()
     {
         if (gridTilePrefab == null) return;
@@ -123,7 +148,6 @@ public class GridManager : MonoBehaviour
                 tile.transform.parent = gridArea;
                 tile.SetActive(false);
 
-                // Ustawienie koloru kafelka na bia³y
                 Renderer tileRenderer = tile.GetComponent<Renderer>();
                 if (tileRenderer != null)
                 {
@@ -133,7 +157,6 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    // W³¹czanie/wy³¹czanie widocznoœci siatki
     private void ToggleGridVisibility(bool isVisible)
     {
         foreach (Transform child in gridArea)
