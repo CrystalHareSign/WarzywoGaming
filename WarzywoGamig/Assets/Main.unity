@@ -2641,7 +2641,9 @@ MonoBehaviour:
   tileSpacing: 0
   gridArea: {fileID: 1247015103}
   gridTilePrefab: {fileID: 647715511860830119, guid: 194a9956da80d5a428f88a7dd7141152, type: 3}
-  objectPreviewPrefab: {fileID: 6348389216423563156, guid: c111ec5c6ca7c4c468e0b9aaed5dec79, type: 3}
+  buildingPrefabs:
+  - {fileID: 1312443720054046551, guid: 4db89abf19f1d734d9c6bb56251226d3, type: 3}
+  - {fileID: 6348389216423563156, guid: 4263c6e3e93789b44882b44b3dceb4e1, type: 3}
 --- !u!4 &623208566
 Transform:
   m_ObjectHideFlags: 0

@@ -1,5 +1,5 @@
 using UnityEngine;
-using System.Collections.Generic;  // Dodajemy przestrzeñ nazw dla list
+using System.Collections.Generic;
 
 public class GridManager : MonoBehaviour
 {
@@ -7,19 +7,20 @@ public class GridManager : MonoBehaviour
     public float tileSpacing = 0.1f; // Odstêp miêdzy kafelkami
     public Transform gridArea; // Obszar siatki
     public GameObject gridTilePrefab; // Prefab kafelka siatki
-    public GameObject objectPreviewPrefab; // Prefab podgl¹du budowy
+    public List<GameObject> buildingPrefabs; // Lista dostêpnych prefabów
+    private int currentPrefabIndex = 0; // Aktualny indeks prefabrykatu
 
     private bool isBuildingMode = false; // Tryb budowy w³¹czony/wy³¹czony
     private GameObject previewObject; // Obiekt podgl¹du
     private float gridAreaWidth;
     private float gridAreaHeight;
-    private HashSet<Vector3> occupiedTiles; // Zbiór zajêtych kafelków (unikanie duplikatów)
+    private HashSet<Vector3> occupiedTiles; // Zbiór zajêtych kafelków
 
     void Start()
     {
         gridAreaWidth = gridArea.localScale.x;
         gridAreaHeight = gridArea.localScale.z;
-        occupiedTiles = new HashSet<Vector3>(); // Inicjalizujemy zbiór
+        occupiedTiles = new HashSet<Vector3>();
         CreateGrid();
     }
 
@@ -36,51 +37,110 @@ public class GridManager : MonoBehaviour
                 DestroyPreviewObject();
         }
 
-        if (isBuildingMode && previewObject != null)
+        if (isBuildingMode)
         {
-            Vector3 mousePosition = GetMouseWorldPosition();
-            previewObject.transform.position = SnapToGrid(mousePosition);
+            HandlePrefabSwitching();
 
-            if (Input.GetMouseButtonDown(0))
-                PlaceObject();
+            if (previewObject != null)
+            {
+                Vector3 mousePosition = GetMouseWorldPosition();
+                previewObject.transform.position = SnapToGrid(mousePosition);
+
+                if (Input.GetMouseButtonDown(0))
+                    PlaceObject();
+            }
         }
     }
 
-    // Snappowanie pozycji do siatki uwzglêdniaj¹c tileSpacing, omijaj¹c zajête miejsca
+    private void HandlePrefabSwitching()
+    {
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (scroll != 0)
+        {
+            currentPrefabIndex += (scroll > 0) ? 1 : -1;
+
+            if (currentPrefabIndex >= buildingPrefabs.Count)
+                currentPrefabIndex = 0;
+            else if (currentPrefabIndex < 0)
+                currentPrefabIndex = buildingPrefabs.Count - 1;
+
+            UpdatePreviewObject();
+        }
+    }
+
+    private void UpdatePreviewObject()
+    {
+        if (previewObject != null)
+            Destroy(previewObject);
+
+        CreatePreviewObject();
+    }
+
+    private void CreatePreviewObject()
+    {
+        if (buildingPrefabs.Count == 0) return;
+
+        previewObject = Instantiate(buildingPrefabs[currentPrefabIndex]);
+        DisableColliders(previewObject);
+    }
+
+    private void DestroyPreviewObject()
+    {
+        if (previewObject != null)
+        {
+            Destroy(previewObject);
+        }
+    }
+
     public Vector3 SnapToGrid(Vector3 position)
     {
-        float snappedX = Mathf.Floor((position.x - gridArea.position.x + (gridSize / 2) + (tileSpacing / 2)) / (gridSize + tileSpacing)) * (gridSize + tileSpacing) + gridArea.position.x;
-        float snappedZ = Mathf.Floor((position.z - gridArea.position.z + (gridSize / 2) + (tileSpacing / 2)) / (gridSize + tileSpacing)) * (gridSize + tileSpacing) + gridArea.position.z;
+        if (previewObject == null) return position;
+
+        PrefabSize prefabSize = previewObject.GetComponent<PrefabSize>();
+        if (prefabSize == null)
+        {
+            prefabSize = previewObject.AddComponent<PrefabSize>();
+            prefabSize.widthInTiles = 1;
+            prefabSize.depthInTiles = 1;
+        }
+
+        float offsetX = (prefabSize.widthInTiles % 2 == 0) ? (gridSize + tileSpacing) / 2 : 0;
+        float offsetZ = (prefabSize.depthInTiles % 2 == 0) ? (gridSize + tileSpacing) / 2 : 0;
+
+        float snappedX = Mathf.Floor((position.x - gridArea.position.x + (gridSize / 2)) / (gridSize + tileSpacing)) * (gridSize + tileSpacing) + gridArea.position.x + offsetX;
+        float snappedZ = Mathf.Floor((position.z - gridArea.position.z + (gridSize / 2)) / (gridSize + tileSpacing)) * (gridSize + tileSpacing) + gridArea.position.z + offsetZ;
 
         Vector3 snappedPosition = new Vector3(snappedX, gridArea.position.y, snappedZ);
 
-        // Sprawdzanie, czy kafelek jest zajêty
-        if (occupiedTiles.Contains(snappedPosition))
-        {
-            // Jeœli zajêty, przesuñ obiekt w inne miejsce
-            snappedPosition = GetNextAvailablePosition(snappedPosition);
-        }
+        if (IsPositionAvailable(snappedPosition, prefabSize))
+            return snappedPosition;
 
-        return snappedPosition;
+        return GetNextAvailablePosition(snappedPosition, prefabSize);
     }
 
-    // Zwraca kolejn¹ dostêpn¹ pozycjê na siatce
-    private Vector3 GetNextAvailablePosition(Vector3 position)
+    private bool IsPositionAvailable(Vector3 position, PrefabSize prefabSize)
     {
-        Vector3 offset = new Vector3(gridSize + tileSpacing, 0, 0); // Przesuniêcie do nastêpnej pozycji
-        Vector3 newPosition = position;
-
-        // Sprawdzamy kolejno ró¿ne pozycje wokó³ aktualnej
-        for (int i = 0; i < 10; i++) // Ograniczamy liczbê prób
+        for (int x = 0; x < prefabSize.widthInTiles; x++)
         {
-            newPosition += offset;
-            if (!occupiedTiles.Contains(newPosition))
+            for (int z = 0; z < prefabSize.depthInTiles; z++)
             {
-                break;
+                Vector3 checkPosition = new Vector3(position.x + x * (gridSize + tileSpacing), position.y, position.z + z * (gridSize + tileSpacing));
+                if (occupiedTiles.Contains(checkPosition))
+                    return false;
             }
         }
+        return true;
+    }
 
-        return newPosition;
+    private Vector3 GetNextAvailablePosition(Vector3 startPosition, PrefabSize prefabSize)
+    {
+        for (int i = 0; i < 20; i++)
+        {
+            Vector3 newPosition = startPosition + new Vector3(i * (gridSize + tileSpacing), 0, 0);
+            if (IsPositionAvailable(newPosition, prefabSize))
+                return newPosition;
+        }
+        return startPosition;
     }
 
     private Vector3 GetMouseWorldPosition()
@@ -93,31 +153,25 @@ public class GridManager : MonoBehaviour
         return Vector3.zero;
     }
 
-    private void CreatePreviewObject()
-    {
-        if (objectPreviewPrefab == null) return;
-
-        previewObject = Instantiate(objectPreviewPrefab);
-        DisableColliders(previewObject);
-    }
-
-    private void DestroyPreviewObject()
-    {
-        if (previewObject != null)
-        {
-            Destroy(previewObject);
-        }
-    }
-
     private void PlaceObject()
     {
         if (previewObject != null)
         {
             Vector3 placementPosition = previewObject.transform.position;
-            Instantiate(objectPreviewPrefab, placementPosition, Quaternion.identity);
+            PrefabSize prefabSize = previewObject.GetComponent<PrefabSize>();
 
-            // Zajmujemy kafelek, na którym postawiono obiekt
-            occupiedTiles.Add(placementPosition);
+            if (IsPositionAvailable(placementPosition, prefabSize))
+            {
+                for (int x = 0; x < prefabSize.widthInTiles; x++)
+                {
+                    for (int z = 0; z < prefabSize.depthInTiles; z++)
+                    {
+                        Vector3 occupiedPosition = new Vector3(placementPosition.x + x * (gridSize + tileSpacing), placementPosition.y, placementPosition.z + z * (gridSize + tileSpacing));
+                        occupiedTiles.Add(occupiedPosition);
+                    }
+                }
+                Instantiate(buildingPrefabs[currentPrefabIndex], placementPosition, Quaternion.identity);
+            }
         }
     }
 
