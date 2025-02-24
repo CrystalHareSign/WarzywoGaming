@@ -112,10 +112,26 @@ public class GridManager : MonoBehaviour
 
         Vector3 snappedPosition = new Vector3(snappedX, gridArea.position.y, snappedZ);
 
-        if (IsPositionAvailable(snappedPosition, prefabSize))
+        if (IsPositionAvailable(snappedPosition, prefabSize) && IsInsideGrid(snappedPosition, prefabSize))
             return snappedPosition;
 
         return GetNextAvailablePosition(snappedPosition, prefabSize);
+    }
+
+    private bool IsInsideGrid(Vector3 position, PrefabSize prefabSize)
+    {
+        // Sprawdzenie, czy obiekt znajduje siê w obrêbie siatki
+        float gridAreaMinX = gridArea.position.x - gridAreaWidth / 2;
+        float gridAreaMaxX = gridArea.position.x + gridAreaWidth / 2;
+        float gridAreaMinZ = gridArea.position.z - gridAreaHeight / 2;
+        float gridAreaMaxZ = gridArea.position.z + gridAreaHeight / 2;
+
+        float objectMinX = position.x - prefabSize.widthInTiles * (gridSize + tileSpacing) / 2;
+        float objectMaxX = position.x + prefabSize.widthInTiles * (gridSize + tileSpacing) / 2;
+        float objectMinZ = position.z - prefabSize.depthInTiles * (gridSize + tileSpacing) / 2;
+        float objectMaxZ = position.z + prefabSize.depthInTiles * (gridSize + tileSpacing) / 2;
+
+        return objectMinX >= gridAreaMinX && objectMaxX <= gridAreaMaxX && objectMinZ >= gridAreaMinZ && objectMaxZ <= gridAreaMaxZ;
     }
 
     private bool IsPositionAvailable(Vector3 position, PrefabSize prefabSize)
@@ -160,7 +176,7 @@ public class GridManager : MonoBehaviour
             Vector3 placementPosition = previewObject.transform.position;
             PrefabSize prefabSize = previewObject.GetComponent<PrefabSize>();
 
-            if (IsPositionAvailable(placementPosition, prefabSize))
+            if (IsPositionAvailable(placementPosition, prefabSize) && IsInsideGrid(placementPosition, prefabSize))
             {
                 for (int x = 0; x < prefabSize.widthInTiles; x++)
                 {
