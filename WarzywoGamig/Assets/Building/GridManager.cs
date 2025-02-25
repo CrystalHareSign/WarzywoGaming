@@ -207,12 +207,15 @@ public class GridManager : MonoBehaviour
         int gridWidth = Mathf.FloorToInt(gridAreaWidth / (gridSize + tileSpacing));
         int gridHeight = Mathf.FloorToInt(gridAreaHeight / (gridSize + tileSpacing));
 
+        // Startowa pozycja to lewy dolny róg siatki, ale przesuniêta o po³owê d³ugoœci kafelka w prawo i w górê
         Vector3 startPosition = gridArea.position - new Vector3(gridAreaWidth / 2, 0, gridAreaHeight / 2);
+        startPosition += new Vector3((gridSize + tileSpacing) / 2, 0, (gridSize + tileSpacing) / 2);
 
         for (int x = 0; x < gridWidth; x++)
         {
             for (int z = 0; z < gridHeight; z++)
             {
+                // Pozycja kafelka w siatce
                 Vector3 tilePosition = new Vector3(x * (gridSize + tileSpacing), 0, z * (gridSize + tileSpacing)) + startPosition;
                 GameObject tile = Instantiate(gridTilePrefab, tilePosition, Quaternion.identity);
                 tile.transform.parent = gridArea;
