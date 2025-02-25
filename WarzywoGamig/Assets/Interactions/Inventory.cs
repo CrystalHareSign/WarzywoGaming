@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections.Generic;
 
 public class Inventory : MonoBehaviour
 {
@@ -62,7 +62,14 @@ public class Inventory : MonoBehaviour
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, interactableLayer))
         {
             InteractableItem interactableItem = hit.collider.GetComponent<InteractableItem>();
-            if (interactableItem != null && interactableItem.canBePickedUp)
+
+            if (interactableItem == null)
+            {
+                Debug.LogWarning("InteractableItem is null!");
+                return;
+            }
+
+            if (interactableItem.canBePickedUp)
             {
                 if (interactableItem.isWeapon)
                 {
@@ -76,7 +83,6 @@ public class Inventory : MonoBehaviour
                         hit.collider.gameObject.SetActive(false);
                         EquipWeapon(interactableItem, hit.collider.gameObject);
                     }
-                    UpdateInventoryUI();
                 }
                 else
                 {
@@ -84,9 +90,23 @@ public class Inventory : MonoBehaviour
                     {
                         items.Add(hit.collider.gameObject);
                         hit.collider.gameObject.SetActive(false);
-                        UpdateInventoryUI();
                     }
                 }
+
+                // Dodaj do GridManager dopiero teraz, jeœli przedmiot ma isLoot = true
+                if (interactableItem.isLoot)
+                {
+                    if (GridManager.Instance != null)
+                    {
+                        GridManager.Instance.AddToBuildingPrefabs(hit.collider.gameObject);
+                    }
+                    else
+                    {
+                        Debug.LogWarning("GridManager.Instance is null!");
+                    }
+                }
+
+                UpdateInventoryUI();
             }
         }
     }
@@ -137,7 +157,7 @@ public class Inventory : MonoBehaviour
         {
             weapons.Remove(currentWeaponItem);
             currentWeaponItem.SetActive(true);
-            currentWeaponItem.transform.position = new Vector3(transform.position.x, transform.position.y + 1.0f, transform.position.z);
+            currentWeaponItem.transform.position = transform.position + Vector3.up;
             Destroy(currentWeaponPrefab);
             currentWeaponPrefab = null;
             currentWeaponItem = null;
@@ -150,6 +170,10 @@ public class Inventory : MonoBehaviour
         if (inventoryUI != null)
         {
             inventoryUI.UpdateInventoryUI(weapons, items);
+        }
+        else
+        {
+            Debug.LogWarning("InventoryUI is not assigned in the inspector!");
         }
     }
 }
