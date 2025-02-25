@@ -16,6 +16,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
     public bool canBePickedUp = true;
     public bool canBeDropped = true;
     public bool isWeapon;    // Okreœla, czy przedmiot jest broni¹
+    public bool isLoot = false;  // Flaga, która decyduje, czy przedmiot jest lootem
 
     [Header("System kierowczy")]
     public bool alwaysInteractive = false;
@@ -66,7 +67,14 @@ public class InteractableItem : MonoBehaviour, IInteractable
             InteractivityManager.Instance.RegisterInteractable(gameObject, alwaysInteractive);
         }
 
-        //Debug.Log($"[LOG] {itemName} zarejestrowany. Zdrowie: {currentHealth}/{maxHealth}");
+        if (isLoot && GridManager.Instance != null)
+        {
+
+        }
+        else if (isLoot)
+        {
+            Debug.LogWarning("GridManager.Instance is null when trying to add " + gameObject.name);
+        }
     }
 
     public void Interact()

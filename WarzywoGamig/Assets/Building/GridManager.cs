@@ -7,7 +7,7 @@ public class GridManager : MonoBehaviour
     public float tileSpacing = 0.1f; // Odstêp miêdzy kafelkami
     public Transform gridArea; // Obszar siatki
     public GameObject gridTilePrefab; // Prefab kafelka siatki
-    public List<GameObject> buildingPrefabs; // Lista dostêpnych prefabów
+    public List<GameObject> buildingPrefabs = new List<GameObject>(); // Lista dostêpnych prefabów
     private int currentPrefabIndex = 0; // Aktualny indeks prefabrykatu
 
     private bool isBuildingMode = false; // Tryb budowy w³¹czony/wy³¹czony
@@ -15,6 +15,21 @@ public class GridManager : MonoBehaviour
     private float gridAreaWidth;
     private float gridAreaHeight;
     private HashSet<Vector3> occupiedTiles; // Zbiór zajêtych kafelków
+
+    public static GridManager Instance { get; private set; }
+
+    void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+    }
 
     void Start()
     {
@@ -169,7 +184,7 @@ public class GridManager : MonoBehaviour
         return Vector3.zero;
     }
 
-    private void PlaceObject()
+    public void PlaceObject()
     {
         if (previewObject != null)
         {
@@ -182,11 +197,21 @@ public class GridManager : MonoBehaviour
                 {
                     for (int z = 0; z < prefabSize.depthInTiles; z++)
                     {
-                        Vector3 occupiedPosition = new Vector3(placementPosition.x + x * (gridSize + tileSpacing), placementPosition.y, placementPosition.z + z * (gridSize + tileSpacing));
+                        Vector3 occupiedPosition = new Vector3(
+                            placementPosition.x + x * (gridSize + tileSpacing),
+                            placementPosition.y,
+                            placementPosition.z + z * (gridSize + tileSpacing)
+                        );
                         occupiedTiles.Add(occupiedPosition);
                     }
                 }
+
                 Instantiate(buildingPrefabs[currentPrefabIndex], placementPosition, Quaternion.identity);
+
+                //// Wy³¹czenie trybu budowania po postawieniu obiektu
+                //isBuildingMode = false;
+                //DestroyPreviewObject();
+                //ToggleGridVisibility(false);
             }
         }
     }
@@ -235,6 +260,18 @@ public class GridManager : MonoBehaviour
         foreach (Transform child in gridArea)
         {
             child.gameObject.SetActive(isVisible);
+        }
+    }
+
+    public void AddToBuildingPrefabs(GameObject prefab)
+    {
+        if (prefab != null && !buildingPrefabs.Contains(prefab))
+        {
+            buildingPrefabs.Add(prefab);
+        }
+        else
+        {
+            Debug.LogWarning("Trying to add a null or duplicate prefab to buildingPrefabs.");
         }
     }
 }
