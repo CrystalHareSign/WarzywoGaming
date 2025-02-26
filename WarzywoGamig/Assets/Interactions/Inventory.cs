@@ -5,12 +5,16 @@ public class Inventory : MonoBehaviour
 {
     public List<GameObject> weapons = new List<GameObject>(); // Lista broni
     public List<GameObject> items = new List<GameObject>(); // Lista innych przedmiotów
+    public List<GameObject> loot = new List<GameObject>(); // Lista lootów
     public int maxWeapons = 3; // Maksymalna liczba broni, które gracz mo¿e nosiæ
     public int maxItems = 5; // Maksymalna liczba innych przedmiotów
+    public int maxLoot = 5; // Maksymalna liczba przedmiotów loot
     public LayerMask interactableLayer; // Warstwa interaktywnych przedmiotów
     public InventoryUI inventoryUI; // Odniesienie do skryptu InventoryUI
 
     public Transform weaponParent; // Transform, do którego bêd¹ przypisywane bronie jako dzieci
+    public Transform lootParent; // Transform, do którego bêd¹ przypisane lootowe przedmioty
+
 
     [System.Serializable]
     public class WeaponPrefabEntry
@@ -27,11 +31,14 @@ public class Inventory : MonoBehaviour
 
     public Vector3 weaponPositionOffset = new Vector3(0.5f, -0.3f, 1.0f);
     public Vector3 weaponRotationOffset = new Vector3(0, 90, 0);
+    public Vector3 lootPositionOffset = new Vector3(0f, 1f, 0f); // Rêczna pozycja lootów wzglêdem gracza
+    public Vector3 lootRotationOffset = new Vector3(0f, 0f, 0f); // Rêczna rotacja lootów wzglêdem gracza
 
     void Start()
     {
         weapons.Clear();
         items.Clear();
+        loot.Clear();
 
         weaponPrefabs.Clear();
         foreach (WeaponPrefabEntry entry in weaponPrefabsList)
@@ -65,13 +72,11 @@ public class Inventory : MonoBehaviour
 
             if (interactableItem == null)
             {
-                Debug.LogWarning("InteractableItem is null!");
                 return;
             }
 
             if (interactableItem.canBePickedUp)
             {
-                // Obs³uguje broñ
                 if (interactableItem.isWeapon)
                 {
                     if (weapons.Count >= maxWeapons)
@@ -85,7 +90,6 @@ public class Inventory : MonoBehaviour
                         EquipWeapon(interactableItem, hit.collider.gameObject);
                     }
                 }
-                // Obs³uguje inne przedmioty
                 else
                 {
                     if (items.Count < maxItems)
@@ -95,16 +99,17 @@ public class Inventory : MonoBehaviour
                     }
                 }
 
-                // Przedmioty z flag¹ isLoot dodawane do GridManager
+                // Dodanie do loot i przypisanie do budowy w GridManager
                 if (interactableItem.isLoot)
                 {
+                    if (loot.Count < maxLoot)
+                    {
+                        loot.Add(hit.collider.gameObject);
+                        EquipLoot(hit.collider.gameObject);  // Wywo³anie EquipLoot po dodaniu do loot
+                    }
                     if (GridManager.Instance != null)
                     {
                         GridManager.Instance.AddToBuildingPrefabs(hit.collider.gameObject);
-                    }
-                    else
-                    {
-                        Debug.LogWarning("GridManager.Instance is null!");
                     }
                 }
 
@@ -112,6 +117,7 @@ public class Inventory : MonoBehaviour
             }
         }
     }
+
 
     void ReplaceCurrentWeapon(InteractableItem newWeapon, GameObject newWeaponItem)
     {
@@ -152,6 +158,28 @@ public class Inventory : MonoBehaviour
             currentWeaponItem = weaponItem;
         }
     }
+    void EquipLoot(GameObject lootItem)
+    {
+        if (lootItem != null)
+        {
+            // SprawdŸ, czy przedmiot jest lootem
+            if (loot.Contains(lootItem))
+            {
+                // Jeœli lootParent jest ustawiony, u¿yj go, jeœli nie, przypnij loot do gracza
+                Transform parentTransform = lootParent != null ? lootParent : transform;
+
+                // Ustaw przedmiot jako dziecko odpowiedniego obiektu (lootParent lub gracza)
+                lootItem.transform.SetParent(parentTransform);
+
+                // Ustaw rêczn¹ pozycjê i rotacjê z Inspektora
+                lootItem.transform.localPosition = lootPositionOffset;  // Przyk³ad: ustawienie pozycji
+                lootItem.transform.localRotation = Quaternion.Euler(lootRotationOffset);  // Przyk³ad: ustawienie rotacji
+
+                // Aktywuj przedmiot, jeœli jest wy³¹czony
+                lootItem.SetActive(true);
+            }
+        }
+    }
 
     void DropItem()
     {
@@ -166,12 +194,16 @@ public class Inventory : MonoBehaviour
             UpdateInventoryUI();
         }
     }
+
     public void RemoveItem(GameObject item)
     {
         if (items.Contains(item))
         {
             items.Remove(item);
-            Debug.Log("Usuniêto przedmiot z ekwipunku: " + item.name);
+        }
+        if (loot.Contains(item))
+        {
+            loot.Remove(item);
         }
     }
 
@@ -180,10 +212,6 @@ public class Inventory : MonoBehaviour
         if (inventoryUI != null)
         {
             inventoryUI.UpdateInventoryUI(weapons, items);
-        }
-        else
-        {
-            Debug.LogWarning("InventoryUI is not assigned in the inspector!");
         }
     }
 }
