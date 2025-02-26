@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEditor;
 
 public class Inventory : MonoBehaviour
 {
@@ -204,6 +205,37 @@ public class Inventory : MonoBehaviour
         if (loot.Contains(item))
         {
             loot.Remove(item);
+        }
+    }
+    public void RemoveObjectFromLootParent(GameObject objectToRemove)
+    {
+        if (lootParent == null || objectToRemove == null)
+        {
+            Debug.LogWarning("LootParent nie jest przypisany lub obiekt jest nullem.");
+            return;
+        }
+
+        Transform foundObject = null;
+
+        // Przeszukujemy dzieci LootParent, ignoruj¹c nazwê i skupiaj¹c siê na prefabriku
+        foreach (Transform child in lootParent)
+        {
+            if (PrefabUtility.GetCorrespondingObjectFromSource(child.gameObject) ==
+                PrefabUtility.GetCorrespondingObjectFromSource(objectToRemove))
+            {
+                foundObject = child;
+                break;
+            }
+        }
+
+        if (foundObject != null)
+        {
+            Debug.Log("Usuwam obiekt z LootParent: " + foundObject.name);
+            Destroy(foundObject.gameObject);
+        }
+        else
+        {
+            Debug.LogWarning("Nie znaleziono odpowiedniego obiektu w LootParent dla: " + objectToRemove.name);
         }
     }
 
