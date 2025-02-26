@@ -3,13 +3,16 @@ using System.Collections.Generic;
 
 public class GridManager : MonoBehaviour
 {
+    public float buildRange = 5f; // Maksymalny zasiêg budowania
     public float gridSize = 1f; // Rozmiar siatki
     public float tileSpacing = 0.1f; // Odstêp miêdzy kafelkami
     public Transform gridArea; // Obszar siatki
+    public Transform player; // Referencja do gracza
+    public Transform LootParent; // Przypisz do niego transform zawieraj¹cy obiekty w rêce gracza
     public GameObject gridTilePrefab; // Prefab kafelka siatki
     public List<GameObject> buildingPrefabs = new List<GameObject>(); // Lista dostêpnych prefabów
-    private int currentPrefabIndex = 0; // Aktualny indeks prefabrykatu
 
+    private int currentPrefabIndex = 0; // Aktualny indeks prefabrykatu
     private bool isBuildingMode = false; // Tryb budowy w³¹czony/wy³¹czony
     private GameObject previewObject; // Obiekt podgl¹du
     private float gridAreaWidth;
@@ -173,6 +176,10 @@ public class GridManager : MonoBehaviour
             Vector3 placementPosition = previewObject.transform.position;
             PrefabSize prefabSize = previewObject.GetComponent<PrefabSize>();
 
+            // Sprawdzenie, czy gracz jest w zasiêgu budowania
+            if (Vector3.Distance(player.position, placementPosition) > buildRange)
+                return; // Nie pozwalamy na budowanie poza zasiêgiem
+
             if (IsPositionAvailable(placementPosition, prefabSize) && IsInsideGrid(placementPosition, prefabSize))
             {
                 for (int x = 0; x < prefabSize.widthInTiles; x++)
@@ -188,31 +195,43 @@ public class GridManager : MonoBehaviour
                     }
                 }
 
-                // Tworzymy obiekt na miejscu podgl¹du
                 GameObject buildedObject = Instantiate(buildingPrefabs[currentPrefabIndex], placementPosition, Quaternion.identity);
                 buildedObject.SetActive(true);
 
-                // Usuwamy prefab z GridManagera
                 GameObject placedPrefab = buildingPrefabs[currentPrefabIndex];
                 buildingPrefabs.RemoveAt(currentPrefabIndex);
 
-                // Usuwamy prefab z Inventory
                 Inventory inventory = Object.FindFirstObjectByType<Inventory>();
                 if (inventory != null)
                 {
                     inventory.RemoveItem(placedPrefab);
                 }
 
-                // Usuwamy podgl¹d po wybudowaniu
+                // Usuwanie obiektu z rêki gracza (LootParent)
+                if (LootParent != null)
+                {
+                    // Sprawdzamy, czy obiekt jest potomkiem LootParent
+                    for (int i = 0; i < LootParent.childCount; i++)
+                    {
+                        Transform child = LootParent.GetChild(i);
+                        if (child.gameObject == previewObject)
+                        {
+                            Destroy(child.gameObject); // Usuwamy obiekt z rêki
+                            break;
+                        }
+                    }
+                }
+
+                // Usuwamy obiekt podgl¹du z ziemi
                 Destroy(previewObject);
                 previewObject = null;
 
-                // Wy³¹czamy tryb budowania
                 isBuildingMode = false;
                 ToggleGridVisibility(false);
             }
         }
     }
+
 
     private void DisableColliders(GameObject obj)
     {

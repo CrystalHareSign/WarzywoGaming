@@ -15,6 +15,7 @@ public class InventoryUI : MonoBehaviour
     public Dictionary<string, Sprite> weaponIcons = new Dictionary<string, Sprite>(); // Ikony broni
     public Dictionary<string, Sprite> itemIcons = new Dictionary<string, Sprite>(); // Ikony przedmiotów
 
+
     // UI dla amunicji
     public TextMeshProUGUI weaponNameText; // Tekst wyświetlający nazwę broni
     public TextMeshProUGUI ammoText;

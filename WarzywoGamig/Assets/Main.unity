@@ -2710,9 +2710,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ccd9f30f7150a3d4e85b62c7e2f4dbf0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  buildRange: 5
   gridSize: 1
   tileSpacing: 0
   gridArea: {fileID: 1247015103}
+  player: {fileID: 2094475111}
+  LootParent: {fileID: 939817340}
   gridTilePrefab: {fileID: 647715511860830119, guid: 194a9956da80d5a428f88a7dd7141152, type: 3}
   buildingPrefabs: []
 --- !u!4 &623208566
@@ -3260,6 +3263,37 @@ MonoBehaviour:
   yellowDistance: 900
   blinkFrequency: 0.3
   updateFrequency: 0.01
+--- !u!1 &939817339
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 939817340}
+  m_Layer: 0
+  m_Name: LootParent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &939817340
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 939817339}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1013625154}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &945966471 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2335924095354780036, guid: ea5a89b664391994eb00a4929e70e38b, type: 3}
@@ -3797,6 +3831,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1787856536}
+  - {fileID: 939817340}
   m_Father: {fileID: 2094475111}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1013625155
@@ -7039,13 +7074,17 @@ MonoBehaviour:
   - {fileID: 0}
   items:
   - {fileID: 0}
+  loot:
+  - {fileID: 0}
   maxWeapons: 1
-  maxItems: 1
+  maxItems: 0
+  maxLoot: 1
   interactableLayer:
     serializedVersion: 2
     m_Bits: 128
   inventoryUI: {fileID: 351697965}
   weaponParent: {fileID: 1787856536}
+  lootParent: {fileID: 939817340}
   weaponPrefabsList:
   - weaponName: Pistol
     weaponPrefab: {fileID: 1532319655}
@@ -7053,6 +7092,8 @@ MonoBehaviour:
     weaponPrefab: {fileID: 945966471}
   weaponPositionOffset: {x: 0.5, y: -0.3, z: 1}
   weaponRotationOffset: {x: 185, y: 175, z: 0}
+  lootPositionOffset: {x: 0.5, y: -0.3, z: 1}
+  lootRotationOffset: {x: 0, y: 0, z: 0}
 --- !u!1001 &70671304840066653
 PrefabInstance:
   m_ObjectHideFlags: 0
