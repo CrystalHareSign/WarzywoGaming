@@ -176,62 +176,32 @@ public class GridManager : MonoBehaviour
             Vector3 placementPosition = previewObject.transform.position;
             PrefabSize prefabSize = previewObject.GetComponent<PrefabSize>();
 
-            // Sprawdzenie, czy gracz jest w zasiêgu budowania
             if (Vector3.Distance(player.position, placementPosition) > buildRange)
-                return; // Nie pozwalamy na budowanie poza zasiêgiem
+                return;
 
             if (IsPositionAvailable(placementPosition, prefabSize) && IsInsideGrid(placementPosition, prefabSize))
             {
-                for (int x = 0; x < prefabSize.widthInTiles; x++)
-                {
-                    for (int z = 0; z < prefabSize.depthInTiles; z++)
-                    {
-                        Vector3 occupiedPosition = new Vector3(
-                            placementPosition.x + x * (gridSize + tileSpacing),
-                            placementPosition.y,
-                            placementPosition.z + z * (gridSize + tileSpacing)
-                        );
-                        occupiedTiles[occupiedPosition] = previewObject;
-                    }
-                }
-
-                GameObject buildedObject = Instantiate(buildingPrefabs[currentPrefabIndex], placementPosition, Quaternion.identity);
+                // Tworzenie obiektu w miejscu docelowym
+                GameObject buildedObject = Instantiate(buildingPrefabs[currentPrefabIndex], placementPosition, previewObject.transform.rotation);
                 buildedObject.SetActive(true);
 
-                GameObject placedPrefab = buildingPrefabs[currentPrefabIndex];
-                buildingPrefabs.RemoveAt(currentPrefabIndex);
-
-                Inventory inventory = Object.FindFirstObjectByType<Inventory>();
+                // Usuwamy obiekt z LootParent
+                Inventory inventory = FindObjectOfType<Inventory>();
                 if (inventory != null)
                 {
-                    inventory.RemoveItem(placedPrefab);
-                }
-
-                // Usuwanie obiektu z rêki gracza (LootParent)
-                if (LootParent != null)
-                {
-                    // Sprawdzamy, czy obiekt jest potomkiem LootParent
-                    for (int i = 0; i < LootParent.childCount; i++)
-                    {
-                        Transform child = LootParent.GetChild(i);
-                        if (child.gameObject == previewObject)
-                        {
-                            Destroy(child.gameObject); // Usuwamy obiekt z rêki
-                            break;
-                        }
-                    }
+                    inventory.RemoveObjectFromLootParent(previewObject);
                 }
 
                 // Usuwamy obiekt podgl¹du z ziemi
                 Destroy(previewObject);
                 previewObject = null;
 
+                // Koñczymy tryb budowania
                 isBuildingMode = false;
                 ToggleGridVisibility(false);
             }
         }
     }
-
 
     private void DisableColliders(GameObject obj)
     {
