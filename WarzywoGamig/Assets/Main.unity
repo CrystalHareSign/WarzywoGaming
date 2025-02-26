@@ -410,6 +410,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1312443720054046551, guid: 4db89abf19f1d734d9c6bb56251226d3, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1592535030}
+    - targetCorrespondingSourceObject: {fileID: 1312443720054046551, guid: 4db89abf19f1d734d9c6bb56251226d3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1592535036}
   m_SourcePrefab: {fileID: 100100000, guid: 4db89abf19f1d734d9c6bb56251226d3, type: 3}
 --- !u!1 &136632854
 GameObject:
@@ -2711,9 +2714,7 @@ MonoBehaviour:
   tileSpacing: 0
   gridArea: {fileID: 1247015103}
   gridTilePrefab: {fileID: 647715511860830119, guid: 194a9956da80d5a428f88a7dd7141152, type: 3}
-  buildingPrefabs:
-  - {fileID: 1312443720054046551, guid: 4db89abf19f1d734d9c6bb56251226d3, type: 3}
-  - {fileID: 6348389216423563156, guid: 4263c6e3e93789b44882b44b3dceb4e1, type: 3}
+  buildingPrefabs: []
 --- !u!4 &623208566
 Transform:
   m_ObjectHideFlags: 0
@@ -5831,6 +5832,20 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+--- !u!114 &1592535036
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1592535029}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 211b7074366de504086ff469dfb41c2b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  widthInTiles: 1
+  depthInTiles: 1
 --- !u!1 &1633245306
 GameObject:
   m_ObjectHideFlags: 0

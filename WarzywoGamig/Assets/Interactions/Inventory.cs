@@ -166,6 +166,14 @@ public class Inventory : MonoBehaviour
             UpdateInventoryUI();
         }
     }
+    public void RemoveItem(GameObject item)
+    {
+        if (items.Contains(item))
+        {
+            items.Remove(item);
+            Debug.Log("Usuniêto przedmiot z ekwipunku: " + item.name);
+        }
+    }
 
     private void UpdateInventoryUI()
     {
