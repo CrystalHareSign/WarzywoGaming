@@ -14,7 +14,7 @@ public class GridManager : MonoBehaviour
     private GameObject previewObject; // Obiekt podgl¹du
     private float gridAreaWidth;
     private float gridAreaHeight;
-    private HashSet<Vector3> occupiedTiles; // Zbiór zajêtych kafelków
+    private Dictionary<Vector3, GameObject> occupiedTiles = new Dictionary<Vector3, GameObject>(); // Zbiór zajêtych kafelków
 
     public static GridManager Instance { get; private set; }
 
@@ -35,7 +35,6 @@ public class GridManager : MonoBehaviour
     {
         gridAreaWidth = gridArea.localScale.x;
         gridAreaHeight = gridArea.localScale.z;
-        occupiedTiles = new HashSet<Vector3>();
         CreateGrid();
     }
 
@@ -156,7 +155,7 @@ public class GridManager : MonoBehaviour
             for (int z = 0; z < prefabSize.depthInTiles; z++)
             {
                 Vector3 checkPosition = new Vector3(position.x + x * (gridSize + tileSpacing), position.y, position.z + z * (gridSize + tileSpacing));
-                if (occupiedTiles.Contains(checkPosition))
+                if (occupiedTiles.ContainsKey(checkPosition))
                     return false;
             }
         }
@@ -165,13 +164,21 @@ public class GridManager : MonoBehaviour
 
     private Vector3 GetNextAvailablePosition(Vector3 startPosition, PrefabSize prefabSize)
     {
-        for (int i = 0; i < 20; i++)
+        // Implementacja spiralnego wyszukiwania dostêpnej pozycji
+        int radius = 1;
+        while (true)
         {
-            Vector3 newPosition = startPosition + new Vector3(i * (gridSize + tileSpacing), 0, 0);
-            if (IsPositionAvailable(newPosition, prefabSize))
-                return newPosition;
+            for (int x = -radius; x <= radius; x++)
+            {
+                for (int z = -radius; z <= radius; z++)
+                {
+                    Vector3 checkPosition = new Vector3(startPosition.x + x * (gridSize + tileSpacing), startPosition.y, startPosition.z + z * (gridSize + tileSpacing));
+                    if (IsPositionAvailable(checkPosition, prefabSize))
+                        return checkPosition;
+                }
+            }
+            radius++;
         }
-        return startPosition;
     }
 
     private Vector3 GetMouseWorldPosition()
@@ -202,7 +209,7 @@ public class GridManager : MonoBehaviour
                             placementPosition.y,
                             placementPosition.z + z * (gridSize + tileSpacing)
                         );
-                        occupiedTiles.Add(occupiedPosition);
+                        occupiedTiles[occupiedPosition] = previewObject;
                     }
                 }
 

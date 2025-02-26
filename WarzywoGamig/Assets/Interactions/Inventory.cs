@@ -71,6 +71,7 @@ public class Inventory : MonoBehaviour
 
             if (interactableItem.canBePickedUp)
             {
+                // Obs³uguje broñ
                 if (interactableItem.isWeapon)
                 {
                     if (weapons.Count >= maxWeapons)
@@ -84,6 +85,7 @@ public class Inventory : MonoBehaviour
                         EquipWeapon(interactableItem, hit.collider.gameObject);
                     }
                 }
+                // Obs³uguje inne przedmioty
                 else
                 {
                     if (items.Count < maxItems)
@@ -93,7 +95,7 @@ public class Inventory : MonoBehaviour
                     }
                 }
 
-                // Dodaj do GridManager dopiero teraz, jeœli przedmiot ma isLoot = true
+                // Przedmioty z flag¹ isLoot dodawane do GridManager
                 if (interactableItem.isLoot)
                 {
                     if (GridManager.Instance != null)
