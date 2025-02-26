@@ -40,20 +40,8 @@ public class GridManager : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.B))
-        {
-            isBuildingMode = !isBuildingMode;
-            ToggleGridVisibility(isBuildingMode);
-
-            if (isBuildingMode)
-                CreatePreviewObject();
-            else
-                DestroyPreviewObject();
-        }
-
         if (isBuildingMode)
         {
-            HandlePrefabSwitching();
 
             if (previewObject != null)
             {
@@ -66,46 +54,27 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    private void HandlePrefabSwitching()
-    {
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (scroll != 0)
-        {
-            currentPrefabIndex += (scroll > 0) ? 1 : -1;
-
-            if (currentPrefabIndex >= buildingPrefabs.Count)
-                currentPrefabIndex = 0;
-            else if (currentPrefabIndex < 0)
-                currentPrefabIndex = buildingPrefabs.Count - 1;
-
-            UpdatePreviewObject();
-        }
-    }
-
-    private void UpdatePreviewObject()
-    {
-        if (previewObject != null)
-            Destroy(previewObject);
-
-        CreatePreviewObject();
-    }
 
     private void CreatePreviewObject()
     {
         if (buildingPrefabs.Count == 0) return;
 
         previewObject = Instantiate(buildingPrefabs[currentPrefabIndex]);
-        DisableColliders(previewObject);
+        previewObject.SetActive(true);  // Ustawienie obiektu jako aktywnego
+        DisableColliders(previewObject);  // Wy³¹czenie koliderów po ustawieniu na aktywny
+
+
+        // Sprawdzamy, czy obiekt podgl¹du jest aktywny
+        //Debug.Log("Is preview object active: " + previewObject.activeSelf);
     }
 
-    private void DestroyPreviewObject()
-    {
-        if (previewObject != null)
-        {
-            Destroy(previewObject);
-        }
-    }
-
+    //private void DestroyPreviewObject()
+    //{
+    //    if (previewObject != null)
+    //    {
+    //        Destroy(previewObject);
+    //    }
+    //}
     public Vector3 SnapToGrid(Vector3 position)
     {
         if (previewObject == null) return position;
@@ -118,13 +87,16 @@ public class GridManager : MonoBehaviour
             prefabSize.depthInTiles = 1;
         }
 
-        float offsetX = (prefabSize.widthInTiles % 2 == 0) ? (gridSize + tileSpacing) / 2 : 0;
-        float offsetZ = (prefabSize.depthInTiles % 2 == 0) ? (gridSize + tileSpacing) / 2 : 0;
+        float gridSizeWithSpacing = gridSize + tileSpacing;
 
-        float snappedX = Mathf.Floor((position.x - gridArea.position.x + (gridSize / 2)) / (gridSize + tileSpacing)) * (gridSize + tileSpacing) + gridArea.position.x + offsetX;
-        float snappedZ = Mathf.Floor((position.z - gridArea.position.z + (gridSize / 2)) / (gridSize + tileSpacing)) * (gridSize + tileSpacing) + gridArea.position.z + offsetZ;
+        // Obliczanie pozycji snapowania wzglêdem siatki
+        float snappedX = Mathf.Floor((position.x - gridArea.position.x) / gridSizeWithSpacing) * gridSizeWithSpacing + gridArea.position.x;
+        float snappedZ = Mathf.Floor((position.z - gridArea.position.z) / gridSizeWithSpacing) * gridSizeWithSpacing + gridArea.position.z;
 
-        Vector3 snappedPosition = new Vector3(snappedX, gridArea.position.y, snappedZ);
+        // Ustawienie pozycji Y na podstawie siatki
+        float snappedY = gridArea.position.y;
+
+        Vector3 snappedPosition = new Vector3(snappedX, snappedY, snappedZ);
 
         if (IsPositionAvailable(snappedPosition, prefabSize) && IsInsideGrid(snappedPosition, prefabSize))
             return snappedPosition;
@@ -186,7 +158,10 @@ public class GridManager : MonoBehaviour
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit hit, 100f))
         {
-            return hit.point;
+            // Przypisanie wysokoœci do pozycji podgl¹du
+            Vector3 hitPoint = hit.point;
+            hitPoint.y = gridArea.position.y;  // Mo¿esz dostosowaæ, jeœli chcesz, aby obiekt by³ na innej wysokoœci
+            return hitPoint;
         }
         return Vector3.zero;
     }
@@ -213,12 +188,28 @@ public class GridManager : MonoBehaviour
                     }
                 }
 
-                Instantiate(buildingPrefabs[currentPrefabIndex], placementPosition, Quaternion.identity);
+                // Tworzymy obiekt na miejscu podgl¹du
+                GameObject buildedObject = Instantiate(buildingPrefabs[currentPrefabIndex], placementPosition, Quaternion.identity);
+                buildedObject.SetActive(true);
 
-                //// Wy³¹czenie trybu budowania po postawieniu obiektu
-                //isBuildingMode = false;
-                //DestroyPreviewObject();
-                //ToggleGridVisibility(false);
+                // Usuwamy prefab z GridManagera
+                GameObject placedPrefab = buildingPrefabs[currentPrefabIndex];
+                buildingPrefabs.RemoveAt(currentPrefabIndex);
+
+                // Usuwamy prefab z Inventory
+                Inventory inventory = Object.FindFirstObjectByType<Inventory>();
+                if (inventory != null)
+                {
+                    inventory.RemoveItem(placedPrefab);
+                }
+
+                // Usuwamy podgl¹d po wybudowaniu
+                Destroy(previewObject);
+                previewObject = null;
+
+                // Wy³¹czamy tryb budowania
+                isBuildingMode = false;
+                ToggleGridVisibility(false);
             }
         }
     }
@@ -275,10 +266,21 @@ public class GridManager : MonoBehaviour
         if (prefab != null && !buildingPrefabs.Contains(prefab))
         {
             buildingPrefabs.Add(prefab);
+            //Debug.Log("Prefab added: " + prefab.name); // Debugowanie, ¿eby upewniæ siê, ¿e prefab jest dodawany
+
+            // Uruchomienie trybu budowania
+            isBuildingMode = true;  // Ustawienie trybu budowania na w³¹czony
+            ToggleGridVisibility(isBuildingMode);  // Aktualizacja widocznoœci siatki
+
+            // Ustawienie aktualnego prefabrykatu na ostatnio dodany prefabryk
+            currentPrefabIndex = buildingPrefabs.Count - 1;
+
+            // Jeœli w³¹czony tryb budowy, utwórz obiekt podgl¹du
+            CreatePreviewObject();
         }
         else
         {
-            Debug.LogWarning("Trying to add a null or duplicate prefab to buildingPrefabs.");
+            //Debug.LogWarning("Trying to add a null or duplicate prefab to buildingPrefabs.");
         }
     }
 }
