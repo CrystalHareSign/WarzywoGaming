@@ -1,20 +1,21 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using System.Collections.Generic;
 using UnityEditor;
 
 public class Inventory : MonoBehaviour
 {
     public List<GameObject> weapons = new List<GameObject>(); // Lista broni
-    public List<GameObject> items = new List<GameObject>(); // Lista innych przedmiotów
-    public List<GameObject> loot = new List<GameObject>(); // Lista lootów
-    public int maxWeapons = 3; // Maksymalna liczba broni, które gracz mo¿e nosiæ
-    public int maxItems = 5; // Maksymalna liczba innych przedmiotów
-    public int maxLoot = 5; // Maksymalna liczba przedmiotów loot
-    public LayerMask interactableLayer; // Warstwa interaktywnych przedmiotów
+    public List<GameObject> items = new List<GameObject>(); // Lista innych przedmiotÃ³w
+    public List<GameObject> loot = new List<GameObject>(); // Lista lootÃ³w
+    public int maxWeapons = 3; // Maksymalna liczba broni, ktÃ³re gracz moÅ¼e nosiÄ‡
+    public int maxItems = 5; // Maksymalna liczba innych przedmiotÃ³w
+    public int maxLoot = 5; // Maksymalna liczba przedmiotÃ³w loot
+    public float dropHeight = 1f; // WysokoÅ›Ä‡, na jakiej loot ma upaÅ›Ä‡
+    public LayerMask interactableLayer; // Warstwa interaktywnych przedmiotÃ³w
     public InventoryUI inventoryUI; // Odniesienie do skryptu InventoryUI
 
-    public Transform weaponParent; // Transform, do którego bêd¹ przypisywane bronie jako dzieci
-    public Transform lootParent; // Transform, do którego bêd¹ przypisane lootowe przedmioty
+    public Transform weaponParent; // Transform, do ktÃ³rego bÄ™dÄ… przypisywane bronie jako dzieci
+    public Transform lootParent; // Transform, do ktÃ³rego bÄ™dÄ… przypisane lootowe przedmioty
 
 
     [System.Serializable]
@@ -27,13 +28,13 @@ public class Inventory : MonoBehaviour
     public List<WeaponPrefabEntry> weaponPrefabsList = new List<WeaponPrefabEntry>();
     private Dictionary<string, GameObject> weaponPrefabs = new Dictionary<string, GameObject>();
 
-    private GameObject currentWeaponPrefab; // Przechowuje aktualnie wyposa¿on¹ broñ
+    private GameObject currentWeaponPrefab; // Przechowuje aktualnie wyposaÅ¼onÄ… broÅ„
     private GameObject currentWeaponItem; // Przechowuje obiekt aktualnej broni w ekwipunku
 
     public Vector3 weaponPositionOffset = new Vector3(0.5f, -0.3f, 1.0f);
     public Vector3 weaponRotationOffset = new Vector3(0, 90, 0);
-    public Vector3 lootPositionOffset = new Vector3(0f, 1f, 0f); // Rêczna pozycja lootów wzglêdem gracza
-    public Vector3 lootRotationOffset = new Vector3(0f, 0f, 0f); // Rêczna rotacja lootów wzglêdem gracza
+    public Vector3 lootPositionOffset = new Vector3(0f, 1f, 0f); // RÄ™czna pozycja lootÃ³w wzglÄ™dem gracza
+    public Vector3 lootRotationOffset = new Vector3(0f, 0f, 0f); // RÄ™czna rotacja lootÃ³w wzglÄ™dem gracza
 
     void Start()
     {
@@ -106,7 +107,7 @@ public class Inventory : MonoBehaviour
                     if (loot.Count < maxLoot)
                     {
                         loot.Add(hit.collider.gameObject);
-                        EquipLoot(hit.collider.gameObject);  // Wywo³anie EquipLoot po dodaniu do loot
+                        EquipLoot(hit.collider.gameObject);  // WywoÅ‚anie EquipLoot po dodaniu do loot
                     }
                     if (GridManager.Instance != null)
                     {
@@ -163,20 +164,20 @@ public class Inventory : MonoBehaviour
     {
         if (lootItem != null)
         {
-            // SprawdŸ, czy przedmiot jest lootem
+            // SprawdÅº, czy przedmiot jest lootem
             if (loot.Contains(lootItem))
             {
-                // Jeœli lootParent jest ustawiony, u¿yj go, jeœli nie, przypnij loot do gracza
+                // JeÅ›li lootParent jest ustawiony, uÅ¼yj go, jeÅ›li nie, przypnij loot do gracza
                 Transform parentTransform = lootParent != null ? lootParent : transform;
 
                 // Ustaw przedmiot jako dziecko odpowiedniego obiektu (lootParent lub gracza)
                 lootItem.transform.SetParent(parentTransform);
 
-                // Ustaw rêczn¹ pozycjê i rotacjê z Inspektora
-                lootItem.transform.localPosition = lootPositionOffset;  // Przyk³ad: ustawienie pozycji
-                lootItem.transform.localRotation = Quaternion.Euler(lootRotationOffset);  // Przyk³ad: ustawienie rotacji
+                // Ustaw rÄ™cznÄ… pozycjÄ™ i rotacjÄ™ z Inspektora
+                lootItem.transform.localPosition = lootPositionOffset;  // PrzykÅ‚ad: ustawienie pozycji
+                lootItem.transform.localRotation = Quaternion.Euler(lootRotationOffset);  // PrzykÅ‚ad: ustawienie rotacji
 
-                // Aktywuj przedmiot, jeœli jest wy³¹czony
+                // Aktywuj przedmiot, jeÅ›li jest wyÅ‚Ä…czony
                 lootItem.SetActive(true);
             }
         }
@@ -184,16 +185,73 @@ public class Inventory : MonoBehaviour
 
     void DropItem()
     {
-        if (currentWeaponItem != null)
+        if (currentWeaponItem != null) // JeÅ›li to broÅ„
+        {
+            DropWeapon();
+        }
+        else if (loot.Count > 0) // JeÅ›li mamy loot do upuszczenia
+        {
+            DropLoot();
+        }
+    }
+
+    void DropWeapon()
+    {
+        if (currentWeaponItem != null) // JeÅ›li to broÅ„
         {
             weapons.Remove(currentWeaponItem);
+            currentWeaponItem.transform.SetParent(null);
+
+            // Wyznaczamy pozycjÄ™ upuszczenia przy zadanej wysokoÅ›ci
+            Vector3 dropPosition = transform.position; // Pozycja gracza (moÅ¼na dostosowaÄ‡ do innego obiektu)
+            dropPosition.y = dropHeight; // Ustawiamy wysokoÅ›Ä‡ upuszczenia na wartoÅ›Ä‡ dropHeight
+
+            currentWeaponItem.transform.position = dropPosition; // Ustawiamy pozycjÄ™ broni
+            currentWeaponItem.transform.rotation = Quaternion.identity; // Reset rotacji
+
             currentWeaponItem.SetActive(true);
-            currentWeaponItem.transform.position = transform.position + Vector3.up;
             Destroy(currentWeaponPrefab);
+
             currentWeaponPrefab = null;
             currentWeaponItem = null;
+
             UpdateInventoryUI();
         }
+    }
+
+    void DropLoot()
+    {
+        if (loot.Count == 0) return; // JeÅ›li nie ma lootÃ³w, zakoÅ„cz
+
+        GameObject lootItem = loot[0]; // Pobieramy pierwszy przedmiot z listy loot
+        loot.RemoveAt(0); // Usuwamy go z listy loot
+
+        lootItem.transform.SetParent(null); // Upewniamy siÄ™, Å¼e lootItem nie jest dzieckiem lootParent
+
+        // Wyznaczamy pozycjÄ™ upuszczenia przy zadanej wysokoÅ›ci
+        Vector3 dropPosition = transform.position; // Pozycja gracza (moÅ¼na dostosowaÄ‡ do innego obiektu)
+        dropPosition.y = dropHeight; // Ustawiamy wysokoÅ›Ä‡ upuszczenia na wartoÅ›Ä‡ dropHeight
+
+        lootItem.transform.position = dropPosition; // Ustawiamy pozycjÄ™ lootItem
+        lootItem.transform.rotation = Quaternion.identity; // Reset rotacji
+
+        lootItem.SetActive(true); // Aktywuj loot w scenie
+
+        // WyÅ‚Ä…cz tryb budowania, jeÅ›li GridManager istnieje
+        if (GridManager.Instance != null)
+        {
+            GridManager.Instance.isBuildingMode = false;
+
+            // Usuwamy przedmiot z BuildingPrefabs w GridManager
+            GridManager.Instance.RemoveFromBuildingPrefabs(lootItem);
+        }
+
+        // Usuwamy loot z podglÄ…du (w scenie) - usuwamy go z lootParent
+        RemoveObjectFromLootParent(lootItem);
+
+        //Debug.Log($"Upuszczono loot: {lootItem.name} na wysokoÅ›ci {dropHeight}");
+
+        UpdateInventoryUI();
     }
 
     public void RemoveItem(GameObject item)
@@ -217,7 +275,7 @@ public class Inventory : MonoBehaviour
 
         Transform foundObject = null;
 
-        // Przeszukujemy dzieci LootParent, ignoruj¹c nazwê i skupiaj¹c siê na prefabriku
+        // Przeszukujemy dzieci LootParent, ignorujÄ…c nazwÄ™ i skupiajÄ…c siÄ™ na prefabriku
         foreach (Transform child in lootParent)
         {
             if (PrefabUtility.GetCorrespondingObjectFromSource(child.gameObject) ==
@@ -231,7 +289,7 @@ public class Inventory : MonoBehaviour
         if (foundObject != null)
         {
             Debug.Log("Usuwam obiekt z LootParent: " + foundObject.name);
-            Destroy(foundObject.gameObject);
+            Destroy(foundObject.gameObject); // Usuwamy obiekt z LootParent
         }
         else
         {

@@ -2718,6 +2718,7 @@ MonoBehaviour:
   LootParent: {fileID: 939817340}
   gridTilePrefab: {fileID: 647715511860830119, guid: 194a9956da80d5a428f88a7dd7141152, type: 3}
   buildingPrefabs: []
+  isBuildingMode: 0
 --- !u!4 &623208566
 Transform:
   m_ObjectHideFlags: 0
@@ -7079,6 +7080,7 @@ MonoBehaviour:
   maxWeapons: 1
   maxItems: 0
   maxLoot: 1
+  dropHeight: 7
   interactableLayer:
     serializedVersion: 2
     m_Bits: 128
@@ -7092,7 +7094,7 @@ MonoBehaviour:
     weaponPrefab: {fileID: 945966471}
   weaponPositionOffset: {x: 0.5, y: -0.3, z: 1}
   weaponRotationOffset: {x: 185, y: 175, z: 0}
-  lootPositionOffset: {x: 0.5, y: -0.3, z: 1}
+  lootPositionOffset: {x: 0.5, y: -0.7, z: 1}
   lootRotationOffset: {x: 0, y: 0, z: 0}
 --- !u!1001 &70671304840066653
 PrefabInstance:
