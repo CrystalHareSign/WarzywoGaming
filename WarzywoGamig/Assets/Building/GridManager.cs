@@ -11,9 +11,9 @@ public class GridManager : MonoBehaviour
     public Transform LootParent; // Przypisz do niego transform zawieraj¹cy obiekty w rêce gracza
     public GameObject gridTilePrefab; // Prefab kafelka siatki
     public List<GameObject> buildingPrefabs = new List<GameObject>(); // Lista dostêpnych prefabów
+    public bool isBuildingMode = false; // Tryb budowy w³¹czony/wy³¹czony
 
     private int currentPrefabIndex = 0; // Aktualny indeks prefabrykatu
-    private bool isBuildingMode = false; // Tryb budowy w³¹czony/wy³¹czony
     private GameObject previewObject; // Obiekt podgl¹du
     private float gridAreaWidth;
     private float gridAreaHeight;
@@ -56,7 +56,6 @@ public class GridManager : MonoBehaviour
             }
         }
     }
-
 
     private void CreatePreviewObject()
     {
@@ -186,7 +185,7 @@ public class GridManager : MonoBehaviour
                 buildedObject.SetActive(true);
 
                 // Usuwamy obiekt z LootParent
-                Inventory inventory = FindObjectOfType<Inventory>();
+                Inventory inventory = Object.FindFirstObjectByType<Inventory>();
                 if (inventory != null)
                 {
                     inventory.RemoveObjectFromLootParent(previewObject);
@@ -272,4 +271,17 @@ public class GridManager : MonoBehaviour
             //Debug.LogWarning("Trying to add a null or duplicate prefab to buildingPrefabs.");
         }
     }
+    public void RemoveFromBuildingPrefabs(GameObject lootItem)
+    {
+        if (buildingPrefabs.Contains(lootItem))
+        {
+            buildingPrefabs.Remove(lootItem);
+            Debug.Log("Usuniêto loot z BuildingPrefabs: " + lootItem.name);
+        }
+        else
+        {
+            Debug.LogWarning("Loot nie znajduje siê na liœcie BuildingPrefabs: " + lootItem.name);
+        }
+    }
+
 }
