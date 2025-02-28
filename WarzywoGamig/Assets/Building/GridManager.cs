@@ -248,34 +248,32 @@ public class GridManager : MonoBehaviour
             child.gameObject.SetActive(isVisible);
         }
     }
+    private void CleanupBuildingPrefabs()
+    {
+        buildingPrefabs.RemoveAll(item => item == null);
+    }
 
     public void AddToBuildingPrefabs(GameObject prefab)
     {
         if (prefab != null && !buildingPrefabs.Contains(prefab))
         {
             buildingPrefabs.Add(prefab);
-            //Debug.Log("Prefab added: " + prefab.name); // Debugowanie, ¿eby upewniæ siê, ¿e prefab jest dodawany
+            CleanupBuildingPrefabs(); // Usuniêcie pustych referencji
 
-            // Uruchomienie trybu budowania
-            isBuildingMode = true;  // Ustawienie trybu budowania na w³¹czony
-            ToggleGridVisibility(isBuildingMode);  // Aktualizacja widocznoœci siatki
-
-            // Ustawienie aktualnego prefabrykatu na ostatnio dodany prefabryk
+            isBuildingMode = true;
+            ToggleGridVisibility(isBuildingMode);
             currentPrefabIndex = buildingPrefabs.Count - 1;
 
-            // Jeœli w³¹czony tryb budowy, utwórz obiekt podgl¹du
             CreatePreviewObject();
         }
-        else
-        {
-            //Debug.LogWarning("Trying to add a null or duplicate prefab to buildingPrefabs.");
-        }
     }
+
     public void RemoveFromBuildingPrefabs(GameObject lootItem)
     {
         if (buildingPrefabs.Contains(lootItem))
         {
             buildingPrefabs.Remove(lootItem);
+            CleanupBuildingPrefabs(); // Usuniêcie pustych referencji
             Debug.Log("Usuniêto loot z BuildingPrefabs: " + lootItem.name);
         }
         else
@@ -283,5 +281,4 @@ public class GridManager : MonoBehaviour
             Debug.LogWarning("Loot nie znajduje siê na liœcie BuildingPrefabs: " + lootItem.name);
         }
     }
-
 }
