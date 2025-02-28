@@ -95,14 +95,33 @@ public class GridManager : MonoBehaviour
         float snappedX = Mathf.Floor((position.x - gridArea.position.x) / gridSizeWithSpacing) * gridSizeWithSpacing + gridArea.position.x;
         float snappedZ = Mathf.Floor((position.z - gridArea.position.z) / gridSizeWithSpacing) * gridSizeWithSpacing + gridArea.position.z;
 
+        // Jeœli obiekt jest wiêkszy ni¿ 1x1, musimy dostosowaæ pozycjê
+        if (prefabSize.widthInTiles > 1 || prefabSize.depthInTiles > 1)
+        {
+            // Jeœli obiekt ma wymiary 2x2, przesuwamy go na œrodek czterech kafelków
+            if (prefabSize.widthInTiles == 2 && prefabSize.depthInTiles == 2)
+            {
+                snappedX += gridSizeWithSpacing / 2; // Przesuniêcie o po³owê rozmiaru kafelka w osi X
+                snappedZ += gridSizeWithSpacing / 2; // Przesuniêcie o po³owê rozmiaru kafelka w osi Z
+            }
+            else
+            {
+                // Inne obiekty mog¹ byæ centrowane w podobny sposób, jeœli maj¹ wiêksze wymiary
+                snappedX += (gridSizeWithSpacing * prefabSize.widthInTiles) / 2 - gridSizeWithSpacing / 2;
+                snappedZ += (gridSizeWithSpacing * prefabSize.depthInTiles) / 2 - gridSizeWithSpacing / 2;
+            }
+        }
+
         // Ustawienie pozycji Y na podstawie siatki
         float snappedY = gridArea.position.y;
 
         Vector3 snappedPosition = new Vector3(snappedX, snappedY, snappedZ);
 
+        // Sprawdzamy, czy obiekt zmieœci siê w tej lokalizacji
         if (IsPositionAvailable(snappedPosition, prefabSize) && IsInsideGrid(snappedPosition, prefabSize))
             return snappedPosition;
 
+        // Jeœli miejsce jest zajête, spróbuj znaleŸæ nastêpne dostêpne
         return GetNextAvailablePosition(snappedPosition, prefabSize);
     }
 
