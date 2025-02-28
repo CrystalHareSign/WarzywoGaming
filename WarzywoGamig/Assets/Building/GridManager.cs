@@ -81,50 +81,44 @@ public class GridManager : MonoBehaviour
     {
         if (previewObject == null) return position;
 
+        // Pobieramy rozmiar prefabrykatów, aby obliczyæ, ile kafelków zajmuje obiekt
         PrefabSize prefabSize = previewObject.GetComponent<PrefabSize>();
         if (prefabSize == null)
         {
             prefabSize = previewObject.AddComponent<PrefabSize>();
-            prefabSize.widthInTiles = 1;
-            prefabSize.depthInTiles = 1;
+            prefabSize.widthInTiles = 1; // Domyœlna wielkoœæ (1x1)
+            prefabSize.depthInTiles = 1; // Domyœlna wielkoœæ (1x1)
         }
 
+        // Uwzglêdniamy odstêpy i rozmiar kafelków
         float gridSizeWithSpacing = gridSize + tileSpacing;
 
-        // Obliczanie pozycji snapowania wzglêdem siatki
+        // Obliczanie pozycji snapowania
         float snappedX = Mathf.Floor((position.x - gridArea.position.x) / gridSizeWithSpacing) * gridSizeWithSpacing + gridArea.position.x;
         float snappedZ = Mathf.Floor((position.z - gridArea.position.z) / gridSizeWithSpacing) * gridSizeWithSpacing + gridArea.position.z;
 
-        // Jeœli obiekt jest wiêkszy ni¿ 1x1, musimy dostosowaæ pozycjê
+        // Korekta pozycji dla wiêkszych obiektów
         if (prefabSize.widthInTiles > 1 || prefabSize.depthInTiles > 1)
         {
-            // Jeœli obiekt ma wymiary 2x2, przesuwamy go na œrodek czterech kafelków
-            if (prefabSize.widthInTiles == 2 && prefabSize.depthInTiles == 2)
-            {
-                snappedX += gridSizeWithSpacing / 2; // Przesuniêcie o po³owê rozmiaru kafelka w osi X
-                snappedZ += gridSizeWithSpacing / 2; // Przesuniêcie o po³owê rozmiaru kafelka w osi Z
-            }
-            else
-            {
-                // Inne obiekty mog¹ byæ centrowane w podobny sposób, jeœli maj¹ wiêksze wymiary
-                snappedX += (gridSizeWithSpacing * prefabSize.widthInTiles) / 2 - gridSizeWithSpacing / 2;
-                snappedZ += (gridSizeWithSpacing * prefabSize.depthInTiles) / 2 - gridSizeWithSpacing / 2;
-            }
+            snappedX += (gridSizeWithSpacing * prefabSize.widthInTiles) / 2 - gridSizeWithSpacing / 2;
+            snappedZ += (gridSizeWithSpacing * prefabSize.depthInTiles) / 2 - gridSizeWithSpacing / 2;
         }
 
-        // Ustawienie pozycji Y na podstawie siatki
+        // Ustawienie pozycji Y na podstawie siatki (jeœli masz jak¹œ wysokoœæ na siatce)
         float snappedY = gridArea.position.y;
 
+        // Nowa pozycja obiektu
         Vector3 snappedPosition = new Vector3(snappedX, snappedY, snappedZ);
 
-        // Sprawdzamy, czy obiekt zmieœci siê w tej lokalizacji
+        // Sprawdzamy, czy ta pozycja jest dostêpna
         if (IsPositionAvailable(snappedPosition, prefabSize) && IsInsideGrid(snappedPosition, prefabSize))
+        {
             return snappedPosition;
+        }
 
-        // Jeœli miejsce jest zajête, spróbuj znaleŸæ nastêpne dostêpne
+        // Jeœli miejsce jest zajête, szukamy kolejnej dostêpnej pozycji
         return GetNextAvailablePosition(snappedPosition, prefabSize);
     }
-
     private bool IsInsideGrid(Vector3 position, PrefabSize prefabSize)
     {
         // Sprawdzenie, czy obiekt znajduje siê w obrêbie siatki
@@ -139,20 +133,6 @@ public class GridManager : MonoBehaviour
         float objectMaxZ = position.z + prefabSize.depthInTiles * (gridSize + tileSpacing) / 2;
 
         return objectMinX >= gridAreaMinX && objectMaxX <= gridAreaMaxX && objectMinZ >= gridAreaMinZ && objectMaxZ <= gridAreaMaxZ;
-    }
-
-    private bool IsPositionAvailable(Vector3 position, PrefabSize prefabSize)
-    {
-        for (int x = 0; x < prefabSize.widthInTiles; x++)
-        {
-            for (int z = 0; z < prefabSize.depthInTiles; z++)
-            {
-                Vector3 checkPosition = new Vector3(position.x + x * (gridSize + tileSpacing), position.y, position.z + z * (gridSize + tileSpacing));
-                if (occupiedTiles.ContainsKey(checkPosition))
-                    return false;
-            }
-        }
-        return true;
     }
 
     private Vector3 GetNextAvailablePosition(Vector3 startPosition, PrefabSize prefabSize)
@@ -189,34 +169,95 @@ public class GridManager : MonoBehaviour
 
     public void PlaceObject()
     {
+        // Sprawdzamy, czy obiekt do podgl¹du istnieje
         if (previewObject != null)
         {
+            // Pobieramy pozycjê, gdzie obiekt ma zostaæ postawiony
             Vector3 placementPosition = previewObject.transform.position;
+
+            // Pobieramy rozmiar prefabrykatu
             PrefabSize prefabSize = previewObject.GetComponent<PrefabSize>();
 
+            // Sprawdzamy, czy odleg³oœæ od gracza do miejsca budowy jest wystarczaj¹ca
             if (Vector3.Distance(player.position, placementPosition) > buildRange)
+            {
+                Debug.Log("Zbyt daleko od gracza, nie mo¿na postawiæ obiektu.");
                 return;
+            }
 
+            // Sprawdzamy, czy miejsce jest dostêpne i czy obiekt zmieœci siê w obrêbie siatki
             if (IsPositionAvailable(placementPosition, prefabSize) && IsInsideGrid(placementPosition, prefabSize))
             {
-                // Tworzenie obiektu w miejscu docelowym
+                // Tworzymy obiekt w miejscu docelowym
                 GameObject buildedObject = Instantiate(buildingPrefabs[currentPrefabIndex], placementPosition, previewObject.transform.rotation);
                 buildedObject.SetActive(true);
 
-                // Usuwamy obiekt z LootParent
+                // Usuwamy obiekt podgl¹du z listy LootParent w Inventory
                 Inventory inventory = Object.FindFirstObjectByType<Inventory>();
                 if (inventory != null)
                 {
-                    inventory.RemoveObjectFromLootParent(previewObject);
+                    inventory.RemoveObjectFromLootParent(previewObject);  // Zmieniono na metodê, która faktycznie usuwa obiekt z rodzica loot
                 }
 
-                // Usuwamy obiekt podgl¹du z ziemi
+                // Usuwamy obiekt podgl¹du z ziemi (po jego postawieniu)
                 Destroy(previewObject);
                 previewObject = null;
 
+                // Aktualizujemy s³ownik, oznaczamy obszar zajêty przez obiekt
+                MarkTilesAsOccupied(placementPosition, prefabSize, buildedObject);
+
                 // Koñczymy tryb budowania
                 isBuildingMode = false;
-                ToggleGridVisibility(false);
+                ToggleGridVisibility(false);  // Wy³¹czenie siatki, jeœli to konieczne
+            }
+            else
+            {
+                Debug.Log("Miejsce jest zajête lub obiekt nie mieœci siê w obrêbie siatki.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Brak obiektu podgl¹du do postawienia.");
+        }
+    }
+
+    private bool IsPositionAvailable(Vector3 position, PrefabSize prefabSize)
+    {
+        // Pobieramy pozycjê pocz¹tkow¹ (dolny lewy róg)
+        int startX = Mathf.FloorToInt(position.x);
+        int startZ = Mathf.FloorToInt(position.z);
+
+        // Sprawdzamy, czy wszystkie kafelki, które obiekt ma zaj¹æ, s¹ dostêpne
+        for (int x = startX; x < startX + prefabSize.widthInTiles; x++)
+        {
+            for (int z = startZ; z < startZ + prefabSize.depthInTiles; z++)
+            {
+                Vector3 tilePosition = new Vector3(x, 0, z);
+                if (occupiedTiles.ContainsKey(tilePosition)) // Jeœli kafelek jest ju¿ zajêty
+                {
+                    return false;
+                }
+            }
+        }
+        return true; // Miejsce dostêpne
+    }
+
+    private void MarkTilesAsOccupied(Vector3 position, PrefabSize prefabSize, GameObject buildedObject)
+    {
+        // Pobieramy pozycjê pocz¹tkow¹ (dolny lewy róg)
+        int startX = Mathf.FloorToInt(position.x);
+        int startZ = Mathf.FloorToInt(position.z);
+
+        // Oznaczamy wszystkie kafelki, które obiekt zajmuje
+        for (int x = startX; x < startX + prefabSize.widthInTiles; x++)
+        {
+            for (int z = startZ; z < startZ + prefabSize.depthInTiles; z++)
+            {
+                Vector3 tilePosition = new Vector3(x, 0, z);
+                if (!occupiedTiles.ContainsKey(tilePosition))  // Sprawdzamy, czy kafelek nie jest ju¿ zajêty
+                {
+                    occupiedTiles[tilePosition] = buildedObject; // Zapisujemy, ¿e kafelek jest zajêty przez ten obiekt
+                }
             }
         }
     }
