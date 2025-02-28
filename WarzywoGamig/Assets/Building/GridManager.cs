@@ -12,6 +12,8 @@ public class GridManager : MonoBehaviour
     public GameObject gridTilePrefab; // Prefab kafelka siatki
     public List<GameObject> buildingPrefabs = new List<GameObject>(); // Lista dostêpnych prefabów
     public bool isBuildingMode = false; // Tryb budowy w³¹czony/wy³¹czony
+    public float checkInterval = 2f; // Czas (w sekundach) po którym sprawdzamy kafelki
+    private float timeSinceLastCheck = 0f; // Zmienna do liczenia czasu
 
     private int currentPrefabIndex = 0; // Aktualny indeks prefabrykatu
     private GameObject previewObject; // Obiekt podgl¹du
@@ -55,6 +57,57 @@ public class GridManager : MonoBehaviour
                     PlaceObject();
             }
         }
+        timeSinceLastCheck += Time.deltaTime;
+
+        // Sprawdzamy co okreœlony czas
+        if (timeSinceLastCheck >= checkInterval)
+        {
+            CheckTiles();
+            timeSinceLastCheck = 0f; // Resetujemy licznik
+        }
+    }
+    private void CheckTiles()
+    {
+        List<Vector3> tilesToActivate = new List<Vector3>();
+
+        // Sprawdzamy ka¿dy kafelek w zajêtych kafelkach
+        foreach (var tile in occupiedTiles)
+        {
+            if (tile.Value == null || !tile.Value.activeSelf)  // Jeœli obiekt jest nieaktywny
+            {
+                tilesToActivate.Add(tile.Key); // Dodajemy kafelek do listy do aktywacji
+            }
+        }
+
+        // Aktywujemy kafelki, które s¹ teraz wolne
+        foreach (var tilePosition in tilesToActivate)
+        {
+            occupiedTiles.Remove(tilePosition); // Usuwamy kafelek z zajêtych
+            SetTileActive(tilePosition, true); // Aktywujemy kafelek
+        }
+    }
+
+    private void SetTileActive(Vector3 position, bool isActive)
+    {
+        // Logika aktywacji/desaktywacji kafelka, np. zmiana jego widocznoœci
+        GameObject tile = GetTileAtPosition(position);
+        if (tile != null)
+        {
+            tile.SetActive(isActive);
+        }
+    }
+
+    private GameObject GetTileAtPosition(Vector3 position)
+    {
+        // Funkcja pomocnicza do znalezienia kafelka na podstawie pozycji
+        foreach (Transform child in gridArea)
+        {
+            if (Vector3.Distance(child.position, position) < gridSize) // Tolerancja odleg³oœci
+            {
+                return child.gameObject;
+            }
+        }
+        return null; // Jeœli nie znaleziono
     }
 
     private void CreatePreviewObject()
