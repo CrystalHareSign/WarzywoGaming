@@ -174,11 +174,14 @@ public class Inventory : MonoBehaviour
                 lootItem.transform.SetParent(parentTransform);
 
                 // Ustaw ręczną pozycję i rotację z Inspektora
-                lootItem.transform.localPosition = lootPositionOffset;  // Przykład: ustawienie pozycji
-                lootItem.transform.localRotation = Quaternion.Euler(lootRotationOffset);  // Przykład: ustawienie rotacji
+                lootItem.transform.localPosition = lootPositionOffset;
+                lootItem.transform.localRotation = Quaternion.Euler(lootRotationOffset);
 
                 // Aktywuj przedmiot, jeśli jest wyłączony
                 lootItem.SetActive(true);
+
+                // Usuń przedmiot z listy dostępnych lootów, aby nie można go było ponownie podnieść
+                loot.Remove(lootItem);
             }
         }
     }
