@@ -20,6 +20,7 @@ public class GridManager : MonoBehaviour
     private float gridAreaWidth;
     private float gridAreaHeight;
     private Dictionary<Vector3, GameObject> occupiedTiles = new Dictionary<Vector3, GameObject>(); // Zbiór zajêtych kafelków
+    public InventoryUI inventoryUI;
 
     public static GridManager Instance { get; private set; }
 
@@ -267,6 +268,7 @@ public class GridManager : MonoBehaviour
                 if (inventory != null && inventory.currentWeaponPrefab != null)
                 {
                     inventory.currentWeaponPrefab.SetActive(true);
+                    inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
                 }
             }
             else

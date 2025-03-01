@@ -64,80 +64,89 @@ public class Inventory : MonoBehaviour
     }
 
     void CollectItem()
-{
-    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-    RaycastHit hit;
-
-    if (Physics.Raycast(ray, out hit, Mathf.Infinity, interactableLayer))
     {
-        InteractableItem interactableItem = hit.collider.GetComponent<InteractableItem>();
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
 
-        if (interactableItem == null)
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity, interactableLayer))
         {
-            return;
-        }
+            InteractableItem interactableItem = hit.collider.GetComponent<InteractableItem>();
 
-        // ❌ Jeśli gracz trzyma loot, nie może podnosić broni
-        if (lootParent != null && lootParent.childCount > 0 && interactableItem.isWeapon)
-        {
-            Debug.Log("Nie możesz podnieść broni, gdy trzymasz loot.");
-            return;
-        }
-
-        // ❌ Jeśli gracz trzyma loot, nie może podnosić innych przedmiotów (poza bronią, ale to już blokujemy powyżej)
-        if (lootParent != null && lootParent.childCount > 0 && !interactableItem.isWeapon)
-        {
-            Debug.Log("Nie możesz podnieść przedmiotu, ponieważ trzymasz loot.");
-            return;
-        }
-
-        if (interactableItem.canBePickedUp)
-        {
-            if (interactableItem.isWeapon)
+            if (interactableItem == null)
             {
-                if (weapons.Count >= maxWeapons)
+                return;
+            }
+
+            // ❌ Jeśli gracz trzyma loot, nie może podnosić broni
+            if (lootParent != null && lootParent.childCount > 0 && interactableItem.isWeapon)
+            {
+                Debug.Log("Nie możesz podnieść broni, gdy trzymasz loot.");
+                return;
+            }
+
+            // ❌ Jeśli gracz trzyma loot, nie może podnosić innych przedmiotów (poza bronią, ale to już blokujemy powyżej)
+            if (lootParent != null && lootParent.childCount > 0 && !interactableItem.isWeapon)
+            {
+                Debug.Log("Nie możesz podnieść przedmiotu, ponieważ trzymasz loot.");
+                return;
+            }
+
+            if (interactableItem.canBePickedUp)
+            {
+                if (interactableItem.isWeapon)
                 {
-                    ReplaceCurrentWeapon(interactableItem, hit.collider.gameObject);
+                    if (weapons.Count >= maxWeapons)
+                    {
+                        ReplaceCurrentWeapon(interactableItem, hit.collider.gameObject);
+                    }
+                    else
+                    {
+                        weapons.Add(hit.collider.gameObject);
+                        hit.collider.gameObject.SetActive(false);
+                        EquipWeapon(interactableItem, hit.collider.gameObject);
+                    }
+                }
+                else if (interactableItem.isLoot)
+                {
+                    if (loot.Count < maxLoot)
+                    {
+                        loot.Add(hit.collider.gameObject);
+                        EquipLoot(hit.collider.gameObject);
+
+                        // ✅ Ukrywamy broń, jeśli gracz podnosi loot
+                        if (currentWeaponPrefab != null)
+                        {
+                            currentWeaponPrefab.SetActive(false);
+                        }
+                    }
+
+                    if (GridManager.Instance != null)
+                    {
+                        GridManager.Instance.AddToBuildingPrefabs(hit.collider.gameObject);
+                    }
                 }
                 else
                 {
-                    weapons.Add(hit.collider.gameObject);
-                    hit.collider.gameObject.SetActive(false);
-                    EquipWeapon(interactableItem, hit.collider.gameObject);
-                }
-            }
-            else if (interactableItem.isLoot)
-            {
-                if (loot.Count < maxLoot)
-                {
-                    loot.Add(hit.collider.gameObject);
-                    EquipLoot(hit.collider.gameObject);
-
-                    // ✅ Ukrywamy broń, jeśli gracz podnosi loot
-                    if (currentWeaponPrefab != null)
+                    if (items.Count < maxItems)
                     {
-                        currentWeaponPrefab.SetActive(false);
+                        items.Add(hit.collider.gameObject);
+                        hit.collider.gameObject.SetActive(false);
                     }
                 }
 
-                if (GridManager.Instance != null)
+                UpdateInventoryUI();
+                if (currentWeaponPrefab != null)
                 {
-                    GridManager.Instance.AddToBuildingPrefabs(hit.collider.gameObject);
+                    Gun gunScript = currentWeaponPrefab.GetComponent<Gun>();
+                    if (gunScript != null)
+                    {
+                        inventoryUI.UpdateWeaponUI(gunScript);
+ 
+                    }
                 }
             }
-            else
-            {
-                if (items.Count < maxItems)
-                {
-                    items.Add(hit.collider.gameObject);
-                    hit.collider.gameObject.SetActive(false);
-                }
-            }
-
-            UpdateInventoryUI();
         }
     }
-}
 
 
     void ReplaceCurrentWeapon(InteractableItem newWeapon, GameObject newWeaponItem)
