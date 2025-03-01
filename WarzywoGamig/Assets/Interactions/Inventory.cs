@@ -6,7 +6,7 @@ public class Inventory : MonoBehaviour
 {
     public List<GameObject> weapons = new List<GameObject>(); // Lista broni
     public List<GameObject> items = new List<GameObject>(); // Lista innych przedmiotów
-    public List<GameObject> loot = new List<GameObject>(); // Lista lootów
+    private List<GameObject> loot = new List<GameObject>(); // Lista lootów
     public int maxWeapons = 3; // Maksymalna liczba broni, które gracz może nosić
     public int maxItems = 5; // Maksymalna liczba innych przedmiotów
     public int maxLoot = 5; // Maksymalna liczba przedmiotów loot
@@ -59,7 +59,7 @@ public class Inventory : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.Q))
         {
-            DropItem();
+            DropItemFromInventory();
         }
     }
 
@@ -214,7 +214,7 @@ public class Inventory : MonoBehaviour
         }
     }
 
-    void DropItem()
+    void DropItemFromInventory()
     {
         if (currentWeaponItem != null) // Jeśli to broń
         {
@@ -224,29 +224,74 @@ public class Inventory : MonoBehaviour
         {
             DropLoot();
         }
+        else if (items.Count > 0) // Jeśli mamy przedmioty do upuszczenia
+        {
+            DropItem();
+        }
+    }
+
+    void DropItem()
+    {
+        if (items.Count == 0) return;
+
+        GameObject item = items[0];
+        InteractableItem interactableItem = item.GetComponent<InteractableItem>(); // Pobieramy komponent InteractableItem
+
+        // Sprawdzamy, czy przedmiot może być upuszczony
+        if (interactableItem != null && interactableItem.canBeDropped)
+        {
+            items.RemoveAt(0);
+
+            item.transform.SetParent(null);
+
+            // Wyznaczamy pozycję upuszczenia przy zadanej wysokości
+            Vector3 dropPosition = transform.position; // Pozycja gracza (można dostosować do innego obiektu)
+            dropPosition.y = dropHeight; // Ustawiamy wysokość upuszczenia na wartość dropHeight
+
+            item.transform.position = dropPosition; // Ustawiamy pozycję przedmiotu
+            item.transform.rotation = Quaternion.identity; // Reset rotacji
+
+            item.SetActive(true);
+
+            UpdateInventoryUI();
+        }
+        else
+        {
+            Debug.LogWarning("Nie możesz upuścić tego przedmiotu, ponieważ 'canBeDropped' jest ustawione na false.");
+        }
     }
 
     void DropWeapon()
     {
         if (currentWeaponItem != null) // Jeśli to broń
         {
-            weapons.Remove(currentWeaponItem);
-            currentWeaponItem.transform.SetParent(null);
+            InteractableItem interactableItem = currentWeaponItem.GetComponent<InteractableItem>(); // Pobieramy komponent InteractableItem
 
-            // Wyznaczamy pozycję upuszczenia przy zadanej wysokości
-            Vector3 dropPosition = transform.position; // Pozycja gracza (można dostosować do innego obiektu)
-            dropPosition.y = dropHeight; // Ustawiamy wysokość upuszczenia na wartość dropHeight
+            // Sprawdzamy, czy broń może być upuszczona
+            if (interactableItem != null && interactableItem.canBeDropped)
+            {
+                weapons.Remove(currentWeaponItem);
+                currentWeaponItem.transform.SetParent(null);
 
-            currentWeaponItem.transform.position = dropPosition; // Ustawiamy pozycję broni
-            currentWeaponItem.transform.rotation = Quaternion.identity; // Reset rotacji
+                // Wyznaczamy pozycję upuszczenia przy zadanej wysokości
+                Vector3 dropPosition = transform.position; // Pozycja gracza (można dostosować do innego obiektu)
+                dropPosition.y = dropHeight; // Ustawiamy wysokość upuszczenia na wartość dropHeight
 
-            currentWeaponItem.SetActive(true);
-            Destroy(currentWeaponPrefab);
+                currentWeaponItem.transform.position = dropPosition; // Ustawiamy pozycję broni
+                currentWeaponItem.transform.rotation = Quaternion.identity; // Reset rotacji
 
-            currentWeaponPrefab = null;
-            currentWeaponItem = null;
+                currentWeaponItem.SetActive(true);
+                Destroy(currentWeaponPrefab);
 
-            UpdateInventoryUI();
+                currentWeaponPrefab = null;
+                currentWeaponItem = null;
+
+                UpdateInventoryUI();
+            }
+            else
+            {
+                Debug.LogWarning("Nie możesz upuścić tej broni, ponieważ 'canBeDropped' jest ustawione na false.");
+            }
         }
     }
 
@@ -255,33 +300,43 @@ public class Inventory : MonoBehaviour
         if (loot.Count == 0) return;
 
         GameObject lootItem = loot[0];
-        loot.RemoveAt(0);
+        InteractableItem interactableItem = lootItem.GetComponent<InteractableItem>(); // Pobieramy komponent InteractableItem
 
-        lootItem.transform.SetParent(null);
-
-        Vector3 dropPosition = transform.position;
-        dropPosition.y = dropHeight;
-
-        lootItem.transform.position = dropPosition;
-        lootItem.transform.rotation = Quaternion.identity;
-
-        lootItem.SetActive(true);
-
-        if (GridManager.Instance != null)
+        // Sprawdzamy, czy loot może być upuszczony
+        if (interactableItem != null && interactableItem.canBeDropped)
         {
-            GridManager.Instance.isBuildingMode = false;
-            GridManager.Instance.RemoveFromBuildingPrefabs(lootItem);
+            loot.RemoveAt(0);
+
+            lootItem.transform.SetParent(null);
+
+            Vector3 dropPosition = transform.position;
+            dropPosition.y = dropHeight;
+
+            lootItem.transform.position = dropPosition;
+            lootItem.transform.rotation = Quaternion.identity;
+
+            lootItem.SetActive(true);
+
+            if (GridManager.Instance != null)
+            {
+                GridManager.Instance.isBuildingMode = false;
+                GridManager.Instance.RemoveFromBuildingPrefabs(lootItem);
+            }
+
+            RemoveObjectFromLootParent(lootItem);
+
+            // Jeśli gracz miał broń ukrytą, przywracamy ją
+            if (currentWeaponPrefab != null)
+            {
+                currentWeaponPrefab.SetActive(true);
+            }
+
+            UpdateInventoryUI();
         }
-
-        RemoveObjectFromLootParent(lootItem);
-
-        // Jeśli gracz miał broń ukrytą, przywracamy ją
-        if (currentWeaponPrefab != null)
+        else
         {
-            currentWeaponPrefab.SetActive(true);
+            Debug.LogWarning("Nie możesz upuścić tego lootu, ponieważ 'canBeDropped' jest ustawione na false.");
         }
-
-        UpdateInventoryUI();
     }
 
     public void RemoveItem(GameObject item)
