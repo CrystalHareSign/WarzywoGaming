@@ -53,7 +53,7 @@ public class GridManager : MonoBehaviour
                 Vector3 mousePosition = GetMouseWorldPosition();
                 previewObject.transform.position = SnapToGrid(mousePosition);
 
-                if (Input.GetMouseButtonDown(0))
+                if (Input.GetKeyDown(KeyCode.E))
                     PlaceObject();
             }
         }
@@ -262,6 +262,12 @@ public class GridManager : MonoBehaviour
                 // Koñczymy tryb budowania
                 isBuildingMode = false;
                 ToggleGridVisibility(false);  // Wy³¹czenie siatki, jeœli to konieczne
+
+                // Sprawdzamy, czy istnieje aktywna broñ w Inventory, a jeœli tak, to j¹ dezaktywujemy
+                if (inventory != null && inventory.currentWeaponPrefab != null)
+                {
+                    inventory.currentWeaponPrefab.SetActive(true);
+                }
             }
             else
             {

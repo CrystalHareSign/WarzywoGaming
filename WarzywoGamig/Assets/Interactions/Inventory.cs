@@ -28,7 +28,7 @@ public class Inventory : MonoBehaviour
     public List<WeaponPrefabEntry> weaponPrefabsList = new List<WeaponPrefabEntry>();
     private Dictionary<string, GameObject> weaponPrefabs = new Dictionary<string, GameObject>();
 
-    private GameObject currentWeaponPrefab; // Przechowuje aktualnie wyposażoną broń
+    public GameObject currentWeaponPrefab; // Przechowuje aktualnie wyposażoną broń
     private GameObject currentWeaponItem; // Przechowuje obiekt aktualnej broni w ekwipunku
 
     public Vector3 weaponPositionOffset = new Vector3(0.5f, -0.3f, 1.0f);
