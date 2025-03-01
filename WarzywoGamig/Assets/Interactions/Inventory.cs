@@ -64,61 +64,80 @@ public class Inventory : MonoBehaviour
     }
 
     void CollectItem()
+{
+    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+    RaycastHit hit;
+
+    if (Physics.Raycast(ray, out hit, Mathf.Infinity, interactableLayer))
     {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
+        InteractableItem interactableItem = hit.collider.GetComponent<InteractableItem>();
 
-        if (Physics.Raycast(ray, out hit, Mathf.Infinity, interactableLayer))
+        if (interactableItem == null)
         {
-            InteractableItem interactableItem = hit.collider.GetComponent<InteractableItem>();
+            return;
+        }
 
-            if (interactableItem == null)
-            {
-                return;
-            }
+        // ❌ Jeśli gracz trzyma loot, nie może podnosić broni
+        if (lootParent != null && lootParent.childCount > 0 && interactableItem.isWeapon)
+        {
+            Debug.Log("Nie możesz podnieść broni, gdy trzymasz loot.");
+            return;
+        }
 
-            if (interactableItem.canBePickedUp)
+        // ❌ Jeśli gracz trzyma loot, nie może podnosić innych przedmiotów (poza bronią, ale to już blokujemy powyżej)
+        if (lootParent != null && lootParent.childCount > 0 && !interactableItem.isWeapon)
+        {
+            Debug.Log("Nie możesz podnieść przedmiotu, ponieważ trzymasz loot.");
+            return;
+        }
+
+        if (interactableItem.canBePickedUp)
+        {
+            if (interactableItem.isWeapon)
             {
-                if (interactableItem.isWeapon)
+                if (weapons.Count >= maxWeapons)
                 {
-                    if (weapons.Count >= maxWeapons)
-                    {
-                        ReplaceCurrentWeapon(interactableItem, hit.collider.gameObject);
-                    }
-                    else
-                    {
-                        weapons.Add(hit.collider.gameObject);
-                        hit.collider.gameObject.SetActive(false);
-                        EquipWeapon(interactableItem, hit.collider.gameObject);
-                    }
+                    ReplaceCurrentWeapon(interactableItem, hit.collider.gameObject);
                 }
                 else
                 {
-                    if (items.Count < maxItems)
-                    {
-                        items.Add(hit.collider.gameObject);
-                        hit.collider.gameObject.SetActive(false);
-                    }
+                    weapons.Add(hit.collider.gameObject);
+                    hit.collider.gameObject.SetActive(false);
+                    EquipWeapon(interactableItem, hit.collider.gameObject);
                 }
-
-                // Dodanie do loot i przypisanie do budowy w GridManager
-                if (interactableItem.isLoot)
-                {
-                    if (loot.Count < maxLoot)
-                    {
-                        loot.Add(hit.collider.gameObject);
-                        EquipLoot(hit.collider.gameObject);  // Wywołanie EquipLoot po dodaniu do loot
-                    }
-                    if (GridManager.Instance != null)
-                    {
-                        GridManager.Instance.AddToBuildingPrefabs(hit.collider.gameObject);
-                    }
-                }
-
-                UpdateInventoryUI();
             }
+            else if (interactableItem.isLoot)
+            {
+                if (loot.Count < maxLoot)
+                {
+                    loot.Add(hit.collider.gameObject);
+                    EquipLoot(hit.collider.gameObject);
+
+                    // ✅ Ukrywamy broń, jeśli gracz podnosi loot
+                    if (currentWeaponPrefab != null)
+                    {
+                        currentWeaponPrefab.SetActive(false);
+                    }
+                }
+
+                if (GridManager.Instance != null)
+                {
+                    GridManager.Instance.AddToBuildingPrefabs(hit.collider.gameObject);
+                }
+            }
+            else
+            {
+                if (items.Count < maxItems)
+                {
+                    items.Add(hit.collider.gameObject);
+                    hit.collider.gameObject.SetActive(false);
+                }
+            }
+
+            UpdateInventoryUI();
         }
     }
+}
 
 
     void ReplaceCurrentWeapon(InteractableItem newWeapon, GameObject newWeaponItem)
@@ -224,35 +243,34 @@ public class Inventory : MonoBehaviour
 
     void DropLoot()
     {
-        if (loot.Count == 0) return; // Jeśli nie ma lootów, zakończ
+        if (loot.Count == 0) return;
 
-        GameObject lootItem = loot[0]; // Pobieramy pierwszy przedmiot z listy loot
-        loot.RemoveAt(0); // Usuwamy go z listy loot
+        GameObject lootItem = loot[0];
+        loot.RemoveAt(0);
 
-        lootItem.transform.SetParent(null); // Upewniamy się, że lootItem nie jest dzieckiem lootParent
+        lootItem.transform.SetParent(null);
 
-        // Wyznaczamy pozycję upuszczenia przy zadanej wysokości
-        Vector3 dropPosition = transform.position; // Pozycja gracza (można dostosować do innego obiektu)
-        dropPosition.y = dropHeight; // Ustawiamy wysokość upuszczenia na wartość dropHeight
+        Vector3 dropPosition = transform.position;
+        dropPosition.y = dropHeight;
 
-        lootItem.transform.position = dropPosition; // Ustawiamy pozycję lootItem
-        lootItem.transform.rotation = Quaternion.identity; // Reset rotacji
+        lootItem.transform.position = dropPosition;
+        lootItem.transform.rotation = Quaternion.identity;
 
-        lootItem.SetActive(true); // Aktywuj loot w scenie
+        lootItem.SetActive(true);
 
-        // Wyłącz tryb budowania, jeśli GridManager istnieje
         if (GridManager.Instance != null)
         {
             GridManager.Instance.isBuildingMode = false;
-
-            // Usuwamy przedmiot z BuildingPrefabs w GridManager
             GridManager.Instance.RemoveFromBuildingPrefabs(lootItem);
         }
 
-        // Usuwamy loot z podglądu (w scenie) - usuwamy go z lootParent
         RemoveObjectFromLootParent(lootItem);
 
-        //Debug.Log($"Upuszczono loot: {lootItem.name} na wysokości {dropHeight}");
+        // Jeśli gracz miał broń ukrytą, przywracamy ją
+        if (currentWeaponPrefab != null)
+        {
+            currentWeaponPrefab.SetActive(true);
+        }
 
         UpdateInventoryUI();
     }
