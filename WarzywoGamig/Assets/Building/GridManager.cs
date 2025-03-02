@@ -78,6 +78,13 @@ public class GridManager : MonoBehaviour
 
     private void DropLootItem(GameObject lootItem)
     {
+        Inventory inventory = Object.FindFirstObjectByType<Inventory>(); // ZnajdŸ skrypt Inventory
+
+        if (inventory != null)
+        {
+            inventory.isLootBeingDropped = true; // Ustaw flagê, ¿e loot jest w trakcie upuszczania
+        }
+
         // Usuwamy przedmiot z LootParent, aby go "upuœciæ"
         lootItem.transform.SetParent(null); // Przenosimy przedmiot na œwiat
 
@@ -87,12 +94,12 @@ public class GridManager : MonoBehaviour
         // Ustawiamy pocz¹tkow¹ rotacjê wzglêdem œwiata (np. ustawiamy na 0, 0, 0)
         lootItem.transform.rotation = Quaternion.identity;
 
-        // Jeœli przedmiot ma komponent Rigidbody, w³¹czamy fizykê (jeœli by³a wy³¹czona)
-        Rigidbody rb = lootItem.GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            rb.isKinematic = false; // W³¹czamy fizykê
-        }
+        //// Jeœli przedmiot ma komponent Rigidbody, w³¹czamy fizykê (jeœli by³a wy³¹czona)
+        //Rigidbody rb = lootItem.GetComponent<Rigidbody>();
+        //if (rb != null)
+        //{
+        //    rb.isKinematic = false; // W³¹czamy fizykê
+        //}
 
         // Ustawiamy przedmiot na Loot
         lootItem.GetComponent<InteractableItem>().isLoot = true;
@@ -113,6 +120,12 @@ public class GridManager : MonoBehaviour
         // Ukrywamy kafelki (lub inne obiekty zwi¹zane z trybem budowania)
         ToggleGridVisibility(false);
 
+        // Sprawdzamy, czy istnieje aktywna broñ w Inventory, a jeœli tak, to j¹ dezaktywujemy
+        if (inventory != null && inventory.currentWeaponPrefab != null)
+        {
+            inventory.currentWeaponPrefab.SetActive(true);
+            inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+        }
         Debug.Log("Przedmiot upuszczony, tryb budowania wy³¹czony i kafelki ukryte.");
     }
 

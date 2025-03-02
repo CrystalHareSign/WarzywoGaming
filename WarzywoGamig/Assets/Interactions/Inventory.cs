@@ -16,6 +16,7 @@ public class Inventory : MonoBehaviour
 
     public Transform weaponParent; // Transform, do którego będą przypisywane bronie jako dzieci
     public Transform lootParent; // Transform, do którego będą przypisane lootowe przedmioty
+    public bool isLootBeingDropped = false; // Flaga kontrolująca proces upuszczania lootu
 
 
     [System.Serializable]
@@ -216,13 +217,16 @@ public class Inventory : MonoBehaviour
 
     void DropItemFromInventory()
     {
-        if (currentWeaponItem != null) // Jeśli to broń
-        {
-            DropWeapon();
-        }
-        else if (loot.Count > 0) // Jeśli mamy loot do upuszczenia
+        // Jeśli loot jest w trakcie upuszczania, nie rób nic
+        if (isLootBeingDropped) return;
+
+        if (loot.Count > 0) // Jeśli mamy loot do upuszczenia
         {
             DropLoot();
+        }
+        else if (currentWeaponItem != null) // Jeśli mamy broń do upuszczenia
+        {
+            DropWeapon();
         }
         else if (items.Count > 0) // Jeśli mamy przedmioty do upuszczenia
         {
