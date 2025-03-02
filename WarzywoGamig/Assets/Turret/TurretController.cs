@@ -76,19 +76,6 @@ public class TurretController : MonoBehaviour
             Debug.LogWarning("[WARNING] EnterArea jest niezdefiniowane.");
         }
     }
-
-    private IEnumerator RaiseTurret()
-    {
-        float targetHeight = turretBase.position.y + raiseHeight;
-        while (turretBase.position.y < targetHeight)
-        {
-            turretBase.position += Vector3.up * raiseSpeed * Time.deltaTime;
-            yield return null;
-        }
-        turretBase.position = new Vector3(turretBase.position.x, targetHeight, turretBase.position.z);
-        isRaised = true;
-    }
-
     private void ActivateTurretGun()
     {
         // Tutaj aktywujesz dzia³ko, np. poprzez w³¹czenie skryptu strzelania
@@ -101,22 +88,68 @@ public class TurretController : MonoBehaviour
             Debug.LogWarning("[WARNING] Dzia³ko nie zosta³o przypisane.");
         }
     }
+    private IEnumerator RaiseTurret()
+    {
+        float targetHeight = turretBase.position.y + raiseHeight;
+        float targetEnterAreaHeight = enterArea.position.y + raiseHeight;
+
+        // Okreœlamy wektory docelowe
+        Vector3 targetTurretBasePosition = new Vector3(turretBase.position.x, targetHeight, turretBase.position.z);
+        Vector3 targetEnterAreaPosition = new Vector3(enterArea.position.x, targetEnterAreaHeight, enterArea.position.z);
+
+        while (turretBase.position.y < targetHeight)
+        {
+            // P³ynne przesuwanie wie¿yczki
+            turretBase.position = Vector3.MoveTowards(turretBase.position, targetTurretBasePosition, raiseSpeed * Time.deltaTime);
+
+            // P³ynne przesuwanie EnterArea
+            enterArea.position = Vector3.MoveTowards(enterArea.position, targetEnterAreaPosition, raiseSpeed * Time.deltaTime);
+
+            // P³ynne przesuwanie gracza
+            playerMovement.transform.position = Vector3.MoveTowards(playerMovement.transform.position, enterArea.position, raiseSpeed * Time.deltaTime);
+
+            yield return null;
+        }
+
+        // Ustawienie finalnej pozycji
+        turretBase.position = targetTurretBasePosition;
+        enterArea.position = targetEnterAreaPosition;
+
+        isRaised = true;
+    }
 
     private IEnumerator LowerTurret()
     {
         isCooldown = true;
         float targetHeight = turretBase.position.y - raiseHeight;
+        float targetEnterAreaHeight = enterArea.position.y - raiseHeight;
+
+        // Okreœlamy wektory docelowe
+        Vector3 targetTurretBasePosition = new Vector3(turretBase.position.x, targetHeight, turretBase.position.z);
+        Vector3 targetEnterAreaPosition = new Vector3(enterArea.position.x, targetEnterAreaHeight, enterArea.position.z);
+
         while (turretBase.position.y > targetHeight)
         {
-            turretBase.position -= Vector3.up * lowerSpeed * Time.deltaTime;
+            // P³ynne przesuwanie wie¿yczki
+            turretBase.position = Vector3.MoveTowards(turretBase.position, targetTurretBasePosition, lowerSpeed * Time.deltaTime);
+
+            // P³ynne przesuwanie EnterArea
+            enterArea.position = Vector3.MoveTowards(enterArea.position, targetEnterAreaPosition, lowerSpeed * Time.deltaTime);
+
+            // P³ynne przesuwanie gracza
+            playerMovement.transform.position = Vector3.MoveTowards(playerMovement.transform.position, enterArea.position, lowerSpeed * Time.deltaTime);
+
             yield return null;
         }
-        turretBase.position = new Vector3(turretBase.position.x, targetHeight, turretBase.position.z);
+
+        // Ustawienie finalnej pozycji
+        turretBase.position = targetTurretBasePosition;
+        enterArea.position = targetEnterAreaPosition;
 
         // Po opuszczeniu wie¿yczki teleportacja gracza
         TeleportPlayer(exitArea);
 
-        // W³¹czenie z powrotem skryptu poruszania gracza
+        // W³¹czenie skryptu poruszania gracza
         if (playerMovement != null)
         {
             playerMovement.enabled = true;
