@@ -744,7 +744,7 @@ GameObject:
   - component: {fileID: 191199840}
   m_Layer: 7
   m_Name: ' Opona LT'
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -836,7 +836,7 @@ MonoBehaviour:
   startAsNonInteractive: 1
   canBePickedUp: 0
   canBeDropped: 0
-  isWeapon: 1
+  isWeapon: 0
   isLoot: 0
   alwaysInteractive: 0
   hasCooldown: 0
@@ -1552,7 +1552,7 @@ GameObject:
   - component: {fileID: 346508346}
   m_Layer: 7
   m_Name: ' Opona PP'
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5303,7 +5303,7 @@ GameObject:
   - component: {fileID: 1503271511}
   m_Layer: 7
   m_Name: ' Opona LP'
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5341,7 +5341,7 @@ MonoBehaviour:
   startAsNonInteractive: 1
   canBePickedUp: 0
   canBeDropped: 0
-  isWeapon: 1
+  isWeapon: 0
   isLoot: 0
   alwaysInteractive: 0
   hasCooldown: 0
@@ -5615,7 +5615,7 @@ GameObject:
   - component: {fileID: 1582969585}
   m_Layer: 7
   m_Name: ' Opona PT'
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7113,7 +7113,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2005437070
 Transform:
   m_ObjectHideFlags: 0
