@@ -2879,7 +2879,7 @@ MonoBehaviour:
   buildingPrefabs: []
   isBuildingMode: 0
   checkInterval: 0.5
-  inventoryUI: {fileID: 0}
+  inventoryUI: {fileID: 351697965}
 --- !u!4 &623208566
 Transform:
   m_ObjectHideFlags: 0
