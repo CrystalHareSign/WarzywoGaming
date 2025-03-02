@@ -6,6 +6,7 @@ public class AssignInteraction : MonoBehaviour
 {
     public GameObject interactableLeft; // Przedmiot interaktywny 1
     public GameObject interactableRight; // Przedmiot interaktywny 2
+    [Header("Body")]
     public GameObject[] manualMoveObjects; // Rêcznie przypisane obiekty
     private List<GameObject> moveObjects = new List<GameObject>(); // Lista przedmiotów do przenoszenia
     public float moveDistance = 1.0f; // Odleg³oœæ przenoszenia obiektów
