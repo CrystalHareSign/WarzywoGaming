@@ -13,6 +13,17 @@ public class PlayerInteraction : MonoBehaviour
     private float interactionTimer = 0f;
     private InteractableItem currentInteractableItem = null;
     private float requiredHoldTime = 5f;
+    private TurretController turretController; // Dodajemy referencjê do TurretController
+
+    void Start()
+    {
+        // Znajdujemy TurretController w scenie
+        turretController = Object.FindFirstObjectByType<TurretController>();
+        if (turretController == null)
+        {
+            Debug.LogError("Brak obiektu TurretController w scenie.");
+        }
+    }
 
     void Update()
     {
@@ -62,7 +73,7 @@ public class PlayerInteraction : MonoBehaviour
                         {
                             if (currentInteractableItem.isTurret) // Sprawdzamy, czy obiekt to wie¿yczka
                             {
-                                TurretMode(currentInteractableItem);
+                                UseTurret(interactableItem); // Uruchamiamy tryb wie¿yczki
                             }
                             else
                             {
@@ -109,12 +120,16 @@ public class PlayerInteraction : MonoBehaviour
             interactableItem.Interact();
         }
     }
-    private void TurretMode(InteractableItem interactableItem)
+
+    private void UseTurret(InteractableItem interactableItem)
     {
-        // Tutaj dodaj logikê, która bêdzie wykonywana, gdy gracz aktywuje wie¿yczkê.
-        Debug.Log($"{interactableItem.itemName} jest teraz w trybie wie¿yczki!");
-        // Mo¿esz dodaæ logikê aktywacji trybu wie¿yczki, np. rozpoczêcie strzelania, obracanie itp.
+        if (turretController != null)
+        {
+            Debug.Log($"{interactableItem.itemName} jest teraz w trybie wie¿yczki!");
+            turretController.UseTurret(); // U¿ywamy metody z TurretController do aktywacji wie¿yczki
+        }
     }
+
     private void HideUI()
     {
         if (progressCircle != null)
