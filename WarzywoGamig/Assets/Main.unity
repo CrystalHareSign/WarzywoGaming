@@ -400,6 +400,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 7
       objectReference: {fileID: 0}
+    - target: {fileID: 1312443720054046551, guid: 4db89abf19f1d734d9c6bb56251226d3, type: 3}
+      propertyPath: m_TagString
+      value: Loot
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1254,6 +1258,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 7
       objectReference: {fileID: 0}
+    - target: {fileID: 1260716534702189861, guid: 188c18add269d2f4dad7bf975a8d030b, type: 3}
+      propertyPath: m_TagString
+      value: Weapon
+      objectReference: {fileID: 0}
     - target: {fileID: 1796291232013545334, guid: 188c18add269d2f4dad7bf975a8d030b, type: 3}
       propertyPath: m_LocalPosition.x
       value: -8.250099
@@ -1507,6 +1515,10 @@ PrefabInstance:
     - target: {fileID: 6348389216423563156, guid: 4263c6e3e93789b44882b44b3dceb4e1, type: 3}
       propertyPath: m_Layer
       value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 6348389216423563156, guid: 4263c6e3e93789b44882b44b3dceb4e1, type: 3}
+      propertyPath: m_TagString
+      value: Loot
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2093,6 +2105,10 @@ PrefabInstance:
     - target: {fileID: 2335924095354780036, guid: ea5a89b664391994eb00a4929e70e38b, type: 3}
       propertyPath: m_Name
       value: Rifle
+      objectReference: {fileID: 0}
+    - target: {fileID: 2335924095354780036, guid: ea5a89b664391994eb00a4929e70e38b, type: 3}
+      propertyPath: m_TagString
+      value: Weapon
       objectReference: {fileID: 0}
     - target: {fileID: 2763177521429961776, guid: ea5a89b664391994eb00a4929e70e38b, type: 3}
       propertyPath: fireRate
@@ -2863,6 +2879,7 @@ MonoBehaviour:
   buildingPrefabs: []
   isBuildingMode: 0
   checkInterval: 0.5
+  inventoryUI: {fileID: 0}
 --- !u!4 &623208566
 Transform:
   m_ObjectHideFlags: 0
@@ -3380,15 +3397,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   interactableLeft: {fileID: 1636800920}
   interactableRight: {fileID: 406868863}
-  moveObjects:
+  manualMoveObjects:
   - {fileID: 905466875}
-  - {fileID: 7351473872481356819}
-  - {fileID: 573163803}
-  - {fileID: 1316888107}
-  - {fileID: 715916810}
-  - {fileID: 422394330}
-  - {fileID: 816699481}
-  - {fileID: 2022038531}
   moveDistance: 10
   moveDuration: 2
 --- !u!114 &905466878
@@ -3611,114 +3621,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 962743393}
   m_CullTransparentMesh: 1
---- !u!1 &980959465
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 980959469}
-  - component: {fileID: 980959468}
-  - component: {fileID: 980959467}
-  - component: {fileID: 980959466}
-  m_Layer: 0
-  m_Name: Cube
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!65 &980959466
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 980959465}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!23 &980959467
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 980959465}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &980959468
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 980959465}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!4 &980959469
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 980959465}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: 7, z: 9.4}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &983533623
 GameObject:
   m_ObjectHideFlags: 0
@@ -6444,6 +6346,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 7
       objectReference: {fileID: 0}
+    - target: {fileID: 6348389216423563156, guid: 4263c6e3e93789b44882b44b3dceb4e1, type: 3}
+      propertyPath: m_TagString
+      value: Loot
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6923,6 +6829,10 @@ PrefabInstance:
     - target: {fileID: 1312443720054046551, guid: 4db89abf19f1d734d9c6bb56251226d3, type: 3}
       propertyPath: m_Layer
       value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 1312443720054046551, guid: 4db89abf19f1d734d9c6bb56251226d3, type: 3}
+      propertyPath: m_TagString
+      value: Loot
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7493,8 +7403,6 @@ MonoBehaviour:
   - {fileID: 0}
   items:
   - {fileID: 0}
-  loot:
-  - {fileID: 0}
   maxWeapons: 1
   maxItems: 0
   maxLoot: 1
@@ -7510,6 +7418,7 @@ MonoBehaviour:
     weaponPrefab: {fileID: 1532319655}
   - weaponName: Rifle
     weaponPrefab: {fileID: 945966471}
+  currentWeaponPrefab: {fileID: 0}
   weaponPositionOffset: {x: 0.5, y: -0.3, z: 1}
   weaponRotationOffset: {x: 185, y: 175, z: 0}
   lootPositionOffset: {x: 0.5, y: -0.7, z: 1}
@@ -7525,6 +7434,10 @@ PrefabInstance:
     - target: {fileID: 2391441681660469431, guid: c782c8810660123459274786c4701eb5, type: 3}
       propertyPath: m_Name
       value: ItemPrefab
+      objectReference: {fileID: 0}
+    - target: {fileID: 2391441681660469431, guid: c782c8810660123459274786c4701eb5, type: 3}
+      propertyPath: m_TagString
+      value: Item
       objectReference: {fileID: 0}
     - target: {fileID: 2953083661723229773, guid: c782c8810660123459274786c4701eb5, type: 3}
       propertyPath: m_IsTrigger
@@ -7684,11 +7597,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 320669737569192163, guid: 63be283cc17236444a1160d9be1249d1, type: 3}
   m_PrefabInstance: {fileID: 3290737905201669706}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &7351473872481356819 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2391441681660469431, guid: c782c8810660123459274786c4701eb5, type: 3}
-  m_PrefabInstance: {fileID: 70671304840066653}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &8371680155304217337
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7736,7 +7644,6 @@ SceneRoots:
   - {fileID: 391909753}
   - {fileID: 1869351813}
   - {fileID: 1949269490}
-  - {fileID: 980959469}
   - {fileID: 745991812}
   - {fileID: 336749633}
   - {fileID: 1705292397}
