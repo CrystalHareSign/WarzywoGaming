@@ -46,18 +46,26 @@ public class GridManager : MonoBehaviour
 
     void Update()
     {
-        if (isBuildingMode)
+        if (isBuildingMode && previewObject != null)
         {
+            Vector3 mousePosition = GetMouseWorldPosition();
+            previewObject.transform.position = SnapToGrid(mousePosition);
 
-            if (previewObject != null)
+            if (Input.GetKeyDown(KeyCode.E))
+                PlaceObject();
+        }
+
+        // Obs³uguje naciœniêcie Q do wyjœcia z trybu budowania i upuszczenia przedmiotu
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            // Jeœli gracz ma podniesiony przedmiot Loot
+            if (LootParent.childCount > 0)
             {
-                Vector3 mousePosition = GetMouseWorldPosition();
-                previewObject.transform.position = SnapToGrid(mousePosition);
-
-                if (Input.GetKeyDown(KeyCode.E))
-                    PlaceObject();
+                GameObject lootItem = LootParent.GetChild(0).gameObject; // Zak³adamy, ¿e gracz ma tylko jeden przedmiot w rêce
+                DropLootItem(lootItem); // Upuszczamy przedmiot
             }
         }
+
         timeSinceLastCheck += Time.deltaTime;
 
         // Sprawdzamy co okreœlony czas
@@ -67,6 +75,47 @@ public class GridManager : MonoBehaviour
             timeSinceLastCheck = 0f; // Resetujemy licznik
         }
     }
+
+    private void DropLootItem(GameObject lootItem)
+    {
+        // Usuwamy przedmiot z LootParent, aby go "upuœciæ"
+        lootItem.transform.SetParent(null); // Przenosimy przedmiot na œwiat
+
+        // Opcjonalnie: ustawiamy jego pozycjê, np. aby wyl¹dowa³ na ziemi
+        lootItem.transform.position = GetMouseWorldPosition();
+
+        // Ustawiamy pocz¹tkow¹ rotacjê wzglêdem œwiata (np. ustawiamy na 0, 0, 0)
+        lootItem.transform.rotation = Quaternion.identity;
+
+        // Jeœli przedmiot ma komponent Rigidbody, w³¹czamy fizykê (jeœli by³a wy³¹czona)
+        Rigidbody rb = lootItem.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = false; // W³¹czamy fizykê
+        }
+
+        // Ustawiamy przedmiot na Loot
+        lootItem.GetComponent<InteractableItem>().isLoot = true;
+
+        // Usuwamy przedmiot z listy BuildingPrefabs, co automatycznie wy³¹cza tryb budowania
+        buildingPrefabs.Remove(lootItem); // Usuwamy obiekt z listy prefabrykowanych obiektów budowy
+
+        // Wy³¹czamy tryb budowania
+        isBuildingMode = false;
+
+        // Usuwamy podgl¹d prefabrykowanego obiektu, jeœli istnieje
+        if (previewObject != null)
+        {
+            Destroy(previewObject);
+            previewObject = null;
+        }
+
+        // Ukrywamy kafelki (lub inne obiekty zwi¹zane z trybem budowania)
+        ToggleGridVisibility(false);
+
+        Debug.Log("Przedmiot upuszczony, tryb budowania wy³¹czony i kafelki ukryte.");
+    }
+
     private void CheckTiles()
     {
         List<Vector3> tilesToActivate = new List<Vector3>();
