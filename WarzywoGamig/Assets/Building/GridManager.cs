@@ -12,6 +12,7 @@ public class GridManager : MonoBehaviour
     public GameObject gridTilePrefab; // Prefab kafelka siatki
     public List<GameObject> buildingPrefabs = new List<GameObject>(); // Lista dostêpnych prefabów
     public bool isBuildingMode = false; // Tryb budowy w³¹czony/wy³¹czony
+    public float dropHeight = 7f; // Wysokoœæ, na jakiej loot ma upaœæ
     public float checkInterval = 2f; // Czas (w sekundach) po którym sprawdzamy kafelki
     private float timeSinceLastCheck = 0f; // Zmienna do liczenia czasu
 
@@ -88,18 +89,16 @@ public class GridManager : MonoBehaviour
         // Usuwamy przedmiot z LootParent, aby go "upuœciæ"
         lootItem.transform.SetParent(null); // Przenosimy przedmiot na œwiat
 
-        // Opcjonalnie: ustawiamy jego pozycjê, np. aby wyl¹dowa³ na ziemi
-        lootItem.transform.position = GetMouseWorldPosition();
+        // Ustawiamy pozycjê przedmiotu na pozycji gracza, ale z okreœlon¹ wysokoœci¹ 'dropHeight' (na osi Y)
+        lootItem.transform.position = new Vector3
+        (
+            player.transform.position.x, // U¿ywamy pozycji gracza w X
+            dropHeight, // Ustawiamy Y na dropHeight
+            player.transform.position.z  // U¿ywamy pozycji gracza w Z
+        );
 
         // Ustawiamy pocz¹tkow¹ rotacjê wzglêdem œwiata (np. ustawiamy na 0, 0, 0)
         lootItem.transform.rotation = Quaternion.identity;
-
-        //// Jeœli przedmiot ma komponent Rigidbody, w³¹czamy fizykê (jeœli by³a wy³¹czona)
-        //Rigidbody rb = lootItem.GetComponent<Rigidbody>();
-        //if (rb != null)
-        //{
-        //    rb.isKinematic = false; // W³¹czamy fizykê
-        //}
 
         // Ustawiamy przedmiot na Loot
         lootItem.GetComponent<InteractableItem>().isLoot = true;
@@ -120,7 +119,7 @@ public class GridManager : MonoBehaviour
         // Ukrywamy kafelki (lub inne obiekty zwi¹zane z trybem budowania)
         ToggleGridVisibility(false);
 
-        // Sprawdzamy, czy istnieje aktywna broñ w Inventory, a jeœli tak, to j¹ dezaktywujemy
+        // Sprawdzamy, czy istnieje nieaktywna broñ w Inventory, a jeœli tak, to j¹ aktywujemy
         if (inventory != null && inventory.currentWeaponPrefab != null)
         {
             inventory.currentWeaponPrefab.SetActive(true);
