@@ -18,6 +18,9 @@ public class InteractableItem : MonoBehaviour, IInteractable
     public bool isWeapon;    // Okreœla, czy przedmiot jest broni¹
     public bool isLoot = false;  // Flaga, która decyduje, czy przedmiot jest lootem
 
+    [Header("Turret")]
+    public bool isTurret = false; // Okreœla, czy przedmiot jest wie¿yczk¹
+
     [Header("System kierowczy")]
     public bool alwaysInteractive = false;
     public bool hasCooldown = false;

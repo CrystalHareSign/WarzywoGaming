@@ -60,7 +60,14 @@ public class PlayerInteraction : MonoBehaviour
 
                         if (interactionTimer >= requiredHoldTime)
                         {
-                            InteractWithObject(currentInteractableItem);
+                            if (currentInteractableItem.isTurret) // Sprawdzamy, czy obiekt to wie¿yczka
+                            {
+                                TurretMode(currentInteractableItem);
+                            }
+                            else
+                            {
+                                InteractWithObject(currentInteractableItem);
+                            }
                             interactionTimer = 0f;
                             HideUI();
                         }
@@ -102,7 +109,12 @@ public class PlayerInteraction : MonoBehaviour
             interactableItem.Interact();
         }
     }
-
+    private void TurretMode(InteractableItem interactableItem)
+    {
+        // Tutaj dodaj logikê, która bêdzie wykonywana, gdy gracz aktywuje wie¿yczkê.
+        Debug.Log($"{interactableItem.itemName} jest teraz w trybie wie¿yczki!");
+        // Mo¿esz dodaæ logikê aktywacji trybu wie¿yczki, np. rozpoczêcie strzelania, obracanie itp.
+    }
     private void HideUI()
     {
         if (progressCircle != null)
