@@ -11,7 +11,7 @@ public class TurretController : MonoBehaviour
     public float lowerSpeed = 2f; // Prêdkoœæ opuszczania wie¿yczki
     public GameObject turretGun;  // Obiekt dzia³ka wie¿yczki
     public PlayerMovement playerMovement; // Skrypt odpowiadaj¹cy za poruszanie gracza
-    public Inventory playerInventory;  // Skrypt odpowiadaj¹cy za inwentaryzacjê
+    public Inventory inventory;  // Skrypt odpowiadaj¹cy za inwentaryzacjê
 
     private bool isRaised = false;   // Flaga, która informuje, czy wie¿yczka jest uniesiona
     private bool isUsingTurret = false; // Flaga, która informuje, czy gracz korzysta z wie¿yczki
@@ -21,9 +21,9 @@ public class TurretController : MonoBehaviour
     {
         // Znajdujemy skrypt PlayerMovement w scenie
         playerMovement = Object.FindFirstObjectByType<PlayerMovement>();
-        playerInventory = Object.FindFirstObjectByType<Inventory>();  // Przypisujemy skrypt Inventory
+        inventory = Object.FindFirstObjectByType<Inventory>();  // Przypisujemy skrypt Inventory
 
-        if (playerMovement == null || playerInventory == null)
+        if (playerMovement == null || inventory == null)
         {
             Debug.LogError("Brak komponentów PlayerMovement lub Inventory w scenie.");
         }
@@ -56,11 +56,18 @@ public class TurretController : MonoBehaviour
                 playerMovement.enabled = false;
             }
 
+            // Dezaktywacja broni gracza
+            if (inventory != null && inventory.currentWeaponPrefab != null)
+            {
+                inventory.currentWeaponPrefab.SetActive(false);  // Dezaktywujemy broñ
+                Debug.Log("Dezaktywujê broñ gracza.");
+            }
+
             // Wy³¹czenie Inwentaryzacji
-            if (playerInventory != null)
+            if (inventory != null)
             {
                 Debug.Log("Wy³¹czam inwentaryzacjê.");
-                playerInventory.enabled = false;  // Wy³¹czamy skrypt inwentaryzacji
+                inventory.enabled = false;  // Wy³¹czamy skrypt inwentaryzacji
             }
 
             // Podniesienie wie¿yczki
@@ -148,10 +155,17 @@ public class TurretController : MonoBehaviour
         }
 
         // Ponowne w³¹czenie Inwentaryzacji
-        if (playerInventory != null)
+        if (inventory != null)
         {
             Debug.Log("W³¹czam inwentaryzacjê.");
-            playerInventory.enabled = true;  // W³¹czamy z powrotem inwentaryzacjê
+            inventory.enabled = true;  // W³¹czamy z powrotem inwentaryzacjê
+        }
+
+        // Ponowna aktywacja broni gracza
+        if (inventory != null && inventory.currentWeaponPrefab != null)
+        {
+            inventory.currentWeaponPrefab.SetActive(true);  // Aktywujemy broñ
+            Debug.Log("Aktywujê broñ gracza.");
         }
 
         DeactivateTurretGun();
