@@ -23,7 +23,7 @@ public class PlayerInteraction : MonoBehaviour
         }
 
         // Sprawdzamy, czy gracz trzyma loot
-        Inventory playerInventory = FindObjectOfType<Inventory>();
+        Inventory playerInventory = Object.FindFirstObjectByType<Inventory>();
         if (playerInventory != null && playerInventory.lootParent != null && playerInventory.lootParent.childCount > 0)
         {
             HideUI();
