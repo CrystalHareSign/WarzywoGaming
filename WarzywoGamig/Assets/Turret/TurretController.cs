@@ -37,9 +37,22 @@ public class TurretController : MonoBehaviour
             {
                 StartCoroutine(LowerTurret());
             }
+
+            // Obracanie EnterArea zgodnie z rotacj¹ gracza
+            RotateEnterAreaWithPlayer();
         }
     }
+    private void RotateEnterAreaWithPlayer()
+    {
+        if (playerMovement != null && enterArea != null)
+        {
+            // Przypisujemy rotacjê gracza tylko w osi Y
+            float playerRotationY = playerMovement.transform.rotation.eulerAngles.y;
 
+            // Ustawiamy rotacjê EnterArea na rotacjê gracza w osi Y
+            enterArea.rotation = Quaternion.Euler(0, playerRotationY, 0);
+        }
+    }
     public void UseTurret()
     {
         if (!isUsingTurret)
