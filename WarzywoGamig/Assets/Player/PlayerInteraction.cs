@@ -22,6 +22,14 @@ public class PlayerInteraction : MonoBehaviour
             return;
         }
 
+        // Sprawdzamy, czy gracz trzyma loot
+        Inventory playerInventory = FindObjectOfType<Inventory>();
+        if (playerInventory != null && playerInventory.lootParent != null && playerInventory.lootParent.childCount > 0)
+        {
+            HideUI();
+            return; // Zatrzymujemy dalsze przetwarzanie, gdy gracz trzyma loot
+        }
+
         RaycastHit hit;
         if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward, out hit, interactionRange, interactableLayer))
         {
