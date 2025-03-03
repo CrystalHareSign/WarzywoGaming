@@ -1,31 +1,38 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 
 public class TurretController : MonoBehaviour
 {
-    public Transform enterArea;   // Punkt, do którego teleportuje siê gracz
-    public Transform exitArea;    // Punkt, z którego teleportuje siê gracz po zakoñczeniu
-    public Transform turretBase;  // Transform wie¿yczki (czêœæ, która bêdzie siê unosiæ)
-    public float raiseHeight = 5f; // Wysokoœæ, na któr¹ wie¿yczka ma siê podnieœæ
-    public float raiseSpeed = 2f; // Prêdkoœæ podnoszenia wie¿yczki
-    public float lowerSpeed = 2f; // Prêdkoœæ opuszczania wie¿yczki
-    public GameObject turretGun;  // Obiekt dzia³ka wie¿yczki
-    public PlayerMovement playerMovement; // Skrypt odpowiadaj¹cy za poruszanie gracza
-    public Inventory inventory;  // Skrypt odpowiadaj¹cy za inwentaryzacjê
+    public Transform enterArea;   // Punkt, do ktÃ³rego teleportuje siÄ™ gracz
+    public Transform exitArea;    // Punkt, z ktÃ³rego teleportuje siÄ™ gracz po zakoÅ„czeniu
+    public Transform turretBase;  // Transform wieÅ¼yczki (czÄ™Å›Ä‡, ktÃ³ra bÄ™dzie siÄ™ unosiÄ‡)
+    public float raiseHeight = 5f; // WysokoÅ›Ä‡, na ktÃ³rÄ… wieÅ¼yczka ma siÄ™ podnieÅ›Ä‡
+    public float raiseSpeed = 5f; // PrÄ™dkoÅ›Ä‡ podnoszenia wieÅ¼yczki (zwiÄ™kszona dla pÅ‚ynnoÅ›ci)
+    public float lowerSpeed = 5f; // PrÄ™dkoÅ›Ä‡ opuszczania wieÅ¼yczki (zwiÄ™kszona dla pÅ‚ynnoÅ›ci)
+    public GameObject turretGun;  // Obiekt dziaÅ‚ka wieÅ¼yczki
+    public PlayerMovement playerMovement; // Skrypt odpowiadajÄ…cy za poruszanie gracza
+    public Inventory inventory;  // Skrypt odpowiadajÄ…cy za inwentaryzacjÄ™
 
-    private bool isRaised = false;   // Flaga, która informuje, czy wie¿yczka jest uniesiona
-    private bool isUsingTurret = false; // Flaga, która informuje, czy gracz korzysta z wie¿yczki
-    private bool isCooldown = false; // Flaga kontroluj¹ca opóŸnienie przy opuszczaniu
+    public float rotationResetSpeed = 3f; // PrÄ™dkoÅ›Ä‡ resetowania rotacji
+    private Quaternion initialEnterAreaRotation; // PoczÄ…tkowa rotacja enterArea
+
+    private bool isRaised = false;   // Flaga, ktÃ³ra informuje, czy wieÅ¼yczka jest uniesiona
+    private bool isUsingTurret = false; // Flaga, ktÃ³ra informuje, czy gracz korzysta z wieÅ¼yczki
+    private bool isCooldown = false; // Flaga kontrolujÄ…ca opÃ³Åºnienie przy opuszczaniu
 
     void Start()
     {
-        // Znajdujemy skrypt PlayerMovement w scenie
         playerMovement = Object.FindFirstObjectByType<PlayerMovement>();
-        inventory = Object.FindFirstObjectByType<Inventory>();  // Przypisujemy skrypt Inventory
+        inventory = Object.FindFirstObjectByType<Inventory>();
 
         if (playerMovement == null || inventory == null)
         {
-            Debug.LogError("Brak komponentów PlayerMovement lub Inventory w scenie.");
+            Debug.LogError("Brak komponentÃ³w PlayerMovement lub Inventory w scenie.");
+        }
+
+        if (enterArea != null)
+        {
+            initialEnterAreaRotation = enterArea.rotation;
         }
     }
 
@@ -38,55 +45,44 @@ public class TurretController : MonoBehaviour
                 StartCoroutine(LowerTurret());
             }
 
-            // Obracanie EnterArea zgodnie z rotacj¹ gracza
             RotateEnterAreaWithPlayer();
         }
     }
+
     private void RotateEnterAreaWithPlayer()
     {
         if (playerMovement != null && enterArea != null)
         {
-            // Przypisujemy rotacjê gracza tylko w osi Y
             float playerRotationY = playerMovement.transform.rotation.eulerAngles.y;
-
-            // Ustawiamy rotacjê EnterArea na rotacjê gracza w osi Y
-            enterArea.rotation = Quaternion.Euler(0, playerRotationY, 0);
+            enterArea.rotation = Quaternion.Lerp(enterArea.rotation, Quaternion.Euler(0, playerRotationY, 0), Time.deltaTime * 5f); // PÅ‚ynniejsza interpolacja
         }
     }
+
     public void UseTurret()
     {
         if (!isUsingTurret)
         {
-            Debug.Log("Aktywujê wie¿yczkê.");
+            Debug.Log("AktywujÄ™ wieÅ¼yczkÄ™.");
 
-            // Teleportacja gracza do EnterArea
             TeleportPlayer(enterArea);
 
-            // Wy³¹czenie skryptu poruszania gracza
             if (playerMovement != null)
             {
-                Debug.Log("Wy³¹czam skrypt PlayerMovement.");
                 playerMovement.enabled = false;
             }
 
-            // Dezaktywacja broni gracza
             if (inventory != null && inventory.currentWeaponPrefab != null)
             {
-                inventory.currentWeaponPrefab.SetActive(false);  // Dezaktywujemy broñ
-                Debug.Log("Dezaktywujê broñ gracza.");
+                inventory.currentWeaponPrefab.SetActive(false);
             }
 
-            // Wy³¹czenie Inwentaryzacji
             if (inventory != null)
             {
-                Debug.Log("Wy³¹czam inwentaryzacjê.");
-                inventory.enabled = false;  // Wy³¹czamy skrypt inwentaryzacji
+                inventory.enabled = false;
             }
 
-            // Podniesienie wie¿yczki
             StartCoroutine(RaiseTurret());
 
-            // Aktywowanie dzia³ania dzia³ka (np. za pomoc¹ skryptu do strzelania)
             ActivateTurretGun();
 
             isUsingTurret = true;
@@ -97,12 +93,7 @@ public class TurretController : MonoBehaviour
     {
         if (targetArea != null)
         {
-            // Teleportacja gracza do wyznaczonego obszaru
             playerMovement.transform.position = targetArea.position;
-        }
-        else
-        {
-            Debug.LogWarning("[WARNING] EnterArea jest niezdefiniowane.");
         }
     }
 
@@ -118,7 +109,7 @@ public class TurretController : MonoBehaviour
         {
             turretBase.position = Vector3.MoveTowards(turretBase.position, targetTurretBasePosition, raiseSpeed * Time.deltaTime);
             enterArea.position = Vector3.MoveTowards(enterArea.position, targetEnterAreaPosition, raiseSpeed * Time.deltaTime);
-            playerMovement.transform.position = Vector3.MoveTowards(playerMovement.transform.position, enterArea.position, raiseSpeed * Time.deltaTime);
+            playerMovement.transform.position = Vector3.Lerp(playerMovement.transform.position, enterArea.position, 0.9f); // PÅ‚ynniejszy ruch gracza
             yield return null;
         }
 
@@ -132,11 +123,7 @@ public class TurretController : MonoBehaviour
     {
         if (turretGun != null)
         {
-            turretGun.SetActive(true); // Za³ó¿my, ¿e po podniesieniu wie¿yczki w³¹czamy dzia³ko
-        }
-        else
-        {
-            Debug.LogWarning("[WARNING] Dzia³ko nie zosta³o przypisane.");
+            turretGun.SetActive(true);
         }
     }
 
@@ -153,7 +140,7 @@ public class TurretController : MonoBehaviour
         {
             turretBase.position = Vector3.MoveTowards(turretBase.position, targetTurretBasePosition, lowerSpeed * Time.deltaTime);
             enterArea.position = Vector3.MoveTowards(enterArea.position, targetEnterAreaPosition, lowerSpeed * Time.deltaTime);
-            playerMovement.transform.position = Vector3.MoveTowards(playerMovement.transform.position, enterArea.position, lowerSpeed * Time.deltaTime);
+            playerMovement.transform.position = Vector3.Lerp(playerMovement.transform.position, enterArea.position, 0.9f); // Lepsza synchronizacja gracza z enterArea
             yield return null;
         }
 
@@ -167,18 +154,19 @@ public class TurretController : MonoBehaviour
             playerMovement.enabled = true;
         }
 
-        // Ponowne w³¹czenie Inwentaryzacji
-        if (inventory != null)
+        if (enterArea != null)
         {
-            Debug.Log("W³¹czam inwentaryzacjê.");
-            inventory.enabled = true;  // W³¹czamy z powrotem inwentaryzacjê
+            StartCoroutine(ResetEnterAreaRotation());
         }
 
-        // Ponowna aktywacja broni gracza
+        if (inventory != null)
+        {
+            inventory.enabled = true;
+        }
+
         if (inventory != null && inventory.currentWeaponPrefab != null)
         {
-            inventory.currentWeaponPrefab.SetActive(true);  // Aktywujemy broñ
-            Debug.Log("Aktywujê broñ gracza.");
+            inventory.currentWeaponPrefab.SetActive(true);
         }
 
         DeactivateTurretGun();
@@ -188,11 +176,26 @@ public class TurretController : MonoBehaviour
         isUsingTurret = false;
     }
 
+    private IEnumerator ResetEnterAreaRotation()
+    {
+        float elapsedTime = 0f;
+        Quaternion startRotation = enterArea.rotation;
+
+        while (elapsedTime < 1f)
+        {
+            enterArea.rotation = Quaternion.Lerp(startRotation, initialEnterAreaRotation, elapsedTime);
+            elapsedTime += Time.deltaTime * rotationResetSpeed;
+            yield return null;
+        }
+
+        enterArea.rotation = initialEnterAreaRotation;
+    }
+
     private void DeactivateTurretGun()
     {
         if (turretGun != null)
         {
-            turretGun.SetActive(false); // Wy³¹czamy dzia³ko po opuszczeniu wie¿yczki
+            turretGun.SetActive(false);
         }
     }
 }
