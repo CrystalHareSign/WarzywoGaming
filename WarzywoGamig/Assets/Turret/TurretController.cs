@@ -3,17 +3,21 @@ using UnityEngine;
 
 public class TurretController : MonoBehaviour
 {
+    public PlayerMovement playerMovement; // Skrypt odpowiadający za poruszanie gracza
+    public Inventory inventory;  // Skrypt odpowiadający za inwentaryzację
     public Transform enterArea;   // Punkt, do którego teleportuje się gracz
     public Transform exitArea;    // Punkt, z którego teleportuje się gracz po zakończeniu
     public Transform turretBase;  // Transform wieżyczki (część, która będzie się unosić)
+    public Transform barrelPivot; // Nowy obiekt pivotu
+    public Camera playerCamera; // Kamera gracza, używana do wykrywania kursora
+    public GameObject turretGun;  // Obiekt działka wieżyczki
     public float raiseHeight = 5f; // Wysokość, na którą wieżyczka ma się podnieść
     public float raiseSpeed = 5f; // Prędkość podnoszenia wieżyczki (zwiększona dla płynności)
     public float lowerSpeed = 5f; // Prędkość opuszczania wieżyczki (zwiększona dla płynności)
-    public GameObject turretGun;  // Obiekt działka wieżyczki
-    public PlayerMovement playerMovement; // Skrypt odpowiadający za poruszanie gracza
-    public Inventory inventory;  // Skrypt odpowiadający za inwentaryzację
-
     public float rotationResetSpeed = 3f; // Prędkość resetowania rotacji
+    public float minBarrelAngle = -30f; // Minimalny kąt pochylenia lufy
+    public float maxBarrelAngle = 30f;  // Maksymalny kąt pochylenia lufy
+
     private Quaternion initialEnterAreaRotation; // Początkowa rotacja enterArea
 
     private bool isRaised = false;   // Flaga, która informuje, czy wieżyczka jest uniesiona
@@ -46,6 +50,7 @@ public class TurretController : MonoBehaviour
             }
 
             RotateEnterAreaWithPlayer();
+            RotateBarrelWithMouse();
         }
     }
 
@@ -53,9 +58,30 @@ public class TurretController : MonoBehaviour
     {
         if (playerMovement != null && enterArea != null)
         {
-            float playerRotationY = playerMovement.transform.rotation.eulerAngles.y;
-            enterArea.rotation = Quaternion.Lerp(enterArea.rotation, Quaternion.Euler(0, playerRotationY, 0), Time.deltaTime * 5f); // Płynniejsza interpolacja
+            enterArea.rotation = Quaternion.Euler(0, playerMovement.transform.eulerAngles.y, 0);
         }
+    }
+
+    private void RotateBarrelWithMouse()
+    {
+        if (barrelPivot == null || playerCamera == null)
+            return;
+
+        // Pobieramy kąt X kamery gracza
+        float cameraAngleX = NormalizeAngle(playerCamera.transform.localEulerAngles.x);
+
+        // Ograniczamy kąt do podanego zakresu
+        float clampedAngle = Mathf.Clamp(cameraAngleX, minBarrelAngle, maxBarrelAngle);
+
+        // Ustawiamy nowy kąt dla lufy (obrót tylko w osi X)
+        barrelPivot.localRotation = Quaternion.Euler(clampedAngle, 0, 0);
+    }
+
+    // Zamiana kąta na zakres -180° do 180°
+    private float NormalizeAngle(float angle)
+    {
+        if (angle > 180f) angle -= 360f;
+        return angle;
     }
 
     public void UseTurret()
@@ -136,6 +162,9 @@ public class TurretController : MonoBehaviour
         Vector3 targetTurretBasePosition = new Vector3(turretBase.position.x, targetHeight, turretBase.position.z);
         Vector3 targetEnterAreaPosition = new Vector3(enterArea.position.x, targetEnterAreaHeight, enterArea.position.z);
 
+        // Zapisz początkową rotację pivotu
+        Quaternion initialBarrelPivotRotation = barrelPivot.localRotation;
+
         while (turretBase.position.y > targetHeight)
         {
             turretBase.position = Vector3.MoveTowards(turretBase.position, targetTurretBasePosition, lowerSpeed * Time.deltaTime);
@@ -170,6 +199,9 @@ public class TurretController : MonoBehaviour
         }
 
         DeactivateTurretGun();
+
+        // Resetowanie rotacji barrelPivot po zakończeniu
+        barrelPivot.localRotation = initialBarrelPivotRotation;
 
         isRaised = false;
         isCooldown = false;
