@@ -3614,7 +3614,7 @@ GameObject:
   - component: {fileID: 938572022}
   m_Layer: 0
   m_Name: TurretBody
-  m_TagString: Untagged
+  m_TagString: Turret
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3706,6 +3706,7 @@ MonoBehaviour:
   rotationResetSpeed: 2
   minBarrelAngle: -30
   maxBarrelAngle: 60
+  isUsingTurret: 0
 --- !u!1 &939817339
 GameObject:
   m_ObjectHideFlags: 0
@@ -4609,6 +4610,7 @@ MonoBehaviour:
   rotationResetSpeed: 2
   minBarrelAngle: -30
   maxBarrelAngle: 30
+  isUsingTurret: 0
 --- !u!114 &1170922815
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8389,6 +8391,8 @@ MonoBehaviour:
   playerCamera: {fileID: 1013625153}
   progressCircle: {fileID: 1830742377}
   messageText: {fileID: 1348021637}
+  inventory: {fileID: 2094475115}
+  inventoryUI: {fileID: 351697965}
 --- !u!114 &2094475115
 MonoBehaviour:
   m_ObjectHideFlags: 0

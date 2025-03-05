@@ -11,6 +11,7 @@ TagManager:
   - Loot
   - Weapon
   - Item
+  - Turret
   layers:
   - Default
   - TransparentFX

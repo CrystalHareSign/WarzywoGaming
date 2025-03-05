@@ -6,7 +6,8 @@ public class AssignInteraction : MonoBehaviour
 {
     public GameObject interactableLeft; // Przedmiot interaktywny 1
     public GameObject interactableRight; // Przedmiot interaktywny 2
-    [Header("Body")]
+    [Header("TAGS: Loot, Item, Weapon, Turret")]
+    [Header("TAGS: Body")]
     public GameObject[] manualMoveObjects; // Rêcznie przypisane obiekty
     private List<GameObject> moveObjects = new List<GameObject>(); // Lista przedmiotów do przenoszenia
     public float moveDistance = 1.0f; // Odleg³oœæ przenoszenia obiektów
@@ -26,10 +27,11 @@ public class AssignInteraction : MonoBehaviour
             }
         }
 
-        // Pobierz wszystkie obiekty z tagami "Loot", "Item" i "Weapon"
+        // Pobierz wszystkie obiekty z tagami "Loot", "Item", "Weapon" oraz "Turret"
         AddObjectsWithTag("Loot");
         AddObjectsWithTag("Item");
         AddObjectsWithTag("Weapon");
+        AddObjectsWithTag("Turret"); // Dodane dla tagu "Turret"
 
         // Przypisz funkcje do interaktywnych przedmiotów
         if (interactableLeft != null)
