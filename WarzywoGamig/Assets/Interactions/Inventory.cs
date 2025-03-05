@@ -34,8 +34,13 @@ public class Inventory : MonoBehaviour
 
     public Vector3 weaponPositionOffset = new Vector3(0.5f, -0.3f, 1.0f);
     public Vector3 weaponRotationOffset = new Vector3(0, 90, 0);
-    public Vector3 lootPositionOffset = new Vector3(0f, 1f, 0f); // Ręczna pozycja lootów względem gracza
-    public Vector3 lootRotationOffset = new Vector3(0f, 0f, 0f); // Ręczna rotacja lootów względem gracza
+
+    public Vector3 lootPositionOffset_1x1 = new Vector3(0f, 1f, 0f); // Ręczna pozycja lootów 1x1 względem gracza
+    public Vector3 lootRotationOffset_1x1 = new Vector3(0f, 0f, 0f); // Ręczna rotacja lootów 1x1 względem gracza
+
+    public Vector3 lootPositionOffset_2x2 = new Vector3(0f, 1.5f, 0f); // Ręczna pozycja lootów 2x2 względem gracza
+    public Vector3 lootRotationOffset_2x2 = new Vector3(0f, 0f, 0f); // Ręczna rotacja lootów 2x2 względem gracza
+
 
     void Start()
     {
@@ -196,15 +201,31 @@ public class Inventory : MonoBehaviour
             // Sprawdź, czy przedmiot jest lootem
             if (loot.Contains(lootItem))
             {
-                // Jeśli lootParent jest ustawiony, użyj go, jeśli nie, przypnij loot do gracza
-                Transform parentTransform = lootParent != null ? lootParent : transform;
+                // Określenie, czy przedmiot jest 1x1, 2x2, czy inny
+                Vector3 lootPosition = lootPositionOffset_1x1; // Domyślny offset dla 1x1
+                Vector3 lootRotation = lootRotationOffset_1x1; // Domyślny rotation dla 1x1
+
+                // Sprawdzamy wielkość przedmiotu (tutaj zakłada się, że lootItem ma collider)
+                Collider lootCollider = lootItem.GetComponent<Collider>();
+                if (lootCollider != null)
+                {
+                    // Załóżmy, że przedmioty 2x2 mają większy rozmiar (możesz to dostosować w zależności od własnych kryteriów)
+                    if (lootCollider.bounds.size.x > 1f && lootCollider.bounds.size.z > 1f)
+                    {
+                        lootPosition = lootPositionOffset_2x2; // Przypisujemy offset dla 2x2
+                        lootRotation = lootRotationOffset_2x2; // Przypisujemy rotację dla 2x2
+                    }
+                }
 
                 // Ustaw przedmiot jako dziecko odpowiedniego obiektu (lootParent lub gracza)
+                Transform parentTransform = lootParent != null ? lootParent : transform;
+
+                // Ustaw przedmiot w odpowiedniej pozycji
                 lootItem.transform.SetParent(parentTransform);
 
                 // Ustaw ręczną pozycję i rotację z Inspektora
-                lootItem.transform.localPosition = lootPositionOffset;
-                lootItem.transform.localRotation = Quaternion.Euler(lootRotationOffset);
+                lootItem.transform.localPosition = lootPosition;
+                lootItem.transform.localRotation = Quaternion.Euler(lootRotation);
 
                 // Aktywuj przedmiot, jeśli jest wyłączony
                 lootItem.SetActive(true);
