@@ -8428,8 +8428,10 @@ MonoBehaviour:
   currentWeaponPrefab: {fileID: 0}
   weaponPositionOffset: {x: 0.5, y: -0.3, z: 1}
   weaponRotationOffset: {x: 185, y: 175, z: 0}
-  lootPositionOffset: {x: 0.5, y: -0.7, z: 1}
-  lootRotationOffset: {x: 0, y: 0, z: 0}
+  lootPositionOffset_1x1: {x: 0.5, y: -0.7, z: 1}
+  lootRotationOffset_1x1: {x: 0, y: 0, z: 0}
+  lootPositionOffset_2x2: {x: 1.23, y: 0.58, z: 1}
+  lootRotationOffset_2x2: {x: 0, y: 0, z: 0}
 --- !u!1001 &70671304840066653
 PrefabInstance:
   m_ObjectHideFlags: 0
