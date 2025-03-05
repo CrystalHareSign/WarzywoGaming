@@ -9,6 +9,8 @@ public class PlayerInteraction : MonoBehaviour
     public Camera playerCamera;
     public Image progressCircle;
     public TMP_Text messageText;
+    public Inventory inventory;  // Referencja do Inventory
+    public InventoryUI inventoryUI;  // Referencja do InventoryUI
 
     private float interactionTimer = 0f;
     private InteractableItem currentInteractableItem = null;
@@ -17,6 +19,7 @@ public class PlayerInteraction : MonoBehaviour
 
     void Start()
     {
+
         // Znajdujemy TurretController w scenie
         turretController = Object.FindFirstObjectByType<TurretController>();
         if (turretController == null)
@@ -39,6 +42,13 @@ public class PlayerInteraction : MonoBehaviour
         {
             HideUI();
             return; // Zatrzymujemy dalsze przetwarzanie, gdy gracz trzyma loot
+        }
+
+        // Sprawdzenie, czy inventory i currentWeaponPrefab s¹ przypisane
+        if (inventory == null)
+        {
+            Debug.LogError("Inventory nie zosta³o przypisane do PlayerInteraction.");
+            return;
         }
 
         RaycastHit hit;
@@ -69,6 +79,10 @@ public class PlayerInteraction : MonoBehaviour
                             progressCircle.fillAmount = interactionTimer / requiredHoldTime;
                         }
 
+                        // Wy³¹czamy broñ od razu po rozpoczêciu interakcji
+                        inventory.currentWeaponPrefab.SetActive(false);
+                        inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+
                         if (interactionTimer >= requiredHoldTime)
                         {
                             if (currentInteractableItem.isTurret) // Sprawdzamy, czy obiekt to wie¿yczka
@@ -95,6 +109,13 @@ public class PlayerInteraction : MonoBehaviour
                 }
                 else
                 {
+                    // Gdy gracz przestaje trzymaæ przycisk E, przywracamy broñ do aktywnoœci
+                    if (inventory.currentWeaponPrefab != null)
+                    {
+                        inventory.currentWeaponPrefab.SetActive(true);
+                        inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+                    }
+
                     interactionTimer = 0f;
                     if (progressCircle != null)
                     {
@@ -109,6 +130,13 @@ public class PlayerInteraction : MonoBehaviour
         }
         else
         {
+            // Gdy nie ma interaktywnego obiektu, zawsze przywracamy broñ do aktywnoœci
+            if (inventory.currentWeaponPrefab != null && !inventory.currentWeaponPrefab.activeSelf)
+            {
+                inventory.currentWeaponPrefab.SetActive(true);
+                inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+            }
+
             ResetInteraction();
         }
     }

@@ -66,6 +66,13 @@ public class Inventory : MonoBehaviour
 
     void CollectItem()
     {
+        // ❌ Jeśli gracz trzyma loot, nie może wchodzić w interakcje z innymi przedmiotami
+        if (lootParent != null && lootParent.childCount > 0)
+        {
+            Debug.Log("Nie możesz podnosić przedmiotów, gdy trzymasz loot.");
+            return;
+        }
+
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
 
@@ -75,20 +82,6 @@ public class Inventory : MonoBehaviour
 
             if (interactableItem == null)
             {
-                return;
-            }
-
-            // ❌ Jeśli gracz trzyma loot, nie może podnosić broni
-            if (lootParent != null && lootParent.childCount > 0 && interactableItem.isWeapon)
-            {
-                Debug.Log("Nie możesz podnieść broni, gdy trzymasz loot.");
-                return;
-            }
-
-            // ❌ Jeśli gracz trzyma loot, nie może podnosić innych przedmiotów (poza bronią, ale to już blokujemy powyżej)
-            if (lootParent != null && lootParent.childCount > 0 && !interactableItem.isWeapon)
-            {
-                Debug.Log("Nie możesz podnieść przedmiotu, ponieważ trzymasz loot.");
                 return;
             }
 
@@ -142,13 +135,11 @@ public class Inventory : MonoBehaviour
                     if (gunScript != null)
                     {
                         inventoryUI.UpdateWeaponUI(gunScript);
- 
                     }
                 }
             }
         }
     }
-
 
     void ReplaceCurrentWeapon(InteractableItem newWeapon, GameObject newWeaponItem)
     {
