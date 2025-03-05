@@ -21,7 +21,7 @@ public class TurretController : MonoBehaviour
     private Quaternion initialEnterAreaRotation; // Początkowa rotacja enterArea
 
     private bool isRaised = false;   // Flaga, która informuje, czy wieżyczka jest uniesiona
-    private bool isUsingTurret = false; // Flaga, która informuje, czy gracz korzysta z wieżyczki
+    public bool isUsingTurret = false; // Flaga, która informuje, czy gracz korzysta z wieżyczki
     private bool isCooldown = false; // Flaga kontrolująca opóźnienie przy opuszczaniu
 
     void Start()

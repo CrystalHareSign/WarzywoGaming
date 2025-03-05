@@ -9,6 +9,8 @@ public class PlayerInteraction : MonoBehaviour
     public Camera playerCamera;
     public Image progressCircle;
     public TMP_Text messageText;
+    public Inventory inventory;
+    public InventoryUI inventoryUI;
 
     private float interactionTimer = 0f;
     private InteractableItem currentInteractableItem = null;
@@ -81,6 +83,11 @@ public class PlayerInteraction : MonoBehaviour
                             }
                             interactionTimer = 0f;
                             HideUI();
+                        }
+                        if (inventory != null && inventory.currentWeaponPrefab != null)
+                        {
+                            inventory.currentWeaponPrefab.SetActive(false);
+                            inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
                         }
                     }
                     else
@@ -158,5 +165,13 @@ public class PlayerInteraction : MonoBehaviour
         }
 
         currentInteractableItem = null;
+
+        // Sprawdzamy, czy gracz nie jest w trybie wie¿yczki przed aktywowaniem broni
+        if (turretController != null && !turretController.isUsingTurret && inventory != null && inventory.currentWeaponPrefab != null)
+        {
+            inventory.currentWeaponPrefab.SetActive(true);
+            inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+        }
     }
+
 }
