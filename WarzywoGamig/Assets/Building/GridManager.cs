@@ -125,6 +125,11 @@ public class GridManager : MonoBehaviour
             inventory.currentWeaponPrefab.SetActive(true);
             inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
         }
+
+        // Aktywujemy kafelki pod lootem
+        PrefabSize prefabSize = lootItem.GetComponent<PrefabSize>();
+        UnmarkTilesAsOccupied(lootItem.transform.position, prefabSize);
+
         Debug.Log("Przedmiot upuszczony, tryb budowania wy³¹czony i kafelki ukryte.");
     }
 
@@ -179,19 +184,8 @@ public class GridManager : MonoBehaviour
         previewObject = Instantiate(buildingPrefabs[currentPrefabIndex]);
         previewObject.SetActive(true);  // Ustawienie obiektu jako aktywnego
         DisableColliders(previewObject);  // Wy³¹czenie koliderów po ustawieniu na aktywny
-
-
-        // Sprawdzamy, czy obiekt podgl¹du jest aktywny
-        //Debug.Log("Is preview object active: " + previewObject.activeSelf);
     }
 
-    //private void DestroyPreviewObject()
-    //{
-    //    if (previewObject != null)
-    //    {
-    //        Destroy(previewObject);
-    //    }
-    //}
     public Vector3 SnapToGrid(Vector3 position)
     {
         if (previewObject == null) return position;
@@ -234,6 +228,7 @@ public class GridManager : MonoBehaviour
         // Jeœli miejsce jest zajête, szukamy kolejnej dostêpnej pozycji
         return GetNextAvailablePosition(snappedPosition, prefabSize);
     }
+
     private bool IsInsideGrid(Vector3 position, PrefabSize prefabSize)
     {
         // Sprawdzenie, czy obiekt znajduje siê w obrêbie siatki
@@ -379,6 +374,28 @@ public class GridManager : MonoBehaviour
                 if (!occupiedTiles.ContainsKey(tilePosition))  // Sprawdzamy, czy kafelek nie jest ju¿ zajêty
                 {
                     occupiedTiles[tilePosition] = buildedObject; // Zapisujemy, ¿e kafelek jest zajêty przez ten obiekt
+                    SetTileActive(tilePosition, false); // Deaktywujemy kafelek
+                }
+            }
+        }
+    }
+
+    public void UnmarkTilesAsOccupied(Vector3 position, PrefabSize prefabSize)
+    {
+        // Pobieramy pozycjê pocz¹tkow¹ (dolny lewy róg)
+        int startX = Mathf.FloorToInt(position.x);
+        int startZ = Mathf.FloorToInt(position.z);
+
+        // Oznaczamy wszystkie kafelki, które obiekt zajmuje jako wolne
+        for (int x = startX; x < startX + prefabSize.widthInTiles; x++)
+        {
+            for (int z = startZ; z < startZ + prefabSize.depthInTiles; z++)
+            {
+                Vector3 tilePosition = new Vector3(x, 0, z);
+                if (occupiedTiles.ContainsKey(tilePosition))  // Sprawdzamy, czy kafelek jest zajêty
+                {
+                    occupiedTiles.Remove(tilePosition); // Usuwamy kafelek ze zbioru zajêtych
+                    SetTileActive(tilePosition, true); // Aktywujemy kafelek
                 }
             }
         }

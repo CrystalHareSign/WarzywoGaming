@@ -18,7 +18,6 @@ public class Inventory : MonoBehaviour
     public Transform lootParent; // Transform, do którego będą przypisane lootowe przedmioty
     public bool isLootBeingDropped = false; // Flaga kontrolująca proces upuszczania lootu
 
-
     [System.Serializable]
     public class WeaponPrefabEntry
     {
@@ -40,7 +39,6 @@ public class Inventory : MonoBehaviour
 
     public Vector3 lootPositionOffset_2x2 = new Vector3(0f, 1.5f, 0f); // Ręczna pozycja lootów 2x2 względem gracza
     public Vector3 lootRotationOffset_2x2 = new Vector3(0f, 0f, 0f); // Ręczna rotacja lootów 2x2 względem gracza
-
 
     void Start()
     {
@@ -116,6 +114,7 @@ public class Inventory : MonoBehaviour
                 {
                     if (loot.Count < maxLoot)
                     {
+                        Vector3 previousPosition = hit.collider.gameObject.transform.position;
                         loot.Add(hit.collider.gameObject);
                         EquipLoot(hit.collider.gameObject);
 
@@ -124,11 +123,13 @@ public class Inventory : MonoBehaviour
                         {
                             currentWeaponPrefab.SetActive(false);
                         }
-                    }
 
-                    if (GridManager.Instance != null)
-                    {
-                        GridManager.Instance.AddToBuildingPrefabs(hit.collider.gameObject);
+                        if (GridManager.Instance != null)
+                        {
+                            PrefabSize prefabSize = hit.collider.gameObject.GetComponent<PrefabSize>();
+                            GridManager.Instance.UnmarkTilesAsOccupied(previousPosition, prefabSize);
+                            GridManager.Instance.AddToBuildingPrefabs(hit.collider.gameObject);
+                        }
                     }
                 }
                 else
@@ -147,13 +148,11 @@ public class Inventory : MonoBehaviour
                     if (gunScript != null)
                     {
                         inventoryUI.UpdateWeaponUI(gunScript);
- 
                     }
                 }
             }
         }
     }
-
 
     void ReplaceCurrentWeapon(InteractableItem newWeapon, GameObject newWeaponItem)
     {
@@ -194,6 +193,7 @@ public class Inventory : MonoBehaviour
             currentWeaponItem = weaponItem;
         }
     }
+
     void EquipLoot(GameObject lootItem)
     {
         if (lootItem != null)
@@ -337,6 +337,8 @@ public class Inventory : MonoBehaviour
             Vector3 dropPosition = transform.position;
             dropPosition.y = dropHeight;
 
+            Vector3 previousPosition = lootItem.transform.position;
+
             lootItem.transform.position = dropPosition;
             lootItem.transform.rotation = Quaternion.identity;
 
@@ -346,6 +348,9 @@ public class Inventory : MonoBehaviour
             {
                 GridManager.Instance.isBuildingMode = false;
                 GridManager.Instance.RemoveFromBuildingPrefabs(lootItem);
+
+                PrefabSize prefabSize = lootItem.GetComponent<PrefabSize>();
+                GridManager.Instance.UnmarkTilesAsOccupied(previousPosition, prefabSize);
             }
 
             RemoveObjectFromLootParent(lootItem);
@@ -375,6 +380,7 @@ public class Inventory : MonoBehaviour
             loot.Remove(item);
         }
     }
+
     public void RemoveObjectFromLootParent(GameObject objectToRemove)
     {
         if (lootParent == null || objectToRemove == null)
