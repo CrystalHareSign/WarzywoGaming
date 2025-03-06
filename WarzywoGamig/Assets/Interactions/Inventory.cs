@@ -63,6 +63,7 @@ public class Inventory : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.Q))
         {
+            if (isLootBeingDropped) return;
             DropItemFromInventory();
         }
     }
@@ -243,7 +244,7 @@ public class Inventory : MonoBehaviour
 
         if (loot.Count > 0) // Jeśli mamy loot do upuszczenia
         {
-            DropLoot();
+            //DropLoot();
         }
         else if (currentWeaponItem != null) // Jeśli mamy broń do upuszczenia
         {
@@ -320,54 +321,54 @@ public class Inventory : MonoBehaviour
         }
     }
 
-    void DropLoot()
-    {
-        if (loot.Count == 0) return;
+    //void DropLoot()
+    //{
+    //    if (loot.Count == 0) return;
 
-        GameObject lootItem = loot[0];
-        InteractableItem interactableItem = lootItem.GetComponent<InteractableItem>(); // Pobieramy komponent InteractableItem
+    //    GameObject lootItem = loot[0];
+    //    InteractableItem interactableItem = lootItem.GetComponent<InteractableItem>(); // Pobieramy komponent InteractableItem
 
-        // Sprawdzamy, czy loot może być upuszczony
-        if (interactableItem != null && interactableItem.canBeDropped)
-        {
-            loot.RemoveAt(0);
+    //    // Sprawdzamy, czy loot może być upuszczony
+    //    if (interactableItem != null && interactableItem.canBeDropped)
+    //    {
+    //        loot.RemoveAt(0);
 
-            lootItem.transform.SetParent(null);
+    //        lootItem.transform.SetParent(null);
 
-            Vector3 dropPosition = transform.position;
-            dropPosition.y = dropHeight;
+    //        Vector3 dropPosition = transform.position;
+    //        dropPosition.y = dropHeight;
 
-            Vector3 previousPosition = lootItem.transform.position;
+    //        Vector3 previousPosition = lootItem.transform.position;
 
-            lootItem.transform.position = dropPosition;
-            lootItem.transform.rotation = Quaternion.identity;
+    //        lootItem.transform.position = dropPosition;
+    //        lootItem.transform.rotation = Quaternion.identity;
 
-            lootItem.SetActive(true);
+    //        lootItem.SetActive(true);
 
-            if (GridManager.Instance != null)
-            {
-                GridManager.Instance.isBuildingMode = false;
-                GridManager.Instance.RemoveFromBuildingPrefabs(lootItem);
+    //        if (GridManager.Instance != null)
+    //        {
+    //            GridManager.Instance.isBuildingMode = false;
+    //            GridManager.Instance.RemoveFromBuildingPrefabs(lootItem);
 
-                PrefabSize prefabSize = lootItem.GetComponent<PrefabSize>();
-                GridManager.Instance.UnmarkTilesAsOccupied(previousPosition, prefabSize);
-            }
+    //            PrefabSize prefabSize = lootItem.GetComponent<PrefabSize>();
+    //            GridManager.Instance.UnmarkTilesAsOccupied(previousPosition, prefabSize);
+    //        }
 
-            RemoveObjectFromLootParent(lootItem);
+    //        RemoveObjectFromLootParent(lootItem);
 
-            // Jeśli gracz miał broń ukrytą, przywracamy ją
-            if (currentWeaponPrefab != null)
-            {
-                currentWeaponPrefab.SetActive(true);
-            }
+    //        // Jeśli gracz miał broń ukrytą, przywracamy ją
+    //        if (currentWeaponPrefab != null)
+    //        {
+    //            currentWeaponPrefab.SetActive(true);
+    //        }
 
-            UpdateInventoryUI();
-        }
-        else
-        {
-            Debug.LogWarning("Nie możesz upuścić tego lootu, ponieważ 'canBeDropped' jest ustawione na false.");
-        }
-    }
+    //        UpdateInventoryUI();
+    //    }
+    //    else
+    //    {
+    //        Debug.LogWarning("Nie możesz upuścić tego lootu, ponieważ 'canBeDropped' jest ustawione na false.");
+    //    }
+    //}
 
     public void RemoveItem(GameObject item)
     {
