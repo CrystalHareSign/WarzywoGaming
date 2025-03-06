@@ -79,6 +79,43 @@ public class GridManager : MonoBehaviour
 
     private void DropLootItem(GameObject lootItem)
     {
+        // Pobieramy Collider obiektu Loot
+        Collider lootCollider = lootItem.GetComponent<Collider>();
+        if (lootCollider == null)
+        {
+            Debug.LogWarning("Loot nie ma komponentu Collider.");
+            return;
+        }
+
+        // Pobieramy Collider obszaru siatki
+        Collider gridAreaCollider = gridArea.GetComponent<Collider>();
+        if (gridAreaCollider == null)
+        {
+            Debug.LogWarning("Siatka nie ma komponentu Collider.");
+            return;
+        }
+
+        // Ustawiamy docelow¹ pozycjê przedmiotu na pozycji gracza, ale z okreœlon¹ wysokoœci¹ 'dropHeight' (na osi Y)
+        Vector3 dropPosition = new Vector3
+        (
+            player.transform.position.x, // U¿ywamy pozycji gracza w X
+            dropHeight, // Ustawiamy Y na dropHeight
+            player.transform.position.z  // U¿ywamy pozycji gracza w Z
+        );
+
+        // Sprawdzamy, czy kolidery siê przecinaj¹ przy docelowej pozycji
+        Vector3 lootSize = lootCollider.bounds.size;
+        Collider[] colliders = Physics.OverlapBox(dropPosition, lootSize / 2, lootItem.transform.rotation, LayerMask.GetMask("Default")); // Zak³adamy, ¿e u¿ywasz warstwy "Default"
+
+        foreach (var collider in colliders)
+        {
+            if (collider == gridAreaCollider)
+            {
+                Debug.LogWarning("Nie mo¿na upuœciæ przedmiotu wewn¹trz obszaru siatki.");
+                return;
+            }
+        }
+
         Inventory inventory = Object.FindFirstObjectByType<Inventory>(); // ZnajdŸ skrypt Inventory
 
         if (inventory != null)
@@ -89,13 +126,8 @@ public class GridManager : MonoBehaviour
         // Usuwamy przedmiot z LootParent, aby go "upuœciæ"
         lootItem.transform.SetParent(null); // Przenosimy przedmiot na œwiat
 
-        // Ustawiamy pozycjê przedmiotu na pozycji gracza, ale z okreœlon¹ wysokoœci¹ 'dropHeight' (na osi Y)
-        lootItem.transform.position = new Vector3
-        (
-            player.transform.position.x, // U¿ywamy pozycji gracza w X
-            dropHeight, // Ustawiamy Y na dropHeight
-            player.transform.position.z  // U¿ywamy pozycji gracza w Z
-        );
+        // Ustawiamy pozycjê przedmiotu na docelow¹ pozycjê
+        lootItem.transform.position = dropPosition;
 
         // Ustawiamy pocz¹tkow¹ rotacjê wzglêdem œwiata (np. ustawiamy na 0, 0, 0)
         lootItem.transform.rotation = Quaternion.identity;
@@ -132,7 +164,6 @@ public class GridManager : MonoBehaviour
 
         Debug.Log("Przedmiot upuszczony, tryb budowania wy³¹czony i kafelki ukryte.");
     }
-
     private void CheckTiles()
     {
         List<Vector3> tilesToActivate = new List<Vector3>();
