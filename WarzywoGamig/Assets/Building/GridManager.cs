@@ -63,7 +63,7 @@ public class GridManager : MonoBehaviour
 
             if (Input.GetKeyDown(KeyCode.E) && previewObject.activeSelf)
             {
-                Debug.Log("Placing object");
+                //Debug.Log("Placing object");
                 PlaceObject();
             }
         }
@@ -75,7 +75,7 @@ public class GridManager : MonoBehaviour
             if (LootParent.childCount > 0)
             {
                 GameObject lootItem = LootParent.GetChild(0).gameObject; // Zak³adamy, ¿e gracz ma tylko jeden przedmiot w rêce
-                Debug.Log("Dropping loot item");
+                //Debug.Log("Dropping loot item");
                 DropLootItem(lootItem); // Upuszczamy przedmiot
             }
         }
@@ -99,33 +99,9 @@ public class GridManager : MonoBehaviour
 
         bool isWithinBounds = position.x >= minX && position.x <= maxX && position.z >= minZ && position.z <= maxZ;
 
-        Debug.Log($"Position: {position}, MinX: {minX}, MaxX: {maxX}, MinZ: {minZ}, MaxZ: {maxZ}, IsWithinBounds: {isWithinBounds}");
+        //Debug.Log($"Position: {position}, MinX: {minX}, MaxX: {maxX}, MinZ: {minZ}, MaxZ: {maxZ}, IsWithinBounds: {isWithinBounds}");
 
         return isWithinBounds;
-    }
-
-
-    private bool IsLookingAtGridArea()
-    {
-        Camera mainCamera = Camera.main;
-        if (mainCamera == null)
-        {
-            Debug.LogError("Main camera not found.");
-            return false;
-        }
-
-        Ray ray = mainCamera.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
-        RaycastHit hit;
-
-        if (Physics.Raycast(ray, out hit))
-        {
-            if (hit.transform == gridArea)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private void DropLootItem(GameObject lootItem)
@@ -134,7 +110,7 @@ public class GridManager : MonoBehaviour
         Collider lootCollider = lootItem.GetComponent<Collider>();
         if (lootCollider == null)
         {
-            Debug.LogWarning("Loot nie ma komponentu Collider.");
+            //Debug.LogWarning("Loot nie ma komponentu Collider.");
             return;
         }
 
@@ -142,7 +118,7 @@ public class GridManager : MonoBehaviour
         Collider gridAreaCollider = gridArea.GetComponent<Collider>();
         if (gridAreaCollider == null)
         {
-            Debug.LogWarning("Siatka nie ma komponentu Collider.");
+            //Debug.LogWarning("Siatka nie ma komponentu Collider.");
             return;
         }
 
@@ -213,7 +189,7 @@ public class GridManager : MonoBehaviour
         PrefabSize prefabSize = lootItem.GetComponent<PrefabSize>();
         UnmarkTilesAsOccupied(lootItem.transform.position, prefabSize);
 
-        Debug.Log("Przedmiot upuszczony, tryb budowania wy³¹czony i kafelki ukryte.");
+        //Debug.Log("Przedmiot upuszczony, tryb budowania wy³¹czony i kafelki ukryte.");
     }
     private void CheckTiles()
     {
@@ -268,7 +244,7 @@ public class GridManager : MonoBehaviour
         DisableColliders(previewObject);  // Wy³¹czenie koliderów po ustawieniu na aktywny
     }
 
-    public Vector3 SnapToGrid(Vector3 position)
+    private Vector3 SnapToGrid(Vector3 position)
     {
         if (previewObject == null) return position;
 
@@ -285,14 +261,14 @@ public class GridManager : MonoBehaviour
         float gridSizeWithSpacing = gridSize + tileSpacing;
 
         // Obliczanie pozycji snapowania
-        float snappedX = Mathf.Floor((position.x - gridArea.position.x) / gridSizeWithSpacing) * gridSizeWithSpacing + gridArea.position.x;
-        float snappedZ = Mathf.Floor((position.z - gridArea.position.z) / gridSizeWithSpacing) * gridSizeWithSpacing + gridArea.position.z;
+        float snappedX = Mathf.Round((position.x - gridArea.position.x) / gridSizeWithSpacing) * gridSizeWithSpacing + gridArea.position.x;
+        float snappedZ = Mathf.Round((position.z - gridArea.position.z) / gridSizeWithSpacing) * gridSizeWithSpacing + gridArea.position.z;
 
         // Korekta pozycji dla wiêkszych obiektów
         if (prefabSize.widthInTiles > 1 || prefabSize.depthInTiles > 1)
         {
-            snappedX += (gridSizeWithSpacing * prefabSize.widthInTiles) / 2 - gridSizeWithSpacing / 2;
-            snappedZ += (gridSizeWithSpacing * prefabSize.depthInTiles) / 2 - gridSizeWithSpacing / 2;
+            snappedX += (gridSizeWithSpacing * (prefabSize.widthInTiles - 1)) / 2;
+            snappedZ += (gridSizeWithSpacing * (prefabSize.depthInTiles - 1)) / 2;
         }
 
         // Ustawienie pozycji Y na podstawie siatki (jeœli masz jak¹œ wysokoœæ na siatce)
