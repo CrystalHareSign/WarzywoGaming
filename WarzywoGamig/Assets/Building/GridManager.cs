@@ -4,8 +4,10 @@ using System.Collections.Generic;
 public class GridManager : MonoBehaviour
 {
     public float buildRange = 5f; // Maksymalny zasiêg budowania
+    public float maxDistanceFromEdge = 1f; // Maksymalna odleg³oœæ od krawêdzi siatki
     public float gridSize = 1f; // Rozmiar siatki
     public float tileSpacing = 0.1f; // Odstêp miêdzy kafelkami
+    public float offsetFromEdge = 1f; // Dodatkowy offset od ka¿dej krawêdzi siatki
     public Transform gridArea; // Obszar siatki
     public Transform player; // Referencja do gracza
     public Transform LootParent; // Przypisz do niego transform zawieraj¹cy obiekty w rêce gracza
@@ -52,8 +54,15 @@ public class GridManager : MonoBehaviour
             Vector3 mousePosition = GetMouseWorldPosition();
             previewObject.transform.position = SnapToGrid(mousePosition);
 
-            if (Input.GetKeyDown(KeyCode.E))
+            // Sprawdzenie, czy previewObject znajduje siê w wyznaczonym obszarze
+            bool isWithinBounds = IsWithinBounds(previewObject.transform.position);
+            previewObject.SetActive(isWithinBounds);
+
+            if (Input.GetKeyDown(KeyCode.E) && previewObject.activeSelf)
+            {
+                Debug.Log("Placing object");
                 PlaceObject();
+            }
         }
 
         // Obs³uguje naciœniêcie Q do wyjœcia z trybu budowania i upuszczenia przedmiotu
@@ -63,6 +72,7 @@ public class GridManager : MonoBehaviour
             if (LootParent.childCount > 0)
             {
                 GameObject lootItem = LootParent.GetChild(0).gameObject; // Zak³adamy, ¿e gracz ma tylko jeden przedmiot w rêce
+                Debug.Log("Dropping loot item");
                 DropLootItem(lootItem); // Upuszczamy przedmiot
             }
         }
@@ -75,6 +85,20 @@ public class GridManager : MonoBehaviour
             CheckTiles();
             timeSinceLastCheck = 0f; // Resetujemy licznik
         }
+    }
+
+    private bool IsWithinBounds(Vector3 position)
+    {
+        float minX = gridArea.position.x - gridArea.localScale.x / 2 + offsetFromEdge;
+        float maxX = gridArea.position.x + gridArea.localScale.x / 2 - offsetFromEdge;
+        float minZ = gridArea.position.z - gridArea.localScale.z / 2 + offsetFromEdge;
+        float maxZ = gridArea.position.z + gridArea.localScale.z / 2 - offsetFromEdge;
+
+        bool isWithinBounds = position.x >= minX && position.x <= maxX && position.z >= minZ && position.z <= maxZ;
+
+        Debug.Log($"Position: {position}, MinX: {minX}, MaxX: {maxX}, MinZ: {minZ}, MaxZ: {maxZ}, IsWithinBounds: {isWithinBounds}");
+
+        return isWithinBounds;
     }
 
     private void DropLootItem(GameObject lootItem)
