@@ -4,10 +4,8 @@ using System.Collections.Generic;
 public class GridManager : MonoBehaviour
 {
     public float buildRange = 5f; // Maksymalny zasiêg budowania
-    public float maxDistanceFromEdge = 1f; // Maksymalna odleg³oœæ od krawêdzi siatki
     public float gridSize = 1f; // Rozmiar siatki
     public float tileSpacing = 0.1f; // Odstêp miêdzy kafelkami
-    public float offsetFromEdge = 1f; // Dodatkowy offset od ka¿dej krawêdzi siatki
     public Transform gridArea; // Obszar siatki
     public Transform player; // Referencja do gracza
     public Transform LootParent; // Przypisz do niego transform zawieraj¹cy obiekty w rêce gracza
@@ -52,11 +50,16 @@ public class GridManager : MonoBehaviour
         if (isBuildingMode && previewObject != null)
         {
             Vector3 mousePosition = GetMouseWorldPosition();
-            previewObject.transform.position = SnapToGrid(mousePosition);
+            Vector3 snappedPosition = SnapToGrid(mousePosition);
 
-            // Sprawdzenie, czy previewObject znajduje siê w wyznaczonym obszarze
-            bool isWithinBounds = IsWithinBounds(previewObject.transform.position);
+            // Sprawdzenie, czy obiekt snapuje do gridArea
+            bool isWithinBounds = IsWithinBounds(snappedPosition);
             previewObject.SetActive(isWithinBounds);
+
+            if (isWithinBounds)
+            {
+                previewObject.transform.position = snappedPosition;
+            }
 
             if (Input.GetKeyDown(KeyCode.E) && previewObject.activeSelf)
             {
@@ -89,16 +92,40 @@ public class GridManager : MonoBehaviour
 
     private bool IsWithinBounds(Vector3 position)
     {
-        float minX = gridArea.position.x - gridArea.localScale.x / 2 + offsetFromEdge;
-        float maxX = gridArea.position.x + gridArea.localScale.x / 2 - offsetFromEdge;
-        float minZ = gridArea.position.z - gridArea.localScale.z / 2 + offsetFromEdge;
-        float maxZ = gridArea.position.z + gridArea.localScale.z / 2 - offsetFromEdge;
+        float minX = gridArea.position.x - gridArea.localScale.x / 2;
+        float maxX = gridArea.position.x + gridArea.localScale.x / 2;
+        float minZ = gridArea.position.z - gridArea.localScale.z / 2;
+        float maxZ = gridArea.position.z + gridArea.localScale.z / 2;
 
         bool isWithinBounds = position.x >= minX && position.x <= maxX && position.z >= minZ && position.z <= maxZ;
 
         Debug.Log($"Position: {position}, MinX: {minX}, MaxX: {maxX}, MinZ: {minZ}, MaxZ: {maxZ}, IsWithinBounds: {isWithinBounds}");
 
         return isWithinBounds;
+    }
+
+
+    private bool IsLookingAtGridArea()
+    {
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            Debug.LogError("Main camera not found.");
+            return false;
+        }
+
+        Ray ray = mainCamera.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit))
+        {
+            if (hit.transform == gridArea)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void DropLootItem(GameObject lootItem)
