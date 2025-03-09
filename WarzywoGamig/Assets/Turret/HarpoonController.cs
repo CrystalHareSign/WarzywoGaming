@@ -1,10 +1,10 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class HarpoonController : MonoBehaviour
 {
     public GameObject harpoonPrefab; // Prefab Harpoon
-    public Transform firePoint; // Punkt, do którego przypisywany bêdzie Harpoon
-    public float harpoonSpeed = 50f; // Prêdkoœæ wystrzeliwanego harpunu
+    public Transform firePoint; // Punkt, do ktÃ³rego przypisywany bÄ™dzie Harpoon
+    public float harpoonSpeed = 50f; // PrÄ™dkoÅ›Ä‡ wystrzeliwanego harpunu
 
     private TurretController turretController; // Referencja do skryptu TurretController
     private GameObject harpoonInstance; // Instancja harpunu
@@ -25,7 +25,7 @@ public class HarpoonController : MonoBehaviour
             return;
         }
 
-        // ZnajdŸ obiekt z TurretController w scenie
+        // ZnajdÅº obiekt z TurretController w scenie
         turretController = Object.FindFirstObjectByType<TurretController>();
         if (turretController == null)
         {
@@ -55,20 +55,22 @@ public class HarpoonController : MonoBehaviour
         {
             Debug.LogError("Prefabrykat Harpoon nie ma komponentu Rigidbody.");
         }
-        harpoonInstance.SetActive(false); // Dezaktywuj harpun na starcie
+        harpoonInstance.SetActive(true); // Dezaktywuj harpun na starcie
     }
 
     void ShootHarpoon()
     {
         if (harpoonInstance == null || harpoonRb == null)
         {
-            Debug.LogError("Harpun nie zosta³ poprawnie zainicjalizowany.");
+            Debug.LogError("Harpun nie zostaÅ‚ poprawnie zainicjalizowany.");
             return;
         }
 
+        harpoonRb.isKinematic = false; // Upewnij siÄ™, Å¼e harpun nie jest kinematic
+
         harpoonInstance.transform.position = firePoint.position;
         harpoonInstance.transform.rotation = firePoint.rotation;
-        harpoonInstance.transform.SetParent(null); // Od³¹cz harpun od FirePoint
+        harpoonInstance.transform.SetParent(null); // OdÅ‚Ä…cz harpun od FirePoint
         harpoonInstance.SetActive(true); // Aktywuj harpun
 
         Vector3 shootDirection = GetShootDirection();
@@ -86,5 +88,25 @@ public class HarpoonController : MonoBehaviour
         {
             return ray.direction;
         }
+    }
+
+    public void OnHarpoonCollision()
+    {
+        // Funkcja wywoÅ‚ana po kolizji harpunu
+        ReturnHarpoonToFirePoint();
+    }
+
+    void ReturnHarpoonToFirePoint()
+    {
+        if (harpoonInstance == null)
+        {
+            Debug.LogError("Harpun nie zostaÅ‚ poprawnie zainicjalizowany.");
+            return;
+        }
+
+        harpoonInstance.transform.position = firePoint.position;
+        harpoonInstance.transform.rotation = firePoint.rotation;
+        harpoonInstance.transform.SetParent(firePoint); // PodÅ‚Ä…cz harpun do FirePoint
+        harpoonInstance.SetActive(false); // Dezaktywuj harpun
     }
 }
