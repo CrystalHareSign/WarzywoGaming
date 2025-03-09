@@ -10,7 +10,8 @@ public class TurretController : MonoBehaviour
     public Transform turretBase;  // Transform wieżyczki (część, która będzie się unosić)
     public Transform barrelPivot; // Nowy obiekt pivotu
     public Camera playerCamera; // Kamera gracza, używana do wykrywania kursora
-    public GameObject turretGun;  // Obiekt działka wieżyczki
+    public GameObject weapon; // Obiekt broni na wieżyczce
+    public GameObject harpoonGunPrefab; // Prefab HarpoonGun
     public float raiseHeight = 5f; // Wysokość, na którą wieżyczka ma się podnieść
     public float raiseSpeed = 5f; // Prędkość podnoszenia wieżyczki (zwiększona dla płynności)
     public float lowerSpeed = 5f; // Prędkość opuszczania wieżyczki (zwiększona dla płynności)
@@ -37,6 +38,11 @@ public class TurretController : MonoBehaviour
         if (enterArea != null)
         {
             initialEnterAreaRotation = enterArea.rotation;
+        }
+
+        if (harpoonGunPrefab != null && weapon != null)
+        {
+            Instantiate(harpoonGunPrefab, weapon.transform);
         }
     }
 
@@ -109,7 +115,7 @@ public class TurretController : MonoBehaviour
 
             StartCoroutine(RaiseTurret());
 
-            ActivateTurretGun();
+            ActivateWeapon();
 
             isUsingTurret = true;
         }
@@ -145,11 +151,11 @@ public class TurretController : MonoBehaviour
         isRaised = true;
     }
 
-    private void ActivateTurretGun()
+    private void ActivateWeapon()
     {
-        if (turretGun != null)
+        if (weapon != null)
         {
-            turretGun.SetActive(true);
+            weapon.SetActive(true);
         }
     }
 
@@ -198,7 +204,7 @@ public class TurretController : MonoBehaviour
             inventory.currentWeaponPrefab.SetActive(true);
         }
 
-        DeactivateTurretGun();
+        DeactivateWeapon();
 
         // Resetowanie rotacji barrelPivot po zakończeniu
         barrelPivot.localRotation = initialBarrelPivotRotation;
@@ -223,11 +229,11 @@ public class TurretController : MonoBehaviour
         enterArea.rotation = initialEnterAreaRotation;
     }
 
-    private void DeactivateTurretGun()
+    private void DeactivateWeapon()
     {
-        if (turretGun != null)
+        if (weapon != null)
         {
-            turretGun.SetActive(false);
+            weapon.SetActive(false);
         }
     }
 }
