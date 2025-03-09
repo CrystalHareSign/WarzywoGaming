@@ -4,7 +4,6 @@ public class Harpoon : MonoBehaviour
 {
     private Rigidbody harpoonRb;
     private HarpoonController harpoonController;
-    private Light harpoonLight;
 
     private void Start()
     {
@@ -19,12 +18,6 @@ public class Harpoon : MonoBehaviour
         {
             Debug.LogError("Nie znaleziono HarpoonController w scenie.");
         }
-
-        // Dodaj œwiat³o do harpunu
-        harpoonLight = gameObject.AddComponent<Light>();
-        harpoonLight.color = Color.white;
-        harpoonLight.intensity = 5f;
-        harpoonLight.range = 10f;
     }
 
     private void OnCollisionEnter(Collision collision)

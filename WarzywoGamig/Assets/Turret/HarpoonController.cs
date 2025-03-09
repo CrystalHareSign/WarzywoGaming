@@ -2,111 +2,80 @@
 
 public class HarpoonController : MonoBehaviour
 {
-    public GameObject harpoonPrefab; // Prefab Harpoon
-    public Transform firePoint; // Punkt, do którego przypisywany będzie Harpoon
-    public float harpoonSpeed = 50f; // Prędkość wystrzeliwanego harpunu
+    public GameObject harpoonPrefab;
+    public Transform firePoint;
+    public float shootSpeed = 20f;
+    public float returnSpeed = 10f;
 
-    private TurretController turretController; // Referencja do skryptu TurretController
-    private GameObject harpoonInstance; // Instancja harpunu
-    private Rigidbody harpoonRb; // Rigidbody harpunu
-    private Camera playerCamera; // Kamera gracza
+    private GameObject currentHarpoon;
+    private Rigidbody harpoonRb;
+    private bool isReturning = false;
+    private bool canShoot = true;
+    private Vector3 initialScale;
 
     void Start()
     {
-        if (harpoonPrefab == null)
-        {
-            Debug.LogError("Nie przypisano prefabrykatu Harpoon.");
-            return;
-        }
-
-        if (firePoint == null)
-        {
-            Debug.LogError("Nie przypisano FirePoint.");
-            return;
-        }
-
-        // Znajdź obiekt z TurretController w scenie
-        turretController = Object.FindFirstObjectByType<TurretController>();
-        if (turretController == null)
-        {
-            Debug.LogError("Nie znaleziono TurretController w scenie.");
-            return;
-        }
-
-        playerCamera = Camera.main;
-        SpawnHarpoon();
+        // Inicjalizuj harpun i ustaw jako child firePoint
+        currentHarpoon = Instantiate(harpoonPrefab, firePoint.position, firePoint.rotation, firePoint);
+        harpoonRb = currentHarpoon.GetComponent<Rigidbody>();
+        harpoonRb.isKinematic = true;
+        initialScale = currentHarpoon.transform.localScale;
     }
 
     void Update()
     {
-        if (turretController.isUsingTurret && turretController.isRaised && Input.GetMouseButtonDown(0)) // LPM
+        if (Input.GetMouseButtonDown(0) && canShoot)
         {
             ShootHarpoon();
         }
-    }
 
-    void SpawnHarpoon()
-    {
-        harpoonInstance = Instantiate(harpoonPrefab, firePoint.position, firePoint.rotation, firePoint);
-        harpoonInstance.transform.localScale = Vector3.one; // Ustawienie skali na (1, 1, 1)
-
-        harpoonRb = harpoonInstance.GetComponent<Rigidbody>();
-        if (harpoonRb == null)
+        if (isReturning)
         {
-            Debug.LogError("Prefabrykat Harpoon nie ma komponentu Rigidbody.");
+            ReturnHarpoon();
         }
-        harpoonInstance.SetActive(true); // Dezaktywuj harpun na starcie
     }
 
     void ShootHarpoon()
     {
-        if (harpoonInstance == null || harpoonRb == null)
-        {
-            Debug.LogError("Harpun nie został poprawnie zainicjalizowany.");
-            return;
-        }
+        // Odłącz harpun od firePoint i aktywuj go
+        currentHarpoon.transform.SetParent(null);
+        currentHarpoon.SetActive(true);
 
-        harpoonRb.isKinematic = false; // Upewnij się, że harpun nie jest kinematic
-
-        harpoonInstance.transform.position = firePoint.position;
-        harpoonInstance.transform.rotation = firePoint.rotation;
-        harpoonInstance.transform.SetParent(null); // Odłącz harpun od FirePoint
-        harpoonInstance.SetActive(true); // Aktywuj harpun
-
-        Vector3 shootDirection = GetShootDirection();
-        harpoonRb.linearVelocity = shootDirection * harpoonSpeed;
+        Vector3 shootDirection = (GetMouseWorldPosition() - firePoint.position).normalized;
+        harpoonRb.isKinematic = false;
+        harpoonRb.velocity = shootDirection * shootSpeed;
+        canShoot = false;
     }
 
-    Vector3 GetShootDirection()
+    void ReturnHarpoon()
     {
-        Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out RaycastHit hit))
+        Vector3 returnDirection = (firePoint.position - currentHarpoon.transform.position).normalized;
+        harpoonRb.velocity = returnDirection * returnSpeed;
+
+        if (Vector3.Distance(currentHarpoon.transform.position, firePoint.position) < 0.5f)
         {
-            return (hit.point - firePoint.position).normalized;
-        }
-        else
-        {
-            return ray.direction;
+            // Zatrzymaj harpun i ustaw jako child firePoint
+            harpoonRb.velocity = Vector3.zero;
+            harpoonRb.isKinematic = true;
+            currentHarpoon.transform.SetParent(firePoint);
+            currentHarpoon.transform.position = firePoint.position;
+            currentHarpoon.transform.rotation = firePoint.rotation;
+            currentHarpoon.transform.localScale = initialScale;
+            isReturning = false;
+            canShoot = true;
         }
     }
 
     public void OnHarpoonCollision()
     {
-        // Funkcja wywołana po kolizji harpunu
-        ReturnHarpoonToFirePoint();
+        isReturning = true;
+        harpoonRb.isKinematic = false;
     }
 
-    void ReturnHarpoonToFirePoint()
+    Vector3 GetMouseWorldPosition()
     {
-        if (harpoonInstance == null)
-        {
-            Debug.LogError("Harpun nie został poprawnie zainicjalizowany.");
-            return;
-        }
-
-        harpoonInstance.transform.position = firePoint.position;
-        harpoonInstance.transform.rotation = firePoint.rotation;
-        harpoonInstance.transform.SetParent(firePoint); // Podłącz harpun do FirePoint
-        harpoonInstance.SetActive(false); // Dezaktywuj harpun
+        Vector3 mouseScreenPosition = Input.mousePosition;
+        mouseScreenPosition.z = Camera.main.transform.position.y; // Adjust z to be the distance from the camera
+        return Camera.main.ScreenToWorldPoint(mouseScreenPosition);
     }
 }
