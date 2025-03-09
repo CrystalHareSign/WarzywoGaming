@@ -57,7 +57,7 @@ public class ObstacleDetector : MonoBehaviour
         }
         else
         {
-            Debug.Log("Detektor nie wykrywa ¿adnej przeszkody.");  // Logujemy, kiedy detektor nie ma przeszkody
+            //Debug.Log("Detektor nie wykrywa ¿adnej przeszkody.");  // Logujemy, kiedy detektor nie ma przeszkody
         }
     }
 

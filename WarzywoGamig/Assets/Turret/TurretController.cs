@@ -94,7 +94,7 @@ public class TurretController : MonoBehaviour
     {
         if (!isUsingTurret)
         {
-            Debug.Log("Aktywuję wieżyczkę.");
+            //Debug.Log("Aktywuję wieżyczkę.");
 
             TeleportPlayer(enterArea);
 

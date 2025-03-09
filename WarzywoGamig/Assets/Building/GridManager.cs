@@ -34,9 +34,17 @@ public class GridManager : MonoBehaviour
         else
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            if (transform.parent == null)
+            {
+                DontDestroyOnLoad(gameObject);
+            }
+            else
+            {
+                Debug.LogWarning("GridManager is a child GameObject. DontDestroyOnLoad will not work.");
+            }
         }
     }
+
 
     void Start()
     {

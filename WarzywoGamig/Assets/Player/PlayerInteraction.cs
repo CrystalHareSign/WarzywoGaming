@@ -132,7 +132,7 @@ public class PlayerInteraction : MonoBehaviour
     {
         if (turretController != null)
         {
-            Debug.Log($"{interactableItem.itemName} jest teraz w trybie wie퓓czki!");
+            //Debug.Log($"{interactableItem.itemName} jest teraz w trybie wie퓓czki!");
             turretController.UseTurret(); // U퓓wamy metody z TurretController do aktywacji wie퓓czki
         }
     }
