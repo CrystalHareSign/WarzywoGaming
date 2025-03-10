@@ -24,9 +24,14 @@ public class Harpoon : MonoBehaviour
     {
         Debug.Log("Harpoon zderzy³ siê z: " + collision.gameObject.name);
 
-        // Zatrzymaj ruch harpunu
-        harpoonRb.linearVelocity = Vector3.zero;
-        harpoonRb.angularVelocity = Vector3.zero;
+        // SprawdŸ, czy harpoonRb nie jest kinetyczny, zanim ustawisz prêdkoœæ
+        if (!harpoonRb.isKinematic)
+        {
+            // Zatrzymaj ruch harpunu
+            harpoonRb.linearVelocity = Vector3.zero;
+            harpoonRb.angularVelocity = Vector3.zero;
+        }
+
         harpoonRb.isKinematic = true;
 
         // Przeka¿ dane do HarpoonController
