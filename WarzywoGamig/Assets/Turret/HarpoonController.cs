@@ -6,12 +6,15 @@ public class HarpoonController : MonoBehaviour
     public Transform firePoint;
     public float shootSpeed = 20f;
     public float returnSpeed = 10f;
+    public float maxRange = 50f; // Maksymalny zasięg harpunu
 
     private GameObject currentHarpoon;
     private Rigidbody harpoonRb;
     private bool isReturning = false;
     private bool canShoot = true;
     private Vector3 initialScale = new Vector3(1, 1, 1);
+    private float currentShootDistance = 0f; // Aktualna odległość przebyta przez harpun
+    private Vector3 shootPosition; // Pozycja z której został wystrzelony harpun
 
     private TurretController turretController; // Referencja do TurretController
 
@@ -48,10 +51,22 @@ public class HarpoonController : MonoBehaviour
             {
                 ReturnHarpoon();
             }
+
+            // Sprawdź czy harpun przekroczył maksymalny zasięg
+            if (currentShootDistance >= maxRange)
+            {
+                StartReturnHarpoon();
+            }
         }
         else
         {
-            //Debug.LogError("turretController nie jest przypisany lub wieżyczka nie jest używana ani podniesiona.");
+            // Debug.LogError("turretController nie jest przypisany lub wieżyczka nie jest używana ani podniesiona.");
+        }
+
+        // Oblicz aktualną odległość przebyta przez harpun
+        if (currentHarpoon != null && !harpoonRb.isKinematic)
+        {
+            currentShootDistance = Vector3.Distance(shootPosition, currentHarpoon.transform.position);
         }
     }
 
@@ -67,6 +82,10 @@ public class HarpoonController : MonoBehaviour
             harpoonRb.isKinematic = false;
             harpoonRb.velocity = shootDirection * shootSpeed;
             canShoot = false;
+
+            // Zapisz pozycję z której harpun został wystrzelony
+            shootPosition = firePoint.position;
+            currentShootDistance = 0f;
         }
         else
         {
@@ -100,12 +119,24 @@ public class HarpoonController : MonoBehaviour
         }
     }
 
+    void StartReturnHarpoon()
+    {
+        if (harpoonRb != null)
+        {
+            harpoonRb.isKinematic = false; // Upewnij się, że harpun nie jest kinematyczny przed powrotem
+            isReturning = true;
+        }
+        else
+        {
+            Debug.LogError("harpoonRb nie jest przypisany.");
+        }
+    }
+
     public void OnHarpoonCollision()
     {
         if (harpoonRb != null)
         {
-            isReturning = true;
-            harpoonRb.isKinematic = false;
+            StartReturnHarpoon();
         }
         else
         {
@@ -116,7 +147,7 @@ public class HarpoonController : MonoBehaviour
     Vector3 GetMouseWorldPosition()
     {
         Vector3 mouseScreenPosition = Input.mousePosition;
-        mouseScreenPosition.z = Camera.main.transform.position.y; // Adjust z to be the distance from the camera
+        mouseScreenPosition.z = Camera.main.transform.position.y; // Dostosuj z do odległości od kamery
         return Camera.main.ScreenToWorldPoint(mouseScreenPosition);
     }
 }
