@@ -1185,9 +1185,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spawnablePrefabsGroup1:
   - prefab: {fileID: 4385719690331741413, guid: 0722d1e035305de419109ec854fbe855, type: 3}
-    spawnChance: 90
-  - prefab: {fileID: 1591325824849679810, guid: b545e7e9cb910ee409a3cdee4069334a, type: 3}
     spawnChance: 10
+  - prefab: {fileID: 1591325824849679810, guid: b545e7e9cb910ee409a3cdee4069334a, type: 3}
+    spawnChance: 90
   spawnPointsGroup1:
   - {fileID: 1633245306}
   - {fileID: 1325649894}
@@ -7934,7 +7934,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2005437070
 Transform:
   m_ObjectHideFlags: 0

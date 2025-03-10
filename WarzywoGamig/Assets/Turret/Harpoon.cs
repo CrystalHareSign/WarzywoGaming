@@ -4,6 +4,7 @@ public class Harpoon : MonoBehaviour
 {
     private Rigidbody harpoonRb;
     private HarpoonController harpoonController;
+    public float spawnedObjectSpeed;
 
     private void Start()
     {
@@ -28,7 +29,7 @@ public class Harpoon : MonoBehaviour
         if (!harpoonRb.isKinematic)
         {
             // Zatrzymaj ruch harpunu
-            harpoonRb.linearVelocity = Vector3.zero;
+            harpoonRb.velocity = Vector3.zero;
             harpoonRb.angularVelocity = Vector3.zero;
         }
 
@@ -39,5 +40,12 @@ public class Harpoon : MonoBehaviour
         {
             harpoonController.OnHarpoonCollision();
         }
+
+        //// Jeœli harpoon zderzy³ siê z obiektem z tagiem "Treasure", nadaj mu dodatkow¹ prêdkoœæ
+        //if (collision.gameObject.CompareTag("Treasure"))
+        //{
+        //    harpoonRb.isKinematic = false;
+        //    harpoonRb.velocity = transform.forward * spawnedObjectSpeed;
+        //}
     }
 }
