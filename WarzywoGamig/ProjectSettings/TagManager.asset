@@ -12,6 +12,7 @@ TagManager:
   - Weapon
   - Item
   - Turret
+  - Treasure
   layers:
   - Default
   - TransparentFX
