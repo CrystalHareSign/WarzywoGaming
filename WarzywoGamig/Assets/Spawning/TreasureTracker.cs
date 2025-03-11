@@ -20,7 +20,7 @@ public class TreasureTracker : MonoBehaviour
     {
         if (treasureRb != null)
         {
-            CurrentVelocity = treasureRb.velocity;
+            CurrentVelocity = treasureRb.linearVelocity;
             CurrentDirection = CurrentVelocity.normalized;
         }
     }

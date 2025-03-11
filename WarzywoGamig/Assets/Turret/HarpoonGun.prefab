@@ -265,11 +265,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   harpoonPrefab: {fileID: 238242757751386101, guid: 11509d1350415f44ab1b32b0aeb84381, type: 3}
   firePoint: {fileID: 661208314154918027}
-  shootSpeed: 500
-  returnSpeed: 200
+  shootSpeed: 400
+  returnSpeed: 300
   maxRange: 300
-  maxAngleToTarget: 30
+  maxHorizontalAngleToTarget: 45
+  maxVerticalAngleToTarget: 45
   detectionRange: 300
+  minDetectionRange: 20
+  showRangesInScene: 1
 --- !u!1 &6505266079822188895
 GameObject:
   m_ObjectHideFlags: 0
