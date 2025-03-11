@@ -1,13 +1,17 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 public class HarpoonController : MonoBehaviour
 {
     public GameObject harpoonPrefab;
     public Transform firePoint;
+    public Transform treasureMountPoint; // Nowy punkt montażu dla Treasure
     [Header("HARPUN PARAMETRY")]
     public float shootSpeed = 20f;
     public float returnSpeed = 10f;
     public float maxRange = 50f; // Maksymalny zasięg harpunu
+    public float reloadTime = 2f; // Czas przeładowania harpunu w sekundach
+    public float treasureLifetime = 5f; // Czas, po którym Treasure zostaje zniszczone po powrocie harpunu
     [Header("! DRGANIE !")]
     public float returnTolerance = 3.0f;
     [Header("WYKRYWANIE")]
@@ -40,6 +44,13 @@ public class HarpoonController : MonoBehaviour
             harpoonRb = currentHarpoon.GetComponent<Rigidbody>();
             harpoonRb.isKinematic = true;
             currentHarpoon.transform.localScale = initialScale; // Ustaw skalę na 1x1x1
+
+            // Ustaw treasureLifetime w skrypcie Harpoon
+            Harpoon harpoonScript = currentHarpoon.GetComponent<Harpoon>();
+            if (harpoonScript != null)
+            {
+                harpoonScript.treasureLifetime = treasureLifetime;
+            }
         }
         else
         {
@@ -101,11 +112,20 @@ public class HarpoonController : MonoBehaviour
             // Zapisz pozycję z której harpun został wystrzelony
             shootPosition = firePoint.position;
             currentShootDistance = 0f;
+
+            // Rozpocznij proces powrotu harpunu po określonym czasie
+            StartCoroutine(ReturnHarpoonAfterDelay());
         }
         else
         {
             Debug.LogError("currentHarpoon nie jest przypisany.");
         }
+    }
+
+    IEnumerator ReturnHarpoonAfterDelay()
+    {
+        yield return new WaitForSeconds(reloadTime);
+        StartReturnHarpoon();
     }
 
     void ReturnHarpoon()
@@ -124,8 +144,16 @@ public class HarpoonController : MonoBehaviour
                 currentHarpoon.transform.localPosition = Vector3.zero;
                 currentHarpoon.transform.localRotation = Quaternion.identity;
                 currentHarpoon.transform.localScale = initialScale; // Ustaw skalę na 1x1x1
+
+                // Zresetuj pozycję i rotację przyczepionego obiektu
+                foreach (Transform child in currentHarpoon.transform)
+                {
+                    child.localPosition = Vector3.zero;
+                    child.localRotation = Quaternion.identity;
+                }
+
                 isReturning = false;
-                canShoot = true;
+                StartCoroutine(ReloadHarpoon());
             }
         }
         else
@@ -145,6 +173,12 @@ public class HarpoonController : MonoBehaviour
         {
             Debug.LogError("harpoonRb nie jest przypisany.");
         }
+    }
+
+    IEnumerator ReloadHarpoon()
+    {
+        yield return new WaitForSeconds(reloadTime);
+        canShoot = true;
     }
 
     public void OnHarpoonCollision()

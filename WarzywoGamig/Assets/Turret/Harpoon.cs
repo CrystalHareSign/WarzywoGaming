@@ -5,6 +5,7 @@ public class Harpoon : MonoBehaviour
     private Rigidbody harpoonRb;
     private HarpoonController harpoonController;
     public Transform treasureMountPoint; // Nowy punkt montażu dla Treasure
+    public float treasureLifetime = 5f; // Czas, po którym Treasure zostaje zniszczone
 
     private void Start()
     {
@@ -26,7 +27,7 @@ public class Harpoon : MonoBehaviour
         if (!harpoonRb.isKinematic)
         {
             // Zatrzymaj ruch harpunu
-            harpoonRb.velocity = Vector3.zero;
+            harpoonRb.linearVelocity = Vector3.zero;
             harpoonRb.angularVelocity = Vector3.zero;
         }
 
@@ -51,14 +52,14 @@ public class Harpoon : MonoBehaviour
             // Utwórz kopię obiektu bez skryptów
             GameObject treasureCopy = Instantiate(originalObject, originalPosition, originalRotation);
 
-            //// Usuń wszystkie skrypty poza SpecificScript
-            //foreach (var script in treasureCopy.GetComponents<MonoBehaviour>())
-            //{
-            //    if (!(script is SpecificScript))
-            //    {
-            //        Destroy(script);
-            //    }
-            //}
+            // Usuń wszystkie skrypty poza TreasureResources
+            foreach (var script in treasureCopy.GetComponents<MonoBehaviour>())
+            {
+                if (!(script is TreasureResources))
+                {
+                    Destroy(script);
+                }
+            }
 
             // Ustaw obiekt jako kinematyczny, wyłącz collider i zresetuj jego skalę
             Rigidbody treasureRb = treasureCopy.GetComponent<Rigidbody>();
@@ -79,6 +80,9 @@ public class Harpoon : MonoBehaviour
 
             // Zniszcz oryginalny obiekt
             Destroy(originalObject);
+
+            // Zniszcz kopię po treasureLifetime
+            Destroy(treasureCopy, treasureLifetime);
         }
     }
 }
