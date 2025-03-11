@@ -4,11 +4,18 @@ public class HarpoonController : MonoBehaviour
 {
     public GameObject harpoonPrefab;
     public Transform firePoint;
+    [Header("HARPUN PARAMETRY")]
     public float shootSpeed = 20f;
     public float returnSpeed = 10f;
     public float maxRange = 50f; // Maksymalny zasięg harpunu
-    public float maxAngleToTarget = 30f; // Maksymalny kąt, w którym harpun naprowadza się na cel
+    [Header("! DRGANIE !")]
+    public float returnTolerance = 3.0f;
+    [Header("WYKRYWANIE")]
+    public float maxHorizontalAngleToTarget = 30f; // Maksymalny poziomy kąt, w którym harpun naprowadza się na cel
+    public float maxVerticalAngleToTarget = 30f; // Maksymalny pionowy kąt, w którym harpun naprowadza się na cel
     public float detectionRange = 100f; // Maksymalny zasięg wykrywania celu
+    public float minDetectionRange = 10f; // Minimalny zasięg wykrywania celu
+    public bool showRangesInScene = true; // Czy pokazywać zakresy w scenie
 
     private GameObject currentHarpoon;
     private Rigidbody harpoonRb;
@@ -23,7 +30,7 @@ public class HarpoonController : MonoBehaviour
     void Start()
     {
         // Automatyczne przypisanie TurretController
-        turretController = FindObjectOfType<TurretController>();
+        turretController = Object.FindFirstObjectByType<TurretController>();
 
         if (harpoonPrefab != null && firePoint != null)
         {
@@ -49,15 +56,12 @@ public class HarpoonController : MonoBehaviour
                 GameObject target = FindClosestTreasureInView();
                 if (target != null)
                 {
-                    //Debug.Log("Found target in view: " + target.name);
                     Vector3 predictedPosition = PredictTargetPosition(target);
-                    //Debug.Log("Predicted position: " + predictedPosition);
                     ShootHarpoon(predictedPosition);
                 }
                 else
                 {
                     Vector3 shootDirection = GetMouseWorldPosition();
-                    //Debug.Log("Shooting in mouse direction: " + shootDirection);
                     ShootHarpoon(shootDirection);
                 }
             }
@@ -78,7 +82,6 @@ public class HarpoonController : MonoBehaviour
         if (currentHarpoon != null && !harpoonRb.isKinematic)
         {
             currentShootDistance = Vector3.Distance(shootPosition, currentHarpoon.transform.position);
-            //Debug.Log("Current shoot distance: " + currentShootDistance);
         }
     }
 
@@ -92,14 +95,12 @@ public class HarpoonController : MonoBehaviour
 
             Vector3 shootDirection = (targetPosition - firePoint.position).normalized;
             harpoonRb.isKinematic = false;
-            harpoonRb.velocity = shootDirection * shootSpeed;
+            harpoonRb.linearVelocity = shootDirection * shootSpeed;
             canShoot = false;
 
             // Zapisz pozycję z której harpun został wystrzelony
             shootPosition = firePoint.position;
             currentShootDistance = 0f;
-
-            //Debug.Log("Harpoon shot towards: " + targetPosition + " with direction: " + shootDirection);
         }
         else
         {
@@ -112,12 +113,12 @@ public class HarpoonController : MonoBehaviour
         if (currentHarpoon != null)
         {
             Vector3 returnDirection = (firePoint.position - currentHarpoon.transform.position).normalized;
-            harpoonRb.velocity = returnDirection * returnSpeed;
+            harpoonRb.linearVelocity = returnDirection * returnSpeed;
 
-            if (Vector3.Distance(currentHarpoon.transform.position, firePoint.position) < 0.5f)
+            if (Vector3.Distance(currentHarpoon.transform.position, firePoint.position) < returnTolerance) // Zwiększony margines tolerancji
             {
                 // Zatrzymaj harpun i ustaw jako child firePoint
-                harpoonRb.velocity = Vector3.zero;
+                harpoonRb.linearVelocity = Vector3.zero;
                 harpoonRb.isKinematic = true;
                 currentHarpoon.transform.SetParent(firePoint);
                 currentHarpoon.transform.localPosition = Vector3.zero;
@@ -167,10 +168,11 @@ public class HarpoonController : MonoBehaviour
         foreach (GameObject treasure in treasures)
         {
             Vector3 directionToTreasure = (treasure.transform.position - firePoint.position).normalized;
-            float angleToTreasure = Vector3.Angle(firePoint.forward, directionToTreasure);
+            float angleToTreasureHorizontal = Vector3.Angle(firePoint.forward, new Vector3(directionToTreasure.x, 0, directionToTreasure.z));
+            float angleToTreasureVertical = Vector3.Angle(firePoint.forward, new Vector3(0, directionToTreasure.y, directionToTreasure.z));
             float distanceToTreasure = Vector3.Distance(firePoint.position, treasure.transform.position);
 
-            if (angleToTreasure <= maxAngleToTarget && distanceToTreasure <= detectionRange)
+            if (angleToTreasureHorizontal <= maxHorizontalAngleToTarget && angleToTreasureVertical <= maxVerticalAngleToTarget && distanceToTreasure <= detectionRange && distanceToTreasure >= minDetectionRange)
             {
                 if (distanceToTreasure < closestDistance)
                 {
@@ -205,5 +207,47 @@ public class HarpoonController : MonoBehaviour
         Vector3 mouseScreenPosition = Input.mousePosition;
         mouseScreenPosition.z = Camera.main.transform.position.y; // Dostosuj z do odległości od kamery
         return Camera.main.ScreenToWorldPoint(mouseScreenPosition);
+    }
+
+    void OnDrawGizmos()
+    {
+        if (showRangesInScene)
+        {
+            // Rysowanie maksymalnego zasięgu wykrywania celu
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(firePoint.position, detectionRange);
+
+            // Rysowanie minimalnego zasięgu wykrywania celu
+            Gizmos.color = Color.blue;
+            Gizmos.DrawWireSphere(firePoint.position, minDetectionRange);
+
+            // Rysowanie maksymalnego zasięgu harpunu
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(firePoint.position, maxRange);
+
+            // Rysowanie stożka widzenia
+            Gizmos.color = Color.yellow;
+            DrawViewCone(firePoint.position, firePoint.forward, maxHorizontalAngleToTarget, maxVerticalAngleToTarget, detectionRange);
+        }
+    }
+
+    void DrawViewCone(Vector3 position, Vector3 direction, float horizontalAngle, float verticalAngle, float range)
+    {
+        // Rysowanie stożka widzenia w obu płaszczyznach
+        Vector3 up = Quaternion.Euler(verticalAngle, 0, 0) * direction * range;
+        Vector3 down = Quaternion.Euler(-verticalAngle, 0, 0) * direction * range;
+        Vector3 left = Quaternion.Euler(0, -horizontalAngle, 0) * direction * range;
+        Vector3 right = Quaternion.Euler(0, horizontalAngle, 0) * direction * range;
+
+        Gizmos.DrawLine(position, position + up);
+        Gizmos.DrawLine(position, position + down);
+        Gizmos.DrawLine(position, position + left);
+        Gizmos.DrawLine(position, position + right);
+
+        // Połączenie krawędzi stożka
+        Gizmos.DrawLine(position + up, position + left);
+        Gizmos.DrawLine(position + up, position + right);
+        Gizmos.DrawLine(position + down, position + left);
+        Gizmos.DrawLine(position + down, position + right);
     }
 }
