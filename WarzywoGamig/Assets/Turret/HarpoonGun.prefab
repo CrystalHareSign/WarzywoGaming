@@ -265,9 +265,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   harpoonPrefab: {fileID: 4978519809050357980, guid: 600dfc55fcceaa74db396d3660ded222, type: 3}
   firePoint: {fileID: 661208314154918027}
+  treasureMountPoint: {fileID: 0}
   shootSpeed: 400
   returnSpeed: 300
   maxRange: 300
+  reloadTime: 2
+  treasureLifetime: 10
   returnTolerance: 3
   maxHorizontalAngleToTarget: 45
   maxVerticalAngleToTarget: 45
