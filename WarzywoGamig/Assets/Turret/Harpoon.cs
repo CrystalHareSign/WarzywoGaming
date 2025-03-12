@@ -4,8 +4,9 @@ public class Harpoon : MonoBehaviour
 {
     private Rigidbody harpoonRb;
     private HarpoonController harpoonController;
+    private TurretCollector turretCollector; // Dodaj referencję do TurretCollector
     public Transform treasureMountPoint; // Nowy punkt montażu dla Treasure
-    public float treasureLifetime = 5f; // Czas, po którym Treasure zostaje zniszczone
+    public float treasureLifetime; // Czas, po którym Treasure zostaje zniszczone
 
     private void Start()
     {
@@ -17,6 +18,12 @@ public class Harpoon : MonoBehaviour
 
         harpoonController = Object.FindFirstObjectByType<HarpoonController>();
         if (harpoonController == null)
+        {
+            Debug.LogError("Nie znaleziono HarpoonController w scenie.");
+        }
+
+        turretCollector = Object.FindFirstObjectByType<TurretCollector>();
+        if (turretCollector == null)
         {
             Debug.LogError("Nie znaleziono HarpoonController w scenie.");
         }
@@ -77,6 +84,13 @@ public class Harpoon : MonoBehaviour
             // Przypisz kopię jako dziecko treasureMountPoint
             treasureCopy.transform.SetParent(treasureMountPoint);
             treasureCopy.transform.localPosition = Vector3.zero; // Ustaw lokalną pozycję na (0,0,0)
+
+            // Przekaż zasoby do TurretCollector
+            TreasureResources treasureResources = treasureCopy.GetComponent<TreasureResources>();
+            if (treasureResources != null && turretCollector != null)
+            {
+                turretCollector.CollectResource(treasureResources);
+            }
 
             // Zniszcz oryginalny obiekt
             Destroy(originalObject);
