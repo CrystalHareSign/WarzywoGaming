@@ -9,6 +9,7 @@ public class TurretCollector : MonoBehaviour
         public Transform slotTransform;
         public string resourceCategory = "";
         public int resourceCount = 0;
+        public GameObject resourceVisual;
     }
 
     public List<ResourceSlot> resourceSlots = new List<ResourceSlot>();
@@ -16,24 +17,25 @@ public class TurretCollector : MonoBehaviour
 
     void Start()
     {
-        // Initialize resource slots with empty categories and zero resources
+        // Initialize resource slots with empty categories, zero resources, and no visual representation
         foreach (var slot in resourceSlots)
         {
             slot.resourceCategory = "";
             slot.resourceCount = 0;
+            slot.resourceVisual = null;
         }
     }
 
     public void CollectResource(TreasureResources treasureResources)
     {
-        foreach (var category in treasureResources.resourceCategories)
+        foreach (var category in treasureResources.GetResourceCategories())
         {
-            int remainingResources = treasureResources.resourceCount;
+            int remainingResources = category.resourceCount;
 
             for (int i = 0; i < resourceSlots.Count; i++)
             {
                 var slot = resourceSlots[i];
-                if (slot.resourceCategory == "" || slot.resourceCategory == category)
+                if (slot.resourceCategory == "" || slot.resourceCategory == category.name)
                 {
                     int availableSpace = maxResourcePerSlot - slot.resourceCount;
                     int resourcesToCollect = Mathf.Min(remainingResources, availableSpace);
@@ -42,13 +44,13 @@ public class TurretCollector : MonoBehaviour
                     {
                         if (slot.resourceCategory == "")
                         {
-                            slot.resourceCategory = category;
+                            slot.resourceCategory = category.name;
                         }
                         slot.resourceCount += resourcesToCollect;
                         remainingResources -= resourcesToCollect;
 
-                        // Spawn a visual representation of the collected resources
-                        SpawnResourceVisual(slot.slotTransform, treasureResources.gameObject, resourcesToCollect);
+                        // Update or spawn a visual representation of the collected resources
+                        UpdateResourceVisual(slot, treasureResources.gameObject, category.name, slot.resourceCount);
 
                         if (remainingResources == 0)
                         {
@@ -60,42 +62,32 @@ public class TurretCollector : MonoBehaviour
         }
     }
 
-    private void SpawnResourceVisual(Transform slotTransform, GameObject originalResource, int resourceCount)
+    private void UpdateResourceVisual(ResourceSlot slot, GameObject originalResource, string resourceCategory, int resourceCount)
     {
-        // Create a copy of the original resource with a smaller scale
-        GameObject resourceCopy = Instantiate(originalResource, slotTransform.position, slotTransform.rotation);
-        resourceCopy.transform.SetParent(slotTransform);
-        resourceCopy.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
-
-        // Update the TreasureResources component of the copied resource
-        TreasureResources copyResources = resourceCopy.GetComponent<TreasureResources>();
-        if (copyResources == null)
+        if (slot.resourceVisual == null)
         {
-            copyResources = resourceCopy.AddComponent<TreasureResources>();
-        }
-        copyResources.resourceCount = resourceCount;
-        copyResources.resourceCategories = new List<string> { copyResources.resourceCategories[0] }; // Keep only the category of the collected resource
+            // Create a new visual representation if none exists
+            slot.resourceVisual = Instantiate(originalResource, slot.slotTransform.position, slot.slotTransform.rotation);
+            slot.resourceVisual.transform.SetParent(slot.slotTransform);
+            slot.resourceVisual.transform.localPosition = Vector3.zero;
+            slot.resourceVisual.transform.localScale = Vector3.one * 0.2f;
 
-        // Remove all other scripts from the copied resource
-        foreach (var script in resourceCopy.GetComponents<MonoBehaviour>())
-        {
-            if (!(script is TreasureResources))
+            // Remove all other scripts from the copied resource except TreasureResources
+            foreach (var script in slot.resourceVisual.GetComponents<MonoBehaviour>())
             {
-                Destroy(script);
+                if (!(script is TreasureResources))
+                {
+                    Destroy(script);
+                }
             }
         }
 
-        // Reset collider to the new position and size
-        Collider resourceCollider = resourceCopy.GetComponent<Collider>();
-        if (resourceCollider != null)
+        // Update the TreasureResources component of the copied resource
+        TreasureResources copyResources = slot.resourceVisual.GetComponent<TreasureResources>();
+        if (copyResources == null)
         {
-            resourceCollider.enabled = false; // Disable collider to reset its bounds
-            resourceCollider.enabled = true;  // Enable collider to apply the new bounds
+            copyResources = slot.resourceVisual.AddComponent<TreasureResources>();
         }
-        Rigidbody resourceRb = resourceCopy.GetComponent<Rigidbody>();
-        if (resourceRb != null)
-        {
-            resourceRb.isKinematic = true;
-        }
+        copyResources.resourceCategories = new List<ResourceCategory> { new ResourceCategory { name = resourceCategory, isActive = true, resourceCount = resourceCount } }; // Keep only the category of the collected resource
     }
 }
