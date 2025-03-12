@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 6979507498194262447}
   - component: {fileID: -1630196577918655703}
   m_Layer: 7
-  m_Name: Treasure
+  m_Name: TreasureSilver
   m_TagString: Treasure
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -162,8 +162,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c67910c76a1db1d4eb32d13ba078b292, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  resourceCount: 0
-  minResourceCount: 5
-  maxResourceCount: 10
   resourceCategories:
-  - Gold
+  - name: Silver
+    isActive: 1
+    minResourceCount: 4
+    maxResourceCount: 5
+    resourceCount: 0
