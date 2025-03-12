@@ -11,7 +11,7 @@ public class HarpoonController : MonoBehaviour
     public float returnSpeed = 10f;
     public float maxRange = 50f; // Maksymalny zasięg harpunu
     public float reloadTime = 2f; // Czas przeładowania harpunu w sekundach
-    public float treasureLifetime = 5f; // Czas, po którym Treasure zostaje zniszczone po powrocie harpunu
+    public float treasureLifetime = 1f; // Czas, po którym Treasure zostaje zniszczone po powrocie harpunu
     [Header("! DRGANIE !")]
     public float returnTolerance = 3.0f;
     [Header("WYKRYWANIE")]

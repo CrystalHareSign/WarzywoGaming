@@ -270,7 +270,7 @@ MonoBehaviour:
   returnSpeed: 300
   maxRange: 300
   reloadTime: 2
-  treasureLifetime: 10
+  treasureLifetime: 1
   returnTolerance: 3
   maxHorizontalAngleToTarget: 45
   maxVerticalAngleToTarget: 45
