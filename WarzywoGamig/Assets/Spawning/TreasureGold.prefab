@@ -167,8 +167,13 @@ MonoBehaviour:
   resourceCategories:
   - name: Gold
     isActive: 1
-    minResourceCount: 2
-    maxResourceCount: 3
+    minResourceCount: 9
+    maxResourceCount: 10
+    resourceCount: 0
+  - name: Silver
+    isActive: 1
+    minResourceCount: 9
+    maxResourceCount: 10
     resourceCount: 0
 --- !u!114 &6630829200974938628
 MonoBehaviour:
