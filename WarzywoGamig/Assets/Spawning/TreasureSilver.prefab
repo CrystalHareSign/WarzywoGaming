@@ -15,6 +15,8 @@ GameObject:
   - component: {fileID: -688377564213083489}
   - component: {fileID: 6979507498194262447}
   - component: {fileID: -1630196577918655703}
+  - component: {fileID: -6617605308913028778}
+  - component: {fileID: -712420782758217477}
   m_Layer: 7
   m_Name: TreasureSilver
   m_TagString: Treasure
@@ -168,3 +170,46 @@ MonoBehaviour:
     minResourceCount: 4
     maxResourceCount: 5
     resourceCount: 0
+--- !u!114 &-6617605308913028778
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1591325824849679810}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a232f88565b95744a8035c4ec583243, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverMessage: {fileID: 0}
+  itemName: Treasure
+  startAsNonInteractive: 0
+  canBePickedUp: 1
+  canBeDropped: 0
+  isWeapon: 0
+  isLoot: 0
+  isTurret: 0
+  alwaysInteractive: 0
+  hasCooldown: 0
+  usesHealthSystem: 0
+  maxHealth: 2
+  currentHealth: 0
+  requiredHoldTime: 0
+  wheelIndex: 0
+--- !u!114 &-712420782758217477
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1591325824849679810}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9c10a544bb40ac40ba2b7fe60df5b57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  message: "Wci\u015Bnij E aby podnie\u015B\u0107"
+  interactionDistance: 3
+  isInteracted: 0
+  alwaysActive: 1

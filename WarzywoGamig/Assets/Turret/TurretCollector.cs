@@ -64,6 +64,12 @@ public class TurretCollector : MonoBehaviour
 
     private void UpdateResourceVisual(ResourceSlot slot, GameObject originalResource, string resourceCategory, int resourceCount)
     {
+        if (slot.slotTransform == null)
+        {
+            Debug.LogError("slotTransform is null for ResourceSlot.");
+            return;
+        }
+
         if (slot.resourceVisual == null)
         {
             // Create a new visual representation if none exists
@@ -72,15 +78,39 @@ public class TurretCollector : MonoBehaviour
             slot.resourceVisual.transform.localPosition = Vector3.zero;
             slot.resourceVisual.transform.localScale = Vector3.one * 0.2f;
 
-            // Remove all other scripts from the copied resource except TreasureResources
+            // Remove all other scripts from the copied resource except TreasureResources, InteractableItem, and HoverMessage
             foreach (var script in slot.resourceVisual.GetComponents<MonoBehaviour>())
             {
-                if (!(script is TreasureResources))
+                if (!(script is TreasureResources) && !(script is InteractableItem) && !(script is HoverMessage))
                 {
                     Destroy(script);
                 }
             }
         }
+
+        // Ensure the collider is enabled
+        Collider resourceCollider = slot.resourceVisual.GetComponent<Collider>();
+        if (resourceCollider != null)
+        {
+            resourceCollider.enabled = true;
+        }
+
+        // Ensure InteractableItem and HoverMessage components are enabled
+        InteractableItem interactableItem = slot.resourceVisual.GetComponent<InteractableItem>();
+        if (interactableItem != null)
+        {
+            interactableItem.enabled = true;
+        }
+
+        HoverMessage hoverMessage = slot.resourceVisual.GetComponent<HoverMessage>();
+        if (hoverMessage != null)
+        {
+            hoverMessage.enabled = true;
+        }
+
+        // Reset the scale and position of the resource
+        slot.resourceVisual.transform.localScale = Vector3.one * 0.2f;
+        slot.resourceVisual.transform.localPosition = Vector3.zero;
 
         // Update the TreasureResources component of the copied resource
         TreasureResources copyResources = slot.resourceVisual.GetComponent<TreasureResources>();
