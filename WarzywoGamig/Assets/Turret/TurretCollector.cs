@@ -88,6 +88,15 @@ public class TurretCollector : MonoBehaviour
         {
             copyResources = slot.resourceVisual.AddComponent<TreasureResources>();
         }
-        copyResources.resourceCategories = new List<ResourceCategory> { new ResourceCategory { name = resourceCategory, isActive = true, resourceCount = resourceCount } }; // Keep only the category of the collected resource
+        // Ensure the resource count matches the collected amount
+        ResourceCategory resourceCategoryToUpdate = copyResources.resourceCategories.Find(rc => rc.name == resourceCategory);
+        if (resourceCategoryToUpdate != null)
+        {
+            resourceCategoryToUpdate.resourceCount = resourceCount;
+        }
+        else
+        {
+            copyResources.resourceCategories.Add(new ResourceCategory { name = resourceCategory, isActive = true, resourceCount = resourceCount });
+        }
     }
 }
