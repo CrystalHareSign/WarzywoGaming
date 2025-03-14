@@ -102,8 +102,18 @@ public class InventoryUI : MonoBehaviour
         // Aktualizujemy ikony i teksty dla podniesionych przedmiotów
         for (int i = 0; i < items.Count && i < 4; i++)
         {
+            if (items[i] == null) continue; // Pomija usunięte obiekty
+
+            // Sprawdzamy, czy obiekt został zniszczony (Unitiowa sztuczka)
+            if (!items[i])
+            {
+                Debug.LogWarning("Obiekt w liście przedmiotów został zniszczony.");
+                continue;
+            }
+
             InteractableItem item = items[i].GetComponent<InteractableItem>();
             TreasureResources treasureResources = items[i].GetComponent<TreasureResources>();
+
             if (item != null && treasureResources != null)
             {
                 itemImages[i].sprite = itemIcons.ContainsKey(item.itemName) ? itemIcons[item.itemName] : defaultItemSprite;
