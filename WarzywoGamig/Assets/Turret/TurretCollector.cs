@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Unity.VisualScripting.Antlr3.Runtime.Misc;
 
 public class TurretCollector : MonoBehaviour
 {
@@ -25,6 +26,7 @@ public class TurretCollector : MonoBehaviour
             slot.resourceVisual = null;
         }
     }
+<<<<<<< Updated upstream
     void Update()
     {
         // Monitor the resource slots in every frame to reset them if needed
@@ -44,6 +46,25 @@ public class TurretCollector : MonoBehaviour
 
                 // Optionally, you can add a visual cue here for when the slot becomes empty
                 // For example: Debug.Log("Slot " + slot.slotTransform.name + " is now empty.");
+=======
+    public void ResetSlotForItem(GameObject item)
+    {
+        foreach (var slot in resourceSlots)
+        {
+            if (slot.resourceVisual == item)
+            {
+                slot.resourceCategory = "";
+                slot.resourceCount = 0;
+
+                // Upewniamy siê, ¿e referencja nie bêdzie wskazywaæ na zniszczony obiekt
+                if (slot.resourceVisual != null)
+                {
+                    slot.resourceVisual.SetActive(false);
+                    slot.resourceVisual = null;
+                }
+
+                return;
+>>>>>>> Stashed changes
             }
         }
     }
@@ -63,6 +84,13 @@ public class TurretCollector : MonoBehaviour
             for (int i = 0; i < resourceSlots.Count; i++)
             {
                 var slot = resourceSlots[i];
+
+                // Sprawdzamy, czy resourceVisual nadal istnieje
+                if (slot.resourceVisual != null && !slot.resourceVisual)
+                {
+                    slot.resourceVisual = null; // Zerujemy, jeœli obiekt zosta³ usuniêty
+                }
+
                 if (slot.resourceCategory == "" || slot.resourceCategory == category.name)
                 {
                     int availableSpace = maxResourcePerSlot - slot.resourceCount;
@@ -77,7 +105,7 @@ public class TurretCollector : MonoBehaviour
                         slot.resourceCount += resourcesToCollect;
                         remainingResources -= resourcesToCollect;
 
-                        // Update or spawn a visual representation of the collected resources
+                        // Aktualizacja lub stworzenie nowego wizualnego obiektu zasobu
                         UpdateResourceVisual(slot, treasureResources.gameObject, category.name, slot.resourceCount);
 
                         if (remainingResources == 0)
