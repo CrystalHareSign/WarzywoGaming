@@ -25,6 +25,28 @@ public class TurretCollector : MonoBehaviour
             slot.resourceVisual = null;
         }
     }
+    void Update()
+    {
+        // Monitor the resource slots in every frame to reset them if needed
+        MonitorSlots();
+    }
+    private void MonitorSlots()
+    {
+        // Monitor slots and reset them if the visual object is inactive (not active in hierarchy)
+        foreach (var slot in resourceSlots)
+        {
+            if (slot.resourceVisual != null && !slot.resourceVisual.activeInHierarchy && slot.resourceCategory != "")
+            {
+                // Reset the slot when the visual object is inactive
+                slot.resourceCategory = "";
+                slot.resourceCount = 0;
+                slot.resourceVisual = null;
+
+                // Optionally, you can add a visual cue here for when the slot becomes empty
+                // For example: Debug.Log("Slot " + slot.slotTransform.name + " is now empty.");
+            }
+        }
+    }
 
     public void CollectResource(TreasureResources treasureResources)
     {
@@ -108,24 +130,6 @@ public class TurretCollector : MonoBehaviour
             {
                 hoverMessage.enabled = true;
             }
-        }
-
-        // Zaktualizowanie komponentu TreasureResources
-        TreasureResources copyResources = slot.resourceVisual.GetComponent<TreasureResources>();
-        if (copyResources == null)
-        {
-            copyResources = slot.resourceVisual.AddComponent<TreasureResources>();
-        }
-
-        // Aktualizacja licznika zasobów
-        ResourceCategory resourceCategoryToUpdate = copyResources.resourceCategories.Find(rc => rc.name == resourceCategory);
-        if (resourceCategoryToUpdate != null)
-        {
-            resourceCategoryToUpdate.resourceCount = resourceCount;
-        }
-        else
-        {
-            copyResources.resourceCategories.Add(new ResourceCategory { name = resourceCategory, isActive = true, resourceCount = resourceCount });
         }
     }
 }
