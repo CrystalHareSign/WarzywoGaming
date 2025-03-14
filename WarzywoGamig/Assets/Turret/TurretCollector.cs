@@ -28,6 +28,12 @@ public class TurretCollector : MonoBehaviour
 
     public void CollectResource(TreasureResources treasureResources)
     {
+        if (treasureResources == null || treasureResources.GetResourceCategories() == null)
+        {
+            Debug.LogError("TreasureResources is null or no resource categories found.");
+            return;
+        }
+
         foreach (var category in treasureResources.GetResourceCategories())
         {
             int remainingResources = category.resourceCount;
@@ -70,15 +76,15 @@ public class TurretCollector : MonoBehaviour
             return;
         }
 
+        // Tworzenie wizualizacji zasobu tylko jeœli nie istnieje
         if (slot.resourceVisual == null)
         {
-            // Create a new visual representation if none exists
             slot.resourceVisual = Instantiate(originalResource, slot.slotTransform.position, slot.slotTransform.rotation);
             slot.resourceVisual.transform.SetParent(slot.slotTransform);
             slot.resourceVisual.transform.localPosition = Vector3.zero;
             slot.resourceVisual.transform.localScale = Vector3.one * 0.2f;
 
-            // Remove all other scripts from the copied resource except TreasureResources, InteractableItem, and HoverMessage
+            // Usuwanie niepotrzebnych komponentów
             foreach (var script in slot.resourceVisual.GetComponents<MonoBehaviour>())
             {
                 if (!(script is TreasureResources) && !(script is InteractableItem) && !(script is HoverMessage))
@@ -86,39 +92,32 @@ public class TurretCollector : MonoBehaviour
                     Destroy(script);
                 }
             }
+
+            // W³¹czenie komponentów kolizji oraz interakcji
+            if (slot.resourceVisual.TryGetComponent(out Collider resourceCollider))
+            {
+                resourceCollider.enabled = true;
+            }
+
+            if (slot.resourceVisual.TryGetComponent(out InteractableItem interactableItem))
+            {
+                interactableItem.enabled = true;
+            }
+
+            if (slot.resourceVisual.TryGetComponent(out HoverMessage hoverMessage))
+            {
+                hoverMessage.enabled = true;
+            }
         }
 
-        // Ensure the collider is enabled
-        Collider resourceCollider = slot.resourceVisual.GetComponent<Collider>();
-        if (resourceCollider != null)
-        {
-            resourceCollider.enabled = true;
-        }
-
-        // Ensure InteractableItem and HoverMessage components are enabled
-        InteractableItem interactableItem = slot.resourceVisual.GetComponent<InteractableItem>();
-        if (interactableItem != null)
-        {
-            interactableItem.enabled = true;
-        }
-
-        HoverMessage hoverMessage = slot.resourceVisual.GetComponent<HoverMessage>();
-        if (hoverMessage != null)
-        {
-            hoverMessage.enabled = true;
-        }
-
-        // Reset the scale and position of the resource
-        slot.resourceVisual.transform.localScale = Vector3.one * 0.2f;
-        slot.resourceVisual.transform.localPosition = Vector3.zero;
-
-        // Update the TreasureResources component of the copied resource
+        // Zaktualizowanie komponentu TreasureResources
         TreasureResources copyResources = slot.resourceVisual.GetComponent<TreasureResources>();
         if (copyResources == null)
         {
             copyResources = slot.resourceVisual.AddComponent<TreasureResources>();
         }
-        // Ensure the resource count matches the collected amount
+
+        // Aktualizacja licznika zasobów
         ResourceCategory resourceCategoryToUpdate = copyResources.resourceCategories.Find(rc => rc.name == resourceCategory);
         if (resourceCategoryToUpdate != null)
         {

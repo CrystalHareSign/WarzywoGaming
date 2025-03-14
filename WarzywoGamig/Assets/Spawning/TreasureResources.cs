@@ -6,30 +6,20 @@ public class ResourceCategory
 {
     public string name;
     public bool isActive;
+    public int resourceCount;
+
+    // Przywrócone pola dla min i max
     public int minResourceCount = 1;
     public int maxResourceCount = 10;
-    public int resourceCount;
 }
+
 
 public class TreasureResources : MonoBehaviour
 {
     // Public list to store the categories of the resources and their counts
     public List<ResourceCategory> resourceCategories;
 
-    void Start()
-    {
-        // Initialize the resource count for each category with a random value within the specified range
-        foreach (var category in resourceCategories)
-        {
-            if (category.isActive)
-            {
-                category.resourceCount = Random.Range(category.minResourceCount, category.maxResourceCount + 1);
-                //Debug.Log($"Initialized {category.resourceCount} resources for category: {category.name}");
-            }
-        }
-    }
-
-    // Method to set the resource categories (if needed)
+    // Method to set the resource categories (received from TreasureDefiner)
     public void SetResourceCategories(List<ResourceCategory> categories)
     {
         resourceCategories = categories;
