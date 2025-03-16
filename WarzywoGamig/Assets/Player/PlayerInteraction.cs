@@ -17,6 +17,7 @@ public class PlayerInteraction : MonoBehaviour
     private float requiredHoldTime = 5f;
     private TurretController turretController; // Dodajemy referencjê do TurretController
     private TreasureRefiner treasureRefiner;
+    private bool hasRefinerBeenUsed = false; // Flaga kontroluj¹ca, czy refiner ju¿ zosta³ u¿yty
 
     void Start()
     {
@@ -84,9 +85,12 @@ public class PlayerInteraction : MonoBehaviour
                             {
                                 UseTurret(interactableItem); // Uruchamiamy tryb wie¿yczki
                             }
-                            if (currentInteractableItem.isRefiner) // Sprawdzamy, czy obiekt to wie¿yczka
+
+                            if (currentInteractableItem.isRefiner && !hasRefinerBeenUsed) // Sprawdzamy, czy to refiner i czy nie by³ ju¿ u¿yty
                             {
                                 RemoveOldestItemFromInventory(interactableItem); // Uruchamiamy Refiner
+                                inventory.RefreshItemListChronologically(); // Aktualizujemy listê przedmiotów
+                                hasRefinerBeenUsed = true; // Ustawiamy flagê, aby unikn¹æ ponownego u¿ycia podczas trzymania E
                             }
                             else
                             {
@@ -113,6 +117,7 @@ public class PlayerInteraction : MonoBehaviour
                 }
                 else
                 {
+                    hasRefinerBeenUsed = false; // Resetujemy flagê, gdy E jest puszczone
                     interactionTimer = 0f;
                     if (progressCircle != null)
                     {
@@ -130,6 +135,7 @@ public class PlayerInteraction : MonoBehaviour
             ResetInteraction();
         }
     }
+
 
     private void InteractWithObject(InteractableItem interactableItem)
     {
