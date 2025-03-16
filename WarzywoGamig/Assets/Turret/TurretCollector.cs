@@ -159,5 +159,10 @@ public class TurretCollector : MonoBehaviour
                 hoverMessage.enabled = true;
             }
         }
+
+        if (slot.resourceVisual.TryGetComponent(out TreasureResources resourceComponent))
+        {
+            resourceComponent.UpdateResourceCategoryCount(resourceCategory, resourceCount);
+        }
     }
 }
