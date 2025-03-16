@@ -144,6 +144,8 @@ public class Inventory : MonoBehaviour
                         {
                             turretCollector.ResetSlotForItem(hit.collider.gameObject);
                         }
+                        // Odświeżenie listy, aby utrzymać kolejność chronologiczną
+                        RefreshItemListChronologically();
                     }
                 }
 
@@ -157,6 +159,15 @@ public class Inventory : MonoBehaviour
                     }
                 }
             }
+        }
+    }
+    public void RefreshItemListChronologically()
+    {
+        // Numerujemy przedmioty w sposób chronologiczny
+        for (int i = 0; i < items.Count; i++)
+        {
+            // Możesz dodać dowolną logikę, jeśli przedmioty mają być numerowane w jakiś specjalny sposób
+            items[i].name = "Item_" + (i + 1);
         }
     }
 
