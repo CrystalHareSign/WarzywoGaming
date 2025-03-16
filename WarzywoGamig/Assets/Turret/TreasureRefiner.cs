@@ -2,42 +2,55 @@ using UnityEngine;
 
 public class TreasureRefiner : MonoBehaviour
 {
-    public Inventory playerInventory; // Odniesienie do ekwipunku gracza
+    public Inventory inventory; // Odniesienie do ekwipunku gracza
     public InventoryUI inventoryUI;
 
-    // Funkcja do usuwania najstarszego przedmiotu z ekwipunku
-    public void RemoveOldestItemFromInventory()
+    private bool isRefining = false; // Flaga, która zapewnia, ¿e metoda jest wywo³ywana tylko raz
+
+    // Funkcja do usuwania przedmiotu o nazwie "item_1" z ekwipunku
+    public void RemoveOldestItemFromInventory(string itemName)
     {
-        if (playerInventory == null)
+        if (isRefining)
         {
-            Debug.LogError("Player Inventory is not assigned!");
-            return;
+            return; // Jeœli metoda ju¿ zosta³a wywo³ana, nie rób nic
         }
 
-        // Sprawdzamy, czy s¹ jakieœ przedmioty w ekwipunku
-        if (playerInventory.items.Count > 0)
+        isRefining = true; // Ustawienie flagi na true, aby metoda dzia³a³a tylko raz
+
+        // Szukamy przedmiotu o nazwie "item_1" w ekwipunku
+        GameObject itemToRemove = null;
+
+        foreach (GameObject item in inventory.items)
         {
-            // Usuwamy najstarszy przedmiot (pierwszy w liœcie)
-            GameObject oldestItem = playerInventory.items[0];
+            if (item.name == itemName)
+            {
+                itemToRemove = item;
+                break;
+            }
+        }
 
-            // Debugowanie: SprawdŸmy, co jest w liœcie
-            Debug.Log("Najstarszy przedmiot do usuniêcia: " + oldestItem.name);
+        if (itemToRemove != null)
+        {
+            // Usuwamy przedmiot o nazwie "item_1" z listy
+            inventory.items.Remove(itemToRemove);
 
-            // Usuwamy go z listy
-            playerInventory.items.RemoveAt(0); // Usuwamy go z listy
+            // Usuwamy obiekt z gry (jeœli chcesz go zniszczyæ)
+            Destroy(itemToRemove);
 
-            // Dezaktywujemy obiekt w grze (aby znikn¹³ z widoku gracza)
-            oldestItem.SetActive(false);
+            Debug.Log($"Usuniêto przedmiot: {itemToRemove.name}");
 
-            // Mo¿esz dodaæ logikê, aby obiekt zosta³ usuniêty z poziomu œwiata (jeœli to wymagane)
-            Destroy(oldestItem); // Usuñ obiekt z gry
-
-            // Aktualizujemy UI po usuniêciu przedmiotu
-            inventoryUI.UpdateInventoryUI(playerInventory.weapons, playerInventory.items);
+            // Po usuniêciu przedmiotu zaktualizuj UI ekwipunku
+            if (inventoryUI != null)
+            {
+                inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items);
+            }
         }
         else
         {
-            Debug.Log("Brak przedmiotów do usuniêcia.");
+            Debug.Log("Nie znaleziono przedmiotu o nazwie 'item_1' w ekwipunku.");
         }
+
+        // Po zakoñczeniu operacji ustawiamy flagê z powrotem na false, aby metoda mog³a byæ wywo³ana ponownie
+        isRefining = false;
     }
 }
