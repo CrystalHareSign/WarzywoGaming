@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 6761115961010013151}
   - component: {fileID: -688377564213083489}
   - component: {fileID: 6979507498194262447}
+  - component: {fileID: 6767437065646373606}
   - component: {fileID: -1630196577918655703}
   - component: {fileID: -6617605308913028778}
   - component: {fileID: -712420782758217477}
@@ -152,6 +153,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a4506324edc98547a4fdac42a073a43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &6767437065646373606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1591325824849679810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: deca928ae8fcc1d4a99945acfdba5b43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  treasureResources: {fileID: 0}
+  predefinedCategories:
+  - name: Silver
+    isActive: 1
+    resourceCount: 0
+    minResourceCount: 6
+    maxResourceCount: 7
 --- !u!114 &-1630196577918655703
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -164,12 +184,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c67910c76a1db1d4eb32d13ba078b292, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  resourceCategories:
-  - name: Silver
-    isActive: 1
-    minResourceCount: 4
-    maxResourceCount: 5
-    resourceCount: 0
+  resourceCategories: []
 --- !u!114 &-6617605308913028778
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -190,6 +205,7 @@ MonoBehaviour:
   isWeapon: 0
   isLoot: 0
   isTurret: 0
+  isRefiner: 0
   alwaysInteractive: 0
   hasCooldown: 0
   usesHealthSystem: 0
