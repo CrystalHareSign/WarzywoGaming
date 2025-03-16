@@ -44,4 +44,21 @@ public class TreasureResources : MonoBehaviour
         }
         return activeCategories;
     }
+    public void UpdateResourceCategoryCount(string categoryName, int newCount)
+    {
+        foreach (var category in resourceCategories)
+        {
+            if (category.name == categoryName)
+            {
+                category.resourceCount = newCount;
+
+                // Tutaj mo¿esz dodaæ dowolne dodatkowe efekty wizualne lub logikê
+                // np. aktualizacja UI w œwiecie gry
+                Debug.Log($"Zaktualizowano {categoryName} do {newCount} zasobów.");
+                return;
+            }
+        }
+
+        Debug.LogWarning($"Nie znaleziono kategorii {categoryName} do aktualizacji.");
+    }
 }
