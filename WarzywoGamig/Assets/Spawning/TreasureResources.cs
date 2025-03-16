@@ -54,7 +54,7 @@ public class TreasureResources : MonoBehaviour
 
                 // Tutaj mo¿esz dodaæ dowolne dodatkowe efekty wizualne lub logikê
                 // np. aktualizacja UI w œwiecie gry
-                Debug.Log($"Zaktualizowano {categoryName} do {newCount} zasobów.");
+                //Debug.Log($"Zaktualizowano {categoryName} do {newCount} zasobów.");
                 return;
             }
         }
