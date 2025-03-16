@@ -217,8 +217,6 @@ public class TurretController : MonoBehaviour
             inventory.currentWeaponPrefab.SetActive(true);
         }
 
-        DeactivateWeapon();
-
         // Resetowanie rotacji barrelPivot po zakończeniu
         barrelPivot.localRotation = initialBarrelPivotRotation;
 

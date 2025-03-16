@@ -13,13 +13,16 @@ public class InteractableItem : MonoBehaviour, IInteractable
     public bool startAsNonInteractive = false;
 
     [Header("System Itemów")]
-    public bool canBePickedUp = true;
-    public bool canBeDropped = true;
+    public bool canBePickedUp = false;
+    public bool canBeDropped = false;
     public bool isWeapon;    // Okreœla, czy przedmiot jest broni¹
     public bool isLoot = false;  // Flaga, która decyduje, czy przedmiot jest lootem
 
     [Header("Turret")]
     public bool isTurret = false; // Okreœla, czy przedmiot jest wie¿yczk¹
+
+    [Header("Refiner")]
+    public bool isRefiner = false; //  czy jest Refiner
 
     [Header("System kierowczy")]
     public bool alwaysInteractive = false;
@@ -31,7 +34,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
     public bool usesHealthSystem = false; // Czy ten przedmiot korzysta z systemu zdrowia?
     public int maxHealth = 2; // Maksymalne zdrowie to 2
     [SerializeField] private int currentHealth; // Aktualne zdrowie
-    public float requiredHoldTime = 5f; // Czas trzymania przycisku interakcji
+    public float requiredHoldTime = 0f; // Czas trzymania przycisku interakcji
 
     [Header("UI System Zdrowia")]
     public int wheelIndex; // Indeks ko³a (0-3)

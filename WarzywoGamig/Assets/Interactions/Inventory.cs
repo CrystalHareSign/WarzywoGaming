@@ -139,7 +139,7 @@ public class Inventory : MonoBehaviour
                     {
                         items.Add(hit.collider.gameObject);
                         hit.collider.gameObject.SetActive(false);
-                        TurretCollector turretCollector = FindObjectOfType<TurretCollector>();
+                        TurretCollector turretCollector = Object.FindFirstObjectByType<TurretCollector>();
                         if (turretCollector != null)
                         {
                             turretCollector.ResetSlotForItem(hit.collider.gameObject);

@@ -16,12 +16,19 @@ public class PlayerInteraction : MonoBehaviour
     private InteractableItem currentInteractableItem = null;
     private float requiredHoldTime = 5f;
     private TurretController turretController; // Dodajemy referencjê do TurretController
+    private TreasureRefiner treasureRefiner;
 
     void Start()
     {
         // Znajdujemy TurretController w scenie
         turretController = Object.FindFirstObjectByType<TurretController>();
         if (turretController == null)
+        {
+            Debug.LogError("Brak obiektu TurretController w scenie.");
+        }
+        // Znajdujemy TreasureRefiner w scenie
+        treasureRefiner = Object.FindFirstObjectByType<TreasureRefiner>();
+        if (treasureRefiner  == null)
         {
             Debug.LogError("Brak obiektu TurretController w scenie.");
         }
@@ -76,6 +83,10 @@ public class PlayerInteraction : MonoBehaviour
                             if (currentInteractableItem.isTurret) // Sprawdzamy, czy obiekt to wie¿yczka
                             {
                                 UseTurret(interactableItem); // Uruchamiamy tryb wie¿yczki
+                            }
+                            if (currentInteractableItem.isRefiner) // Sprawdzamy, czy obiekt to wie¿yczka
+                            {
+                                RemoveOldestItemFromInventory(interactableItem); // Uruchamiamy Refiner
                             }
                             else
                             {
@@ -134,6 +145,13 @@ public class PlayerInteraction : MonoBehaviour
         {
             //Debug.Log($"{interactableItem.itemName} jest teraz w trybie wie¿yczki!");
             turretController.UseTurret(); // U¿ywamy metody z TurretController do aktywacji wie¿yczki
+        }
+    }
+    private void RemoveOldestItemFromInventory(InteractableItem interactableItem)
+    {
+        if (treasureRefiner != null)
+        {
+            treasureRefiner.RemoveOldestItemFromInventory();
         }
     }
 
