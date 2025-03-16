@@ -23,8 +23,8 @@ public class HarpoonController : MonoBehaviour
 
     private GameObject currentHarpoon;
     private Rigidbody harpoonRb;
-    private bool isReturning = false;
-    private bool canShoot = true;
+    public bool isReturning = false;
+    public bool canShoot = true;
     private Vector3 initialScale = new Vector3(1, 1, 1);
     private float currentShootDistance = 0f; // Aktualna odległość przebyta przez harpun
     private Vector3 shootPosition; // Pozycja z której został wystrzelony harpun
@@ -62,7 +62,7 @@ public class HarpoonController : MonoBehaviour
     {
         if (turretController != null && turretController.isUsingTurret && turretController.isRaised)
         {
-            if (Input.GetMouseButtonDown(0) && canShoot)
+            if (Input.GetMouseButtonDown(0) && canShoot && !(turretController.isLowering))
             {
                 GameObject target = FindClosestTreasureInView();
                 if (target != null)
@@ -238,9 +238,12 @@ public class HarpoonController : MonoBehaviour
 
     Vector3 GetMouseWorldPosition()
     {
-        Vector3 mouseScreenPosition = Input.mousePosition;
-        mouseScreenPosition.z = Camera.main.transform.position.y; // Dostosuj z do odległości od kamery
-        return Camera.main.ScreenToWorldPoint(mouseScreenPosition);
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out RaycastHit hit, 1000f))
+        {
+            return hit.point;
+        }
+        return ray.GetPoint(100f); // Jeśli nie trafi w nic, celuje w daleko
     }
 
     void OnDrawGizmos()
