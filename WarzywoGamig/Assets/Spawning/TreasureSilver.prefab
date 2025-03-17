@@ -170,8 +170,8 @@ MonoBehaviour:
   - name: Silver
     isActive: 1
     resourceCount: 0
-    minResourceCount: 6
-    maxResourceCount: 7
+    minResourceCount: 10
+    maxResourceCount: 20
 --- !u!114 &-1630196577918655703
 MonoBehaviour:
   m_ObjectHideFlags: 0

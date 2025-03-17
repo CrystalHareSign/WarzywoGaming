@@ -170,8 +170,8 @@ MonoBehaviour:
   - name: Gold
     isActive: 1
     resourceCount: 0
-    minResourceCount: 4
-    maxResourceCount: 5
+    minResourceCount: 10
+    maxResourceCount: 20
 --- !u!114 &-1630196577918655703
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -205,6 +205,7 @@ MonoBehaviour:
   isWeapon: 0
   isLoot: 0
   isTurret: 0
+  isRefiner: 0
   alwaysInteractive: 0
   hasCooldown: 0
   usesHealthSystem: 0
