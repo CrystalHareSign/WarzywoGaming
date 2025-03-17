@@ -34,9 +34,17 @@ public class GridManager : MonoBehaviour
         else
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            if (transform.parent == null)
+            {
+                DontDestroyOnLoad(gameObject);
+            }
+            else
+            {
+                Debug.LogWarning("GridManager is a child GameObject. DontDestroyOnLoad will not work.");
+            }
         }
     }
+
 
     void Start()
     {
@@ -50,10 +58,22 @@ public class GridManager : MonoBehaviour
         if (isBuildingMode && previewObject != null)
         {
             Vector3 mousePosition = GetMouseWorldPosition();
-            previewObject.transform.position = SnapToGrid(mousePosition);
+            Vector3 snappedPosition = SnapToGrid(mousePosition);
 
-            if (Input.GetKeyDown(KeyCode.E))
+            // Sprawdzenie, czy obiekt snapuje do gridArea
+            bool isWithinBounds = IsWithinBounds(snappedPosition);
+            previewObject.SetActive(isWithinBounds);
+
+            if (isWithinBounds)
+            {
+                previewObject.transform.position = snappedPosition;
+            }
+
+            if (Input.GetKeyDown(KeyCode.E) && previewObject.activeSelf)
+            {
+                //Debug.Log("Placing object");
                 PlaceObject();
+            }
         }
 
         // Obs³uguje naciœniêcie Q do wyjœcia z trybu budowania i upuszczenia przedmiotu
@@ -63,6 +83,7 @@ public class GridManager : MonoBehaviour
             if (LootParent.childCount > 0)
             {
                 GameObject lootItem = LootParent.GetChild(0).gameObject; // Zak³adamy, ¿e gracz ma tylko jeden przedmiot w rêce
+                //Debug.Log("Dropping loot item");
                 DropLootItem(lootItem); // Upuszczamy przedmiot
             }
         }
@@ -77,8 +98,59 @@ public class GridManager : MonoBehaviour
         }
     }
 
+    private bool IsWithinBounds(Vector3 position)
+    {
+        float minX = gridArea.position.x - gridArea.localScale.x / 2;
+        float maxX = gridArea.position.x + gridArea.localScale.x / 2;
+        float minZ = gridArea.position.z - gridArea.localScale.z / 2;
+        float maxZ = gridArea.position.z + gridArea.localScale.z / 2;
+
+        bool isWithinBounds = position.x >= minX && position.x <= maxX && position.z >= minZ && position.z <= maxZ;
+
+        //Debug.Log($"Position: {position}, MinX: {minX}, MaxX: {maxX}, MinZ: {minZ}, MaxZ: {maxZ}, IsWithinBounds: {isWithinBounds}");
+
+        return isWithinBounds;
+    }
+
     private void DropLootItem(GameObject lootItem)
     {
+        // Pobieramy Collider obiektu Loot
+        Collider lootCollider = lootItem.GetComponent<Collider>();
+        if (lootCollider == null)
+        {
+            //Debug.LogWarning("Loot nie ma komponentu Collider.");
+            return;
+        }
+
+        // Pobieramy Collider obszaru siatki
+        Collider gridAreaCollider = gridArea.GetComponent<Collider>();
+        if (gridAreaCollider == null)
+        {
+            //Debug.LogWarning("Siatka nie ma komponentu Collider.");
+            return;
+        }
+
+        // Ustawiamy docelow¹ pozycjê przedmiotu na pozycji gracza, ale z okreœlon¹ wysokoœci¹ 'dropHeight' (na osi Y)
+        Vector3 dropPosition = new Vector3
+        (
+            player.transform.position.x, // U¿ywamy pozycji gracza w X
+            dropHeight, // Ustawiamy Y na dropHeight
+            player.transform.position.z  // U¿ywamy pozycji gracza w Z
+        );
+
+        // Sprawdzamy, czy kolidery siê przecinaj¹ przy docelowej pozycji
+        Vector3 lootSize = lootCollider.bounds.size;
+        Collider[] colliders = Physics.OverlapBox(dropPosition, lootSize / 2, lootItem.transform.rotation, LayerMask.GetMask("Default")); // Zak³adamy, ¿e u¿ywasz warstwy "Default"
+
+        foreach (var collider in colliders)
+        {
+            if (collider == gridAreaCollider)
+            {
+                Debug.LogWarning("Nie mo¿na upuœciæ przedmiotu wewn¹trz obszaru siatki.");
+                return;
+            }
+        }
+
         Inventory inventory = Object.FindFirstObjectByType<Inventory>(); // ZnajdŸ skrypt Inventory
 
         if (inventory != null)
@@ -89,13 +161,8 @@ public class GridManager : MonoBehaviour
         // Usuwamy przedmiot z LootParent, aby go "upuœciæ"
         lootItem.transform.SetParent(null); // Przenosimy przedmiot na œwiat
 
-        // Ustawiamy pozycjê przedmiotu na pozycji gracza, ale z okreœlon¹ wysokoœci¹ 'dropHeight' (na osi Y)
-        lootItem.transform.position = new Vector3
-        (
-            player.transform.position.x, // U¿ywamy pozycji gracza w X
-            dropHeight, // Ustawiamy Y na dropHeight
-            player.transform.position.z  // U¿ywamy pozycji gracza w Z
-        );
+        // Ustawiamy pozycjê przedmiotu na docelow¹ pozycjê
+        lootItem.transform.position = dropPosition;
 
         // Ustawiamy pocz¹tkow¹ rotacjê wzglêdem œwiata (np. ustawiamy na 0, 0, 0)
         lootItem.transform.rotation = Quaternion.identity;
@@ -125,9 +192,13 @@ public class GridManager : MonoBehaviour
             inventory.currentWeaponPrefab.SetActive(true);
             inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
         }
-        Debug.Log("Przedmiot upuszczony, tryb budowania wy³¹czony i kafelki ukryte.");
-    }
 
+        // Aktywujemy kafelki pod lootem
+        PrefabSize prefabSize = lootItem.GetComponent<PrefabSize>();
+        UnmarkTilesAsOccupied(lootItem.transform.position, prefabSize);
+
+        //Debug.Log("Przedmiot upuszczony, tryb budowania wy³¹czony i kafelki ukryte.");
+    }
     private void CheckTiles()
     {
         List<Vector3> tilesToActivate = new List<Vector3>();
@@ -179,20 +250,9 @@ public class GridManager : MonoBehaviour
         previewObject = Instantiate(buildingPrefabs[currentPrefabIndex]);
         previewObject.SetActive(true);  // Ustawienie obiektu jako aktywnego
         DisableColliders(previewObject);  // Wy³¹czenie koliderów po ustawieniu na aktywny
-
-
-        // Sprawdzamy, czy obiekt podgl¹du jest aktywny
-        //Debug.Log("Is preview object active: " + previewObject.activeSelf);
     }
 
-    //private void DestroyPreviewObject()
-    //{
-    //    if (previewObject != null)
-    //    {
-    //        Destroy(previewObject);
-    //    }
-    //}
-    public Vector3 SnapToGrid(Vector3 position)
+    private Vector3 SnapToGrid(Vector3 position)
     {
         if (previewObject == null) return position;
 
@@ -209,14 +269,14 @@ public class GridManager : MonoBehaviour
         float gridSizeWithSpacing = gridSize + tileSpacing;
 
         // Obliczanie pozycji snapowania
-        float snappedX = Mathf.Floor((position.x - gridArea.position.x) / gridSizeWithSpacing) * gridSizeWithSpacing + gridArea.position.x;
-        float snappedZ = Mathf.Floor((position.z - gridArea.position.z) / gridSizeWithSpacing) * gridSizeWithSpacing + gridArea.position.z;
+        float snappedX = Mathf.Round((position.x - gridArea.position.x) / gridSizeWithSpacing) * gridSizeWithSpacing + gridArea.position.x;
+        float snappedZ = Mathf.Round((position.z - gridArea.position.z) / gridSizeWithSpacing) * gridSizeWithSpacing + gridArea.position.z;
 
         // Korekta pozycji dla wiêkszych obiektów
         if (prefabSize.widthInTiles > 1 || prefabSize.depthInTiles > 1)
         {
-            snappedX += (gridSizeWithSpacing * prefabSize.widthInTiles) / 2 - gridSizeWithSpacing / 2;
-            snappedZ += (gridSizeWithSpacing * prefabSize.depthInTiles) / 2 - gridSizeWithSpacing / 2;
+            snappedX += (gridSizeWithSpacing * (prefabSize.widthInTiles - 1)) / 2;
+            snappedZ += (gridSizeWithSpacing * (prefabSize.depthInTiles - 1)) / 2;
         }
 
         // Ustawienie pozycji Y na podstawie siatki (jeœli masz jak¹œ wysokoœæ na siatce)
@@ -234,6 +294,7 @@ public class GridManager : MonoBehaviour
         // Jeœli miejsce jest zajête, szukamy kolejnej dostêpnej pozycji
         return GetNextAvailablePosition(snappedPosition, prefabSize);
     }
+
     private bool IsInsideGrid(Vector3 position, PrefabSize prefabSize)
     {
         // Sprawdzenie, czy obiekt znajduje siê w obrêbie siatki
@@ -379,6 +440,28 @@ public class GridManager : MonoBehaviour
                 if (!occupiedTiles.ContainsKey(tilePosition))  // Sprawdzamy, czy kafelek nie jest ju¿ zajêty
                 {
                     occupiedTiles[tilePosition] = buildedObject; // Zapisujemy, ¿e kafelek jest zajêty przez ten obiekt
+                    SetTileActive(tilePosition, false); // Deaktywujemy kafelek
+                }
+            }
+        }
+    }
+
+    public void UnmarkTilesAsOccupied(Vector3 position, PrefabSize prefabSize)
+    {
+        // Pobieramy pozycjê pocz¹tkow¹ (dolny lewy róg)
+        int startX = Mathf.FloorToInt(position.x);
+        int startZ = Mathf.FloorToInt(position.z);
+
+        // Oznaczamy wszystkie kafelki, które obiekt zajmuje jako wolne
+        for (int x = startX; x < startX + prefabSize.widthInTiles; x++)
+        {
+            for (int z = startZ; z < startZ + prefabSize.depthInTiles; z++)
+            {
+                Vector3 tilePosition = new Vector3(x, 0, z);
+                if (occupiedTiles.ContainsKey(tilePosition))  // Sprawdzamy, czy kafelek jest zajêty
+                {
+                    occupiedTiles.Remove(tilePosition); // Usuwamy kafelek ze zbioru zajêtych
+                    SetTileActive(tilePosition, true); // Aktywujemy kafelek
                 }
             }
         }

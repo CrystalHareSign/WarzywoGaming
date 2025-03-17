@@ -13,9 +13,14 @@ GameObject:
   - component: {fileID: 56179964848103197}
   - component: {fileID: 6761115961010013151}
   - component: {fileID: -688377564213083489}
+  - component: {fileID: 6979507498194262447}
+  - component: {fileID: 6767437065646373606}
+  - component: {fileID: -1630196577918655703}
+  - component: {fileID: -6617605308913028778}
+  - component: {fileID: -712420782758217477}
   m_Layer: 7
-  m_Name: Treasure
-  m_TagString: Untagged
+  m_Name: TreasureSilver
+  m_TagString: Treasure
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -103,12 +108,12 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 2, y: 2, z: 2}
+  m_Center: {x: 0, y: 0.6, z: 0}
 --- !u!54 &-688377564213083489
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -136,3 +141,91 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &6979507498194262447
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1591325824849679810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a4506324edc98547a4fdac42a073a43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &6767437065646373606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1591325824849679810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: deca928ae8fcc1d4a99945acfdba5b43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  treasureResources: {fileID: -1630196577918655703}
+  predefinedCategories:
+  - name: Silver
+    isActive: 1
+    resourceCount: 0
+    minResourceCount: 10
+    maxResourceCount: 20
+--- !u!114 &-1630196577918655703
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1591325824849679810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c67910c76a1db1d4eb32d13ba078b292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  resourceCategories: []
+--- !u!114 &-6617605308913028778
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1591325824849679810}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a232f88565b95744a8035c4ec583243, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverMessage: {fileID: 0}
+  itemName: Treasure
+  startAsNonInteractive: 0
+  canBePickedUp: 1
+  canBeDropped: 0
+  isWeapon: 0
+  isLoot: 0
+  isTurret: 0
+  isRefiner: 0
+  alwaysInteractive: 0
+  hasCooldown: 0
+  usesHealthSystem: 0
+  maxHealth: 2
+  currentHealth: 0
+  requiredHoldTime: 0
+  wheelIndex: 0
+--- !u!114 &-712420782758217477
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1591325824849679810}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9c10a544bb40ac40ba2b7fe60df5b57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  message: "Wci\u015Bnij E aby podnie\u015B\u0107"
+  interactionDistance: 3
+  isInteracted: 0
+  alwaysActive: 1

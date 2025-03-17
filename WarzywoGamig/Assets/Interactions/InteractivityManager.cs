@@ -13,7 +13,7 @@ public class InteractivityManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            Debug.Log("InteractivityManager initialized.");
+            //Debug.Log("InteractivityManager initialized.");
         }
         else
         {

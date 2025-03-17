@@ -4,13 +4,16 @@ using UnityEngine;
 public class TurretController : MonoBehaviour
 {
     public PlayerMovement playerMovement; // Skrypt odpowiadający za poruszanie gracza
+    public HarpoonController harpoonController;  // Referencja do skryptu HarpoonController
     public Inventory inventory;  // Skrypt odpowiadający za inwentaryzację
+
     public Transform enterArea;   // Punkt, do którego teleportuje się gracz
     public Transform exitArea;    // Punkt, z którego teleportuje się gracz po zakończeniu
     public Transform turretBase;  // Transform wieżyczki (część, która będzie się unosić)
     public Transform barrelPivot; // Nowy obiekt pivotu
     public Camera playerCamera; // Kamera gracza, używana do wykrywania kursora
-    public GameObject turretGun;  // Obiekt działka wieżyczki
+    public GameObject weapon; // Obiekt broni na wieżyczce
+    public GameObject harpoonGunPrefab; // Prefab HarpoonGun
     public float raiseHeight = 5f; // Wysokość, na którą wieżyczka ma się podnieść
     public float raiseSpeed = 5f; // Prędkość podnoszenia wieżyczki (zwiększona dla płynności)
     public float lowerSpeed = 5f; // Prędkość opuszczania wieżyczki (zwiększona dla płynności)
@@ -20,8 +23,9 @@ public class TurretController : MonoBehaviour
 
     private Quaternion initialEnterAreaRotation; // Początkowa rotacja enterArea
 
-    private bool isRaised = false;   // Flaga, która informuje, czy wieżyczka jest uniesiona
-    private bool isUsingTurret = false; // Flaga, która informuje, czy gracz korzysta z wieżyczki
+    public bool isRaised = false;   // Flaga, która informuje, czy wieżyczka jest uniesiona
+    public bool isLowering = false; // Flaga informująca, czy wieżyczka jest w trakcie opuszczania
+    public bool isUsingTurret = false; // Flaga, która informuje, czy gracz korzysta z wieżyczki
     private bool isCooldown = false; // Flaga kontrolująca opóźnienie przy opuszczaniu
 
     void Start()
@@ -38,13 +42,27 @@ public class TurretController : MonoBehaviour
         {
             initialEnterAreaRotation = enterArea.rotation;
         }
+
+        if (harpoonGunPrefab != null && weapon != null)
+        {
+            GameObject harpoonGun = Instantiate(harpoonGunPrefab, weapon.transform);
+
+            // Teraz przypisujemy referencję do HarpoonController
+            harpoonController = harpoonGun.GetComponent<HarpoonController>();
+
+            if (harpoonController == null)
+            {
+                Debug.LogError("Nie znaleziono skryptu HarpoonController w prefabie.");
+            }
+        }
     }
+
 
     void Update()
     {
         if (isUsingTurret)
         {
-            if (Input.GetKeyDown(KeyCode.Q) && isRaised && !isCooldown)
+            if (Input.GetKeyDown(KeyCode.Q) && isRaised && !isCooldown && !harpoonController.isReturning && harpoonController.canShoot)
             {
                 StartCoroutine(LowerTurret());
             }
@@ -88,7 +106,7 @@ public class TurretController : MonoBehaviour
     {
         if (!isUsingTurret)
         {
-            Debug.Log("Aktywuję wieżyczkę.");
+            //Debug.Log("Aktywuję wieżyczkę.");
 
             TeleportPlayer(enterArea);
 
@@ -109,7 +127,7 @@ public class TurretController : MonoBehaviour
 
             StartCoroutine(RaiseTurret());
 
-            ActivateTurretGun();
+            ActivateWeapon();
 
             isUsingTurret = true;
         }
@@ -145,16 +163,17 @@ public class TurretController : MonoBehaviour
         isRaised = true;
     }
 
-    private void ActivateTurretGun()
+    private void ActivateWeapon()
     {
-        if (turretGun != null)
+        if (weapon != null)
         {
-            turretGun.SetActive(true);
+            weapon.SetActive(true);
         }
     }
 
     private IEnumerator LowerTurret()
     {
+        isLowering = true; // Rozpocznij opuszczanie
         isCooldown = true;
         float targetHeight = turretBase.position.y - raiseHeight;
         float targetEnterAreaHeight = enterArea.position.y - raiseHeight;
@@ -198,14 +217,13 @@ public class TurretController : MonoBehaviour
             inventory.currentWeaponPrefab.SetActive(true);
         }
 
-        DeactivateTurretGun();
-
         // Resetowanie rotacji barrelPivot po zakończeniu
         barrelPivot.localRotation = initialBarrelPivotRotation;
 
         isRaised = false;
         isCooldown = false;
         isUsingTurret = false;
+        isLowering = false;
     }
 
     private IEnumerator ResetEnterAreaRotation()
@@ -223,11 +241,11 @@ public class TurretController : MonoBehaviour
         enterArea.rotation = initialEnterAreaRotation;
     }
 
-    private void DeactivateTurretGun()
+    private void DeactivateWeapon()
     {
-        if (turretGun != null)
+        if (weapon != null)
         {
-            turretGun.SetActive(false);
+            weapon.SetActive(false);
         }
     }
 }

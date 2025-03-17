@@ -18,7 +18,6 @@ public class Inventory : MonoBehaviour
     public Transform lootParent; // Transform, do którego będą przypisane lootowe przedmioty
     public bool isLootBeingDropped = false; // Flaga kontrolująca proces upuszczania lootu
 
-
     [System.Serializable]
     public class WeaponPrefabEntry
     {
@@ -34,8 +33,12 @@ public class Inventory : MonoBehaviour
 
     public Vector3 weaponPositionOffset = new Vector3(0.5f, -0.3f, 1.0f);
     public Vector3 weaponRotationOffset = new Vector3(0, 90, 0);
-    public Vector3 lootPositionOffset = new Vector3(0f, 1f, 0f); // Ręczna pozycja lootów względem gracza
-    public Vector3 lootRotationOffset = new Vector3(0f, 0f, 0f); // Ręczna rotacja lootów względem gracza
+
+    public Vector3 lootPositionOffset_1x1 = new Vector3(0f, 1f, 0f); // Ręczna pozycja lootów 1x1 względem gracza
+    public Vector3 lootRotationOffset_1x1 = new Vector3(0f, 0f, 0f); // Ręczna rotacja lootów 1x1 względem gracza
+
+    public Vector3 lootPositionOffset_2x2 = new Vector3(0f, 1.5f, 0f); // Ręczna pozycja lootów 2x2 względem gracza
+    public Vector3 lootRotationOffset_2x2 = new Vector3(0f, 0f, 0f); // Ręczna rotacja lootów 2x2 względem gracza
 
     void Start()
     {
@@ -60,19 +63,13 @@ public class Inventory : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.Q))
         {
+            if (isLootBeingDropped) return;
             DropItemFromInventory();
         }
     }
 
     void CollectItem()
     {
-        // ❌ Jeśli gracz trzyma loot, nie może wchodzić w interakcje z innymi przedmiotami
-        if (lootParent != null && lootParent.childCount > 0)
-        {
-            Debug.Log("Nie możesz podnosić przedmiotów, gdy trzymasz loot.");
-            return;
-        }
-
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
 
@@ -82,6 +79,20 @@ public class Inventory : MonoBehaviour
 
             if (interactableItem == null)
             {
+                return;
+            }
+
+            // ❌ Jeśli gracz trzyma loot, nie może podnosić broni
+            if (lootParent != null && lootParent.childCount > 0 && interactableItem.isWeapon)
+            {
+                Debug.Log("Nie możesz podnieść broni, gdy trzymasz loot.");
+                return;
+            }
+
+            // ❌ Jeśli gracz trzyma loot, nie może podnosić innych przedmiotów (poza bronią, ale to już blokujemy powyżej)
+            if (lootParent != null && lootParent.childCount > 0 && !interactableItem.isWeapon)
+            {
+                Debug.Log("Nie możesz podnieść przedmiotu, ponieważ trzymasz loot.");
                 return;
             }
 
@@ -104,6 +115,7 @@ public class Inventory : MonoBehaviour
                 {
                     if (loot.Count < maxLoot)
                     {
+                        Vector3 previousPosition = hit.collider.gameObject.transform.position;
                         loot.Add(hit.collider.gameObject);
                         EquipLoot(hit.collider.gameObject);
 
@@ -112,11 +124,13 @@ public class Inventory : MonoBehaviour
                         {
                             currentWeaponPrefab.SetActive(false);
                         }
-                    }
 
-                    if (GridManager.Instance != null)
-                    {
-                        GridManager.Instance.AddToBuildingPrefabs(hit.collider.gameObject);
+                        if (GridManager.Instance != null)
+                        {
+                            PrefabSize prefabSize = hit.collider.gameObject.GetComponent<PrefabSize>();
+                            GridManager.Instance.UnmarkTilesAsOccupied(previousPosition, prefabSize);
+                            GridManager.Instance.AddToBuildingPrefabs(hit.collider.gameObject);
+                        }
                     }
                 }
                 else
@@ -125,6 +139,13 @@ public class Inventory : MonoBehaviour
                     {
                         items.Add(hit.collider.gameObject);
                         hit.collider.gameObject.SetActive(false);
+                        TurretCollector turretCollector = Object.FindFirstObjectByType<TurretCollector>();
+                        if (turretCollector != null)
+                        {
+                            turretCollector.ResetSlotForItem(hit.collider.gameObject);
+                        }
+                        // Odświeżenie listy, aby utrzymać kolejność chronologiczną
+                        RefreshItemListChronologically();
                     }
                 }
 
@@ -138,6 +159,15 @@ public class Inventory : MonoBehaviour
                     }
                 }
             }
+        }
+    }
+    public void RefreshItemListChronologically()
+    {
+        // Numerujemy przedmioty w sposób chronologiczny
+        for (int i = 0; i < items.Count; i++)
+        {
+            // Możesz dodać dowolną logikę, jeśli przedmioty mają być numerowane w jakiś specjalny sposób
+            items[i].name = "Item_" + (i + 1);
         }
     }
 
@@ -180,6 +210,7 @@ public class Inventory : MonoBehaviour
             currentWeaponItem = weaponItem;
         }
     }
+
     void EquipLoot(GameObject lootItem)
     {
         if (lootItem != null)
@@ -187,15 +218,31 @@ public class Inventory : MonoBehaviour
             // Sprawdź, czy przedmiot jest lootem
             if (loot.Contains(lootItem))
             {
-                // Jeśli lootParent jest ustawiony, użyj go, jeśli nie, przypnij loot do gracza
-                Transform parentTransform = lootParent != null ? lootParent : transform;
+                // Określenie, czy przedmiot jest 1x1, 2x2, czy inny
+                Vector3 lootPosition = lootPositionOffset_1x1; // Domyślny offset dla 1x1
+                Vector3 lootRotation = lootRotationOffset_1x1; // Domyślny rotation dla 1x1
+
+                // Sprawdzamy wielkość przedmiotu (tutaj zakłada się, że lootItem ma collider)
+                Collider lootCollider = lootItem.GetComponent<Collider>();
+                if (lootCollider != null)
+                {
+                    // Załóżmy, że przedmioty 2x2 mają większy rozmiar (możesz to dostosować w zależności od własnych kryteriów)
+                    if (lootCollider.bounds.size.x > 1f && lootCollider.bounds.size.z > 1f)
+                    {
+                        lootPosition = lootPositionOffset_2x2; // Przypisujemy offset dla 2x2
+                        lootRotation = lootRotationOffset_2x2; // Przypisujemy rotację dla 2x2
+                    }
+                }
 
                 // Ustaw przedmiot jako dziecko odpowiedniego obiektu (lootParent lub gracza)
+                Transform parentTransform = lootParent != null ? lootParent : transform;
+
+                // Ustaw przedmiot w odpowiedniej pozycji
                 lootItem.transform.SetParent(parentTransform);
 
                 // Ustaw ręczną pozycję i rotację z Inspektora
-                lootItem.transform.localPosition = lootPositionOffset;
-                lootItem.transform.localRotation = Quaternion.Euler(lootRotationOffset);
+                lootItem.transform.localPosition = lootPosition;
+                lootItem.transform.localRotation = Quaternion.Euler(lootRotation);
 
                 // Aktywuj przedmiot, jeśli jest wyłączony
                 lootItem.SetActive(true);
@@ -213,7 +260,7 @@ public class Inventory : MonoBehaviour
 
         if (loot.Count > 0) // Jeśli mamy loot do upuszczenia
         {
-            DropLoot();
+            //DropLoot();
         }
         else if (currentWeaponItem != null) // Jeśli mamy broń do upuszczenia
         {
@@ -290,49 +337,54 @@ public class Inventory : MonoBehaviour
         }
     }
 
-    void DropLoot()
-    {
-        if (loot.Count == 0) return;
+    //void DropLoot()
+    //{
+    //    if (loot.Count == 0) return;
 
-        GameObject lootItem = loot[0];
-        InteractableItem interactableItem = lootItem.GetComponent<InteractableItem>(); // Pobieramy komponent InteractableItem
+    //    GameObject lootItem = loot[0];
+    //    InteractableItem interactableItem = lootItem.GetComponent<InteractableItem>(); // Pobieramy komponent InteractableItem
 
-        // Sprawdzamy, czy loot może być upuszczony
-        if (interactableItem != null && interactableItem.canBeDropped)
-        {
-            loot.RemoveAt(0);
+    //    // Sprawdzamy, czy loot może być upuszczony
+    //    if (interactableItem != null && interactableItem.canBeDropped)
+    //    {
+    //        loot.RemoveAt(0);
 
-            lootItem.transform.SetParent(null);
+    //        lootItem.transform.SetParent(null);
 
-            Vector3 dropPosition = transform.position;
-            dropPosition.y = dropHeight;
+    //        Vector3 dropPosition = transform.position;
+    //        dropPosition.y = dropHeight;
 
-            lootItem.transform.position = dropPosition;
-            lootItem.transform.rotation = Quaternion.identity;
+    //        Vector3 previousPosition = lootItem.transform.position;
 
-            lootItem.SetActive(true);
+    //        lootItem.transform.position = dropPosition;
+    //        lootItem.transform.rotation = Quaternion.identity;
 
-            if (GridManager.Instance != null)
-            {
-                GridManager.Instance.isBuildingMode = false;
-                GridManager.Instance.RemoveFromBuildingPrefabs(lootItem);
-            }
+    //        lootItem.SetActive(true);
 
-            RemoveObjectFromLootParent(lootItem);
+    //        if (GridManager.Instance != null)
+    //        {
+    //            GridManager.Instance.isBuildingMode = false;
+    //            GridManager.Instance.RemoveFromBuildingPrefabs(lootItem);
 
-            // Jeśli gracz miał broń ukrytą, przywracamy ją
-            if (currentWeaponPrefab != null)
-            {
-                currentWeaponPrefab.SetActive(true);
-            }
+    //            PrefabSize prefabSize = lootItem.GetComponent<PrefabSize>();
+    //            GridManager.Instance.UnmarkTilesAsOccupied(previousPosition, prefabSize);
+    //        }
 
-            UpdateInventoryUI();
-        }
-        else
-        {
-            Debug.LogWarning("Nie możesz upuścić tego lootu, ponieważ 'canBeDropped' jest ustawione na false.");
-        }
-    }
+    //        RemoveObjectFromLootParent(lootItem);
+
+    //        // Jeśli gracz miał broń ukrytą, przywracamy ją
+    //        if (currentWeaponPrefab != null)
+    //        {
+    //            currentWeaponPrefab.SetActive(true);
+    //        }
+
+    //        UpdateInventoryUI();
+    //    }
+    //    else
+    //    {
+    //        Debug.LogWarning("Nie możesz upuścić tego lootu, ponieważ 'canBeDropped' jest ustawione na false.");
+    //    }
+    //}
 
     public void RemoveItem(GameObject item)
     {
@@ -345,6 +397,7 @@ public class Inventory : MonoBehaviour
             loot.Remove(item);
         }
     }
+
     public void RemoveObjectFromLootParent(GameObject objectToRemove)
     {
         if (lootParent == null || objectToRemove == null)

@@ -6,7 +6,9 @@ using TMPro;
 public class InventoryUI : MonoBehaviour
 {
     public Image weaponImage; // Ikona broni
-    public Image itemImage; // Ikona innego przedmiotu
+    public Image[] itemImages = new Image[4]; // Tablica obrazków dla przedmiotów
+    public TextMeshProUGUI[] itemTexts = new TextMeshProUGUI[4]; // Tablica tekstów dla ilości przedmiotów
+    public TextMeshProUGUI[] itemCategoryTexts = new TextMeshProUGUI[4]; // Tablica tekstów dla kategorii zasobów
 
 
     public Sprite defaultWeaponSprite; // Domyślny obrazek broni
@@ -14,7 +16,6 @@ public class InventoryUI : MonoBehaviour
 
     public Dictionary<string, Sprite> weaponIcons = new Dictionary<string, Sprite>(); // Ikony broni
     public Dictionary<string, Sprite> itemIcons = new Dictionary<string, Sprite>(); // Ikony przedmiotów
-
 
     // UI dla amunicji
     public TextMeshProUGUI weaponNameText; // Tekst wyświetlający nazwę broni
@@ -29,7 +30,14 @@ public class InventoryUI : MonoBehaviour
     {
         // Domyślnie ukrywamy wszystkie elementy UI
         weaponImage.enabled = false;
-        itemImage.enabled = false;
+        foreach (var img in itemImages)
+        {
+            img.enabled = false;
+        }
+        foreach (var txt in itemTexts)
+        {
+            txt.gameObject.SetActive(false);
+        }
         weaponNameText.gameObject.SetActive(false);
 
         ammoText.gameObject.SetActive(false);
@@ -42,7 +50,6 @@ public class InventoryUI : MonoBehaviour
     public void UpdateInventoryUI(List<GameObject> weapons, List<GameObject> items)
     {
         bool weaponEquipped = false;
-        bool itemEquipped = false;
 
         // Sprawdzamy, czy gracz trzyma broń
         foreach (var weaponObj in weapons)
@@ -68,18 +75,6 @@ public class InventoryUI : MonoBehaviour
             }
         }
 
-        // Sprawdzamy, czy gracz trzyma przedmioty
-        foreach (var itemObj in items)
-        {
-            InteractableItem item = itemObj.GetComponent<InteractableItem>();
-            if (item != null)
-            {
-                itemImage.sprite = itemIcons.ContainsKey(item.itemName) ? itemIcons[item.itemName] : defaultItemSprite;
-                itemImage.enabled = true;
-                itemEquipped = true;
-            }
-        }
-
         // Ukrywanie UI, jeśli gracz nie trzyma broni
         if (!weaponEquipped)
         {
@@ -92,10 +87,44 @@ public class InventoryUI : MonoBehaviour
             slashText.gameObject.SetActive(false);
         }
 
-        // Ukrywanie UI, jeśli gracz nie trzyma żadnych przedmiotów
-        if (!itemEquipped)
+        // Aktualizacja UI dla przedmiotów
+        UpdateItemUI(items);
+    }
+
+    // Aktualizacja UI przedmiotów
+    private void UpdateItemUI(List<GameObject> items)
+    {
+        // Ukrywamy wszystkie ikony, teksty ilości oraz kategorie przedmiotów
+        for (int i = 0; i < itemImages.Length; i++)
         {
-            itemImage.enabled = false;
+            itemImages[i].enabled = false;
+            itemTexts[i].gameObject.SetActive(false);
+            itemCategoryTexts[i].gameObject.SetActive(false);  // Ukryj tekst kategorii
+        }
+
+        // Aktualizujemy ikony, teksty ilości oraz kategorie dla podniesionych przedmiotów
+        for (int i = 0; i < items.Count && i < 4; i++)
+        {
+            if (items[i] == null) continue; // Pomija usunięte obiekty
+
+            InteractableItem item = items[i].GetComponent<InteractableItem>();
+            TreasureResources treasureResources = items[i].GetComponent<TreasureResources>();
+
+            if (item != null && treasureResources != null)
+            {
+                // Wyświetlanie ikony przedmiotu
+                itemImages[i].sprite = itemIcons.ContainsKey(item.itemName) ? itemIcons[item.itemName] : defaultItemSprite;
+                itemImages[i].enabled = true;
+
+                // Wyświetlanie ilości zasobów
+                itemTexts[i].text = treasureResources.resourceCategories[0].resourceCount.ToString();
+                itemTexts[i].gameObject.SetActive(true);
+
+                // Wyświetlanie kategorii zasobów
+                string categoryName = treasureResources.resourceCategories[0].name;
+                itemCategoryTexts[i].text = categoryName; // Użycie name z ResourceCategory
+                itemCategoryTexts[i].gameObject.SetActive(true);
+            }
         }
     }
 

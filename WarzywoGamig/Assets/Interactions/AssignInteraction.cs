@@ -6,9 +6,11 @@ public class AssignInteraction : MonoBehaviour
 {
     public GameObject interactableLeft; // Przedmiot interaktywny 1
     public GameObject interactableRight; // Przedmiot interaktywny 2
-    [Header("Body")]
+    [Header("TAGS: Loot, Item, Weapon, Turret")]
+    [Header("TAGS: Body")]
     public GameObject[] manualMoveObjects; // Rêcznie przypisane obiekty
     private List<GameObject> moveObjects = new List<GameObject>(); // Lista przedmiotów do przenoszenia
+    private int lastLootCount = 0;
     public float moveDistance = 1.0f; // Odleg³oœæ przenoszenia obiektów
     public float moveDuration = 1.0f; // Czas trwania przenoszenia obiektów
 
@@ -26,10 +28,10 @@ public class AssignInteraction : MonoBehaviour
             }
         }
 
-        // Pobierz wszystkie obiekty z tagami "Loot", "Item" i "Weapon"
-        AddObjectsWithTag("Loot");
+        // Pobierz wszystkie obiekty z tagami "Loot", "Item", "Weapon" oraz "Turret"
         AddObjectsWithTag("Item");
         AddObjectsWithTag("Weapon");
+        AddObjectsWithTag("Turret"); // Dodane dla tagu "Turret"
 
         // Przypisz funkcje do interaktywnych przedmiotów
         if (interactableLeft != null)
@@ -44,6 +46,15 @@ public class AssignInteraction : MonoBehaviour
             InteractableItem item2 = interactableRight.GetComponent<InteractableItem>();
             item2.hasCooldown = true; // Ustaw cooldown dla tego przedmiotu
             item2.onInteract = () => MoveAll(Vector3.back);
+        }
+    }
+    private void Update()
+    {
+        GameObject[] foundLootObjects = GameObject.FindGameObjectsWithTag("Loot");
+        if (foundLootObjects.Length != lastLootCount) // Sprawdza, czy liczba obiektów z tagiem "Loot" siê zmieni³a
+        {
+            AddObjectsWithTag("Loot");
+            lastLootCount = foundLootObjects.Length; // Aktualizuje zapisan¹ liczbê obiektów
         }
     }
 
