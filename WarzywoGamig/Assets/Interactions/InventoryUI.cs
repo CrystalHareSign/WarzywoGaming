@@ -8,6 +8,8 @@ public class InventoryUI : MonoBehaviour
     public Image weaponImage; // Ikona broni
     public Image[] itemImages = new Image[4]; // Tablica obrazków dla przedmiotów
     public TextMeshProUGUI[] itemTexts = new TextMeshProUGUI[4]; // Tablica tekstów dla ilości przedmiotów
+    public TextMeshProUGUI[] itemCategoryTexts = new TextMeshProUGUI[4]; // Tablica tekstów dla kategorii zasobów
+
 
     public Sprite defaultWeaponSprite; // Domyślny obrazek broni
     public Sprite defaultItemSprite; // Domyślny obrazek przedmiotu
@@ -92,34 +94,36 @@ public class InventoryUI : MonoBehaviour
     // Aktualizacja UI przedmiotów
     private void UpdateItemUI(List<GameObject> items)
     {
-        // Ukrywamy wszystkie ikony i teksty przedmiotów
+        // Ukrywamy wszystkie ikony, teksty ilości oraz kategorie przedmiotów
         for (int i = 0; i < itemImages.Length; i++)
         {
             itemImages[i].enabled = false;
             itemTexts[i].gameObject.SetActive(false);
+            itemCategoryTexts[i].gameObject.SetActive(false);  // Ukryj tekst kategorii
         }
 
-        // Aktualizujemy ikony i teksty dla podniesionych przedmiotów
+        // Aktualizujemy ikony, teksty ilości oraz kategorie dla podniesionych przedmiotów
         for (int i = 0; i < items.Count && i < 4; i++)
         {
             if (items[i] == null) continue; // Pomija usunięte obiekty
-
-            // Sprawdzamy, czy obiekt został zniszczony (Unitiowa sztuczka)
-            if (!items[i])
-            {
-                Debug.LogWarning("Obiekt w liście przedmiotów został zniszczony.");
-                continue;
-            }
 
             InteractableItem item = items[i].GetComponent<InteractableItem>();
             TreasureResources treasureResources = items[i].GetComponent<TreasureResources>();
 
             if (item != null && treasureResources != null)
             {
+                // Wyświetlanie ikony przedmiotu
                 itemImages[i].sprite = itemIcons.ContainsKey(item.itemName) ? itemIcons[item.itemName] : defaultItemSprite;
                 itemImages[i].enabled = true;
+
+                // Wyświetlanie ilości zasobów
                 itemTexts[i].text = treasureResources.resourceCategories[0].resourceCount.ToString();
                 itemTexts[i].gameObject.SetActive(true);
+
+                // Wyświetlanie kategorii zasobów
+                string categoryName = treasureResources.resourceCategories[0].name;
+                itemCategoryTexts[i].text = categoryName; // Użycie name z ResourceCategory
+                itemCategoryTexts[i].gameObject.SetActive(true);
             }
         }
     }
