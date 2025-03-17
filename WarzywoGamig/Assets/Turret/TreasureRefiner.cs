@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 public class TreasureRefiner : MonoBehaviour
@@ -6,6 +7,10 @@ public class TreasureRefiner : MonoBehaviour
     public InventoryUI inventoryUI;
 
     private bool isRefining = false; // Flaga, która zapewnia, ¿e metoda jest wywo³ywana tylko raz
+
+    // Publiczne referencje do TextMeshPro dla kategorii i iloœci
+    public TextMeshProUGUI[] categoryTexts; // Tablica dla tekstów kategorii
+    public TextMeshProUGUI[] countTexts;    // Tablica dla tekstów iloœci
 
     // Funkcja do usuwania przedmiotu o nazwie "item_1" z ekwipunku
     public void RemoveOldestItemFromInventory(string itemName)
