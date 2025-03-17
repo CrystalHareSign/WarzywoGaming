@@ -11,12 +11,90 @@ public class TreasureRefiner : MonoBehaviour
     public TextMeshProUGUI[] categoryTexts;
     public TextMeshProUGUI[] countTexts;
 
-    // Nowa zmienna dla limitu zasobów w jednym slocie
     public float maxResourcePerSlot = 50f;
+
+    // Przyciski jako cube'y
+    public GameObject[] categoryButtons; // 4 Cubes
+    public GameObject refineButton; // 5-ty Cube
+
+    // Prefab i miejsce spawnu
+    public GameObject prefabToSpawn;
+    public Transform spawnPoint;
+
+    // Iloœæ do odjêcia przy przetwarzaniu
+    public int refineAmount = 10;
+
+    private int selectedCategoryIndex = -1; // Zaznaczony slot
 
     void Start()
     {
         InitializeSlots();
+    }
+
+    void Update()
+    {
+        HandleMouseClick();
+    }
+
+    private void HandleMouseClick()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            RaycastHit hit;
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+            if (Physics.Raycast(ray, out hit))
+            {
+                for (int i = 0; i < categoryButtons.Length; i++)
+                {
+                    if (hit.collider.gameObject == categoryButtons[i])
+                    {
+                        SelectCategory(i);
+                        return;
+                    }
+                }
+
+                if (hit.collider.gameObject == refineButton)
+                {
+                    RefineResources();
+                    return;
+                }
+            }
+        }
+    }
+
+    private void SelectCategory(int index)
+    {
+        selectedCategoryIndex = index;
+        Debug.Log($"Wybrano kategoriê w slocie {index + 1}: {categoryTexts[index].text}");
+    }
+
+    private void RefineResources()
+    {
+        if (selectedCategoryIndex == -1)
+        {
+            Debug.Log("Wybierz kategoriê zanim przetworzysz zasoby!");
+            return;
+        }
+
+        int currentAmount = int.Parse(countTexts[selectedCategoryIndex].text);
+
+        if (currentAmount >= refineAmount)
+        {
+            currentAmount -= refineAmount;
+            countTexts[selectedCategoryIndex].text = currentAmount.ToString();
+            SpawnPrefab();
+        }
+        else
+        {
+            Debug.Log("Za ma³o zasobów w wybranej kategorii!");
+        }
+    }
+
+    private void SpawnPrefab()
+    {
+        Instantiate(prefabToSpawn, spawnPoint.position, Quaternion.identity);
+        Debug.Log("Prefab zosta³ zespawnowany!");
     }
 
     public void RemoveOldestItemFromInventory(string itemName)
@@ -69,7 +147,6 @@ public class TreasureRefiner : MonoBehaviour
 
             bool addedToExistingSlot = false;
 
-            // Najpierw sprawdzamy, czy dana kategoria ju¿ istnieje w slotach
             for (int i = 0; i < categoryTexts.Length; i++)
             {
                 if (categoryTexts[i].text == resourceCategory)
@@ -82,7 +159,6 @@ public class TreasureRefiner : MonoBehaviour
                 }
             }
 
-            // Jeœli kategoria nie istnieje jeszcze w slotach, szukamy pustego slotu
             if (!addedToExistingSlot)
             {
                 for (int i = 0; i < categoryTexts.Length; i++)
