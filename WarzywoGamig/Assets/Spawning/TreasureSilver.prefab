@@ -165,7 +165,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: deca928ae8fcc1d4a99945acfdba5b43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  treasureResources: {fileID: 0}
+  treasureResources: {fileID: -1630196577918655703}
   predefinedCategories:
   - name: Silver
     isActive: 1
