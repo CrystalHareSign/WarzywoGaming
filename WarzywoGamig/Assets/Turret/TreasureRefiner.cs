@@ -10,20 +10,15 @@ public class TreasureRefiner : MonoBehaviour
 
     public TextMeshProUGUI[] categoryTexts;
     public TextMeshProUGUI[] countTexts;
-
     public float maxResourcePerSlot = 50f;
-
     public GameObject[] categoryButtons; // 4 Cubes
     public GameObject refineButton; // 5-ty Cube
-
     public GameObject prefabToSpawn;
     public Transform spawnPoint;
-    public float spawnHeightOffset = 2f; // ustalasz sobie w inspektorze
-
+    public float spawnYPosition = 2f; // ustawiasz dok³adne Y w inspektorze
     public int refineAmount = 10;
 
     private int selectedCategoryIndex = -1;
-
     private Color defaultColor;
     public Color highlightColor = Color.green;
 
@@ -91,6 +86,13 @@ public class TreasureRefiner : MonoBehaviour
             return;
         }
 
+        // 1. Sprawdzenie, czy spawnpoint jest zajêty
+        if (IsSpawnPointBlocked())
+        {
+            Debug.Log("Nie mo¿na przetworzyæ zasobów – spawn point jest zablokowany.");
+            return;
+        }
+
         int currentAmount = int.Parse(countTexts[selectedCategoryIndex].text);
 
         if (currentAmount >= refineAmount)
@@ -107,9 +109,39 @@ public class TreasureRefiner : MonoBehaviour
 
     private void SpawnPrefab()
     {
-        Vector3 spawnPos = spawnPoint.position + new Vector3(0, spawnHeightOffset, 0);
-        Instantiate(prefabToSpawn, spawnPos, Quaternion.identity);
-        Debug.Log("Prefab zosta³ zespawnowany na wysokoœci " + spawnPos.y);
+        // 1. SprawdŸ, czy spawnPoint ma dzieci
+        if (spawnPoint.childCount > 0)
+        {
+            Debug.Log("Nie mo¿na zespawnowaæ – spawn point ma ju¿ obiekt jako dziecko.");
+            return;
+        }
+
+        // 2. SprawdŸ kolizje w obszarze Collidera spawnPointa
+        Collider spawnCollider = spawnPoint.GetComponent<Collider>();
+        if (spawnCollider != null)
+        {
+            Collider[] overlaps = Physics.OverlapBox(
+                spawnCollider.bounds.center,
+                spawnCollider.bounds.extents,
+                spawnPoint.rotation
+            );
+
+            foreach (Collider col in overlaps)
+            {
+                if (col.transform != spawnPoint) // Ignorujemy collider spawnPointa
+                {
+                    Debug.Log("Nie mo¿na zespawnowaæ – coœ znajduje siê w obszarze spawn pointa.");
+                    return;
+                }
+            }
+        }
+
+        // 3. Spawnowanie – ustaw Y manualnie
+        Vector3 spawnPos = new Vector3(spawnPoint.position.x, spawnYPosition, spawnPoint.position.z);
+        GameObject spawned = Instantiate(prefabToSpawn, spawnPos, Quaternion.identity);
+        spawned.transform.SetParent(spawnPoint); // opcjonalnie jako dziecko
+
+        Debug.Log("Prefab zespawnowany na Y = " + spawnPos.y);
     }
 
     public void RemoveOldestItemFromInventory(string itemName)
@@ -196,5 +228,30 @@ public class TreasureRefiner : MonoBehaviour
             categoryTexts[i].text = "-";
             countTexts[i].text = "0";
         }
+    }
+
+    // Funkcja sprawdzaj¹ca, czy spawn point jest zablokowany
+    private bool IsSpawnPointBlocked()
+    {
+        if (spawnPoint.childCount > 0)
+            return true;
+
+        Collider spawnCollider = spawnPoint.GetComponent<Collider>();
+        if (spawnCollider != null)
+        {
+            Collider[] overlaps = Physics.OverlapBox(
+                spawnCollider.bounds.center,
+                spawnCollider.bounds.extents,
+                spawnPoint.rotation
+            );
+
+            foreach (Collider col in overlaps)
+            {
+                if (col.transform != spawnPoint)
+                    return true;
+            }
+        }
+
+        return false;
     }
 }
