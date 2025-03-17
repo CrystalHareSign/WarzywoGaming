@@ -13,22 +13,27 @@ public class TreasureRefiner : MonoBehaviour
 
     public float maxResourcePerSlot = 50f;
 
-    // Przyciski jako cube'y
     public GameObject[] categoryButtons; // 4 Cubes
     public GameObject refineButton; // 5-ty Cube
 
-    // Prefab i miejsce spawnu
     public GameObject prefabToSpawn;
     public Transform spawnPoint;
+    public float spawnHeightOffset = 2f; // ustalasz sobie w inspektorze
 
-    // Iloœæ do odjêcia przy przetwarzaniu
     public int refineAmount = 10;
 
-    private int selectedCategoryIndex = -1; // Zaznaczony slot
+    private int selectedCategoryIndex = -1;
+
+    private Color defaultColor;
+    public Color highlightColor = Color.green;
 
     void Start()
     {
         InitializeSlots();
+        if (categoryButtons.Length > 0)
+        {
+            defaultColor = categoryButtons[0].GetComponent<Renderer>().material.color;
+        }
     }
 
     void Update()
@@ -67,6 +72,15 @@ public class TreasureRefiner : MonoBehaviour
     {
         selectedCategoryIndex = index;
         Debug.Log($"Wybrano kategoriê w slocie {index + 1}: {categoryTexts[index].text}");
+
+        for (int i = 0; i < categoryButtons.Length; i++)
+        {
+            Renderer rend = categoryButtons[i].GetComponent<Renderer>();
+            if (i == index)
+                rend.material.color = highlightColor;
+            else
+                rend.material.color = defaultColor;
+        }
     }
 
     private void RefineResources()
@@ -93,8 +107,9 @@ public class TreasureRefiner : MonoBehaviour
 
     private void SpawnPrefab()
     {
-        Instantiate(prefabToSpawn, spawnPoint.position, Quaternion.identity);
-        Debug.Log("Prefab zosta³ zespawnowany!");
+        Vector3 spawnPos = spawnPoint.position + new Vector3(0, spawnHeightOffset, 0);
+        Instantiate(prefabToSpawn, spawnPos, Quaternion.identity);
+        Debug.Log("Prefab zosta³ zespawnowany na wysokoœci " + spawnPos.y);
     }
 
     public void RemoveOldestItemFromInventory(string itemName)
