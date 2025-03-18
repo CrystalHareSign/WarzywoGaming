@@ -13,6 +13,7 @@ TagManager:
   - Item
   - Turret
   - Treasure
+  - Wheel
   layers:
   - Default
   - TransparentFX

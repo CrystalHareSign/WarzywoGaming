@@ -112,7 +112,10 @@ public class TreasureRefiner : MonoBehaviour
         // 1. SprawdŸ, czy spawnPoint ma dzieci
         if (spawnPoint.childCount > 0)
         {
-            Debug.Log("Nie mo¿na zespawnowaæ – spawn point ma ju¿ obiekt jako dziecko.");
+            foreach (Transform child in spawnPoint)
+            {
+                Debug.Log("Spawn point zablokowany przez dziecko: " + child.gameObject.name);
+            }
             return;
         }
 
@@ -130,7 +133,7 @@ public class TreasureRefiner : MonoBehaviour
             {
                 if (col.transform != spawnPoint) // Ignorujemy collider spawnPointa
                 {
-                    Debug.Log("Nie mo¿na zespawnowaæ – coœ znajduje siê w obszarze spawn pointa.");
+                    Debug.Log("Nie mo¿na zespawnowaæ – kolizja z obiektem: " + col.gameObject.name);
                     return;
                 }
             }

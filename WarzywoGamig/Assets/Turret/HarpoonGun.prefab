@@ -276,7 +276,9 @@ MonoBehaviour:
   maxVerticalAngleToTarget: 45
   detectionRange: 300
   minDetectionRange: 20
-  showRangesInScene: 1
+  showRangesInScene: 0
+  isReturning: 0
+  canShoot: 1
 --- !u!1 &6505266079822188895
 GameObject:
   m_ObjectHideFlags: 0
