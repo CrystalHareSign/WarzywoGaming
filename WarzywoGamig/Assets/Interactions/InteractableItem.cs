@@ -40,6 +40,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
     public int wheelIndex; // Indeks ko³a (0-3)
 
     private WheelHealthUI wheelHealthUI;
+    public WheelManager wheelManager;
 
     private void Start()
     {
@@ -87,7 +88,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
     {
         if (hasCooldown && isCooldownActive)
         {
-            Debug.LogWarning($"[WARNING] Nie mo¿na wejœæ w interakcjê z {itemName}. Cooldown aktywny.");
+            //Debug.LogWarning($"[WARNING] Nie mo¿na wejœæ w interakcjê z {itemName}. Cooldown aktywny.");
             return;
         }
 
@@ -110,6 +111,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
             if (hasCooldown)
             {
                 StartCoroutine(CooldownCoroutine());
+                //wheelManager.StartSteering(direction, moveDuration);
             }
         }
         else

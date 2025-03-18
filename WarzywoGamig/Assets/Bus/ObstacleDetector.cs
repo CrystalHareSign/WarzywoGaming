@@ -13,7 +13,7 @@ public class ObstacleDetector : MonoBehaviour
     {
         if (other.CompareTag("Obstacle")) // Sprawdza, czy przeszkoda posiada tag "Obstacle"
         {
-            Debug.Log("Przeszkoda wykryta: " + other.name);  // Logujemy wykryt¹ przeszkodê
+            //Debug.Log("Przeszkoda wykryta: " + other.name);  // Logujemy wykryt¹ przeszkodê
             detectedObstacle = other.transform;
             // Uruchamiamy sprawdzanie odleg³oœci co updateFrequency sekund
             InvokeRepeating("UpdateDistanceAndUI", 0f, detectorManager.updateFrequency);
@@ -25,7 +25,7 @@ public class ObstacleDetector : MonoBehaviour
     {
         if (other.CompareTag("Obstacle")) // Sprawdza, czy przeszkoda posiada tag "Obstacle"
         {
-            Debug.Log("Przeszkoda opuœci³a detektor: " + other.name);  // Logujemy opuszczenie detektora
+            //Debug.Log("Przeszkoda opuœci³a detektor: " + other.name);  // Logujemy opuszczenie detektora
 
             // Resetujemy stan tylko wtedy, gdy wyjdzie ostatnia przeszkoda z obszaru
             if (detectedObstacle == other.transform)
