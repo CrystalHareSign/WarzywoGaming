@@ -4299,6 +4299,7 @@ GameObject:
   - component: {fileID: 905466876}
   - component: {fileID: 905466877}
   - component: {fileID: 905466878}
+  - component: {fileID: 905466879}
   m_Layer: 0
   m_Name: Body
   m_TagString: Ground
@@ -4371,6 +4372,23 @@ MonoBehaviour:
   yellowDistance: 900
   blinkFrequency: 0.3
   updateFrequency: 0.01
+--- !u!114 &905466879
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 905466875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37d978fde750e404e9f4e5e5e38dd180, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  frontLeftWheel: {fileID: 2141790952}
+  frontRightWheel: {fileID: 1528088092}
+  backLeftWheel: {fileID: 959489425}
+  backRightWheel: {fileID: 1169466806}
+  rotationSpeed: 400
 --- !u!1 &938572019
 GameObject:
   m_ObjectHideFlags: 0

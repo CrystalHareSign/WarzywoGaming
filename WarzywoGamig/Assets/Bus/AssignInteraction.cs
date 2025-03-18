@@ -11,8 +11,20 @@ public class AssignInteraction : MonoBehaviour
     public GameObject[] manualMoveObjects; // Rêcznie przypisane obiekty
     private List<GameObject> moveObjects = new List<GameObject>(); // Lista przedmiotów do przenoszenia
     private int lastLootCount = 0;
+    [Header("Body Move")]
     public float moveDistance = 1.0f; // Odleg³oœæ przenoszenia obiektów
     public float moveDuration = 1.0f; // Czas trwania przenoszenia obiektów
+    [Header("WheelTurn")]
+    public float rotationSpeed = 100f;
+    // Cztery transformy dla kó³
+    [Header("LP")]
+    public Transform frontLeftWheel;
+    [Header("PP")]
+    public Transform frontRightWheel;
+    [Header("LT")]
+    public Transform backLeftWheel;
+    [Header("PT")]
+    public Transform backRightWheel;
 
     void Start()
     {
@@ -50,11 +62,30 @@ public class AssignInteraction : MonoBehaviour
     }
     private void Update()
     {
+        // Rotacja wszystkich kó³
+        RotateWheel(frontLeftWheel, rotationSpeed);
+        RotateWheel(frontRightWheel, rotationSpeed);
+        RotateWheel(backLeftWheel, rotationSpeed);
+        RotateWheel(backRightWheel, rotationSpeed);
+
         GameObject[] foundLootObjects = GameObject.FindGameObjectsWithTag("Loot");
         if (foundLootObjects.Length != lastLootCount) // Sprawdza, czy liczba obiektów z tagiem "Loot" siê zmieni³a
         {
             AddObjectsWithTag("Loot");
             lastLootCount = foundLootObjects.Length; // Aktualizuje zapisan¹ liczbê obiektów
+        }
+    }
+    // Funkcja do rotacji kó³ z uwzglêdnieniem odbicia lustrzanego dla prawych kó³
+    private void RotateWheel(Transform wheel, float speed)
+    {
+        // Jeœli to prawe ko³o, odbij kierunek rotacji
+        if (wheel == frontRightWheel || wheel == backRightWheel)
+        {
+            wheel.Rotate(Vector3.back, -speed * Time.deltaTime);  // Obrót w przeciwn¹ stronê
+        }
+        else
+        {
+            wheel.Rotate(Vector3.back, speed * Time.deltaTime);  // Standardowy obrót
         }
     }
 
