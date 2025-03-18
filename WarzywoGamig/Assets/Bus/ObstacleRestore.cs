@@ -27,11 +27,11 @@ public class Obstacle : MonoBehaviour
             {
                 // Zniszcz obiekt po 2 kolizjach z Wheel
                 Destroy(gameObject);
-                Debug.Log("Obstacle destroyed after 2 collisions with 'Wheel'");
+                //Debug.Log("Obstacle destroyed after 2 collisions with 'Wheel'");
             }
             else
             {
-                Debug.Log($"Collision with 'Wheel' detected. {2 - wheelCollisionCount} more to destroy.");
+                //Debug.Log($"Collision with 'Wheel' detected. {2 - wheelCollisionCount} more to destroy.");
             }
         }
     }
