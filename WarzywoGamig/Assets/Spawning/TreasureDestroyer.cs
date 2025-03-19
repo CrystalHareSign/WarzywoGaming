@@ -10,7 +10,7 @@ public class TreasureDestroyer : MonoBehaviour
         {
             // Zniszcz obiekt, na którym znajduje siê skrypt
             Destroy(gameObject);
-            Debug.Log("Obiekt zosta³ zniszczony, poniewa¿ wszed³ w kolizjê z obiektem o tagu 'Wheel'");
+            //Debug.Log("Obiekt zosta³ zniszczony, poniewa¿ wszed³ w kolizjê z obiektem o tagu 'Wheel'");
         }
     }
 }

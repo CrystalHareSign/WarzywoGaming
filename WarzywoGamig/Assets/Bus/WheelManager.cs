@@ -3,103 +3,96 @@ using UnityEngine;
 public class WheelManager : MonoBehaviour
 {
     [Header("Prefaby - rotacja jazdy")]
-    // Cztery transformy dla kó³
     public Transform frontLeftWheel;
     public Transform frontRightWheel;
     public Transform backLeftWheel;
     public Transform backRightWheel;
-    // Sta³a prêdkoœæ rotacji dla wszystkich kó³
     public float rotationSpeed = 200f;
 
     [Header("Obiekty - rotacja skrêtu")]
-    // Transformy dla obiektów, które bêd¹ odpowiedzialne za rotacjê kó³ w osi Y
     public Transform frontLeftRotationObject;
     public Transform frontRightRotationObject;
 
-    // K¹t maksymalnego skrêtu
     public float maxSteeringAngle = 30f;
 
-    private float currentSteeringAngle = 0f;
-    private bool isTurning = false;
-    private float steeringTime = 1.0f;  // Bêdzie ustawiane w AssignInteraction
-    private Vector3 targetDirection;
+    private float steeringTime = 1.0f; // Czas ca³kowitego ruchu, pobierany z AssignInteraction
+    private float halfSteeringTime;
+    private bool isSteering = false;
+    private float elapsedSteeringTime = 0f;
+    private bool steeringLeft = true;
 
     void Update()
     {
-        // Rotacja wszystkich kó³ (dotyczy tylko rotacji jazdy, nie skrêtu)
         RotateWheel(frontLeftWheel, rotationSpeed);
         RotateWheel(frontRightWheel, rotationSpeed);
         RotateWheel(backLeftWheel, rotationSpeed);
         RotateWheel(backRightWheel, rotationSpeed);
 
-        // P³ynne skrêcanie przednich kó³
-        if (isTurning)
+        if (isSteering)
         {
-            SteerWheels();
-        }
+            elapsedSteeringTime += Time.deltaTime;
 
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            // Symulacja wywo³ania skrêtu, gdy naciœniesz spacjê
-            StartSteering(Vector3.left, 1.0f);
+            // Faza 1: Skrêt
+            if (elapsedSteeringTime <= halfSteeringTime)
+            {
+                float t = elapsedSteeringTime / halfSteeringTime;
+                ApplySteer(Mathf.Lerp(0f, maxSteeringAngle, t));
+            }
+            // Faza 2: Powrót
+            else if (elapsedSteeringTime <= steeringTime)
+            {
+                float t = (elapsedSteeringTime - halfSteeringTime) / halfSteeringTime;
+                ApplySteer(Mathf.Lerp(maxSteeringAngle, 0f, t));
+            }
+            // Koniec
+            else
+            {
+                isSteering = false;
+                ApplySteer(0f);
+            }
         }
     }
 
-    // Funkcja do rotacji kó³ z uwzglêdnieniem odbicia lustrzanego dla prawych kó³
     private void RotateWheel(Transform wheel, float speed)
     {
-        // Jeœli to prawe ko³o, odbij kierunek rotacji
         if (wheel == frontRightWheel || wheel == backRightWheel)
         {
-            wheel.Rotate(Vector3.back, -speed * Time.deltaTime);  // Obrót w przeciwn¹ stronê
+            wheel.Rotate(Vector3.back, -speed * Time.deltaTime);
         }
         else
         {
-            wheel.Rotate(Vector3.back, speed * Time.deltaTime);  // Standardowy obrót
+            wheel.Rotate(Vector3.back, speed * Time.deltaTime);
         }
     }
 
-    // Funkcja odpowiedzialna za skrêcanie tylko przednich kó³
-    private void SteerWheels()
+    private void ApplySteer(float angle)
     {
-        // Sprawdzenie, czy skrêt jest aktywowany
-        if (currentSteeringAngle == 0)
+        if (steeringLeft)
         {
-            Debug.Log("Current Steering Angle is 0, no steering applied.");
+            // Skrêt w lewo
+            frontLeftRotationObject.localRotation = Quaternion.Euler(0f, -angle, 0f);
+            frontRightRotationObject.localRotation = Quaternion.Euler(0f, -angle, 0f);
         }
-
-        // P³ynne przejœcie do docelowego k¹ta rotacji w obiektach
-        Debug.Log("Steering wheels, current angle: " + frontLeftRotationObject.localRotation.eulerAngles.y);
-        frontLeftRotationObject.localRotation = Quaternion.RotateTowards(
-            frontLeftRotationObject.localRotation,
-            Quaternion.Euler(0f, currentSteeringAngle, 0f),
-            Mathf.Abs(currentSteeringAngle - frontLeftRotationObject.localRotation.eulerAngles.y) * Time.deltaTime / steeringTime
-        );
-        Debug.Log("Front Left Wheel Target Angle: " + currentSteeringAngle);
-
-        frontRightRotationObject.localRotation = Quaternion.RotateTowards(
-            frontRightRotationObject.localRotation,
-            Quaternion.Euler(0f, -currentSteeringAngle, 0f),
-            Mathf.Abs(currentSteeringAngle - frontRightRotationObject.localRotation.eulerAngles.y) * Time.deltaTime / steeringTime
-        );
-        Debug.Log("Front Right Wheel Target Angle: " + -currentSteeringAngle);
-
-        // Zakoñczenie skrêtu, jeœli k¹t jest wystarczaj¹co bliski
-        if (Mathf.Abs(frontLeftRotationObject.localRotation.eulerAngles.y - currentSteeringAngle) < 1f)
+        else
         {
-            isTurning = false;
-            Debug.Log("Steering completed. Current angle reached.");
+            // Skrêt w prawo
+            frontLeftRotationObject.localRotation = Quaternion.Euler(0f, angle, 0f);
+            frontRightRotationObject.localRotation = Quaternion.Euler(0f, angle, 0f);
         }
     }
 
-    // Funkcja wywo³ywana przez inne skrypty, aby zacz¹æ skrêt
+
+    // Funkcja wywo³ywana z AssignInteraction
     public void StartSteering(Vector3 direction, float moveDuration)
     {
-        steeringTime = moveDuration;  // Ustawienie czasu skrêtu równym czasowi ruchu
-        targetDirection = direction;
-        currentSteeringAngle = Mathf.Sign(direction.x) * maxSteeringAngle; // Okreœlenie k¹ta skrêtu w zale¿noœci od kierunku
-        isTurning = true;
+        steeringTime = moveDuration;
+        halfSteeringTime = steeringTime / 2f;
+        elapsedSteeringTime = 0f;
 
-        Debug.Log("StartSteering called, direction: " + direction + ", angle: " + currentSteeringAngle);
+        // Okreœlenie kierunku skrêtu
+        steeringLeft = direction.z > 0; // forward = lewo, backward = prawo (mo¿esz to odwróciæ jeœli trzeba)
+        isSteering = true;
+
+        //Debug.Log($"[WheelManager] Steering started. Duration: {steeringTime}, Direction: {(steeringLeft ? "Left" : "Right")}");
     }
 }

@@ -1246,6 +1246,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 3
   wheelIndex: 0
+  wheelManager: {fileID: 0}
 --- !u!65 &191199844
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2181,6 +2182,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 3
   wheelIndex: 0
+  wheelManager: {fileID: 0}
 --- !u!65 &346508350
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2694,6 +2696,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  wheelManager: {fileID: 0}
 --- !u!65 &406868867
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3442,6 +3445,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  wheelManager: {fileID: 0}
 --- !u!1 &618062078
 GameObject:
   m_ObjectHideFlags: 0
@@ -4527,6 +4531,7 @@ GameObject:
   - component: {fileID: 905466876}
   - component: {fileID: 905466877}
   - component: {fileID: 905466878}
+  - component: {fileID: 905466879}
   m_Layer: 0
   m_Name: Body
   m_TagString: Ground
@@ -4599,6 +4604,26 @@ MonoBehaviour:
   yellowDistance: 900
   blinkFrequency: 0.3
   updateFrequency: 0.01
+--- !u!114 &905466879
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 905466875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e4eea093b63763449ed371c15e9a279, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  frontLeftWheel: {fileID: 2141790952}
+  frontRightWheel: {fileID: 1528088092}
+  backLeftWheel: {fileID: 959489425}
+  backRightWheel: {fileID: 1169466806}
+  rotationSpeed: 800
+  frontLeftRotationObject: {fileID: 1503271509}
+  frontRightRotationObject: {fileID: 346508345}
+  maxSteeringAngle: 60
 --- !u!1 &938572019
 GameObject:
   m_ObjectHideFlags: 0
@@ -4681,6 +4706,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  wheelManager: {fileID: 0}
 --- !u!114 &938572024
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5824,6 +5850,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  wheelManager: {fileID: 0}
 --- !u!65 &1170922817
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -8442,6 +8469,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 3
   wheelIndex: 0
+  wheelManager: {fileID: 0}
 --- !u!65 &1503271506
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -8644,6 +8672,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  wheelManager: {fileID: 0}
 --- !u!1 &1539170959
 GameObject:
   m_ObjectHideFlags: 0
@@ -8888,6 +8917,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  wheelManager: {fileID: 0}
 --- !u!1 &1582969583
 GameObject:
   m_ObjectHideFlags: 0
@@ -9008,6 +9038,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 3
   wheelIndex: 0
+  wheelManager: {fileID: 0}
 --- !u!65 &1582969589
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -9247,6 +9278,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  wheelManager: {fileID: 0}
 --- !u!114 &1592535036
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9480,6 +9512,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  wheelManager: {fileID: 0}
 --- !u!65 &1636800924
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -11273,6 +11306,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  wheelManager: {fileID: 0}
 --- !u!1 &1989328597
 GameObject:
   m_ObjectHideFlags: 0
@@ -12480,6 +12514,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  wheelManager: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
