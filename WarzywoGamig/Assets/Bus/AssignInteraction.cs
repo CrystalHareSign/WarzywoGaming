@@ -14,7 +14,7 @@ public class AssignInteraction : MonoBehaviour
     public float moveDistance = 1.0f; // Odleg³oœæ przenoszenia obiektów
     public float moveDuration = 1.0f; // Czas trwania przenoszenia obiektów
 
-    private WheelManager wheelManager;
+    public WheelManager wheelManager;
 
     void Start()
     {
