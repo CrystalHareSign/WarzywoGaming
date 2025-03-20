@@ -93,7 +93,26 @@ public class TurretController : MonoBehaviour
 
         // Ustawiamy nowy kąt dla lufy (obrót tylko w osi X)
         barrelPivot.localRotation = Quaternion.Euler(clampedAngle, 0, 0);
+
+        // Sprawdzamy, czy kąt jest w dozwolonym zakresie
+        if (clampedAngle == minBarrelAngle || clampedAngle == maxBarrelAngle)
+        {
+            // Jeśli kąt lufy przekracza zakres, blokujemy strzelanie
+            if (harpoonController != null)
+            {
+                harpoonController.canShoot = false;
+            }
+        }
+        else
+        {
+            // Jeśli kąt jest w dozwolonym zakresie, umożliwiamy strzelanie
+            if (harpoonController != null)
+            {
+                harpoonController.canShoot = true;
+            }
+        }
     }
+
 
     // Zamiana kąta na zakres -180° do 180°
     private float NormalizeAngle(float angle)
