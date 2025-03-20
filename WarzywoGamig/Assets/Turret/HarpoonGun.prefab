@@ -266,9 +266,9 @@ MonoBehaviour:
   harpoonPrefab: {fileID: 4978519809050357980, guid: 600dfc55fcceaa74db396d3660ded222, type: 3}
   firePoint: {fileID: 661208314154918027}
   treasureMountPoint: {fileID: 0}
-  shootSpeed: 400
+  shootSpeed: 1000
   returnSpeed: 300
-  maxRange: 300
+  maxRange: 200
   reloadTime: 2
   treasureLifetime: 1
   returnTolerance: 3
@@ -276,7 +276,7 @@ MonoBehaviour:
   maxVerticalAngleToTarget: 45
   detectionRange: 300
   minDetectionRange: 20
-  showRangesInScene: 0
+  showRangesInScene: 1
   isReturning: 0
   canShoot: 1
 --- !u!1 &6505266079822188895

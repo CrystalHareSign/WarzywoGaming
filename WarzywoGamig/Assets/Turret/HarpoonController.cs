@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class HarpoonController : MonoBehaviour
 {
@@ -104,9 +105,13 @@ public class HarpoonController : MonoBehaviour
             currentHarpoon.transform.SetParent(null);
             currentHarpoon.SetActive(true);
 
-            Vector3 shootDirection = (targetPosition - firePoint.position).normalized;
+            // Deklarujemy i obliczamy kierunek na podstawie kamery
+            Vector3 shootDirection = Camera.main.transform.forward;  // Tutaj deklarujemy shootDirection
+
+            // Ustawiamy prędkość harpunu w tym kierunku
             harpoonRb.isKinematic = false;
             harpoonRb.linearVelocity = shootDirection * shootSpeed;
+
             canShoot = false;
 
             // Zapisz pozycję z której harpun został wystrzelony
@@ -121,6 +126,7 @@ public class HarpoonController : MonoBehaviour
             Debug.LogError("currentHarpoon nie jest przypisany.");
         }
     }
+
 
     IEnumerator ReturnHarpoonAfterDelay()
     {
@@ -222,28 +228,35 @@ public class HarpoonController : MonoBehaviour
     Vector3 PredictTargetPosition(GameObject target)
     {
         TreasureTracker treasureTracker = target.GetComponent<TreasureTracker>();
+
         if (treasureTracker != null)
         {
-            Vector3 targetVelocity = treasureTracker.CurrentVelocity;
+            Vector3 targetVelocity = treasureTracker.CurrentVelocity;  // Prędkość celu
             float distanceToTarget = Vector3.Distance(firePoint.position, target.transform.position);
+
+            // Czas, w którym harpun dotrze do celu, zakładając, że harpun porusza się z prędkością shootSpeed
             float timeToTarget = distanceToTarget / shootSpeed;
 
+            // Predykcja nowej pozycji celu, uwzględniając jego prędkość
             Vector3 predictedPosition = target.transform.position + targetVelocity * timeToTarget;
 
             return predictedPosition;
         }
 
+        // Jeżeli nie znaleziono skryptu TreasureTracker, po prostu zwróć obecną pozycję celu
         return target.transform.position;
     }
 
     Vector3 GetMouseWorldPosition()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
         if (Physics.Raycast(ray, out RaycastHit hit, 1000f))
         {
             return hit.point;
         }
-        return ray.GetPoint(100f); // Jeśli nie trafi w nic, celuje w daleko
+
+        return ray.origin + ray.direction * maxRange;
     }
 
     void OnDrawGizmos()
