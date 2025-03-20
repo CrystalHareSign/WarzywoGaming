@@ -11,7 +11,7 @@ public class HarpoonController : MonoBehaviour
     public float shootSpeed = 20f;
     public float returnSpeed = 10f;
     public float maxRange = 50f;
-    public float reloadTimer = 0f; // Nowa zmienna do liczenia czasu przeładowania
+    public float reloadTime = 2f; // Czas przeładowania
     public float treasureLifetime = 1f;
     [Header("! DRGANIE !")]
     public float returnTolerance = 3.0f;
@@ -31,6 +31,8 @@ public class HarpoonController : MonoBehaviour
     private Vector3 shootPosition;
 
     private TurretController turretController;
+
+    private float reloadTimer = 0f; // Nowa zmienna do liczenia czasu przeładowania
 
     void Start()
     {
