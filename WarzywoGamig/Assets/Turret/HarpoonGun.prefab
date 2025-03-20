@@ -267,7 +267,7 @@ MonoBehaviour:
   firePoint: {fileID: 661208314154918027}
   treasureMountPoint: {fileID: 0}
   shootSpeed: 1000
-  returnSpeed: 300
+  returnSpeed: 500
   maxRange: 200
   reloadTime: 2
   treasureLifetime: 1
