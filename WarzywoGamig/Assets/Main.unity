@@ -696,7 +696,7 @@ Transform:
   m_GameObject: {fileID: 81908485}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2000, y: 1, z: 0}
+  m_LocalPosition: {x: 2000, y: 0.2, z: 0}
   m_LocalScale: {x: 0.1, y: 2, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1858,10 +1858,10 @@ MonoBehaviour:
   spawnPointsGroup4:
   - {fileID: 81908485}
   spawnIntervalGroup4: 0
-  group4Lifetime: 150
-  enableGroup4: 0
+  group4Lifetime: 200
+  enableGroup4: 1
   spawnablePrefabsGroup5:
-  - prefab: {fileID: 8014262020370128918, guid: d942ae580beb1d84cbea80a27912d244, type: 3}
+  - prefab: {fileID: 5981551204713810889, guid: d942ae580beb1d84cbea80a27912d244, type: 3}
     spawnChance: 100
   spawnPointsGroup5:
   - {fileID: 1633245306}
@@ -1884,9 +1884,9 @@ MonoBehaviour:
   - {fileID: 1093135866}
   - {fileID: 1206797409}
   - {fileID: 351545347}
-  spawnIntervalGroup5: 0.5
+  spawnIntervalGroup5: 0.01
   group5Lifetime: 20
-  enableGroup5: 1
+  enableGroup5: 0
   spawnedObjectSpeed: 100
   globalObjectLifetime: 20
 --- !u!1001 &299235531
@@ -3512,6 +3512,37 @@ MonoBehaviour:
   requiredHoldTime: 0
   wheelIndex: 0
   wheelManager: {fileID: 0}
+--- !u!1 &606012818
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 606012819}
+  m_Layer: 0
+  m_Name: =====SPAWNOWANE=====
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &606012819
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 606012818}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -38, y: 7, z: -2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &618062078
 GameObject:
   m_ObjectHideFlags: 0
@@ -12645,3 +12676,4 @@ SceneRoots:
   - {fileID: 1906165390}
   - {fileID: 1500927174}
   - {fileID: 938572021}
+  - {fileID: 606012819}
