@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 public class InteractableItem : MonoBehaviour, IInteractable
 {
@@ -38,6 +39,11 @@ public class InteractableItem : MonoBehaviour, IInteractable
 
     [Header("UI System Zdrowia")]
     public int wheelIndex; // Indeks ko³a (0-3)
+
+    [Header("SCENY")]
+    // Dodane boole do sprawdzania aktywnej sceny
+    public bool SceneMain = false;
+    public bool SceneHome = false;
 
     private WheelHealthUI wheelHealthUI;
     public WheelManager wheelManager;
@@ -88,36 +94,56 @@ public class InteractableItem : MonoBehaviour, IInteractable
     {
         if (hasCooldown && isCooldownActive)
         {
-            //Debug.LogWarning($"[WARNING] Nie mo¿na wejœæ w interakcjê z {itemName}. Cooldown aktywny.");
             return;
         }
 
-        if (hoverMessage.alwaysActive || InteractivityManager.Instance.IsInteractable(gameObject))
+        // Sprawdzanie aktywnej sceny
+        if (IsSceneActive())
         {
-            if (usesHealthSystem)
+            if (hoverMessage.alwaysActive || InteractivityManager.Instance.IsInteractable(gameObject))
             {
-                RepairItem();
+                if (usesHealthSystem)
+                {
+                    RepairItem();
+                }
+                else
+                {
+                    onInteract?.Invoke();
+                    if (hoverMessage != null && !hoverMessage.alwaysActive)
+                    {
+                        hoverMessage.isInteracted = true;
+                        InteractivityManager.Instance.UpdateInteractivityStatus(gameObject, false);
+                    }
+                }
+
+                if (hasCooldown)
+                {
+                    StartCoroutine(CooldownCoroutine());
+                }
             }
             else
             {
-                onInteract?.Invoke();
-                if (hoverMessage != null && !hoverMessage.alwaysActive)
-                {
-                    hoverMessage.isInteracted = true;
-                    InteractivityManager.Instance.UpdateInteractivityStatus(gameObject, false);
-                }
-            }
-
-            if (hasCooldown)
-            {
-                StartCoroutine(CooldownCoroutine());
-                //wheelManager.StartSteering(direction, moveDuration);
+                Debug.LogWarning($"[WARNING] Próba interakcji z nieinteraktywnym obiektem: {itemName}");
             }
         }
         else
         {
-            Debug.LogWarning($"[WARNING] Próba interakcji z nieinteraktywnym obiektem: {itemName}");
+            Debug.LogWarning($"[WARNING] Obiekt {itemName} nie jest aktywny w tej scenie.");
         }
+    }
+    private bool IsSceneActive()
+    {
+        if (SceneMain && SceneManager.GetActiveScene().name == "Main") // Sprawdzenie, czy scena "Main" jest aktywna
+        {
+            return true;
+        }
+
+        if (SceneHome && SceneManager.GetActiveScene().name == "Home") // Sprawdzenie, czy scena "Home" jest aktywna
+        {
+            return true;
+        }
+
+        return SceneMain && SceneHome; // Jeœli oba s¹ ustawione na true, to dzia³a dla obu
     }
 
     private int GetWheelIndex()
