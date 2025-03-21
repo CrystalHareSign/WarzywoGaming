@@ -19,6 +19,17 @@ public class PlayerInteraction : MonoBehaviour
     private TreasureRefiner treasureRefiner;
     private bool hasRefinerBeenUsed = false; // Flaga kontroluj¹ca, czy refiner ju¿ zosta³ u¿yty
 
+    void Awake()
+    {
+        if (GameObject.FindGameObjectsWithTag("Player").Length > 1)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        DontDestroyOnLoad(gameObject);
+    }
+
     void Start()
     {
         // Znajdujemy TurretController w scenie
