@@ -9,9 +9,6 @@ public class SceneChanger : MonoBehaviour
     [SerializeField] private Transform button2;
     [SerializeField] private string scene2;
 
-    public TreasureRefiner treasureRefiner;
-    public Inventory inventory;
-
     private void Update()
     {
         if (Input.GetMouseButtonDown(0)) // lewy klik myszy
@@ -54,20 +51,35 @@ public class SceneChanger : MonoBehaviour
 
     private void ExecuteMethodsForMainScene()
     {
-        inventory.ClearInventory();
-        treasureRefiner.ResetSlots();
-
-        // Tutaj umieszczamy logikê, aby znaleŸæ prefab z komponentem TurretCollector
-        TurretCollector turretCollector = FindObjectOfType<TurretCollector>();
-
-        if (turretCollector != null)
+        Inventory inventory = FindObjectOfType<Inventory>();
+        if (inventory == null)
         {
-            // Wywo³anie metody ze skryptu TurretCollector
-            turretCollector.ClearAllSlots(); // Zmieñ "SomeMethod" na odpowiedni¹ metodê w TurretCollector
+            Debug.LogWarning("Nie znaleziono komponentu Inventory w scenie.");
         }
         else
         {
+            inventory.ClearInventory();
+        }
+
+        TreasureRefiner treasureRefiner = FindObjectOfType<TreasureRefiner>();
+        if (treasureRefiner == null)
+        {
+            Debug.LogWarning("Nie znaleziono komponentu TreasureRefiner w scenie.");
+        }
+        else
+        {
+            treasureRefiner.ResetSlots();
+        }
+
+        TurretCollector turretCollector = FindObjectOfType<TurretCollector>();
+        if (turretCollector == null)
+        {
             Debug.LogWarning("Nie znaleziono komponentu TurretCollector w scenie.");
         }
+        else
+        {
+            turretCollector.ClearAllSlots();
+        }
     }
+
 }
