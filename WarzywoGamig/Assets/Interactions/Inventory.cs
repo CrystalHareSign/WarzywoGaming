@@ -437,4 +437,17 @@ public class Inventory : MonoBehaviour
             inventoryUI.UpdateInventoryUI(weapons, items);
         }
     }
+    public void ClearInventory()
+    {
+        // Usuwamy inne przedmioty
+        foreach (GameObject item in items)
+        {
+            Destroy(item);
+        }
+        items.Clear();
+
+        // Zaktualizuj UI
+        UpdateInventoryUI();
+    }
+
 }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class WheelManager : MonoBehaviour
 {
@@ -23,10 +24,15 @@ public class WheelManager : MonoBehaviour
 
     void Update()
     {
-        RotateWheel(frontLeftWheel, rotationSpeed);
-        RotateWheel(frontRightWheel, rotationSpeed);
-        RotateWheel(backLeftWheel, rotationSpeed);
-        RotateWheel(backRightWheel, rotationSpeed);
+        // Sprawdzanie, czy aktywna scena to "Main"
+        if (SceneManager.GetActiveScene().name == "Main")
+        {
+            // Rotacja kó³
+            RotateWheel(frontLeftWheel, rotationSpeed);
+            RotateWheel(frontRightWheel, rotationSpeed);
+            RotateWheel(backLeftWheel, rotationSpeed);
+            RotateWheel(backRightWheel, rotationSpeed);
+        }
 
         if (isSteering)
         {
