@@ -165,4 +165,22 @@ public class TurretCollector : MonoBehaviour
             resourceComponent.UpdateResourceCategoryCount(resourceCategory, resourceCount);
         }
     }
+    public void ClearAllSlots()
+    {
+        foreach (var slot in resourceSlots)
+        {
+            // Resetowanie danych slotu
+            slot.resourceCategory = "";
+            slot.resourceCount = 0;
+
+            // Dezaktywowanie i usuwanie wizualizacji zasobu, jeœli istnieje
+            if (slot.resourceVisual != null)
+            {
+                slot.resourceVisual.SetActive(false);
+                Destroy(slot.resourceVisual); // Usuwamy obiekt wizualizacji
+                slot.resourceVisual = null;
+            }
+        }
+    }
+
 }

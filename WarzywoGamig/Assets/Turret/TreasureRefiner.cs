@@ -257,4 +257,15 @@ public class TreasureRefiner : MonoBehaviour
 
         return false;
     }
+    public void ResetSlots()
+    {
+        for (int i = 0; i < categoryTexts.Length; i++)
+        {
+            categoryTexts[i].text = "-";  // Resetujemy kategoriê
+            countTexts[i].text = "0";     // Resetujemy iloœæ
+        }
+
+        Debug.Log("Wszystkie sloty zosta³y zresetowane.");
+    }
+
 }
