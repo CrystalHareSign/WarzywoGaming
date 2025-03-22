@@ -42,6 +42,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
 
     [Header("SCENY")]
     // Dodane boole do sprawdzania aktywnej sceny
+    public bool UsingSceneSystem = false; // Nowy prze³¹cznik
     public bool SceneMain = false;
     public bool SceneHome = false;
 
@@ -133,18 +134,24 @@ public class InteractableItem : MonoBehaviour, IInteractable
     }
     private bool IsSceneActive()
     {
-        if (SceneMain && SceneManager.GetActiveScene().name == "Main") // Sprawdzenie, czy scena "Main" jest aktywna
+        if (!UsingSceneSystem)
+        {
+            return true; // Jeœli nie korzystamy z systemu scen, zawsze zwracamy true
+        }
+
+        if (SceneMain && SceneManager.GetActiveScene().name == "Main")
         {
             return true;
         }
 
-        if (SceneHome && SceneManager.GetActiveScene().name == "Home") // Sprawdzenie, czy scena "Home" jest aktywna
+        if (SceneHome && SceneManager.GetActiveScene().name == "Home")
         {
             return true;
         }
 
-        return SceneMain && SceneHome; // Jeœli oba s¹ ustawione na true, to dzia³a dla obu
+        return false;
     }
+
 
     private int GetWheelIndex()
     {

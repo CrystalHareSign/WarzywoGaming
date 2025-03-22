@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;  // Dodajemy ten namespace
+using UnityEngine.SceneManagement;
 
 public class HoverMessage : MonoBehaviour
 {
@@ -9,34 +9,35 @@ public class HoverMessage : MonoBehaviour
     public bool alwaysActive = false;
 
     [Header("SCENY")]
+    public bool UsingSceneSystem = false; // Nowy prze³¹cznik
     public bool SceneMain = false;
     public bool SceneHome = false;
 
     private void Start()
     {
-        // Nas³uchujemy na zmianê sceny
         SceneManager.sceneLoaded += OnSceneLoaded;
-        CheckSceneStatus(); // Sprawdzamy status sceny na pocz¹tku
+        CheckSceneStatus();
     }
 
     private void OnDestroy()
     {
-        // Usuwamy nas³uchiwacz przy zniszczeniu obiektu
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // Sprawdzamy status przy ka¿dej zmianie sceny
         CheckSceneStatus();
     }
 
     private void CheckSceneStatus()
     {
-        // Sprawdzamy, w jakiej scenie siê znajdujemy
+        if (!UsingSceneSystem)
+        {
+            return; // Jeœli system scen jest wy³¹czony, nic nie robimy
+        }
+
         string currentSceneName = SceneManager.GetActiveScene().name;
 
-        // Jeœli scena nie pasuje do ustawionych boolów, ustawiamy isInteracted na true
         if (SceneMain && currentSceneName != "Main")
         {
             isInteracted = true;
@@ -47,7 +48,6 @@ public class HoverMessage : MonoBehaviour
         }
         else
         {
-            // Jeœli scena jest odpowiednia, ustawiamy isInteracted na false
             isInteracted = false;
         }
     }

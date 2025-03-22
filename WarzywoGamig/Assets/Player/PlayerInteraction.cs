@@ -40,7 +40,7 @@ public class PlayerInteraction : MonoBehaviour
         }
         // Znajdujemy TreasureRefiner w scenie
         treasureRefiner = Object.FindFirstObjectByType<TreasureRefiner>();
-        if (treasureRefiner  == null)
+        if (treasureRefiner == null)
         {
             Debug.LogError("Brak obiektu TurretController w scenie.");
         }
