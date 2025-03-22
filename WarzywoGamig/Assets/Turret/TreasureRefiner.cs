@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class TreasureRefiner : MonoBehaviour
 {
@@ -10,6 +11,8 @@ public class TreasureRefiner : MonoBehaviour
 
     public TextMeshProUGUI[] categoryTexts;
     public TextMeshProUGUI[] countTexts;
+    public TextMeshProUGUI trashCategoryText; // Nowy tekst dla kategorii trash
+    public TextMeshProUGUI trashCountText; // Nowy tekst dla iloœci trash
     public float maxResourcePerSlot = 50f;
     public GameObject[] categoryButtons; // 4 Cubes
     public GameObject refineButton; // 5-ty Cube
@@ -17,18 +20,32 @@ public class TreasureRefiner : MonoBehaviour
     public Transform spawnPoint;
     public float spawnYPosition = 2f; // ustawiasz dok³adne Y w inspektorze
     public int refineAmount = 10;
+    public int trashRequiredAmount = 30; // Iloœæ zasobów potrzebnych do wytworzenia trash prefab
+
+    // Nowe zmienne dla supplyTrash i refineTrash
+    public GameObject supplyTrashButton;
+    public GameObject refineTrashButton;
+    public float trashResourceRequired = 100f; // Wymagana iloœæ zasobów na trash
 
     private int selectedCategoryIndex = -1;
     private Color defaultColor;
     public Color highlightColor = Color.green;
 
-    void Start()
+    private void Start()
     {
         InitializeSlots();
         if (categoryButtons.Length > 0)
         {
             defaultColor = categoryButtons[0].GetComponent<Renderer>().material.color;
         }
+
+        // Sprawdzanie, czy jesteœmy w scenie Home
+        UpdateButtonStates();
+
+        // Rejestracja nas³uchiwania na zmianê sceny
+        SceneManager.sceneLoaded += OnSceneLoaded;
+
+        trashCountText.text = "0";
     }
 
     void Update()
@@ -59,10 +76,48 @@ public class TreasureRefiner : MonoBehaviour
                     RefineResources();
                     return;
                 }
+
+                // Dodajemy obs³ugê nowych przycisków
+                if (hit.collider.gameObject == supplyTrashButton)
+                {
+                    SupplyTrash();
+                    return;
+                }
+
+                if (hit.collider.gameObject == refineTrashButton)
+                {
+                    RefineTrash();
+                    return;
+                }
             }
         }
     }
 
+    // Funkcja wywo³ywana po za³adowaniu sceny
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Aktualizujemy stan przycisków po zmianie sceny
+        UpdateButtonStates();
+    }
+
+    // Funkcja do aktualizacji stanu przycisków na podstawie sceny
+    private void UpdateButtonStates()
+    {
+        string currentScene = SceneManager.GetActiveScene().name;
+
+        // Jeœli jesteœmy w scenie Home, przyciski s¹ aktywne
+        if (currentScene == "Home")
+        {
+            supplyTrashButton.SetActive(true);
+            refineTrashButton.SetActive(true);
+        }
+        else
+        {
+            // W innych scenach przyciski s¹ nieaktywne
+            supplyTrashButton.SetActive(false);
+            refineTrashButton.SetActive(false);
+        }
+    }
     private void SelectCategory(int index)
     {
         selectedCategoryIndex = index;
@@ -83,13 +138,6 @@ public class TreasureRefiner : MonoBehaviour
         if (selectedCategoryIndex == -1)
         {
             Debug.Log("Wybierz kategoriê zanim przetworzysz zasoby!");
-            return;
-        }
-
-        // 1. Sprawdzenie, czy spawnpoint jest zajêty
-        if (IsSpawnPointBlocked())
-        {
-            Debug.Log("Nie mo¿na przetworzyæ zasobów – spawn point jest zablokowany.");
             return;
         }
 
@@ -145,6 +193,52 @@ public class TreasureRefiner : MonoBehaviour
         spawned.transform.SetParent(spawnPoint); // opcjonalnie jako dziecko
 
         Debug.Log("Prefab zespawnowany na Y = " + spawnPos.y);
+    }
+
+    public void SupplyTrash()
+    {
+        int totalTrashAmount = 0;
+
+        // Sumowanie iloœci zasobów we wszystkich slotach 1-4
+        for (int i = 0; i < 4; i++)
+        {
+            totalTrashAmount += int.Parse(countTexts[i].text);
+            countTexts[i].text = "0"; // Resetowanie slotów do 0
+            categoryTexts[i].text = "-"; // Resetowanie kategorii
+        }
+
+        // Uaktualnienie tekstu kategorii trash oraz liczby zasobów
+        trashCategoryText.text = "Trash";
+        trashCountText.text = totalTrashAmount.ToString();
+    }
+
+    public void RefineTrash()
+    {
+        int currentTrashAmount = int.Parse(trashCountText.text);
+
+        if (currentTrashAmount >= trashRequiredAmount)
+        {
+            currentTrashAmount -= trashRequiredAmount;
+            trashCountText.text = currentTrashAmount.ToString();
+
+            // Sprawdzenie, czy spawn point jest wolny
+            if (IsSpawnPointBlocked())
+            {
+                Debug.Log("Spawn point zablokowany.");
+                return;
+            }
+
+            // Spawnowanie prefab
+            Vector3 spawnPos = new Vector3(spawnPoint.position.x, spawnYPosition, spawnPoint.position.z);
+            GameObject spawnedTrash = Instantiate(prefabToSpawn, spawnPos, Quaternion.identity);
+            spawnedTrash.transform.SetParent(spawnPoint); // Opcjonalnie ustawienie jako dziecko spawnPointa
+
+            Debug.Log("Prefab trash zespawnowany.");
+        }
+        else
+        {
+            Debug.Log("Za ma³o zasobów do przetworzenia trash!");
+        }
     }
 
     public void RemoveOldestItemFromInventory(string itemName)
@@ -257,6 +351,7 @@ public class TreasureRefiner : MonoBehaviour
 
         return false;
     }
+
     public void ResetSlots()
     {
         for (int i = 0; i < categoryTexts.Length; i++)
@@ -267,5 +362,4 @@ public class TreasureRefiner : MonoBehaviour
 
         Debug.Log("Wszystkie sloty zosta³y zresetowane.");
     }
-
 }
