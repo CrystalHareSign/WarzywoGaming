@@ -1249,6 +1249,7 @@ MonoBehaviour:
   interactionDistance: 5
   isInteracted: 1
   alwaysActive: 0
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
 --- !u!114 &191199843
@@ -1279,6 +1280,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 3
   wheelIndex: 0
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
   wheelManager: {fileID: 0}
@@ -2277,6 +2279,7 @@ MonoBehaviour:
   interactionDistance: 5
   isInteracted: 1
   alwaysActive: 0
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
 --- !u!114 &346508349
@@ -2307,8 +2310,9 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 3
   wheelIndex: 0
-  SceneMain: 0
-  SceneHome: 0
+  UsingSceneSystem: 0
+  SceneMain: 1
+  SceneHome: 1
   wheelManager: {fileID: 0}
 --- !u!65 &346508350
 BoxCollider:
@@ -2795,7 +2799,8 @@ MonoBehaviour:
   interactionDistance: 5
   isInteracted: 0
   alwaysActive: 1
-  SceneMain: 0
+  UsingSceneSystem: 1
+  SceneMain: 1
   SceneHome: 0
 --- !u!114 &406868866
 MonoBehaviour:
@@ -2825,7 +2830,8 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
-  SceneMain: 0
+  UsingSceneSystem: 1
+  SceneMain: 1
   SceneHome: 0
   wheelManager: {fileID: 0}
 --- !u!65 &406868867
@@ -3548,6 +3554,7 @@ MonoBehaviour:
   interactionDistance: 5
   isInteracted: 0
   alwaysActive: 1
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
 --- !u!114 &599296874
@@ -3578,6 +3585,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
   wheelManager: {fileID: 0}
@@ -4802,8 +4810,6 @@ GameObject:
   m_Component:
   - component: {fileID: 938572021}
   - component: {fileID: 938572024}
-  - component: {fileID: 938572023}
-  - component: {fileID: 938572022}
   m_Layer: 0
   m_Name: TurretBody
   m_TagString: Turret
@@ -4830,55 +4836,6 @@ Transform:
   - {fileID: 1455545154}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &938572022
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 938572019}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b9c10a544bb40ac40ba2b7fe60df5b57, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  message: "Wci\u015Bnij E aby wej\u015B\u0107"
-  interactionDistance: 5
-  isInteracted: 0
-  alwaysActive: 1
-  SceneMain: 0
-  SceneHome: 0
---- !u!114 &938572023
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 938572019}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4a232f88565b95744a8035c4ec583243, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverMessage: {fileID: 0}
-  itemName: Turret
-  startAsNonInteractive: 0
-  canBePickedUp: 0
-  canBeDropped: 0
-  isWeapon: 0
-  isLoot: 0
-  isTurret: 1
-  isRefiner: 0
-  alwaysInteractive: 0
-  hasCooldown: 0
-  usesHealthSystem: 0
-  maxHealth: 2
-  currentHealth: 0
-  requiredHoldTime: 0
-  wheelIndex: 0
-  SceneMain: 0
-  SceneHome: 0
-  wheelManager: {fileID: 0}
 --- !u!114 &938572024
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5922,7 +5879,6 @@ GameObject:
   - component: {fileID: 1170922817}
   - component: {fileID: 1170922816}
   - component: {fileID: 1170922815}
-  - component: {fileID: 1170922814}
   m_Layer: 7
   m_Name: EnterArea
   m_TagString: Untagged
@@ -5947,37 +5903,6 @@ Transform:
   - {fileID: 1786100113}
   m_Father: {fileID: 1164406312}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1170922814
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1170922812}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bff151e4c6b6bf04ab9e6f626b52558d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerMovement: {fileID: 2094475113}
-  harpoonController: {fileID: 0}
-  inventory: {fileID: 2094475115}
-  enterArea: {fileID: 1170922813}
-  exitArea: {fileID: 796514633}
-  turretBase: {fileID: 1164406312}
-  barrelPivot: {fileID: 0}
-  playerCamera: {fileID: 0}
-  weapon: {fileID: 0}
-  harpoonGunPrefab: {fileID: 0}
-  raiseHeight: 7
-  raiseSpeed: 2
-  lowerSpeed: 2
-  rotationResetSpeed: 2
-  minBarrelAngle: -30
-  maxBarrelAngle: 30
-  isRaised: 0
-  isLowering: 0
-  isUsingTurret: 0
 --- !u!114 &1170922815
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5994,7 +5919,8 @@ MonoBehaviour:
   interactionDistance: 5
   isInteracted: 0
   alwaysActive: 1
-  SceneMain: 0
+  UsingSceneSystem: 1
+  SceneMain: 1
   SceneHome: 0
 --- !u!114 &1170922816
 MonoBehaviour:
@@ -6024,7 +5950,8 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
-  SceneMain: 0
+  UsingSceneSystem: 1
+  SceneMain: 1
   SceneHome: 0
   wheelManager: {fileID: 0}
 --- !u!65 &1170922817
@@ -8617,6 +8544,7 @@ MonoBehaviour:
   interactionDistance: 5
   isInteracted: 1
   alwaysActive: 0
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
 --- !u!114 &1503271505
@@ -8647,6 +8575,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 3
   wheelIndex: 0
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
   wheelManager: {fileID: 0}
@@ -8824,6 +8753,7 @@ MonoBehaviour:
   interactionDistance: 5
   isInteracted: 0
   alwaysActive: 1
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
 --- !u!114 &1538886258
@@ -8854,6 +8784,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
   wheelManager: {fileID: 0}
@@ -9181,7 +9112,8 @@ MonoBehaviour:
   interactionDistance: 5
   isInteracted: 0
   alwaysActive: 1
-  SceneMain: 1
+  UsingSceneSystem: 0
+  SceneMain: 0
   SceneHome: 0
 --- !u!114 &1580745268
 MonoBehaviour:
@@ -9211,7 +9143,8 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
-  SceneMain: 1
+  UsingSceneSystem: 0
+  SceneMain: 0
   SceneHome: 0
   wheelManager: {fileID: 0}
 --- !u!1 &1582969583
@@ -9306,6 +9239,7 @@ MonoBehaviour:
   interactionDistance: 5
   isInteracted: 1
   alwaysActive: 0
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
 --- !u!114 &1582969588
@@ -9336,6 +9270,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 3
   wheelIndex: 0
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
   wheelManager: {fileID: 0}
@@ -9550,6 +9485,7 @@ MonoBehaviour:
   interactionDistance: 5
   isInteracted: 0
   alwaysActive: 1
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
 --- !u!114 &1592535031
@@ -9580,6 +9516,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
   wheelManager: {fileID: 0}
@@ -9788,7 +9725,8 @@ MonoBehaviour:
   interactionDistance: 5
   isInteracted: 0
   alwaysActive: 1
-  SceneMain: 0
+  UsingSceneSystem: 1
+  SceneMain: 1
   SceneHome: 0
 --- !u!114 &1636800923
 MonoBehaviour:
@@ -9818,7 +9756,8 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
-  SceneMain: 0
+  UsingSceneSystem: 1
+  SceneMain: 1
   SceneHome: 0
   wheelManager: {fileID: 0}
 --- !u!65 &1636800924
@@ -10436,6 +10375,8 @@ MonoBehaviour:
   scene1: Main
   button2: {fileID: 1946369534}
   scene2: Home
+  treasureRefiner: {fileID: 1580745263}
+  inventory: {fileID: 2094475115}
 --- !u!65 &1701768992
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -11851,6 +11792,7 @@ MonoBehaviour:
   interactionDistance: 5
   isInteracted: 0
   alwaysActive: 1
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
 --- !u!114 &1970514465
@@ -11881,6 +11823,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
   wheelManager: {fileID: 0}
@@ -13125,6 +13068,7 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
   wheelManager: {fileID: 0}
