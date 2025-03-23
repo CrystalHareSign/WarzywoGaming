@@ -155,7 +155,9 @@ public class TreasureRefiner : MonoBehaviour
         {
             currentAmount -= refineAmount;
             countTexts[selectedCategoryIndex].text = currentAmount.ToString();
-            SpawnPrefab();
+
+            // Spawnowanie zwyk³ego zasobu
+            SpawnPrefab(isTrash: false);
         }
         else
         {
@@ -163,8 +165,10 @@ public class TreasureRefiner : MonoBehaviour
         }
     }
 
-    private void SpawnPrefab()
+    private void SpawnPrefab(bool isTrash = false)
     {
+        float resourceAmount = isTrash ? trashResourceRequired : refineAmount;
+
         // 1. SprawdŸ, czy spawnPoint ma dzieci
         if (spawnPoint.childCount > 0)
         {
@@ -205,11 +209,10 @@ public class TreasureRefiner : MonoBehaviour
 
         // Przypisujemy kategoriê i iloœæ zasobów
         string resourceCategory = categoryTexts[selectedCategoryIndex].text;
-
         treasureValue.category = resourceCategory;
-        treasureValue.amount = refineAmount;
+        treasureValue.amount = (int)resourceAmount;
 
-        Debug.Log("Prefab zespawnowany na Y = " + spawnPos.y + " z kategori¹: " + resourceCategory + " i iloœci¹: " + refineAmount);
+        Debug.Log("Prefab zespawnowany na Y = " + spawnPos.y + " z kategori¹: " + resourceCategory + " i iloœci¹: " + resourceAmount);
     }
 
     public void SupplyTrash()
@@ -228,7 +231,7 @@ public class TreasureRefiner : MonoBehaviour
             if (currentAmount > 0)
             {
                 countTexts[i].text = "0";
-                categoryTexts[i].text = "-";
+                categoryTexts[i].text = "Trash";
             }
         }
 
@@ -244,29 +247,17 @@ public class TreasureRefiner : MonoBehaviour
         }
     }
 
-    public void RefineTrash()
+    private void RefineTrash()
     {
         float currentTrashAmount = int.Parse(trashCountText.text);
 
-        // Sprawdzenie, czy mamy wystarczaj¹co du¿o zasobów do przetworzenia
         if (currentTrashAmount >= trashResourceRequired)
         {
             currentTrashAmount -= trashResourceRequired;
             trashCountText.text = currentTrashAmount.ToString();
 
-            // Sprawdzenie, czy spawn point jest wolny
-            if (IsSpawnPointBlocked())
-            {
-                Debug.Log("Spawn point zablokowany.");
-                return;
-            }
-
-            // Spawnowanie prefab
-            Vector3 spawnPos = new Vector3(spawnPoint.position.x, spawnYPosition, spawnPoint.position.z);
-            GameObject spawnedTrash = Instantiate(prefabToSpawn, spawnPos, Quaternion.identity);
-            spawnedTrash.transform.SetParent(spawnPoint); // Opcjonalnie ustawienie jako dziecko spawnPointa
-
-            Debug.Log("Prefab trash zespawnowany.");
+            // Spawnowanie Trash
+            SpawnPrefab(isTrash: true);
         }
         else
         {
