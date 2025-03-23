@@ -200,7 +200,16 @@ public class TreasureRefiner : MonoBehaviour
         GameObject spawned = Instantiate(prefabToSpawn, spawnPos, Quaternion.identity);
         spawned.transform.SetParent(spawnPoint); // opcjonalnie jako dziecko
 
-        Debug.Log("Prefab zespawnowany na Y = " + spawnPos.y);
+        // Dodajemy skrypt TreasureValue do prefabrykatu
+        TreasureValue treasureValue = spawned.AddComponent<TreasureValue>();
+
+        // Przypisujemy kategoriê i iloœæ zasobów
+        string resourceCategory = categoryTexts[selectedCategoryIndex].text;
+
+        treasureValue.category = resourceCategory;
+        treasureValue.amount = refineAmount;
+
+        Debug.Log("Prefab zespawnowany na Y = " + spawnPos.y + " z kategori¹: " + resourceCategory + " i iloœci¹: " + refineAmount);
     }
 
     public void SupplyTrash()
