@@ -19,8 +19,8 @@ public class TreasureRefiner : MonoBehaviour
     public GameObject prefabToSpawn;
     public Transform spawnPoint;
     public float spawnYPosition = 2f; // ustawiasz dok³adne Y w inspektorze
-    public int refineAmount = 10;
-    public int trashRequiredAmount = 30; // Iloœæ zasobów potrzebnych do wytworzenia trash prefab
+    public float refineAmount = 10;
+    public float trashAmount = 0; 
 
     // Nowe zmienne dla supplyTrash i refineTrash
     public GameObject supplyTrashButton;
@@ -45,6 +45,7 @@ public class TreasureRefiner : MonoBehaviour
         // Rejestracja nas³uchiwania na zmianê sceny
         SceneManager.sceneLoaded += OnSceneLoaded;
 
+        trashAmount = 0;
         trashCountText.text = "0";
     }
 
@@ -93,11 +94,18 @@ public class TreasureRefiner : MonoBehaviour
         }
     }
 
-    // Funkcja wywo³ywana po za³adowaniu sceny
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         // Aktualizujemy stan przycisków po zmianie sceny
         UpdateButtonStates();
+
+        // Zresetowanie liczby trash po za³adowaniu sceny Home
+        if (scene.name == "Main")
+        {
+            trashAmount = 0;
+            trashCountText.text = "0";  // Zaktualizowanie UI, ¿eby pokazaæ 0
+            Debug.Log("Licznik Trash zresetowany do 0 na scenie Main.");
+        }
     }
 
     // Funkcja do aktualizacji stanu przycisków na podstawie sceny
@@ -141,7 +149,7 @@ public class TreasureRefiner : MonoBehaviour
             return;
         }
 
-        int currentAmount = int.Parse(countTexts[selectedCategoryIndex].text);
+        float currentAmount = int.Parse(countTexts[selectedCategoryIndex].text);
 
         if (currentAmount >= refineAmount)
         {
@@ -197,28 +205,44 @@ public class TreasureRefiner : MonoBehaviour
 
     public void SupplyTrash()
     {
+        Debug.Log($"[START] Aktualna iloœæ Trash przed sumowaniem: {trashAmount}");
+
         int totalTrashAmount = 0;
 
-        // Sumowanie iloœci zasobów we wszystkich slotach 1-4
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < categoryTexts.Length; i++)
         {
-            totalTrashAmount += int.Parse(countTexts[i].text);
-            countTexts[i].text = "0"; // Resetowanie slotów do 0
-            categoryTexts[i].text = "-"; // Resetowanie kategorii
+            int currentAmount = int.Parse(countTexts[i].text);
+            Debug.Log($"[Slot {i + 1}] Kategoria: {categoryTexts[i].text}, Iloœæ: {currentAmount}");
+
+            totalTrashAmount += currentAmount;
+
+            if (currentAmount > 0)
+            {
+                countTexts[i].text = "0";
+                categoryTexts[i].text = "-";
+            }
         }
 
-        // Uaktualnienie tekstu kategorii trash oraz liczby zasobów
-        trashCategoryText.text = "Trash";
-        trashCountText.text = totalTrashAmount.ToString();
+        if (totalTrashAmount > 0)
+        {
+            trashAmount += totalTrashAmount;
+            trashCountText.text = trashAmount.ToString();
+            Debug.Log($"Sumowano {totalTrashAmount} zasobów do Trash. Ca³kowita iloœæ Trash: {trashAmount}");
+        }
+        else
+        {
+            Debug.Log("Brak zasobów do sumowania w slotach.");
+        }
     }
 
     public void RefineTrash()
     {
-        int currentTrashAmount = int.Parse(trashCountText.text);
+        float currentTrashAmount = int.Parse(trashCountText.text);
 
-        if (currentTrashAmount >= trashRequiredAmount)
+        // Sprawdzenie, czy mamy wystarczaj¹co du¿o zasobów do przetworzenia
+        if (currentTrashAmount >= trashResourceRequired)
         {
-            currentTrashAmount -= trashRequiredAmount;
+            currentTrashAmount -= trashResourceRequired;
             trashCountText.text = currentTrashAmount.ToString();
 
             // Sprawdzenie, czy spawn point jest wolny
@@ -237,7 +261,7 @@ public class TreasureRefiner : MonoBehaviour
         }
         else
         {
-            Debug.Log("Za ma³o zasobów do przetworzenia trash!");
+            Debug.Log("Za ma³o zasobów do przetworzenia trash! Masz tylko " + currentTrashAmount + ", a potrzeba " + trashResourceRequired);
         }
     }
 
