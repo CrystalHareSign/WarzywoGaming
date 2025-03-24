@@ -2234,12 +2234,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   objectsToPreserve:
-  - {fileID: 853062753}
-  - {fileID: 560154329}
-  - {fileID: 2094475110}
   - {fileID: 1224434963}
-  - {fileID: 351697964}
-  - {fileID: 623208564}
   - {fileID: 938572019}
 --- !u!1001 &336749633
 PrefabInstance:
@@ -6995,7 +6990,7 @@ GameObject:
   - component: {fileID: 1224434964}
   m_Layer: 0
   m_Name: -----BUS-----
-  m_TagString: Untagged
+  m_TagString: Bus
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

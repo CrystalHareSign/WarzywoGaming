@@ -113,19 +113,37 @@ public class TreasureRefiner : MonoBehaviour
     {
         string currentScene = SceneManager.GetActiveScene().name;
 
-        // Jeœli jesteœmy w scenie Home, przyciski s¹ aktywne
-        if (currentScene == "Home")
+        // Sprawdzamy, czy supplyTrashButton i refineTrashButton s¹ ró¿ne od null
+        if (supplyTrashButton != null && refineTrashButton != null)
         {
-            supplyTrashButton.SetActive(true);
-            refineTrashButton.SetActive(true);
+            // Jeœli jesteœmy w scenie Home, przyciski s¹ aktywne
+            if (currentScene == "Home")
+            {
+                supplyTrashButton.SetActive(true);
+                refineTrashButton.SetActive(true);
+            }
+            else
+            {
+                // W innych scenach przyciski s¹ nieaktywne
+                supplyTrashButton.SetActive(false);
+                refineTrashButton.SetActive(false);
+            }
         }
         else
         {
-            // W innych scenach przyciski s¹ nieaktywne
-            supplyTrashButton.SetActive(false);
-            refineTrashButton.SetActive(false);
+            // Je¿eli któryœ z przycisków jest null, wyœwietlamy komunikat w logu
+            if (supplyTrashButton == null)
+            {
+                Debug.LogWarning("supplyTrashButton jest null.");
+            }
+
+            if (refineTrashButton == null)
+            {
+                Debug.LogWarning("refineTrashButton jest null.");
+            }
         }
     }
+
     private void SelectCategory(int index)
     {
         selectedCategoryIndex = index;
@@ -153,11 +171,20 @@ public class TreasureRefiner : MonoBehaviour
 
         if (currentAmount >= refineAmount)
         {
-            currentAmount -= refineAmount;
-            countTexts[selectedCategoryIndex].text = currentAmount.ToString();
+            // Sprawdzamy, czy miejsce na spawnowanie nie jest zablokowane
+            if (!IsSpawnPointBlocked())
+            {
+                // Odejmujemy zasoby, tylko gdy spawnowanie jest mo¿liwe
+                currentAmount -= refineAmount;
+                countTexts[selectedCategoryIndex].text = currentAmount.ToString();
 
-            // Spawnowanie zwyk³ego zasobu
-            SpawnPrefab(isTrash: false);
+                // Spawnowanie zwyk³ego zasobu
+                SpawnPrefab(isTrash: false);
+            }
+            else
+            {
+                Debug.Log("Nie mo¿na zespawnowaæ – kolizja z obiektem!");
+            }
         }
         else
         {
@@ -167,6 +194,13 @@ public class TreasureRefiner : MonoBehaviour
 
     private void SpawnPrefab(bool isTrash = false)
     {
+        // Sprawdzenie, czy wybrany indeks jest poprawny
+        if (selectedCategoryIndex < 0 || selectedCategoryIndex >= categoryTexts.Length)
+        {
+            Debug.LogError("Nieprawid³owy indeks kategorii: " + selectedCategoryIndex);
+            return;
+        }
+
         float resourceAmount = isTrash ? trashResourceRequired : refineAmount;
 
         // 1. SprawdŸ, czy spawnPoint ma dzieci
@@ -253,11 +287,19 @@ public class TreasureRefiner : MonoBehaviour
 
         if (currentTrashAmount >= trashResourceRequired)
         {
-            currentTrashAmount -= trashResourceRequired;
-            trashCountText.text = currentTrashAmount.ToString();
+            // Sprawdzamy, czy mo¿emy zespawnowaæ obiekt (czy nie ma kolizji)
+            if (!IsSpawnPointBlocked())
+            {
+                currentTrashAmount -= trashResourceRequired;
+                trashCountText.text = currentTrashAmount.ToString();
 
-            // Spawnowanie Trash
-            SpawnPrefab(isTrash: true);
+                // Spawnowanie Trash
+                SpawnPrefab(isTrash: true);
+            }
+            else
+            {
+                Debug.Log("Nie mo¿na zespawnowaæ – kolizja z obiektem.");
+            }
         }
         else
         {

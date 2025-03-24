@@ -14,7 +14,7 @@ TagManager:
   - Turret
   - Treasure
   - Wheel
-  - Grass
+  - Bus
   layers:
   - Default
   - TransparentFX
