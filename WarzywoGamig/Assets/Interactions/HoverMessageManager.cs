@@ -6,6 +6,23 @@ public class HoverMessageManager : MonoBehaviour
     public TMP_Text messageText; // Tekst, który bêdzie wyœwietlany po najechaniu kursorem
     private Camera mainCamera;
 
+    public static HoverMessageManager Instance;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            //Debug.Log("HoverMessageManager initialized.");
+        }
+        else
+        {
+            //Debug.LogWarning("Another instance of HoverMessageManager found. Destroying this instance.");
+            Destroy(gameObject);
+        }
+    }
+
     void Start()
     {
         // Ukryj tekst na pocz¹tku

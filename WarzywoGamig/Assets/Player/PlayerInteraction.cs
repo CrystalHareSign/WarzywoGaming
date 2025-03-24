@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class PlayerInteraction : MonoBehaviour
 {
@@ -32,6 +33,7 @@ public class PlayerInteraction : MonoBehaviour
 
     void Start()
     {
+
         // Znajdujemy TurretController w scenie
         turretController = Object.FindFirstObjectByType<TurretController>();
         if (turretController == null)
@@ -43,6 +45,17 @@ public class PlayerInteraction : MonoBehaviour
         if (treasureRefiner == null)
         {
             Debug.LogError("Brak obiektu TurretController w scenie.");
+        }
+
+        if (progressCircle != null)
+        {
+            progressCircle.gameObject.SetActive(false);
+            progressCircle.fillAmount = 0f;
+        }
+
+        if (messageText != null)
+        {
+            messageText.gameObject.SetActive(false);
         }
     }
 
@@ -147,6 +160,23 @@ public class PlayerInteraction : MonoBehaviour
         }
     }
 
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Spróbuj ponownie znaleŸæ UI po za³adowaniu nowej sceny
+        progressCircle = GameObject.Find("ProgressCircle")?.GetComponent<Image>();
+        messageText = GameObject.Find("MessageText")?.GetComponent<TMP_Text>();
+
+        if (progressCircle != null)
+        {
+            progressCircle.gameObject.SetActive(false);
+            progressCircle.fillAmount = 0f;
+        }
+
+        if (messageText != null)
+        {
+            messageText.gameObject.SetActive(false);
+        }
+    }
 
     private void InteractWithObject(InteractableItem interactableItem)
     {
