@@ -26,6 +26,22 @@ public class InventoryUI : MonoBehaviour
 
     private Gun currentWeapon; // Aktualnie trzymana broń
 
+    public static InventoryUI Instance;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            //Debug.Log("InventoryUI initialized.");
+        }
+        else
+        {
+            //Debug.LogWarning("Another instance of InventoryUI found. Destroying this instance.");
+            Destroy(gameObject);
+        }
+    }
     void Start()
     {
         // Domyślnie ukrywamy wszystkie elementy UI
