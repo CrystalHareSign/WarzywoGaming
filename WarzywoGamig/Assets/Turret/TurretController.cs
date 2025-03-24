@@ -28,6 +28,22 @@ public class TurretController : MonoBehaviour
     public bool isUsingTurret = false; // Flaga, która informuje, czy gracz korzysta z wieżyczki
     private bool isCooldown = false; // Flaga kontrolująca opóźnienie przy opuszczaniu
 
+    public static TurretController Instance;
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            //Debug.Log("TurretController initialized.");
+        }
+        else
+        {
+            //Debug.LogWarning("Another instance of TurretController found. Destroying this instance.");
+            Destroy(gameObject);
+        }
+    }
+
     void Start()
     {
         playerMovement = Object.FindFirstObjectByType<PlayerMovement>();
