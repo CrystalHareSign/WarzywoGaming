@@ -939,6 +939,10 @@ PrefabInstance:
       value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 1312443720054046551, guid: 4db89abf19f1d734d9c6bb56251226d3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1312443720054046551, guid: 4db89abf19f1d734d9c6bb56251226d3, type: 3}
       propertyPath: m_TagString
       value: Loot
       objectReference: {fileID: 0}
@@ -2236,6 +2240,8 @@ MonoBehaviour:
   objectsToPreserve:
   - {fileID: 1224434963}
   - {fileID: 938572019}
+  tagsToCheck:
+  - Bus
 --- !u!1001 &336749633
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2303,6 +2309,10 @@ PrefabInstance:
     - target: {fileID: 6348389216423563156, guid: 4263c6e3e93789b44882b44b3dceb4e1, type: 3}
       propertyPath: m_Layer
       value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 6348389216423563156, guid: 4263c6e3e93789b44882b44b3dceb4e1, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6348389216423563156, guid: 4263c6e3e93789b44882b44b3dceb4e1, type: 3}
       propertyPath: m_TagString
@@ -5077,6 +5087,7 @@ MonoBehaviour:
   - {fileID: 905466875}
   moveDistance: 10
   moveDuration: 2
+  isMoving: 0
   wheelManager: {fileID: 905466879}
 --- !u!114 &905466878
 MonoBehaviour:
@@ -11050,6 +11061,8 @@ MonoBehaviour:
   scene1: Main
   button2: {fileID: 1946369534}
   scene2: Home
+  isSceneChanging: 0
+  TurretBody: {fileID: 938572019}
 --- !u!65 &1701768992
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -11191,6 +11204,10 @@ PrefabInstance:
     - target: {fileID: 6348389216423563156, guid: 4263c6e3e93789b44882b44b3dceb4e1, type: 3}
       propertyPath: m_Layer
       value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 6348389216423563156, guid: 4263c6e3e93789b44882b44b3dceb4e1, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6348389216423563156, guid: 4263c6e3e93789b44882b44b3dceb4e1, type: 3}
       propertyPath: m_TagString
@@ -12143,6 +12160,10 @@ PrefabInstance:
     - target: {fileID: 1312443720054046551, guid: 4db89abf19f1d734d9c6bb56251226d3, type: 3}
       propertyPath: m_Layer
       value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 1312443720054046551, guid: 4db89abf19f1d734d9c6bb56251226d3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1312443720054046551, guid: 4db89abf19f1d734d9c6bb56251226d3, type: 3}
       propertyPath: m_TagString
@@ -13491,6 +13512,10 @@ PrefabInstance:
       value: ItemPrefab
       objectReference: {fileID: 0}
     - target: {fileID: 2391441681660469431, guid: c782c8810660123459274786c4701eb5, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2391441681660469431, guid: c782c8810660123459274786c4701eb5, type: 3}
       propertyPath: m_TagString
       value: Item
       objectReference: {fileID: 0}
@@ -13920,6 +13945,10 @@ PrefabInstance:
     - target: {fileID: 1876713827870068900, guid: 7159bfb79ec3ec743a6ce1c91be5304f, type: 3}
       propertyPath: m_Name
       value: GameObject
+      objectReference: {fileID: 0}
+    - target: {fileID: 1876713827870068900, guid: 7159bfb79ec3ec743a6ce1c91be5304f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1876713827870068900, guid: 7159bfb79ec3ec743a6ce1c91be5304f, type: 3}
       propertyPath: m_TagString
