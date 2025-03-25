@@ -30,6 +30,12 @@ public class Gun : MonoBehaviour
 
     private float nextFireTime = 0f; // Zmienna do kontrolowania tempa strzelania w trybie full auto
 
+    void Awake()
+    {
+        // Użycie DontDestroyOnLoad na tym obiekcie, aby nie został zniszczony po zmianie sceny
+        DontDestroyOnLoad(gameObject);
+    }
+
     void Start()
     {
         currentAmmo = maxAmmo;

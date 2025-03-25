@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 6995396338180026329}
   - component: {fileID: 423455307156292821}
   - component: {fileID: 9007757771121226921}
+  - component: {fileID: -5088988975383692331}
   m_Layer: 0
   m_Name: Pistol
   m_TagString: Untagged
@@ -129,6 +130,9 @@ MonoBehaviour:
   canBePickedUp: 0
   canBeDropped: 1
   isWeapon: 1
+  isLoot: 0
+  isTurret: 0
+  isRefiner: 0
   alwaysInteractive: 1
   hasCooldown: 0
   usesHealthSystem: 0
@@ -136,6 +140,10 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  UsingSceneSystem: 0
+  SceneMain: 0
+  SceneHome: 0
+  wheelManager: {fileID: 0}
 --- !u!114 &9007757771121226921
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -152,6 +160,31 @@ MonoBehaviour:
   interactionDistance: 5
   isInteracted: 0
   alwaysActive: 0
+  UsingSceneSystem: 0
+  SceneMain: 0
+  SceneHome: 0
+--- !u!114 &-5088988975383692331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1260716534702189861}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6050ac94f9c95ea40b78d5d3a000c623, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxAmmo: 10
+  currentAmmo: 0
+  totalAmmo: 30
+  reloadTime: 2
+  damage: 20
+  bulletPrefab: {fileID: 8266724109241798289, guid: 5b0ad2da9c75cd246bffe94891b117b8, type: 3}
+  shootingPoint: {fileID: 524849640838388491}
+  unlimitedAmmo: 0
+  isFullAuto: 0
+  fireRate: 0.1
 --- !u!1 &4379155863926223087
 GameObject:
   m_ObjectHideFlags: 0
