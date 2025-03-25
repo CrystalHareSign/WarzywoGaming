@@ -514,6 +514,7 @@ Transform:
   m_Children:
   - {fileID: 516866927}
   - {fileID: 1580745262}
+  - {fileID: 377464791}
   - {fileID: 1340401588}
   - {fileID: 1456790565}
   - {fileID: 1649009529}
@@ -1959,11 +1960,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spawnablePrefabsGroup1:
   - prefab: {fileID: 4385719690331741413, guid: 0722d1e035305de419109ec854fbe855, type: 3}
-    spawnChance: 30
+    spawnChance: 0
   - prefab: {fileID: 1591325824849679810, guid: b545e7e9cb910ee409a3cdee4069334a, type: 3}
-    spawnChance: 35
+    spawnChance: 50
   - prefab: {fileID: 1591325824849679810, guid: f86aca3f024ccbe43903eaf1edcad46c, type: 3}
-    spawnChance: 35
+    spawnChance: 50
   spawnPointsGroup1:
   - {fileID: 1633245306}
   - {fileID: 1325649894}
@@ -1985,7 +1986,7 @@ MonoBehaviour:
   - {fileID: 1093135866}
   - {fileID: 1206797409}
   - {fileID: 351545347}
-  spawnIntervalGroup1: 2
+  spawnIntervalGroup1: 3
   enableGroup1: 1
   spawnablePrefabsGroup2:
   - prefab: {fileID: 4385719690331741413, guid: 2f87a563600e4424db1fc8cbba206fa1, type: 3}
@@ -2129,16 +2130,8 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1260716534702189861, guid: 188c18add269d2f4dad7bf975a8d030b, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1532319656}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 188c18add269d2f4dad7bf975a8d030b, type: 3}
---- !u!4 &299235532 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 524849640838388491, guid: 188c18add269d2f4dad7bf975a8d030b, type: 3}
-  m_PrefabInstance: {fileID: 299235531}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &315242853
 GameObject:
   m_ObjectHideFlags: 0
@@ -2829,6 +2822,167 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 0
   m_Center: {x: 0, y: 0, z: 0}
   m_TimeToStationary: 0.5
+--- !u!1 &377464790
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 377464791}
+  - component: {fileID: 377464796}
+  - component: {fileID: 377464795}
+  - component: {fileID: 377464794}
+  - component: {fileID: 377464793}
+  - component: {fileID: 377464792}
+  m_Layer: 7
+  m_Name: RepairBox
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &377464791
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 377464790}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.301, y: -0.087, z: -0.5}
+  m_LocalScale: {x: 0.3, y: 0.2, z: 0.4}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 43605465}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &377464792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 377464790}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9c10a544bb40ac40ba2b7fe60df5b57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  message: "Wci\u015Bnij E abynaprawi\u0107 Refiner"
+  interactionDistance: 5
+  isInteracted: 1
+  alwaysActive: 1
+  UsingSceneSystem: 0
+  SceneMain: 0
+  SceneHome: 0
+--- !u!114 &377464793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 377464790}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a232f88565b95744a8035c4ec583243, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverMessage: {fileID: 0}
+  itemName: RefinerRepairBox
+  startAsNonInteractive: 0
+  canBePickedUp: 0
+  canBeDropped: 0
+  isWeapon: 0
+  isLoot: 0
+  isTurret: 0
+  isRefiner: 0
+  alwaysInteractive: 0
+  hasCooldown: 0
+  usesHealthSystem: 0
+  maxHealth: 2
+  currentHealth: 0
+  requiredHoldTime: 5
+  wheelIndex: 0
+  UsingSceneSystem: 0
+  SceneMain: 0
+  SceneHome: 0
+  wheelManager: {fileID: 0}
+--- !u!65 &377464794
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 377464790}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &377464795
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 377464790}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &377464796
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 377464790}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1001 &391909753
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7211,9 +7365,9 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
@@ -9238,28 +9392,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 1260716534702189861, guid: 188c18add269d2f4dad7bf975a8d030b, type: 3}
   m_PrefabInstance: {fileID: 299235531}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1532319656
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1532319655}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6050ac94f9c95ea40b78d5d3a000c623, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxAmmo: 10
-  currentAmmo: 0
-  totalAmmo: 30
-  reloadTime: 2
-  damage: 20
-  bulletPrefab: {fileID: 8266724109241798289, guid: 5b0ad2da9c75cd246bffe94891b117b8, type: 3}
-  shootingPoint: {fileID: 299235532}
-  unlimitedAmmo: 0
-  isFullAuto: 0
-  fireRate: 0.1
 --- !u!1 &1538886255 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6348389216423563156, guid: 4263c6e3e93789b44882b44b3dceb4e1, type: 3}
@@ -9659,13 +9791,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1580745261}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.12273552, y: 0, z: 0, w: 0.99243945}
-  m_LocalPosition: {x: -0.301, y: -0.076, z: -0.57}
-  m_LocalScale: {x: 0.3, y: 0.2, z: 0.4}
+  m_LocalRotation: {x: 0.24014333, y: 0, z: 0, w: 0.97073746}
+  m_LocalPosition: {x: -0.301, y: 0.21, z: -0.492}
+  m_LocalScale: {x: 0.3, y: 0.1, z: 0.31}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 43605465}
-  m_LocalEulerAnglesHint: {x: -14.1, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 27.79, y: 0, z: 0}
 --- !u!114 &1580745263
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9702,11 +9834,11 @@ MonoBehaviour:
   prefabToSpawn: {fileID: 1876713827870068900, guid: 7159bfb79ec3ec743a6ce1c91be5304f, type: 3}
   spawnPoint: {fileID: 1539170960}
   spawnYPosition: 7.5
-  refineAmount: 30
+  refineAmount: 10
   trashAmount: 30
   supplyTrashButton: {fileID: 83912492}
   refineTrashButton: {fileID: 961920649}
-  trashResourceRequired: 15
+  trashResourceRequired: 10
   highlightColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!65 &1580745264
 BoxCollider:

@@ -246,6 +246,9 @@ public class TreasureRefiner : MonoBehaviour
         treasureValue.category = resourceCategory;
         treasureValue.amount = (int)resourceAmount;
 
+        // Nadanie tagu "Loot"
+        spawned.tag = "Loot";
+
         Debug.Log("Prefab zespawnowany na Y = " + spawnPos.y + " z kategori¹: " + resourceCategory + " i iloœci¹: " + resourceAmount);
     }
 
