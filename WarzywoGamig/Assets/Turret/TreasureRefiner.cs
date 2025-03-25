@@ -13,19 +13,20 @@ public class TreasureRefiner : MonoBehaviour
     public TextMeshProUGUI[] countTexts;
     public TextMeshProUGUI trashCategoryText; // Nowy tekst dla kategorii trash
     public TextMeshProUGUI trashCountText; // Nowy tekst dla iloœci trash
-    public float maxResourcePerSlot = 50f;
     public GameObject[] categoryButtons; // 4 Cubes
     public GameObject refineButton; // 5-ty Cube
     public GameObject prefabToSpawn;
     public Transform spawnPoint;
     public float spawnYPosition = 2f; // ustawiasz dok³adne Y w inspektorze
     public float refineAmount = 10;
-    public float trashAmount = 0; 
+    public float maxResourcePerSlot = 50f;
+    private float trashAmount = 0;
+    public float trashResourceRequired = 10f; // Wymagana iloœæ zasobów na trash
+    public float trashMaxAmount = 100f;
 
     // Nowe zmienne dla supplyTrash i refineTrash
     public GameObject supplyTrashButton;
     public GameObject refineTrashButton;
-    public float trashResourceRequired = 100f; // Wymagana iloœæ zasobów na trash
 
     private int selectedCategoryIndex = -1;
     private Color defaultColor;
@@ -99,13 +100,13 @@ public class TreasureRefiner : MonoBehaviour
         // Aktualizujemy stan przycisków po zmianie sceny
         UpdateButtonStates();
 
-        // Zresetowanie liczby trash po za³adowaniu sceny Home
-        if (scene.name == "Main")
-        {
-            trashAmount = 0;
-            trashCountText.text = "0";  // Zaktualizowanie UI, ¿eby pokazaæ 0
-            Debug.Log("Licznik Trash zresetowany do 0 na scenie Main.");
-        }
+        //// Zresetowanie liczby trash po za³adowaniu sceny Home
+        //if (scene.name == "Main")
+        //{
+        //    trashAmount = 0;
+        //    trashCountText.text = "0";  // Zaktualizowanie UI, ¿eby pokazaæ 0
+        //    Debug.Log("Licznik Trash zresetowany do 0 na scenie Main.");
+        //}
     }
 
     // Funkcja do aktualizacji stanu przycisków na podstawie sceny
@@ -274,9 +275,21 @@ public class TreasureRefiner : MonoBehaviour
 
         if (totalTrashAmount > 0)
         {
-            trashAmount += totalTrashAmount;
-            trashCountText.text = trashAmount.ToString();
-            Debug.Log($"Sumowano {totalTrashAmount} zasobów do Trash. Ca³kowita iloœæ Trash: {trashAmount}");
+            // Sprawdzamy, czy nie przekroczyliœmy maksymalnej iloœci Trash
+            if (trashAmount + totalTrashAmount <= trashMaxAmount)
+            {
+                trashAmount += totalTrashAmount;
+                trashCountText.text = trashAmount.ToString();
+                Debug.Log($"Sumowano {totalTrashAmount} zasobów do Trash. Ca³kowita iloœæ Trash: {trashAmount}");
+            }
+            else
+            {
+                // Jeœli przekroczyliœmy limit, dodajemy tylko do maksymalnej wartoœci
+                float excessTrash = (trashAmount + totalTrashAmount) - trashMaxAmount;
+                trashAmount = trashMaxAmount;
+                trashCountText.text = trashAmount.ToString();
+                Debug.Log($"Przekroczono limit! Trash zosta³ ustawiony na maksymaln¹ wartoœæ: {trashAmount}. Nadmiar {excessTrash} zasobów zosta³ zignorowany.");
+            }
         }
         else
         {
