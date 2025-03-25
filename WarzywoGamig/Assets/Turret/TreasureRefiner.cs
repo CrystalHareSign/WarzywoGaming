@@ -357,32 +357,90 @@ public class TreasureRefiner : MonoBehaviour
 
             bool addedToExistingSlot = false;
 
+            // Sprawdzamy, czy mo¿na dodaæ zasób do istniej¹cego slotu
             for (int i = 0; i < categoryTexts.Length; i++)
             {
                 if (categoryTexts[i].text == resourceCategory)
                 {
                     int currentCount = int.Parse(countTexts[i].text);
-                    int newCount = Mathf.Min(currentCount + resourceCount, (int)maxResourcePerSlot);
-                    countTexts[i].text = newCount.ToString();
-                    addedToExistingSlot = true;
+
+                    // Obliczamy now¹ sumê zasobów, ale upewniamy siê, ¿e nie przekroczy maksymalnej dopuszczalnej wartoœci
+                    int newCount = currentCount + resourceCount;
+
+                    // Obliczamy, ile zasobów jeszcze mo¿na dodaæ do tego slotu
+                    int maxAddable = (int)maxResourcePerSlot - currentCount;
+
+                    // Jeœli suma zasobów przekroczy maksymalny limit, dodajemy tylko brakuj¹c¹ iloœæ
+                    if (newCount <= (int)maxResourcePerSlot)
+                    {
+                        countTexts[i].text = newCount.ToString();
+                        addedToExistingSlot = true;
+
+                        // Odejmujemy od ekwipunku gracza tylko tyle, ile brakowa³o do maksymalnej wartoœci w Refinerze
+                        item.GetComponent<TreasureResources>().resourceCategories[0].resourceCount -= resourceCount;
+                    }
+                    else
+                    {
+                        countTexts[i].text = maxResourcePerSlot.ToString();
+                        addedToExistingSlot = true;
+
+                        // Odejmujemy tylko brakuj¹c¹ iloœæ zasobów z ekwipunku
+                        item.GetComponent<TreasureResources>().resourceCategories[0].resourceCount -= maxAddable;
+                        Debug.Log("Dodano maksymaln¹ iloœæ zasobów do slotu. Nadmiar przedmiotu zosta³ usuniêty z ekwipunku.");
+                    }
+
                     break;
                 }
             }
 
+            // Jeœli nie znaleziono istniej¹cego slotu, spróbuj dodaæ nowy slot tylko, gdy nie ma ju¿ slotu dla tej kategorii
             if (!addedToExistingSlot)
             {
+                bool categoryExists = false;
+
+                // Sprawdzamy, czy ju¿ istnieje slot z t¹ kategori¹
                 for (int i = 0; i < categoryTexts.Length; i++)
                 {
-                    if (categoryTexts[i].text == "-" && countTexts[i].text == "0")
+                    if (categoryTexts[i].text == resourceCategory)
                     {
-                        categoryTexts[i].text = resourceCategory;
-                        countTexts[i].text = Mathf.Min(resourceCount, (int)maxResourcePerSlot).ToString();
+                        categoryExists = true;
                         break;
                     }
+                }
+
+                // Jeœli kategoria nie istnieje, spróbuj dodaæ nowy slot
+                if (!categoryExists)
+                {
+                    for (int i = 0; i < categoryTexts.Length; i++)
+                    {
+                        if (categoryTexts[i].text == "-" && countTexts[i].text == "0")
+                        {
+                            // Sprawdzamy, czy przedmiot nie przekroczy dopuszczalnej wartoœci w nowym slocie
+                            int newCount = Mathf.Min(resourceCount, (int)maxResourcePerSlot);
+                            if (newCount <= (int)maxResourcePerSlot)
+                            {
+                                categoryTexts[i].text = resourceCategory;
+                                countTexts[i].text = newCount.ToString();
+
+                                // Odejmujemy tyle zasobów z ekwipunku, ile zosta³o dodane do nowego slotu
+                                item.GetComponent<TreasureResources>().resourceCategories[0].resourceCount -= newCount;
+                            }
+                            else
+                            {
+                                Debug.Log("Przekroczono dozwolony limit zasobów w nowym slocie. Przedmiot nie zosta³ dodany.");
+                            }
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.Log("Slot z t¹ kategori¹ zasobów ju¿ istnieje. Nowy slot nie zostanie dodany.");
                 }
             }
         }
     }
+
 
     public void InitializeSlots()
     {
