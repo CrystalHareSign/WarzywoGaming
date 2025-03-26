@@ -198,7 +198,7 @@ public class PlayerInteraction : MonoBehaviour
     {
         if (treasureRefiner != null)
         {
-            treasureRefiner.RemoveOldestItemFromInventory("Item_1"); // Przekazujemy nazwê przedmiotu
+            treasureRefiner.RemoveOldestItemFromInventory(); // Przekazujemy nazwê przedmiotu
         }
     }
 
