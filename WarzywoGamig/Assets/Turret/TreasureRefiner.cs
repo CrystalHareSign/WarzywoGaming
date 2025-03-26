@@ -324,53 +324,43 @@ public class TreasureRefiner : MonoBehaviour
         }
     }
 
-    public void RemoveOldestItemFromInventory(string itemName)
+    public void RemoveOldestItemFromInventory()
     {
         if (isRefining) return;
-
         isRefining = true;
 
-        GameObject itemToRemove = null;
-        int itemIndex = -1;
+        bool resourcesAdded = false;
 
-        // Przeszukujemy inventory w poszukiwaniu przedmiotu
+        // Przechodzimy przez wszystkie przedmioty w kolejnoœci chronologicznej
         for (int i = 0; i < inventory.items.Count; i++)
         {
-            if (inventory.items[i].name == itemName)
-            {
-                itemToRemove = inventory.items[i];
-                itemIndex = i;
-                break;
-            }
-        }
-
-        // Jeœli znaleŸliœmy przedmiot, przetwarzamy go
-        if (itemToRemove != null)
-        {
+            GameObject itemToRemove = inventory.items[i];
             InteractableItem interactableItem = itemToRemove.GetComponent<InteractableItem>();
+
             if (interactableItem != null)
             {
-                // Flaga kontroluj¹ca, czy zasoby zosta³y dodane
-                bool resourcesAdded = false;
-
-                // Resetujemy flagê na pocz¹tku ka¿dej interakcji
-                resourcesAdded = false;
-
-                // Aktualizujemy sloty w TreasureRefiner
+                // Próbujemy dodaæ zasoby z tego przedmiotu
                 UpdateTreasureRefinerSlots(interactableItem, ref resourcesAdded);
 
-                // Je¿eli zasoby zosta³y dodane, usuwamy przedmiot
                 if (resourcesAdded)
                 {
-                    inventory.items.RemoveAt(itemIndex);
+                    // Jeœli uda³o siê dodaæ, usuwamy przedmiot i koñczymy pêtlê
+                    inventory.items.RemoveAt(i);
                     Destroy(itemToRemove);
 
                     if (inventoryUI != null)
                     {
                         inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items);
                     }
+                    break;
                 }
             }
+        }
+
+        // Jeœli ¿aden przedmiot nie pasowa³
+        if (!resourcesAdded)
+        {
+            Debug.Log("Nie mo¿na dodaæ zasobów. Wszystkie sloty przekroczy³yby max");
         }
 
         isRefining = false;
@@ -416,8 +406,10 @@ public class TreasureRefiner : MonoBehaviour
                         countTexts[i].text = countTexts[i].text; // Nie zmienia tekstu w ogóle
                         addedToExistingSlot = false;
 
+                        //GÓWNO
                         //// Nie dodajemy ¿adnych zasobów, tylko usuwamy nadmiar z ekwipunku gracza
                         //item.GetComponent<TreasureResources>().resourceCategories[0].resourceCount -= (newCount - (int)maxResourcePerSlot);
+                        //GÓWNO
                         Debug.Log("Zasoby nie zosta³y dodane. Przekroczono maksymalny limit.");
                     }
 
