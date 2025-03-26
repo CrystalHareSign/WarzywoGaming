@@ -8,6 +8,7 @@ public class TreasureRefiner : MonoBehaviour
     public InventoryUI inventoryUI;
 
     private bool isRefining = false;
+    public bool toDestroy = false;
 
     public TextMeshProUGUI[] categoryTexts;
     public TextMeshProUGUI[] countTexts;
@@ -332,6 +333,7 @@ public class TreasureRefiner : MonoBehaviour
         GameObject itemToRemove = null;
         int itemIndex = -1;
 
+        // Przeszukujemy inventory w poszukiwaniu przedmiotu
         for (int i = 0; i < inventory.items.Count; i++)
         {
             if (inventory.items[i].name == itemName)
@@ -342,19 +344,31 @@ public class TreasureRefiner : MonoBehaviour
             }
         }
 
+        // Jeœli znaleŸliœmy przedmiot, przetwarzamy go
         if (itemToRemove != null)
         {
             InteractableItem interactableItem = itemToRemove.GetComponent<InteractableItem>();
             if (interactableItem != null)
             {
-                UpdateTreasureRefinerSlots(interactableItem);
+                // Flaga kontroluj¹ca, czy zasoby zosta³y dodane
+                bool resourcesAdded = false;
 
-                inventory.items.RemoveAt(itemIndex);
-                Destroy(itemToRemove);
+                // Resetujemy flagê na pocz¹tku ka¿dej interakcji
+                resourcesAdded = false;
 
-                if (inventoryUI != null)
+                // Aktualizujemy sloty w TreasureRefiner
+                UpdateTreasureRefinerSlots(interactableItem, ref resourcesAdded);
+
+                // Je¿eli zasoby zosta³y dodane, usuwamy przedmiot
+                if (resourcesAdded)
                 {
-                    inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items);
+                    inventory.items.RemoveAt(itemIndex);
+                    Destroy(itemToRemove);
+
+                    if (inventoryUI != null)
+                    {
+                        inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items);
+                    }
                 }
             }
         }
@@ -362,7 +376,7 @@ public class TreasureRefiner : MonoBehaviour
         isRefining = false;
     }
 
-    private void UpdateTreasureRefinerSlots(InteractableItem item)
+    public void UpdateTreasureRefinerSlots(InteractableItem item, ref bool resourcesAdded)
     {
         TreasureResources treasureResources = item.GetComponent<TreasureResources>();
 
@@ -386,23 +400,25 @@ public class TreasureRefiner : MonoBehaviour
                     // Obliczamy, ile zasobów jeszcze mo¿na dodaæ do tego slotu
                     int maxAddable = (int)maxResourcePerSlot - currentCount;
 
-                    // Jeœli suma zasobów przekroczy maksymalny limit, dodajemy tylko brakuj¹c¹ iloœæ
+                    // Jeœli suma zasobów przekroczy maksymalny limit, nie dodajemy nic
                     if (newCount <= (int)maxResourcePerSlot)
                     {
                         countTexts[i].text = newCount.ToString();
                         addedToExistingSlot = true;
+                        resourcesAdded = true;
 
                         // Odejmujemy od ekwipunku gracza tylko tyle, ile brakowa³o do maksymalnej wartoœci w Refinerze
                         item.GetComponent<TreasureResources>().resourceCategories[0].resourceCount -= resourceCount;
                     }
                     else
                     {
-                        countTexts[i].text = maxResourcePerSlot.ToString();
-                        addedToExistingSlot = true;
+                        // Jeœli suma zasobów przekroczy limit, po prostu nie dodajemy
+                        countTexts[i].text = countTexts[i].text; // Nie zmienia tekstu w ogóle
+                        addedToExistingSlot = false;
 
-                        // Odejmujemy tylko brakuj¹c¹ iloœæ zasobów z ekwipunku
-                        item.GetComponent<TreasureResources>().resourceCategories[0].resourceCount -= maxAddable;
-                        Debug.Log("Dodano maksymaln¹ iloœæ zasobów do slotu. Nadmiar przedmiotu zosta³ usuniêty z ekwipunku.");
+                        //// Nie dodajemy ¿adnych zasobów, tylko usuwamy nadmiar z ekwipunku gracza
+                        //item.GetComponent<TreasureResources>().resourceCategories[0].resourceCount -= (newCount - (int)maxResourcePerSlot);
+                        Debug.Log("Zasoby nie zosta³y dodane. Przekroczono maksymalny limit.");
                     }
 
                     break;
@@ -440,6 +456,9 @@ public class TreasureRefiner : MonoBehaviour
 
                                 // Odejmujemy tyle zasobów z ekwipunku, ile zosta³o dodane do nowego slotu
                                 item.GetComponent<TreasureResources>().resourceCategories[0].resourceCount -= newCount;
+
+                                // Flaga wskazuj¹ca, ¿e zasoby zosta³y dodane
+                                resourcesAdded = true;
                             }
                             else
                             {
