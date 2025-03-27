@@ -240,6 +240,18 @@ public class TreasureRefiner : MonoBehaviour
         GameObject spawned = Instantiate(prefabToSpawn, spawnPos, Quaternion.identity);
         spawned.transform.SetParent(spawnPoint); // opcjonalnie jako dziecko
 
+        // Dodanie LootColliderController
+        Collider spawnedCollider = spawned.GetComponent<Collider>();
+        if (spawnedCollider != null)
+        {
+            LootColliderController colliderController = spawned.AddComponent<LootColliderController>();
+            colliderController.Initialize(spawnedCollider);
+        }
+        else
+        {
+            Debug.LogWarning(" Brak colliderea w zespawnowanym obiekcie!");
+        }
+
         // Dodajemy skrypt TreasureValue do prefabrykatu
         TreasureValue treasureValue = spawned.AddComponent<TreasureValue>();
 
