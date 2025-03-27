@@ -29,7 +29,7 @@ public class TreasureRefiner : MonoBehaviour
     public GameObject supplyTrashButton;
     public GameObject refineTrashButton;
 
-    private int selectedCategoryIndex = -1;
+    private int selectedCategoryIndex;
     private Color defaultColor;
     public Color highlightColor = Color.green;
 
@@ -65,6 +65,7 @@ public class TreasureRefiner : MonoBehaviour
 
             if (Physics.Raycast(ray, out hit))
             {
+                // Sprawdzamy, czy klikniêto przycisk kategorii
                 for (int i = 0; i < categoryButtons.Length; i++)
                 {
                     if (hit.collider.gameObject == categoryButtons[i])
@@ -74,19 +75,21 @@ public class TreasureRefiner : MonoBehaviour
                     }
                 }
 
+                // Sprawdzamy, czy klikniêto przycisk refineButton
                 if (hit.collider.gameObject == refineButton)
                 {
                     RefineResources();
                     return;
                 }
 
-                // Dodajemy obs³ugê nowych przycisków
+                // Sprawdzamy, czy klikniêto przycisk supplyTrashButton
                 if (hit.collider.gameObject == supplyTrashButton)
                 {
                     SupplyTrash();
                     return;
                 }
 
+                // Sprawdzamy, czy klikniêto przycisk refineTrashButton
                 if (hit.collider.gameObject == refineTrashButton)
                 {
                     RefineTrash();
@@ -149,15 +152,12 @@ public class TreasureRefiner : MonoBehaviour
     private void SelectCategory(int index)
     {
         selectedCategoryIndex = index;
-        Debug.Log($"Wybrano kategoriê w slocie {index + 1}: {categoryTexts[index].text}");
+        Debug.Log($"Wybrano kategoriê: {categoryTexts[index].text} (Index: {index})");
 
         for (int i = 0; i < categoryButtons.Length; i++)
         {
             Renderer rend = categoryButtons[i].GetComponent<Renderer>();
-            if (i == index)
-                rend.material.color = highlightColor;
-            else
-                rend.material.color = defaultColor;
+            rend.material.color = (i == index) ? highlightColor : defaultColor;
         }
     }
 
@@ -270,7 +270,7 @@ public class TreasureRefiner : MonoBehaviour
             if (currentAmount > 0)
             {
                 countTexts[i].text = "0";
-                categoryTexts[i].text = "Trash";
+                categoryTexts[i].text = "-";
             }
         }
 
