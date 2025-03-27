@@ -171,8 +171,8 @@ MonoBehaviour:
   - name: Diamond
     isActive: 1
     resourceCount: 0
-    minResourceCount: 5
-    maxResourceCount: 10
+    minResourceCount: 10
+    maxResourceCount: 20
 --- !u!114 &6853419076634060095
 MonoBehaviour:
   m_ObjectHideFlags: 0
