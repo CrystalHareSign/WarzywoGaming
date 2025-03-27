@@ -140,13 +140,18 @@ public class GridManager : MonoBehaviour
 
         // Sprawdzamy, czy kolidery siê przecinaj¹ przy docelowej pozycji
         Vector3 lootSize = lootCollider.bounds.size;
-        Collider[] colliders = Physics.OverlapBox(dropPosition, lootSize / 2, lootItem.transform.rotation, LayerMask.GetMask("Default")); // Zak³adamy, ¿e u¿ywasz warstwy "Default"
+        Collider[] colliders = Physics.OverlapBox(dropPosition, lootSize / 2, lootItem.transform.rotation, LayerMask.GetMask("Default","InteractableItem")); // Zak³adamy, ¿e u¿ywasz warstwy "Default"
 
         foreach (var collider in colliders)
         {
             if (collider == gridAreaCollider)
             {
                 Debug.LogWarning("Nie mo¿na upuœciæ przedmiotu wewn¹trz obszaru siatki.");
+                return;
+            }
+            if (collider == lootCollider)
+            {
+                Debug.LogWarning("Nie mo¿na upuœciæ przedmiotu wewn¹trz innego przedmiotu.");
                 return;
             }
         }
@@ -196,6 +201,9 @@ public class GridManager : MonoBehaviour
         // Aktywujemy kafelki pod lootem
         PrefabSize prefabSize = lootItem.GetComponent<PrefabSize>();
         UnmarkTilesAsOccupied(lootItem.transform.position, prefabSize);
+
+        LootColliderController colliderController = lootItem.AddComponent<LootColliderController>();
+        colliderController.Initialize(lootCollider);
 
         //Debug.Log("Przedmiot upuszczony, tryb budowania wy³¹czony i kafelki ukryte.");
     }
@@ -367,6 +375,18 @@ public class GridManager : MonoBehaviour
                 // Tworzymy obiekt w miejscu docelowym
                 GameObject buildedObject = Instantiate(buildingPrefabs[currentPrefabIndex], placementPosition, previewObject.transform.rotation);
                 buildedObject.SetActive(true);
+
+                // Dodanie LootColliderController do nowego obiektu
+                Collider buildedCollider = buildedObject.GetComponent<Collider>();
+                if (buildedCollider != null)
+                {
+                    LootColliderController colliderController = buildedObject.AddComponent<LootColliderController>();
+                    colliderController.Initialize(buildedCollider);
+                }
+                else
+                {
+                    Debug.LogWarning(" Brak colliderea w postawionym obiekcie!");
+                }
 
                 // Usuwamy obiekt podgl¹du z listy LootParent w Inventory
                 Inventory inventory = Object.FindFirstObjectByType<Inventory>();

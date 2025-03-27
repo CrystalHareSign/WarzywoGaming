@@ -247,6 +247,12 @@ public class Inventory : MonoBehaviour
                 // Aktywuj przedmiot, jeśli jest wyłączony
                 lootItem.SetActive(true);
 
+                // **Ponowne ustawienie `isTrigger = true` dla poprawnego działania kolizji**
+                if (lootCollider != null)
+                {
+                    lootCollider.isTrigger = true;
+                }
+
                 // Usuń przedmiot z listy dostępnych lootów, aby nie można go było ponownie podnieść
                 loot.Remove(lootItem);
             }

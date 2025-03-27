@@ -343,6 +343,10 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  UsingSceneSystem: 0
+  SceneMain: 0
+  SceneHome: 0
+  wheelManager: {fileID: 0}
 --- !u!114 &3297631377131156987
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -359,6 +363,9 @@ MonoBehaviour:
   interactionDistance: 5
   isInteracted: 0
   alwaysActive: 1
+  UsingSceneSystem: 0
+  SceneMain: 0
+  SceneHome: 0
 --- !u!114 &2759503057541739162
 MonoBehaviour:
   m_ObjectHideFlags: 0
