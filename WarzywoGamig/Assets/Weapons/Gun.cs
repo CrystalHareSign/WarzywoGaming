@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Gun : MonoBehaviour
@@ -30,9 +31,20 @@ public class Gun : MonoBehaviour
 
     private float nextFireTime = 0f; // Zmienna do kontrolowania tempa strzelania w trybie full auto
 
+    // Słownik do przechowywania unikalnych broni
+    private static Dictionary<string, Gun> existingGuns = new Dictionary<string, Gun>();
+
     void Awake()
     {
-        // Użycie DontDestroyOnLoad na tym obiekcie, aby nie został zniszczony po zmianie sceny
+        // Sprawdzenie, czy broń o tej samej nazwie już istnieje
+        if (existingGuns.ContainsKey(gameObject.name))
+        {
+            Destroy(gameObject); // Usunięcie duplikatu
+            return;
+        }
+
+        // Dodanie nowej broni do listy
+        existingGuns[gameObject.name] = this;
         DontDestroyOnLoad(gameObject);
     }
 
