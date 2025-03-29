@@ -49,7 +49,7 @@ public class AssignInteraction : MonoBehaviour
 
         // Pobierz wszystkie obiekty z tagami "Loot", "Item", "Weapon" oraz "Turret"
         AddObjectsWithTag("Item");
-        AddObjectsWithTag("Weapon");
+        //AddObjectsWithTag("Weapon");
         AddObjectsWithTag("Turret"); // Dodane dla tagu "Turret"
 
         // Przypisz funkcje do interaktywnych przedmiotów
@@ -95,7 +95,7 @@ public class AssignInteraction : MonoBehaviour
         // Po za³adowaniu sceny wyczyœæ listê i dodaj wszystkie obiekty z tagami
         moveObjects.Clear();
         AddObjectsWithTag("Item");
-        AddObjectsWithTag("Weapon");
+        //AddObjectsWithTag("Weapon");
         AddObjectsWithTag("Turret");
         AddObjectsWithTag("Loot");
 
