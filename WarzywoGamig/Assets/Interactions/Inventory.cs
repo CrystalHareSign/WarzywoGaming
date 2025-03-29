@@ -192,13 +192,21 @@ public class Inventory : MonoBehaviour
         {
             if (currentWeaponPrefab != null)
             {
-                Destroy(currentWeaponPrefab);
+                // Sprawdzenie, czy obiekt jest zniszczony lub null, zanim go usuniemy
+                if (currentWeaponPrefab != null && currentWeaponPrefab.gameObject != null)
+                {
+                    Destroy(currentWeaponPrefab);
+                }
             }
 
             currentWeaponPrefab = Instantiate(weaponPrefabs[interactableItem.itemName], weaponParent);
             currentWeaponPrefab.transform.localPosition = weaponPositionOffset;
             currentWeaponPrefab.transform.localRotation = Quaternion.Euler(weaponRotationOffset);
             currentWeaponPrefab.SetActive(true);
+
+            // Zapobiegamy usuwaniu broni między scenami przez przeniesienie na root
+            GameObject rootWeapon = currentWeaponPrefab.transform.root.gameObject;
+            DontDestroyOnLoad(rootWeapon);
 
             Gun gunScript = currentWeaponPrefab.GetComponent<Gun>();
             if (gunScript != null)
