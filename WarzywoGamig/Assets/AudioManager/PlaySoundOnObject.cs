@@ -14,7 +14,8 @@ public class PlaySoundOnObject : MonoBehaviour
 
     private void Start()
     {
-        PlaySound("DieselBusEngine", 1f, false);  // 1f to g³oœnoœæ, false to brak pêtli
+        PlaySound("DieselBusEngine", 1f, false);  // TYMCZASOWO //
+
 
         // Jeœli nie przypisano Ÿród³a dŸwiêku, dodaj je automatycznie
         if (audioSourcesWithNames.Count == 0)
@@ -43,3 +44,4 @@ public class PlaySoundOnObject : MonoBehaviour
         }
     }
 }
+///////////     playSoundOnObject.PlaySound("NazwaDŸwiêku", 1f, false);        //////// 1f to g³oœnoœæ, false to brak pêtli
