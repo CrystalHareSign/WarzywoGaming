@@ -12,6 +12,7 @@ public class SceneChanger : MonoBehaviour
     public bool isSceneChanging = false;  // Dodanie zmiennej bool
     private AssignInteraction assignInteraction;
     public GameObject TurretBody;
+    public PlaySoundOnObject playSoundOnObject;
 
     void Start()
     {
@@ -55,18 +56,19 @@ public class SceneChanger : MonoBehaviour
     {
         string currentScene = SceneManager.GetActiveScene().name;
 
-        // Zmieniamy scenê tylko wtedy, gdy to nie ta sama scena, na której ju¿ jesteœmy
         if (currentScene != sceneName && !isSceneChanging)
         {
-            isSceneChanging = true;  // Ustawiamy flagê na true przed rozpoczêciem zmiany sceny
+            isSceneChanging = true;
 
-            // Jeœli przechodzimy z Home do Main, wykonaj metodê
             if (currentScene == "Home" && sceneName == "Main")
             {
                 ExecuteMethodsForMainScene();
             }
+            else if (currentScene == "Main" && sceneName == "Home")
+            {
+                ExecuteMethodsForHomeScene();
+            }
 
-            // Za³aduj now¹ scenê
             SceneManager.LoadScene(sceneName);
         }
         else
@@ -77,6 +79,9 @@ public class SceneChanger : MonoBehaviour
 
     private void ExecuteMethodsForMainScene()
     {
+
+        playSoundOnObject.PlaySound("DieselBusEngine", 1f, false);
+
         Inventory inventory = Object.FindFirstObjectByType<Inventory>();
         if (inventory == null)
         {
@@ -126,6 +131,10 @@ public class SceneChanger : MonoBehaviour
         {
             Debug.LogWarning("TurretBody nie istnieje w scenie.");
         }
+    }
+    private void ExecuteMethodsForHomeScene()
+    {
+        playSoundOnObject.StopSound("DieselBusEngine");
     }
 
     // Mo¿na dodaæ metodê do monitorowania, kiedy scena jest ju¿ za³adowana, aby zresetowaæ flagê

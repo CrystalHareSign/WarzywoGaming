@@ -14,9 +14,6 @@ public class PlaySoundOnObject : MonoBehaviour
 
     private void Start()
     {
-        PlaySound("DieselBusEngine", 1f, false);  // TYMCZASOWO //
-
-
         // Jeœli nie przypisano Ÿród³a dŸwiêku, dodaj je automatycznie
         if (audioSourcesWithNames.Count == 0)
         {
@@ -30,12 +27,10 @@ public class PlaySoundOnObject : MonoBehaviour
     // Publiczna metoda do odtwarzania dŸwiêku
     public void PlaySound(string soundName, float volume = 1f, bool loop = false)
     {
-        // Wyszukaj w liœcie AudioSourceWithName na podstawie nazwy dŸwiêku
         AudioSourceWithName foundSource = audioSourcesWithNames.Find(x => x.soundName == soundName);
 
         if (foundSource != null)
         {
-            // Odtwarzanie dŸwiêku przez AudioManager
             AudioManager.Instance.PlaySound(foundSource.soundName, foundSource.audioSource, volume, loop);
         }
         else
@@ -43,5 +38,30 @@ public class PlaySoundOnObject : MonoBehaviour
             Debug.LogWarning($"DŸwiêk {soundName} nie jest przypisany do {gameObject.name}!");
         }
     }
+
+    // Nowa metoda do zatrzymywania dŸwiêku
+    public void StopSound(string soundName)
+    {
+        AudioSourceWithName foundSource = audioSourcesWithNames.Find(x => x.soundName == soundName);
+
+        if (foundSource != null && foundSource.audioSource.isPlaying)
+        {
+            foundSource.audioSource.Stop();
+        }
+        else
+        {
+            Debug.LogWarning($"DŸwiêk {soundName} nie jest aktualnie odtwarzany na {gameObject.name}!");
+        }
+    }
+    // Metoda do zatrzymania wszystkich dŸwiêków
+    public void StopAllSounds()
+    {
+        foreach (var source in audioSourcesWithNames)
+        {
+            if (source.audioSource.isPlaying)
+            {
+                source.audioSource.Stop();
+            }
+        }
+    }
 }
-///////////     playSoundOnObject.PlaySound("NazwaDŸwiêku", 1f, false);        //////// 1f to g³oœnoœæ, false to brak pêtli
