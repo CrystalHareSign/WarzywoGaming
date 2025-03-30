@@ -44,51 +44,73 @@ public class AudioManager : MonoBehaviour
 
     public void PlaySound(string soundName, AudioSource customSource = null, float volume = 1f, bool loop = false)
     {
-        if (soundDictionary.TryGetValue(soundName, out Sound sound))
-        {
-            float finalVolume = sound.volume * volume;
-
-            // Mno¿ymy finalVolume przez odpowiedni¹ g³oœnoœæ master
-            finalVolume *= sound.type switch
-            {
-                SoundType.Music => masterMusicVolume,
-                SoundType.SFX => masterSFXVolume,
-                SoundType.Ambient => masterAmbientVolume,
-                _ => 1f // Domyœlna wartoœæ, gdyby typ nie by³ rozpoznany
-            };
-
-            if (customSource != null)
-            {
-                customSource.clip = sound.clip;
-                customSource.loop = loop;
-                customSource.volume = finalVolume;
-                customSource.Play();
-            }
-            else
-            {
-                switch (sound.type)
-                {
-                    case SoundType.Music:
-                        musicSource.clip = sound.clip;
-                        musicSource.loop = loop;
-                        musicSource.volume = finalVolume;
-                        musicSource.Play();
-                        break;
-                    case SoundType.SFX:
-                        sfxSource.PlayOneShot(sound.clip, finalVolume); // U¿ywamy finalVolume z uwzglêdnieniem masterSFXVolume
-                        break;
-                    case SoundType.Ambient:
-                        ambientSource.clip = sound.clip;
-                        ambientSource.loop = loop;
-                        ambientSource.volume = finalVolume;
-                        ambientSource.Play();
-                        break;
-                }
-            }
-        }
-        else
+        if (!soundDictionary.TryGetValue(soundName, out Sound sound))
         {
             Debug.LogWarning($"DŸwiêk {soundName} nie zosta³ znaleziony!");
+            return;
+        }
+
+        float finalVolume = sound.volume * volume;
+
+        // Mno¿ymy finalVolume przez odpowiedni¹ g³oœnoœæ master
+        finalVolume *= sound.type switch
+        {
+            SoundType.Music => masterMusicVolume,
+            SoundType.SFX => masterSFXVolume,
+            SoundType.Ambient => masterAmbientVolume,
+            _ => 1f // Domyœlna wartoœæ, gdyby typ nie by³ rozpoznany
+        };
+
+        if (customSource != null)
+        {
+            if (customSource.gameObject == null)
+            {
+                Debug.LogWarning($"AudioSource dla dŸwiêku {soundName} zosta³ zniszczony!");
+                return;
+            }
+
+            customSource.clip = sound.clip;
+            customSource.loop = loop;
+            customSource.volume = finalVolume;
+            customSource.Play();
+            return;
+        }
+
+        // Sprawdzenie Ÿróde³ dŸwiêku przed ich u¿yciem
+        switch (sound.type)
+        {
+            case SoundType.Music:
+                if (musicSource == null)
+                {
+                    Debug.LogWarning("MusicSource nie jest przypisany!");
+                    return;
+                }
+                musicSource.clip = sound.clip;
+                musicSource.loop = loop;
+                musicSource.volume = finalVolume;
+                musicSource.Play();
+                break;
+
+            case SoundType.SFX:
+                if (sfxSource == null)
+                {
+                    Debug.LogWarning("SFXSource nie jest przypisany!");
+                    return;
+                }
+                sfxSource.PlayOneShot(sound.clip, finalVolume);
+                break;
+
+            case SoundType.Ambient:
+                if (ambientSource == null)
+                {
+                    Debug.LogWarning("AmbientSource nie jest przypisany!");
+                    return;
+                }
+                ambientSource.clip = sound.clip;
+                ambientSource.loop = loop;
+                ambientSource.volume = finalVolume;
+                ambientSource.Play();
+                break;
         }
     }
 

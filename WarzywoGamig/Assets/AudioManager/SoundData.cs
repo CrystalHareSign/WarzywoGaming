@@ -7,7 +7,6 @@ public class Sound
     public AudioClip clip;
     [Range(0f, 1f)] public float volume = 1f;
     public AudioManager.SoundType type;
-    public bool loop = false;
 }
 
 [CreateAssetMenu(fileName = "New Sound Data", menuName = "Audio/Sound Data")]
