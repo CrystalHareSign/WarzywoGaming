@@ -76,7 +76,7 @@ public class InventoryUI : MonoBehaviour
 
     public void UpdateInventoryUI(List<GameObject> weapons, List<GameObject> items)
     {
-        Debug.Log("Weapons count: " + weapons.Count);
+        //Debug.Log("Weapons count: " + weapons.Count);
 
         bool weaponEquipped = false;
 
@@ -121,7 +121,7 @@ public class InventoryUI : MonoBehaviour
 
         if (!weaponEquipped)
         {
-            Debug.Log("No weapon equipped, hiding weapon UI.");
+            //Debug.Log("No weapon equipped, hiding weapon UI.");
             weaponImage.enabled = false;
             weaponNameText.gameObject.SetActive(false);
 

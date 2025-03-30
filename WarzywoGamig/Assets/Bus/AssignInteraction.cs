@@ -84,7 +84,7 @@ public class AssignInteraction : MonoBehaviour
         // Po za³adowaniu sceny ustawienie obiektu Busa w pierwotnej pozycji
         if (bus != null)
         {
-            Debug.Log($"Bus found at {bus.transform.position}. Restoring to original position.");
+            //Debug.Log($"Bus found at {bus.transform.position}. Restoring to original position.");
             bus.transform.position = busOriginalPosition;
         }
         else

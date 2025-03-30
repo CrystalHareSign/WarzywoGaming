@@ -523,6 +523,6 @@ public class TreasureRefiner : MonoBehaviour
             countTexts[i].text = "0";     // Resetujemy iloœæ
         }
 
-        Debug.Log("Wszystkie sloty zosta³y zresetowane.");
+        //Debug.Log("Wszystkie sloty zosta³y zresetowane.");
     }
 }

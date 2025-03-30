@@ -6,62 +6,148 @@ public class PlaySoundOnObject : MonoBehaviour
     [System.Serializable]
     public class AudioSourceWithName
     {
-        public AudioSource audioSource;  // èrÛd≥o düwiÍku
-        public string soundName;         // Nazwa düwiÍku
+        public AudioSource audioSource;
+        public string soundName;
     }
 
-    public List<AudioSourceWithName> audioSourcesWithNames;  // Lista grupujπcych AudioSource z nazwπ
+    public List<AudioSourceWithName> audioSourcesWithNames = new List<AudioSourceWithName>();
 
-    private void Start()
-    {
-        // Jeúli nie przypisano ürÛd≥a düwiÍku, dodaj je automatycznie
-        if (audioSourcesWithNames.Count == 0)
-        {
-            foreach (var audioSource in GetComponents<AudioSource>())
-            {
-                audioSourcesWithNames.Add(new AudioSourceWithName { audioSource = audioSource, soundName = audioSource.name });
-            }
-        }
-    }
-
-    // Publiczna metoda do odtwarzania düwiÍku
+    /// <summary>
+    /// Odtwarza düwiÍk przypisany do TEGO obiektu.
+    /// </summary>
     public void PlaySound(string soundName, float volume = 1f, bool loop = false)
     {
+        if (audioSourcesWithNames == null || audioSourcesWithNames.Count == 0)
+        {
+            Debug.LogWarning($"Brak AudioSource w obiekcie {gameObject.name}!");
+            return;
+        }
+
         AudioSourceWithName foundSource = audioSourcesWithNames.Find(x => x.soundName == soundName);
 
-        if (foundSource != null)
+        if (foundSource != null && foundSource.audioSource != null)
         {
-            AudioManager.Instance.PlaySound(foundSource.soundName, foundSource.audioSource, volume, loop);
+            if (foundSource.audioSource.clip == null)
+            {
+                Debug.LogWarning($"AudioSource '{soundName}' w obiekcie {gameObject.name} nie ma przypisanego pliku düwiÍkowego!");
+                return;
+            }
+
+            foundSource.audioSource.loop = loop;
+            foundSource.audioSource.volume = volume;
+
+            if (loop)
+            {
+                if (!foundSource.audioSource.isPlaying)
+                {
+                    foundSource.audioSource.Play();
+                    Debug.Log($"Odtworzono pÍtlÍ düwiÍku '{soundName}' w obiekcie {gameObject.name}.");
+                }
+            }
+            else
+            {
+                foundSource.audioSource.PlayOneShot(foundSource.audioSource.clip, volume);
+                Debug.Log($"Odtworzono düwiÍk '{soundName}' na obiekcie {gameObject.name}.");
+            }
         }
         else
         {
-            Debug.LogWarning($"DüwiÍk {soundName} nie jest przypisany do {gameObject.name}!");
+            //Debug.LogWarning($"DüwiÍk '{soundName}' nie jest przypisany do {gameObject.name}!");
         }
     }
 
-    // Nowa metoda do zatrzymywania düwiÍku
+    /// <summary>
+    /// Zatrzymuje düwiÍk o podanej nazwie.
+    /// </summary>
     public void StopSound(string soundName)
     {
+        if (audioSourcesWithNames == null || audioSourcesWithNames.Count == 0)
+        {
+            Debug.LogWarning($"Brak AudioSource w obiekcie {gameObject.name}!");
+            return;
+        }
+
         AudioSourceWithName foundSource = audioSourcesWithNames.Find(x => x.soundName == soundName);
 
-        if (foundSource != null && foundSource.audioSource.isPlaying)
+        if (foundSource != null && foundSource.audioSource != null)
         {
-            foundSource.audioSource.Stop();
+            if (foundSource.audioSource.isPlaying)
+            {
+                foundSource.audioSource.Stop();
+            }
+            else
+            {
+                Debug.LogWarning($"DüwiÍk '{soundName}' nie jest aktualnie odtwarzany na {gameObject.name}.");
+            }
         }
         else
         {
-            Debug.LogWarning($"DüwiÍk {soundName} nie jest aktualnie odtwarzany na {gameObject.name}!");
+            //Debug.LogWarning($"DüwiÍk '{soundName}' nie zosta≥ znaleziony lub przypisanie audioSource jest niepoprawne w obiekcie {gameObject.name}.");
         }
     }
-    // Metoda do zatrzymania wszystkich düwiÍkÛw
+
+    /// <summary>
+    /// Zatrzymuje wszystkie düwiÍki w tym obiekcie.
+    /// </summary>
     public void StopAllSounds()
     {
+        if (audioSourcesWithNames == null || audioSourcesWithNames.Count == 0)
+        {
+            Debug.LogWarning($"Brak AudioSource w obiekcie {gameObject.name}!");
+            return;
+        }
+
         foreach (var source in audioSourcesWithNames)
         {
-            if (source.audioSource.isPlaying)
+            if (source.audioSource != null && source.audioSource.isPlaying)
             {
                 source.audioSource.Stop();
             }
         }
+    }
+
+    /// <summary>
+    /// Odtwarza düwiÍk na dowolnym obiekcie w scenie.
+    /// </summary>
+    /// <summary>
+    /// Odtwarza düwiÍk na dowolnym obiekcie w scenie.
+    /// </summary>
+    public static void PlaySoundGlobal(string soundName, float volume = 1f, bool loop = false)
+    {
+        PlaySoundOnObject[] allAudioManagers = Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None);
+
+        foreach (var manager in allAudioManagers)
+        {
+            AudioSourceWithName foundSource = manager.audioSourcesWithNames.Find(x => x.soundName == soundName);
+            if (foundSource != null && foundSource.audioSource != null)
+            {
+                if (foundSource.audioSource.clip == null)
+                {
+                    Debug.LogWarning($"AudioSource '{soundName}' w obiekcie {manager.gameObject.name} nie ma przypisanego pliku düwiÍkowego!");
+                    return;
+                }
+
+                foundSource.audioSource.loop = loop;
+                foundSource.audioSource.volume = volume;
+
+                if (loop)
+                {
+                    if (!foundSource.audioSource.isPlaying)
+                    {
+                        foundSource.audioSource.Play();
+                        Debug.Log($"Odtworzono pÍtlÍ düwiÍku '{soundName}' w obiekcie {manager.gameObject.name}.");
+                    }
+                }
+                else
+                {
+                    foundSource.audioSource.PlayOneShot(foundSource.audioSource.clip, volume);
+                    Debug.Log($"Odtworzono düwiÍk '{soundName}' na obiekcie {manager.gameObject.name}.");
+                }
+
+                return; // Przerywamy pÍtlÍ po znalezieniu pierwszego pasujπcego düwiÍku
+            }
+        }
+
+        Debug.LogWarning($"DüwiÍk '{soundName}' nie zosta≥ znaleziony w øadnym obiekcie w scenie!");
     }
 }

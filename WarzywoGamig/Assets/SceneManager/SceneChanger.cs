@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections.Generic;
 
 public class SceneChanger : MonoBehaviour
 {
@@ -9,14 +10,21 @@ public class SceneChanger : MonoBehaviour
     [SerializeField] private Transform button2;
     [SerializeField] private string scene2;
 
-    public bool isSceneChanging = false;  // Dodanie zmiennej bool
+    public bool isSceneChanging = false;
     private AssignInteraction assignInteraction;
+
+    // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
+    private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
+
     public GameObject TurretBody;
-    public PlaySoundOnObject playSoundOnObject;
 
     void Start()
     {
-        assignInteraction = Object.FindFirstObjectByType<AssignInteraction>(); // Pobierz referencjê do skryptu AssignInteraction
+        // Pobierz referencjê do skryptu AssignInteraction
+        assignInteraction = Object.FindFirstObjectByType<AssignInteraction>();
+
+        // ZnajdŸ wszystkie obiekty posiadaj¹ce PlaySoundOnObject i dodaj do listy
+        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
     }
 
     private void Update()
@@ -28,7 +36,7 @@ public class SceneChanger : MonoBehaviour
             if (assignInteraction != null && assignInteraction.isMoving)
             {
                 Debug.Log("Nie mo¿esz zmieniæ sceny, gdy obiekt siê porusza.");
-                return;  // Zatrzymanie zmiany sceny, jeœli obiekt siê porusza
+                return;
             }
 
             // Tworzymy promieñ z kamery na pozycjê myszy
@@ -50,7 +58,6 @@ public class SceneChanger : MonoBehaviour
             }
         }
     }
-
 
     private void TryChangeScene(string sceneName)
     {
@@ -79,8 +86,16 @@ public class SceneChanger : MonoBehaviour
 
     private void ExecuteMethodsForMainScene()
     {
+        //Debug.Log("ExecuteMethodsForMainScene() called.");
 
-        playSoundOnObject.PlaySound("DieselBusEngine", 1f, false);
+        // Przechodzimy przez wszystkie obiekty z PlaySoundOnObject i odtwarzamy odpowiednie dŸwiêki
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("DieselBusEngine", 1f, true);
+            playSoundOnObject.PlaySound("TiresOnGravel", 0.5f, true);
+        }
 
         Inventory inventory = Object.FindFirstObjectByType<Inventory>();
         if (inventory == null)
@@ -105,12 +120,10 @@ public class SceneChanger : MonoBehaviour
         // Sprawdzamy, czy TurretBody istnieje w scenie
         if (TurretBody != null)
         {
-            // Pobierz komponent TurretController
             TurretController turretController = TurretBody.GetComponent<TurretController>();
 
             if (turretController != null)
             {
-                // Teraz znajdŸ komponent TurretCollector na dziecku
                 TurretCollector turretCollector = turretController.GetComponentInChildren<TurretCollector>();
 
                 if (turretCollector != null)
@@ -132,24 +145,31 @@ public class SceneChanger : MonoBehaviour
             Debug.LogWarning("TurretBody nie istnieje w scenie.");
         }
     }
+
     private void ExecuteMethodsForHomeScene()
     {
-        playSoundOnObject.StopSound("DieselBusEngine");
+        //Debug.Log("ExecuteMethodsForHomeScene() called.");
+
+        // Zatrzymaj wszystkie odtwarzane dŸwiêki
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.StopSound("DieselBusEngine");
+            playSoundOnObject.StopSound("TiresOnGravel");
+        }
     }
 
-    // Mo¿na dodaæ metodê do monitorowania, kiedy scena jest ju¿ za³adowana, aby zresetowaæ flagê
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         isSceneChanging = false; // Zmieniamy flagê na false po za³adowaniu sceny
     }
 
-    // Subskrybujemy zdarzenie za³adowania sceny
     private void OnEnable()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
-    // Odsubskrybowanie zdarzenia przy wy³¹czaniu obiektu
     private void OnDisable()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;

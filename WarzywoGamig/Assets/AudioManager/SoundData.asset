@@ -17,4 +17,9 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: 64a6faffcfddf9b4ab0857b4ee766354, type: 3}
     volume: 0.5
     type: 2
-    loop: 0
+    loop: 1
+  - name: DieselBusEngine
+    clip: {fileID: 8300000, guid: abeef427bb472f547872dc6da9aa9b58, type: 3}
+    volume: 0.5
+    type: 2
+    loop: 1
