@@ -41,7 +41,7 @@ public class PlaySoundOnObject : MonoBehaviour
                 if (!foundSource.audioSource.isPlaying)
                 {
                     foundSource.audioSource.Play();
-                    Debug.Log($"Odtworzono pêtlê dŸwiêku '{soundName}' w obiekcie {gameObject.name}.");
+                    //Debug.Log($"Odtworzono pêtlê dŸwiêku '{soundName}' w obiekcie {gameObject.name}.");
                 }
             }
             else
@@ -56,6 +56,44 @@ public class PlaySoundOnObject : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Zmienia pitch dla konkretnego dŸwiêku w obiekcie.
+    /// </summary>
+    public void ChangePitch(string soundName, float newPitch)
+    {
+        AudioSourceWithName foundSource = audioSourcesWithNames.Find(x => x.soundName == soundName);
+
+        if (foundSource != null && foundSource.audioSource != null)
+        {
+            foundSource.audioSource.pitch = newPitch;
+            Debug.Log($"Zmieniono pitch dŸwiêku '{soundName}' na {newPitch} w obiekcie {gameObject.name}.");
+        }
+        else
+        {
+            Debug.LogWarning($"DŸwiêk '{soundName}' nie zosta³ znaleziony w obiekcie {gameObject.name}!");
+        }
+    }
+    //////////     WYWO£ANIE     ///////      playSoundOnObject.ChangePitch("StormSound", 1.5f); // Zwiêkszy pitch
+
+    /// <summary>
+    /// Zmienia g³oœnoœæ dla konkretnego dŸwiêku w obiekcie.
+    /// </summary>
+    public void ChangeVolume(string soundName, float newVolume)
+    {
+        AudioSourceWithName foundSource = audioSourcesWithNames.Find(x => x.soundName == soundName);
+
+        if (foundSource != null && foundSource.audioSource != null)
+        {
+            foundSource.audioSource.volume = newVolume;
+            Debug.Log($"Zmieniono g³oœnoœæ dŸwiêku '{soundName}' na {newVolume} w obiekcie {gameObject.name}.");
+        }
+        else
+        {
+            Debug.LogWarning($"DŸwiêk '{soundName}' nie zosta³ znaleziony w obiekcie {gameObject.name}!");
+        }
+    }
+
+    //////////     WYWO£ANIE     ///////      playSoundOnObject.ChangeVolume("StormSound", 0.5f); // Zmniejszy g³oœnoœæ
     /// <summary>
     /// Zatrzymuje dŸwiêk o podanej nazwie.
     /// </summary>
@@ -77,7 +115,7 @@ public class PlaySoundOnObject : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning($"DŸwiêk '{soundName}' nie jest aktualnie odtwarzany na {gameObject.name}.");
+                //Debug.LogWarning($"DŸwiêk '{soundName}' nie jest aktualnie odtwarzany na {gameObject.name}.");
             }
         }
         else

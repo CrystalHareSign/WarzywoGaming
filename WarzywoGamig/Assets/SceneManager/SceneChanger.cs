@@ -94,7 +94,8 @@ public class SceneChanger : MonoBehaviour
             if (playSoundOnObject == null) continue;
 
             playSoundOnObject.PlaySound("DieselBusEngine", 1f, true);
-            playSoundOnObject.PlaySound("TiresOnGravel", 0.5f, true);
+            playSoundOnObject.PlaySound("TiresOnGravel", 0.05f, true);
+            playSoundOnObject.PlaySound("Storm", 0.15f, true);
         }
 
         Inventory inventory = Object.FindFirstObjectByType<Inventory>();
@@ -157,6 +158,7 @@ public class SceneChanger : MonoBehaviour
 
             playSoundOnObject.StopSound("DieselBusEngine");
             playSoundOnObject.StopSound("TiresOnGravel");
+            playSoundOnObject.StopSound("Storm");
         }
     }
 
@@ -174,4 +176,6 @@ public class SceneChanger : MonoBehaviour
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
+
+
 }
