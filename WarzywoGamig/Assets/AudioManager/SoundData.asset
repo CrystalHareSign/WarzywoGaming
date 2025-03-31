@@ -17,7 +17,14 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: 64a6faffcfddf9b4ab0857b4ee766354, type: 3}
     volume: 0.5
     type: 2
+    enabled: 0
   - name: TiresOnGravel
     clip: {fileID: 8300000, guid: abeef427bb472f547872dc6da9aa9b58, type: 3}
     volume: 0.5
     type: 2
+    enabled: 0
+  - name: Storm
+    clip: {fileID: 8300000, guid: 6deb45b1b57f4b7419e87a2601856260, type: 3}
+    volume: 0.5
+    type: 2
+    enabled: 0
