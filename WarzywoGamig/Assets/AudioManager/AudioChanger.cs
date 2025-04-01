@@ -1,55 +1,95 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public class AudioChanger : MonoBehaviour
 {
-    // Lista colliderów przypisanych do strefy Inside
-    public List<Collider> zoneInsideColliders = new List<Collider>();
+    public AudioLowPassFilter lowPassFilter;
+    public AudioSource stormAudio;
+    public float indoorCutoff = 1000f;
+    public float outdoorCutoff = 22000f;
+    public float indoorVolumeMultiplier = 0.3f;
+    private float outdoorVolume;
 
-    // Lista colliderów przypisanych do strefy Outside
-    public List<Collider> zoneOutsideColliders = new List<Collider>();
+    private bool hasEntered = false;
+    private bool isPlayerInside = false;
 
-    // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
-    private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
+    private Collider triggerCollider;
 
-    // Metoda wywo³ywana, gdy gracz wchodzi w strefê (przez OnTriggerEnter)
+    // G³oœnoœæ przekazywana z SceneManagera
+    public float stormAudioVolume;
+
+    // Parametry p³ynnych zmian
+    public float transitionSpeed = 1f;  // Szybkoœæ przejœcia (od 0 do 1)
+
+    private float targetCutoff;
+    private float targetVolume;
+    private float currentCutoff;
+    private float currentVolume;
+
+    private void Start()
+    {
+        if (stormAudio != null)
+        {
+            outdoorVolume = stormAudio.volume;
+            currentVolume = stormAudio.volume; // Pocz¹tkowa g³oœnoœæ
+        }
+
+        triggerCollider = GetComponent<Collider>();
+
+        // Ustawiamy pocz¹tkowy cutoff
+        currentCutoff = lowPassFilter.cutoffFrequency;
+        targetCutoff = outdoorCutoff; // Pocz¹tkowa wartoœæ
+        targetVolume = outdoorVolume * stormAudioVolume;
+    }
+
+    private void Update()
+    {
+        // Jeœli gracz jest w œrodku, ustawiamy docelowe wartoœci
+        if (isPlayerInside)
+        {
+            targetCutoff = indoorCutoff;
+            targetVolume = outdoorVolume * indoorVolumeMultiplier * stormAudioVolume;
+        }
+        else
+        {
+            targetCutoff = outdoorCutoff;
+            targetVolume = outdoorVolume * stormAudioVolume;
+        }
+
+        // P³ynna zmiana cutoffFrequency - kontrolowanie zakresu
+        currentCutoff = Mathf.MoveTowards(currentCutoff, targetCutoff, transitionSpeed * Time.deltaTime * Mathf.Abs(targetCutoff - currentCutoff));
+
+        // P³ynna zmiana g³oœnoœci
+        currentVolume = Mathf.MoveTowards(currentVolume, targetVolume, transitionSpeed * Time.deltaTime);
+
+        // Ustawiamy wartoœci na podstawie p³ynnych przejœæ
+        if (lowPassFilter != null)
+        {
+            lowPassFilter.cutoffFrequency = currentCutoff;
+        }
+
+        if (stormAudio != null)
+        {
+            stormAudio.volume = currentVolume;
+        }
+    }
+
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))  // Sprawdzamy, czy to gracz
+        if (other.CompareTag("Player") && !hasEntered)
         {
-            // Sprawdzamy, czy gracz wchodzi do strefy Inside
-            foreach (var zoneCollider in zoneInsideColliders)
-            {
-                if (other == zoneCollider) // Gracz wszed³ w collider strefy Inside
-                {
-                    Debug.Log("Gracz wszed³ do strefy Inside");
+            hasEntered = true;
+            isPlayerInside = true;
+            Debug.Log("Gracz wszed³ do wnêtrza.");
+        }
+    }
 
-                    foreach (var playSoundOnObject in playSoundObjects)
-                    {
-                        if (playSoundOnObject == null) continue;
-
-                        playSoundOnObject.ChangePitch("Storm", 0.7f);
-                        Debug.Log("Zmieniamy pitch dla obiektu w strefie Inside na: 0.7f");
-                    }
-                }
-            }
-
-            // Sprawdzamy, czy gracz wchodzi do strefy Outside
-            foreach (var zoneCollider in zoneOutsideColliders)
-            {
-                if (other == zoneCollider) // Gracz wszed³ w collider strefy Outside
-                {
-                    Debug.Log("Gracz wszed³ do strefy Outside");
-
-                    foreach (var playSoundOnObject in playSoundObjects)
-                    {
-                        if (playSoundOnObject == null) continue;
-
-                        playSoundOnObject.ChangePitch("Storm", 1.0f);
-                        Debug.Log("Zmieniamy pitch dla obiektu w strefie Outside na: 1.0f");
-                    }
-                }
-            }
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            hasEntered = false;
+            isPlayerInside = false;
+            Debug.Log("Gracz wyszed³ na zewn¹trz.");
         }
     }
 }

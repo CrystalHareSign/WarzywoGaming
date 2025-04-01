@@ -92,10 +92,18 @@ public class SceneChanger : MonoBehaviour
         foreach (var playSoundOnObject in playSoundObjects)
         {
             if (playSoundOnObject == null) continue;
-
+            float stormVolume = 0.2f;
             playSoundOnObject.PlaySound("DieselBusEngine", 1f, true);
             playSoundOnObject.PlaySound("TiresOnGravel", 0.05f, true);
-            playSoundOnObject.PlaySound("Storm", 0.15f, true);
+            playSoundOnObject.PlaySound("Storm", stormVolume, true);                            /////// TO
+
+            // ZnajdŸ obiekt AudioChanger w scenie
+            AudioChanger audioChanger = Object.FindFirstObjectByType<AudioChanger>();
+            if (audioChanger != null)
+            {
+                // Ustaw pocz¹tkow¹ g³oœnoœæ w AudioChanger
+                audioChanger.stormAudioVolume = stormVolume;  // Przyk³ad ustawienia g³oœnoœci  /////// TUTAJ
+            }
         }
 
         Inventory inventory = Object.FindFirstObjectByType<Inventory>();
