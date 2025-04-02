@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class AudioChanger : MonoBehaviour
 {
@@ -14,40 +15,52 @@ public class AudioChanger : MonoBehaviour
 
     private Collider triggerCollider;
 
-    // G³oœnoœæ przekazywana z SceneManagera
     public float stormAudioVolume;
-
-    // Parametry p³ynnych zmian
-    public float transitionSpeed = 1f;  // Szybkoœæ przejœcia (od 0 do 1)
+    public float transitionSpeed = 1f;
 
     private float targetCutoff;
     private float targetVolume;
     private float currentCutoff;
     private float currentVolume;
 
+    public List<Transform> soundAffectingObjects = new List<Transform>();
+    public float MaxDistance = 10f;
+    public float MinDistance = 0f;
+    public float CurrentDistance = 0f;
+
+    private Transform playerTransform;
+
     private void Start()
     {
         if (stormAudio != null)
         {
             outdoorVolume = stormAudio.volume;
-            currentVolume = stormAudio.volume; // Pocz¹tkowa g³oœnoœæ
+            currentVolume = stormAudio.volume;
         }
 
         triggerCollider = GetComponent<Collider>();
 
-        // Ustawiamy pocz¹tkowy cutoff
         currentCutoff = lowPassFilter.cutoffFrequency;
-        targetCutoff = outdoorCutoff; // Pocz¹tkowa wartoœæ
+        targetCutoff = outdoorCutoff;
         targetVolume = outdoorVolume * stormAudioVolume;
+
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            playerTransform = player.transform;
+        }
     }
 
     private void Update()
     {
-        // Jeœli gracz jest w œrodku, ustawiamy docelowe wartoœci
-        if (isPlayerInside)
+        if (isPlayerInside && playerTransform != null)
         {
-            targetCutoff = indoorCutoff;
-            targetVolume = outdoorVolume * indoorVolumeMultiplier * stormAudioVolume;
+            CurrentDistance = GetClosestDistanceToObjects();
+
+            // Im wiêksza odleg³oœæ, tym bardziej wyciszony i wyt³umiony dŸwiêk
+            float distanceFactor = Mathf.InverseLerp(MinDistance, MaxDistance, CurrentDistance);
+            targetCutoff = Mathf.Lerp(outdoorCutoff, indoorCutoff, distanceFactor);
+            targetVolume = Mathf.Lerp(outdoorVolume * stormAudioVolume, outdoorVolume * indoorVolumeMultiplier * stormAudioVolume, distanceFactor);
         }
         else
         {
@@ -55,13 +68,9 @@ public class AudioChanger : MonoBehaviour
             targetVolume = outdoorVolume * stormAudioVolume;
         }
 
-        // P³ynna zmiana cutoffFrequency - kontrolowanie zakresu
         currentCutoff = Mathf.MoveTowards(currentCutoff, targetCutoff, transitionSpeed * Time.deltaTime * Mathf.Abs(targetCutoff - currentCutoff));
-
-        // P³ynna zmiana g³oœnoœci
         currentVolume = Mathf.MoveTowards(currentVolume, targetVolume, transitionSpeed * Time.deltaTime);
 
-        // Ustawiamy wartoœci na podstawie p³ynnych przejœæ
         if (lowPassFilter != null)
         {
             lowPassFilter.cutoffFrequency = currentCutoff;
@@ -71,6 +80,22 @@ public class AudioChanger : MonoBehaviour
         {
             stormAudio.volume = currentVolume;
         }
+    }
+
+    private float GetClosestDistanceToObjects()
+    {
+        float minDistance = MaxDistance;
+
+        foreach (Transform obj in soundAffectingObjects)
+        {
+            if (obj != null)
+            {
+                float distance = Vector3.Distance(playerTransform.position, obj.position);
+                minDistance = Mathf.Min(minDistance, distance);
+            }
+        }
+
+        return Mathf.Clamp(minDistance, MinDistance, MaxDistance);
     }
 
     private void OnTriggerEnter(Collider other)
