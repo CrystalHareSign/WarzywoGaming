@@ -8,10 +8,18 @@ public class MouseLook : MonoBehaviour
 
     private float xRotation = 0f;
 
+    private TurretController turretController;
+
     private void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        turretController = Object.FindFirstObjectByType<TurretController>();
+        if (turretController == null)
+        {
+            Debug.LogWarning("Brak obiektu TurretController w scenie.");
+        }
     }
 
     private void Update()
@@ -36,6 +44,18 @@ public class MouseLook : MonoBehaviour
         transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
 
         // Obrót gracza w osi Y
+        playerBody.Rotate(Vector3.up * mouseX);
+
+        if (turretController != null && turretController.isUsingTurret)
+        {
+            xRotation = Mathf.Clamp(xRotation, turretController.minBarrelAngle, turretController.maxBarrelAngle);
+        }
+        else
+        {
+            xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+        }
+
+        transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
         playerBody.Rotate(Vector3.up * mouseX);
     }
 }
