@@ -84,50 +84,61 @@ public class TurretController : MonoBehaviour
             }
 
             RotateEnterAreaWithPlayer();
-            RotateBarrelWithMouse();
+            //RotateBarrelWithMouse();
         }
     }
 
     private void RotateEnterAreaWithPlayer()
     {
-        if (playerMovement != null && enterArea != null)
+        if (playerMovement != null && enterArea != null && playerCamera != null)
         {
-            enterArea.rotation = Quaternion.Euler(0, playerMovement.transform.eulerAngles.y, 0);
+            // Pobieramy kąt X z kamery gracza, który chcemy ograniczyć
+            float cameraAngleX = NormalizeAngle(playerCamera.transform.localEulerAngles.x);
+            // Ograniczamy kąt w pionie (X) w zakresie podanym przez minBarrelAngle i maxBarrelAngle
+            float clampedAngleX = Mathf.Clamp(cameraAngleX, minBarrelAngle, maxBarrelAngle);
+
+            // Pobieramy kąt Y z gracza (rotacja w poziomie)
+            float yRotation = playerMovement.transform.eulerAngles.y;
+
+            // Obracamy enterArea i gracza w osi X oraz Y
+            enterArea.rotation = Quaternion.Euler(clampedAngleX, yRotation, 0);
+            playerMovement.transform.rotation = Quaternion.Euler(clampedAngleX, yRotation, 0); // Obrót gracza
         }
     }
 
-    private void RotateBarrelWithMouse()
-    {
-        if (barrelPivot == null || playerCamera == null)
-            return;
 
-        // Pobieramy kąt X kamery gracza
-        float cameraAngleX = NormalizeAngle(playerCamera.transform.localEulerAngles.x);
+    //private void RotateBarrelWithMouse()
+    //{
+    //    if (barrelPivot == null || playerCamera == null)
+    //        return;
 
-        // Ograniczamy kąt do podanego zakresu
-        float clampedAngle = Mathf.Clamp(cameraAngleX, minBarrelAngle, maxBarrelAngle);
+    //    // Pobieramy kąt X kamery gracza
+    //    float cameraAngleX = NormalizeAngle(playerCamera.transform.localEulerAngles.x);
 
-        // Ustawiamy nowy kąt dla lufy (obrót tylko w osi X)
-        barrelPivot.localRotation = Quaternion.Euler(clampedAngle, 0, 0);
+    //    // Ograniczamy kąt do podanego zakresu
+    //    float clampedAngle = Mathf.Clamp(cameraAngleX, minBarrelAngle, maxBarrelAngle);
 
-        // Sprawdzamy, czy kąt jest w dozwolonym zakresie
-        if (clampedAngle == minBarrelAngle || clampedAngle == maxBarrelAngle)
-        {
-            // Jeśli kąt lufy przekracza zakres, blokujemy strzelanie
-            if (harpoonController != null)
-            {
-                harpoonController.canShoot = false;
-            }
-        }
-        else
-        {
-            // Jeśli kąt jest w dozwolonym zakresie, umożliwiamy strzelanie
-            if (harpoonController != null)
-            {
-                harpoonController.canShoot = true;
-            }
-        }
-    }
+    //    // Ustawiamy nowy kąt dla lufy (obrót tylko w osi X)
+    //    barrelPivot.localRotation = Quaternion.Euler(clampedAngle, 0, 0);
+
+    //    // Sprawdzamy, czy kąt jest w dozwolonym zakresie
+    //    if (clampedAngle == minBarrelAngle || clampedAngle == maxBarrelAngle)
+    //    {
+    //        // Jeśli kąt lufy przekracza zakres, blokujemy strzelanie
+    //        if (harpoonController != null)
+    //        {
+    //            harpoonController.canShoot = false;
+    //        }
+    //    }
+    //    else
+    //    {
+    //        // Jeśli kąt jest w dozwolonym zakresie, umożliwiamy strzelanie
+    //        if (harpoonController != null)
+    //        {
+    //            harpoonController.canShoot = true;
+    //        }
+    //    }
+    //}
 
 
     // Zamiana kąta na zakres -180° do 180°
@@ -229,6 +240,9 @@ public class TurretController : MonoBehaviour
 
         turretBase.position = targetTurretBasePosition;
         enterArea.position = targetEnterAreaPosition;
+
+        Quaternion currentRotation = playerMovement.transform.rotation;
+        playerMovement.transform.rotation = Quaternion.Euler(0f, currentRotation.eulerAngles.y, 0f);
 
         TeleportPlayer(exitArea);
 

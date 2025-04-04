@@ -25,7 +25,7 @@ public class Harpoon : MonoBehaviour
         turretCollector = Object.FindFirstObjectByType<TurretCollector>();
         if (turretCollector == null)
         {
-            Debug.LogError("Nie znaleziono HarpoonController w scenie.");
+            Debug.LogError("Nie znaleziono TurretCollector w scenie.");
         }
     }
 
