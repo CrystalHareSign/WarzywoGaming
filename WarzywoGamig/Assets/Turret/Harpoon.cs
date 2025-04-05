@@ -79,7 +79,7 @@ public class Harpoon : MonoBehaviour
             {
                 treasureCollider.enabled = false;
             }
-            treasureCopy.transform.localScale = new Vector3(1, 1, 1);
+            treasureCopy.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
 
             // Przypisz kopię jako dziecko treasureMountPoint
             treasureCopy.transform.SetParent(treasureMountPoint);
