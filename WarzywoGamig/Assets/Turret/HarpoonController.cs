@@ -33,6 +33,7 @@ public class HarpoonController : MonoBehaviour
     private TurretController turretController;
 
     private float reloadTimer = 0f; // Nowa zmienna do liczenia czasu przeładowania
+    private bool isReloading;
 
     [Header("TUBE - Pamietej aby całkowity czas wszyskich etapow musi byc równy ReloadTime")]
     // Dodajemy referencję do obiektu, który ma się poruszać
@@ -48,7 +49,14 @@ public class HarpoonController : MonoBehaviour
     public float timeAfterAnimation = 1f; // Czas, przez który obiekt pozostaje w miejscu po animacji
     public float moveDistance = 5f; // Odległość, na jaką obiekt ma się wysunąć
 
-    private bool isReloading;
+    [Header("TABLET")]
+    public GameObject rotatingObject; // Obiekt, który ma się obracać
+    private Quaternion initialRotation; // Początkowa rotacja obiektu
+    private Quaternion targetRotation;  // Docelowa rotacja obiektu
+    private bool isRotated = false; // Zmienna do śledzenia, czy obiekt jest obrócony wokół osi Z
+    private bool isRotating = false; // Zmienna do sprawdzenia, czy obiekt jest w trakcie rotacji
+    public float rotationDuration = 1f; // Czas trwania rotacji (można ustawić w inspektorze)
+
 
     void Start()
     {
@@ -79,6 +87,13 @@ public class HarpoonController : MonoBehaviour
             initialLocalPosition = movingObject.transform.localPosition;
             initialLocalRotation = movingObject.transform.localRotation;
         }
+
+        // Inicjalizujemy początkową rotację
+        if (rotatingObject != null)
+        {
+            initialRotation = rotatingObject.transform.localRotation;
+            targetRotation = initialRotation * Quaternion.Euler(0f, 90f, 0f); // Obrót o 90 stopni w prawo
+        }
     }
 
     void Update()
@@ -97,6 +112,26 @@ public class HarpoonController : MonoBehaviour
                 {
                     Vector3 shootDirection = GetMouseWorldPosition();
                     ShootHarpoon(shootDirection);
+                }
+            }
+
+            if (Input.GetMouseButtonDown(1)) // Prawy przycisk myszy (PPM)
+            {
+                if (Input.GetMouseButtonDown(1) && !isRotating) // Prawy przycisk myszy (PPM) oraz sprawdzamy, czy rotacja się nie odbywa
+                {
+                    if (isRotated)
+                    {
+                        // Jeśli obiekt jest obrócony, wróć do początkowej rotacji wokół osi Z
+                        StartCoroutine(RotateObject(rotatingObject, rotatingObject.transform.localRotation, initialRotation));
+                    }
+                    else
+                    {
+                        // Jeśli obiekt nie jest obrócony, obróć go o 90 stopni wokół osi Z
+                        StartCoroutine(RotateObject(rotatingObject, rotatingObject.transform.localRotation, initialRotation * Quaternion.Euler(0f, 0f, -90f)));
+                    }
+
+                    // Zmieniamy stan obrotu
+                    isRotated = !isRotated;
                 }
             }
 
@@ -132,6 +167,22 @@ public class HarpoonController : MonoBehaviour
         {
             currentShootDistance = Vector3.Distance(shootPosition, currentHarpoon.transform.position);
         }
+    }
+
+    private IEnumerator RotateObject(GameObject obj, Quaternion fromRotation, Quaternion toRotation)
+    {
+        isRotating = true; // Zaczynamy rotację, ustawiamy flagę na true
+        float elapsedTime = 0f;
+
+        while (elapsedTime < rotationDuration) // Używamy publicznej zmiennej rotationDuration
+        {
+            obj.transform.localRotation = Quaternion.Slerp(fromRotation, toRotation, elapsedTime / rotationDuration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        obj.transform.localRotation = toRotation; // Ustawiamy końcową rotację
+        isRotating = false; // Rotacja zakończona, ustawiamy flagę na false
     }
 
     private IEnumerator MoveObjectDuringReload()
