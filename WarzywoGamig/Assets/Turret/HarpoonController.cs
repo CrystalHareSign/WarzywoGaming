@@ -34,6 +34,22 @@ public class HarpoonController : MonoBehaviour
 
     private float reloadTimer = 0f; // Nowa zmienna do liczenia czasu przeładowania
 
+    [Header("TUBE - Pamietej aby całkowity czas wszyskich etapow musi byc równy ReloadTime")]
+    // Dodajemy referencję do obiektu, który ma się poruszać
+    public GameObject movingObject;
+    private Vector3 initialLocalPosition; // Zmienna do przechowywania początkowej lokalnej pozycji obiektu
+    private Quaternion initialLocalRotation; // Zmienna do przechowywania początkowej lokalnej rotacji obiektu
+    private bool isMoving = false;
+    private bool isMovingForward = true; // Nowa zmienna do śledzenia, w którą stronę porusza się obiekt
+
+    public float fullAnimationTime = 2f; // Czas trwania całej animacji (ruch do przodu i do tyłu)
+    public float timeBeforeAnimation = 1f; // Czas opóźnienia przed rozpoczęciem animacji
+    public float pauseTime = 1f; // Czas przerwy pomiędzy ruchem do przodu i do tyłu
+    public float timeAfterAnimation = 1f; // Czas, przez który obiekt pozostaje w miejscu po animacji
+    public float moveDistance = 5f; // Odległość, na jaką obiekt ma się wysunąć
+
+    private bool isReloading;
+
     void Start()
     {
         turretController = Object.FindFirstObjectByType<TurretController>();
@@ -55,6 +71,13 @@ public class HarpoonController : MonoBehaviour
         else
         {
             Debug.LogError("harpoonPrefab lub firePoint nie jest przypisany.");
+        }
+
+        // Inicjalizacja, ustawienie początkowej lokalnej pozycji i rotacji obiektu
+        if (movingObject != null)
+        {
+            initialLocalPosition = movingObject.transform.localPosition;
+            initialLocalRotation = movingObject.transform.localRotation;
         }
     }
 
@@ -90,7 +113,18 @@ public class HarpoonController : MonoBehaviour
             // Jeśli harpun wrócił, zaczynamy odliczać czas przeładowania
             if (reloadTimer > 0f)
             {
+                // Rozpoczynamy ruch obiektu podczas przeładowania
+                if (!isMoving)
+                {
+                    isMoving = true;
+                    StartCoroutine(MoveObjectDuringReload());
+                }
+
                 reloadTimer -= Time.deltaTime;
+            }
+            else
+            {
+                isMoving = false;
             }
         }
 
@@ -98,6 +132,69 @@ public class HarpoonController : MonoBehaviour
         {
             currentShootDistance = Vector3.Distance(shootPosition, currentHarpoon.transform.position);
         }
+    }
+
+    private IEnumerator MoveObjectDuringReload()
+    {
+        // Czekamy na opóźnienie przed animacją
+        yield return new WaitForSeconds(timeBeforeAnimation);
+
+        float elapsedTime = 0f;
+        Vector3 initialLocalPos = movingObject.transform.localPosition;
+        Vector3 targetPosition = initialLocalPos + Vector3.forward * moveDistance; // Cel ruchu do przodu
+        Vector3 reverseTargetPosition = initialLocalPos - Vector3.forward * moveDistance; // Cel ruchu do tyłu
+        Quaternion initialRotation = movingObject.transform.localRotation;
+
+        // Całkowity czas na animację
+        float movementTime = fullAnimationTime;
+
+        // Ruch do przodu (3/4 czasu)
+        float forwardMovementTime = movementTime * 3f / 4f;
+
+        // Ruch w tył (1/4 czasu)
+        float reverseMovementTime = movementTime / 4f;
+
+        // Czas na przerwę
+        float pauseDuration = pauseTime;
+
+        // Czas przeładowania minus czas animacji
+        float remainingTimeAfterAnim = reloadTimer - fullAnimationTime;
+
+        // Ruch do przodu
+        while (elapsedTime < forwardMovementTime)
+        {
+            float t = elapsedTime / forwardMovementTime;
+            movingObject.transform.localPosition = Vector3.Lerp(initialLocalPos, targetPosition, t);
+            movingObject.transform.localRotation = initialRotation;
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Przerwa po zakończeniu ruchu do przodu
+        yield return new WaitForSeconds(pauseDuration);
+
+        // Resetujemy czas, by rozpocząć ruch w tył
+        elapsedTime = 0f;
+
+        // Ruch w tył (1/4 czasu)
+        while (elapsedTime < reverseMovementTime)
+        {
+            float t = elapsedTime / reverseMovementTime;
+            movingObject.transform.localPosition = Vector3.Lerp(targetPosition, initialLocalPos, t);
+            movingObject.transform.localRotation = initialRotation;
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Zapewniamy, że po zakończeniu animacji obiekt wróci dokładnie na początkową pozycję
+        movingObject.transform.localPosition = initialLocalPos;
+        movingObject.transform.localRotation = initialRotation;
+
+        // Czekamy na pozostały czas po zakończeniu animacji
+        yield return new WaitForSeconds(remainingTimeAfterAnim);
+
+        // Kończymy animację
+        isMoving = false;
     }
 
     void ShootHarpoon(Vector3 targetPosition)

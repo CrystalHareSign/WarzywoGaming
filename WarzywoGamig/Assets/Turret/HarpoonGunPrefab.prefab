@@ -77,6 +77,12 @@ MonoBehaviour:
   showRangesInScene: 1
   isReturning: 0
   canShoot: 1
+  movingObject: {fileID: 7734753986823950443}
+  fullAnimationTime: 1
+  timeBeforeAnimation: 0.25
+  pauseTime: 0.25
+  timeAfterAnimation: 0.5
+  moveDistance: 7
 --- !u!1 &423747838433021579
 GameObject:
   m_ObjectHideFlags: 0
