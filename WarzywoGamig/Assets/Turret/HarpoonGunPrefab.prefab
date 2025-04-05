@@ -63,7 +63,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   harpoonPrefab: {fileID: 4978519809050357980, guid: 600dfc55fcceaa74db396d3660ded222, type: 3}
   firePoint: {fileID: 6439374676385515013}
-  treasureMountPoint: {fileID: 0}
+  treasureMountPoint: {fileID: 448290755306350194, guid: 600dfc55fcceaa74db396d3660ded222, type: 3}
   shootSpeed: 1000
   returnSpeed: 500
   maxRange: 200
@@ -1047,13 +1047,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5514715416611883722}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 8.6, y: 3.4, z: 6.3}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 8.6, y: 3.4, z: 8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 9011288291440278958}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!1 &7414780326164328713
 GameObject:
   m_ObjectHideFlags: 0
