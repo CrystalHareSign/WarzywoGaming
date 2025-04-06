@@ -48,3 +48,8 @@ MonoBehaviour:
     volume: 0.5
     type: 0
     enabled: 0
+  - name: TabletOn
+    clip: {fileID: 8300000, guid: ec637e20fe76f9c4485c220517a5a404, type: 3}
+    volume: 0.5
+    type: 0
+    enabled: 0
