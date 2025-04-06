@@ -171,8 +171,8 @@ MonoBehaviour:
   - name: Coal
     isActive: 1
     resourceCount: 0
-    minResourceCount: 10
-    maxResourceCount: 20
+    minResourceCount: 5
+    maxResourceCount: 10
 --- !u!114 &6248994432240596896
 MonoBehaviour:
   m_ObjectHideFlags: 0

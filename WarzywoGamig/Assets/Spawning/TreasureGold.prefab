@@ -171,8 +171,8 @@ MonoBehaviour:
   - name: Gold
     isActive: 1
     resourceCount: 0
-    minResourceCount: 10
-    maxResourceCount: 20
+    minResourceCount: 5
+    maxResourceCount: 10
 --- !u!114 &-1630196577918655703
 MonoBehaviour:
   m_ObjectHideFlags: 0

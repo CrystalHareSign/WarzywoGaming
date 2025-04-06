@@ -1,6 +1,9 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static TurretCollector;
 using static UnityEngine.InputSystem.LowLevel.InputStateHistory;
 
 public class HarpoonController : MonoBehaviour
@@ -33,6 +36,7 @@ public class HarpoonController : MonoBehaviour
     private Vector3 shootPosition;
 
     private TurretController turretController;
+    private TurretCollector turretCollector;
     private float reloadTimer = 0f; // Nowa zmienna do liczenia czasu przeładowania
     private bool isReloading;
 
@@ -42,7 +46,8 @@ public class HarpoonController : MonoBehaviour
     private Vector3 initialLocalPosition; // Zmienna do przechowywania początkowej lokalnej pozycji obiektu
     private Quaternion initialLocalRotation; // Zmienna do przechowywania początkowej lokalnej rotacji obiektu
     private bool isMoving = false;
-    private bool isMovingForward = true; // Nowa zmienna do śledzenia, w którą stronę porusza się obiekt
+
+    //private bool isMovingForward = true; // Nowa zmienna do śledzenia, w którą stronę porusza się obiekt
 
     public float fullAnimationTime = 2f; // Czas trwania całej animacji (ruch do przodu i do tyłu)
     public float timeBeforeAnimation = 1f; // Czas opóźnienia przed rozpoczęciem animacji
@@ -60,6 +65,14 @@ public class HarpoonController : MonoBehaviour
 
     public Canvas objectCanvas;  // Canvas na obiekcie
 
+    public TextMeshProUGUI[] categoryTexts;  // Tablica dla tekstów kategorii
+    public TextMeshProUGUI[] quantityTexts;  // Tablica dla tekstów ilości zasobów
+
+    // Odwołania do pól tekstowych na kanwie
+    public TextMeshProUGUI resourceText1;
+    public TextMeshProUGUI resourceText2;
+    public TextMeshProUGUI resourceText3;
+    public TextMeshProUGUI resourceText4;
 
     void Start()
     {
@@ -79,6 +92,18 @@ public class HarpoonController : MonoBehaviour
         {
             objectCanvas.gameObject.SetActive(false); // Na początku Canvas jest nieaktywny
         }
+
+        // Znajdź TurretCollector (można również przypisać bezpośrednio w inspektorze)
+        turretCollector = Object.FindFirstObjectByType<TurretCollector>();
+
+        // Sprawdź, czy TurretCollector został znaleziony
+        if (turretCollector == null)
+        {
+            Debug.LogError("TurretCollector not found!");
+            return;
+        }
+
+        UpdateMaxResourceTexts();
 
         turretController = Object.FindFirstObjectByType<TurretController>();
 
@@ -232,6 +257,43 @@ public class HarpoonController : MonoBehaviour
         }
 
         isRotating = false; // Rotacja zakończona, ustawiamy flagę na false
+    }
+
+    public void UpdateResourceUI(List<ResourceSlot> resourceSlots)
+    {
+        // Sprawdzamy, czy sloty są w ogóle dostępne
+        if (resourceSlots == null || resourceSlots.Count == 0)
+        {
+            Debug.LogWarning("No resource slots found.");
+            return;
+        }
+
+        // Dla każdego slotu wyświetlamy kategorię i ilość w UI
+        for (int i = 0; i < resourceSlots.Count; i++)
+        {
+            if (i < categoryTexts.Length && i < quantityTexts.Length)
+            {
+                var slot = resourceSlots[i];
+
+                // Jeśli slot zawiera kategorię, wyświetlamy ją
+                categoryTexts[i].text = string.IsNullOrEmpty(slot.resourceCategory) ? "" : slot.resourceCategory;
+                // Wyświetlamy ilość zasobów w slocie
+                quantityTexts[i].text = slot.resourceCount.ToString();
+            }
+        }
+    }
+    void UpdateMaxResourceTexts()
+    {
+        if (turretCollector == null)
+        {
+            return;
+        }
+
+        // Zakładając, że maxResourcePerSlot to lista 4 wartości
+        resourceText1.text = turretCollector.maxResourcePerSlot.ToString();
+        resourceText2.text = turretCollector.maxResourcePerSlot.ToString();
+        resourceText3.text = turretCollector.maxResourcePerSlot.ToString();
+        resourceText4.text = turretCollector.maxResourcePerSlot.ToString();
     }
 
     private IEnumerator MoveObjectDuringReload()

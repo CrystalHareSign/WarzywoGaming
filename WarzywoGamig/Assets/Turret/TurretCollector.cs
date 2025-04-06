@@ -15,8 +15,12 @@ public class TurretCollector : MonoBehaviour
     public List<ResourceSlot> resourceSlots = new List<ResourceSlot>();
     public int maxResourcePerSlot = 10;
 
+    public HarpoonController harpoonController;
+
     void Start()
     {
+        //resourceSlots = new List<ResourceSlot>(GetComponentsInChildren<ResourceSlot>());
+
         // Initialize resource slots with empty categories, zero resources, and no visual representation
         foreach (var slot in resourceSlots)
         {
@@ -107,6 +111,14 @@ public class TurretCollector : MonoBehaviour
 
                         // Aktualizacja lub stworzenie nowego wizualnego obiektu zasobu
                         UpdateResourceVisual(slot, treasureResources.gameObject, category.name, slot.resourceCount);
+
+                        harpoonController = Object.FindFirstObjectByType<HarpoonController>();  // Pobieramy HarpoonController, jeœli nie jest przypisany w inspektorze
+
+                        // Przesy³amy dane do HarpoonController
+                        if (harpoonController != null)
+                        {
+                            harpoonController.UpdateResourceUI(resourceSlots);
+                        }
 
                         if (remainingResources == 0)
                         {
