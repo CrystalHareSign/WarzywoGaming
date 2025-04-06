@@ -266,10 +266,17 @@ public class HarpoonController : MonoBehaviour
 
         obj.transform.localRotation = toRotation; // Ustawiamy końcową rotację
 
-        // Po zakończeniu rotacji, dezaktywujemy Canvas jeśli obiekt wrócił do pierwotnej rotacji
+        // Po zakończeniu rotacji, aktywujemy Canvas jeśli obiekt wrócił do pierwotnej rotacji
         if (objectCanvas != null)
         {
             objectCanvas.gameObject.SetActive(true);
+
+            foreach (var playSoundOnObject in playSoundObjects)
+            {
+                if (playSoundOnObject == null) continue;
+
+                playSoundOnObject.PlaySound("TabletOn", 0.6f, false);
+            }
         }
 
         isRotating = false; // Rotacja zakończona, ustawiamy flagę na false
