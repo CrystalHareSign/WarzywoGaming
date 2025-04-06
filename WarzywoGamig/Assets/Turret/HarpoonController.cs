@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static UnityEngine.InputSystem.LowLevel.InputStateHistory;
 
 public class HarpoonController : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class HarpoonController : MonoBehaviour
     public float shootSpeed = 20f;
     public float returnSpeed = 10f;
     public float maxRange = 50f;
+    [Tooltip("treasureLifetime =    RT 50%\r\n        fullAnimationTime =   RT 50%\r\n        timeBeforeAnimation = RT 12,5%\r\n        pauseTime =           RT 12,5%\r\n        timeAfterAnimation =  RT 25%\r\n")]
     public float reloadTime = 2f; // Czas przeładowania
     public float treasureLifetime = 1f;
     [Header("! DRGANIE !")]
@@ -59,6 +61,13 @@ public class HarpoonController : MonoBehaviour
 
     void Start()
     {
+        // Zakładając, że zmienna Reload jest już zdefiniowana
+        treasureLifetime = reloadTime * 0.5f;
+        fullAnimationTime = reloadTime * 0.5f;
+        timeBeforeAnimation = reloadTime * 0.125f;
+        pauseTime = reloadTime * 0.125f;
+        timeAfterAnimation = reloadTime * 0.25f;
+
         turretController = Object.FindFirstObjectByType<TurretController>();
 
         if (harpoonPrefab != null && firePoint != null)
