@@ -74,8 +74,15 @@ public class HarpoonController : MonoBehaviour
     public TextMeshProUGUI resourceText3;
     public TextMeshProUGUI resourceText4;
 
+    // Lista wszystkich obiektów, które posiadają PlaySoundOnObject
+    private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
+
     void Start()
     {
+
+        // Znajdź wszystkie obiekty posiadające PlaySoundOnObject i dodaj do listy
+        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+
         // Zakładając, że zmienna Reload jest już zdefiniowana
         treasureLifetime = reloadTime * 0.5f;
         fullAnimationTime = reloadTime * 0.5f;
@@ -147,6 +154,15 @@ public class HarpoonController : MonoBehaviour
         {
             if (Input.GetMouseButtonDown(0) && canShoot && !(turretController.isLowering) && reloadTimer <= 0f) // Sprawdzamy, czy czas przeładowania minął
             {
+                // Zatrzymaj wszystkie odtwarzane dźwięki
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+
+                    playSoundOnObject.PlaySound("HarpoonFire", 0.6f, false);
+                    playSoundOnObject.PlaySound("HarpoonChainFire", 0.6f, false);
+                }
+
                 GameObject target = FindClosestTreasureInView();
                 if (target != null)
                 {
@@ -322,6 +338,13 @@ public class HarpoonController : MonoBehaviour
         // Czas przeładowania minus czas animacji
         float remainingTimeAfterAnim = reloadTimer - fullAnimationTime;
 
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("Tube1", 0.5f, false);
+        }
+
         // Ruch do przodu
         while (elapsedTime < forwardMovementTime)
         {
@@ -334,6 +357,13 @@ public class HarpoonController : MonoBehaviour
 
         // Przerwa po zakończeniu ruchu do przodu
         yield return new WaitForSeconds(pauseDuration);
+
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("Tube2", 0.5f, false);
+        }
 
         // Resetujemy czas, by rozpocząć ruch w tył
         elapsedTime = 0f;
@@ -354,6 +384,14 @@ public class HarpoonController : MonoBehaviour
 
         // Czekamy na pozostały czas po zakończeniu animacji
         yield return new WaitForSeconds(remainingTimeAfterAnim);
+
+
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("Tube3", 0.5f, false);
+        }
 
         // Kończymy animację
         isMoving = false;
@@ -407,6 +445,17 @@ public class HarpoonController : MonoBehaviour
                 // Po powrocie harpunu, zaczynamy czas przeładowania
                 reloadTimer = reloadTime; // Zainicjuj czas przeładowania
                 canShoot = true; // Pozwól na strzał po zakończeniu przeładowania
+
+                // Zatrzymaj wszystkie odtwarzane dźwięki
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+
+                    //playSoundOnObject.StopSound("HarpoonFire");
+                    //playSoundOnObject.StopSound("HarpoonChainFire");
+
+                    //playSoundOnObject.PlaySound("HarpoonChainBack2", 0.3f, false);
+                }
             }
         }
         else
@@ -425,6 +474,13 @@ public class HarpoonController : MonoBehaviour
         else
         {
             Debug.LogError("harpoonRb nie jest przypisany.");
+        }
+
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("HarpoonChainBack2", 0.1f, false);
         }
     }
 

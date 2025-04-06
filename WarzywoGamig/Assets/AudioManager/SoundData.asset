@@ -28,3 +28,23 @@ MonoBehaviour:
     volume: 0.5
     type: 2
     enabled: 0
+  - name: HarponFire
+    clip: {fileID: 8300000, guid: 16bd3ebad59aff54393b1ded0af03ea9, type: 3}
+    volume: 0.5
+    type: 0
+    enabled: 0
+  - name: HarponChainFire
+    clip: {fileID: 8300000, guid: c454cb7d010f9c943882faddf778b744, type: 3}
+    volume: 0.5
+    type: 0
+    enabled: 0
+  - name: HarponChainBack1
+    clip: {fileID: 8300000, guid: 6e03f52888ae71e4ca9ec51d971832d8, type: 3}
+    volume: 0.5
+    type: 0
+    enabled: 0
+  - name: HarponChainBack2
+    clip: {fileID: 8300000, guid: 40c7d93c081832f4c9e40e118247d6e5, type: 3}
+    volume: 0.5
+    type: 0
+    enabled: 0
