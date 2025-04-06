@@ -31,7 +31,6 @@ public class HarpoonController : MonoBehaviour
     private Vector3 shootPosition;
 
     private TurretController turretController;
-
     private float reloadTimer = 0f; // Nowa zmienna do liczenia czasu przeładowania
     private bool isReloading;
 
@@ -148,15 +147,31 @@ public class HarpoonController : MonoBehaviour
             // Jeśli harpun wrócił, zaczynamy odliczać czas przeładowania
             if (reloadTimer > 0f)
             {
-                // Rozpoczynamy ruch obiektu podczas przeładowania
-                if (!isMoving)
+                // Pobieramy komponent Harpoon z currentHarpoon
+                Harpoon harpoonScript = currentHarpoon.GetComponent<Harpoon>();
+
+                if (harpoonScript != null)
                 {
-                    isMoving = true;
-                    StartCoroutine(MoveObjectDuringReload());
+                    // Ustawiamy zmienną hasTreasureAttached na wartość z harpoonScript
+                    bool hasTreasure = harpoonScript.hasTreasureAttached;
+                    //Debug.Log("hasTreasureAttached: " + hasTreasure);
+
+                    // Rozpoczynamy ruch obiektu podczas przeładowania tylko jeśli jest dołączony skarb
+                    if (!isMoving && hasTreasure)
+                    {
+                        //Debug.Log("Startuję ruch obiektu!");
+                        isMoving = true;
+                        StartCoroutine(MoveObjectDuringReload());
+                    }
+                }
+                else
+                {
+                    Debug.LogError("Nie znaleziono komponentu Harpoon na obiekcie currentHarpoon!");
                 }
 
                 reloadTimer -= Time.deltaTime;
             }
+
             else
             {
                 isMoving = false;

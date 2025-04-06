@@ -83,7 +83,7 @@ MonoBehaviour:
   timeAfterAnimation: 0.5
   moveDistance: 7
   rotatingObject: {fileID: 9122766125232458816}
-  rotationSpeed: 30
+  rotationDuration: 0.2
 --- !u!1 &423747838433021579
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Harpoon : MonoBehaviour
@@ -7,6 +8,7 @@ public class Harpoon : MonoBehaviour
     private TurretCollector turretCollector; // Dodaj referencję do TurretCollector
     public Transform treasureMountPoint; // Nowy punkt montażu dla Treasure
     public float treasureLifetime; // Czas, po którym Treasure zostaje zniszczone
+    public bool hasTreasureAttached = false;
 
     private void Start()
     {
@@ -49,6 +51,8 @@ public class Harpoon : MonoBehaviour
         // Jeśli harpoon zderzył się z obiektem z tagiem "Treasure"
         if (collision.gameObject.CompareTag("Treasure"))
         {
+            hasTreasureAttached = true;
+
             // Zapisz pozycję i rotację oryginalnego obiektu
             Vector3 originalPosition = collision.transform.position;
             Quaternion originalRotation = collision.transform.rotation;
@@ -97,6 +101,14 @@ public class Harpoon : MonoBehaviour
 
             // Zniszcz kopię po treasureLifetime
             Destroy(treasureCopy, treasureLifetime);
+
+            // Ustaw flagę na false dopiero po zniszczeniu skarbu
+            StartCoroutine(ResetTreasureAttachment());
         }
+    }
+    private IEnumerator ResetTreasureAttachment()
+    {
+        yield return new WaitForSeconds(treasureLifetime);  // Czekaj na zniszczenie kopii skarbu
+        hasTreasureAttached = false;
     }
 }
