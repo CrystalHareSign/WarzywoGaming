@@ -58,6 +58,8 @@ public class HarpoonController : MonoBehaviour
     private bool isRotating = false; // Zmienna do sprawdzenia, czy obiekt jest w trakcie rotacji
     public float rotationDuration = 1f; // Czas trwania rotacji (można ustawić w inspektorze)
 
+    public Canvas objectCanvas;  // Canvas na obiekcie
+
 
     void Start()
     {
@@ -67,6 +69,16 @@ public class HarpoonController : MonoBehaviour
         timeBeforeAnimation = reloadTime * 0.125f;
         pauseTime = reloadTime * 0.125f;
         timeAfterAnimation = reloadTime * 0.25f;
+
+        if (objectCanvas == null)
+        {
+            objectCanvas = GetComponentInChildren<Canvas>();
+        }
+
+        if (objectCanvas != null)
+        {
+            objectCanvas.gameObject.SetActive(false); // Na początku Canvas jest nieaktywny
+        }
 
         turretController = Object.FindFirstObjectByType<TurretController>();
 
@@ -127,6 +139,12 @@ public class HarpoonController : MonoBehaviour
             {
                 if (Input.GetMouseButtonDown(1) && !isRotating) // Prawy przycisk myszy (PPM) oraz sprawdzamy, czy rotacja się nie odbywa
                 {
+                    // Aktywujemy lub dezaktywujemy Canvas przed rozpoczęciem rotacji
+                    if (objectCanvas != null)
+                    {
+                        objectCanvas.gameObject.SetActive(false);
+                    }
+
                     if (isRotated)
                     {
                         // Jeśli obiekt jest obrócony, wróć do początkowej rotacji wokół osi Z
@@ -206,6 +224,13 @@ public class HarpoonController : MonoBehaviour
         }
 
         obj.transform.localRotation = toRotation; // Ustawiamy końcową rotację
+
+        // Po zakończeniu rotacji, dezaktywujemy Canvas jeśli obiekt wrócił do pierwotnej rotacji
+        if (objectCanvas != null)
+        {
+            objectCanvas.gameObject.SetActive(true);
+        }
+
         isRotating = false; // Rotacja zakończona, ustawiamy flagę na false
     }
 
