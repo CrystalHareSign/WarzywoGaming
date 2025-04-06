@@ -68,6 +68,12 @@ public class TurretCollector : MonoBehaviour
                     slot.resourceVisual = null;
                 }
 
+                // Przesy³amy dane do HarpoonController
+                if (harpoonController != null)
+                {
+                    harpoonController.UpdateResourceUI(resourceSlots);
+                }
+
                 return;
             }
         }
