@@ -275,7 +275,7 @@ public class HarpoonController : MonoBehaviour
             {
                 if (playSoundOnObject == null) continue;
 
-                playSoundOnObject.PlaySound("TabletOn", 0.6f, false);
+                playSoundOnObject.PlaySound("TabletOn", 0.8f, false);
             }
         }
 

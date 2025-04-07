@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class TurretController : MonoBehaviour
@@ -29,6 +30,9 @@ public class TurretController : MonoBehaviour
     private bool isCooldown = false; // Flaga kontrolująca opóźnienie przy opuszczaniu
 
     public static TurretController Instance;
+
+    // Lista wszystkich obiektów, które posiadają PlaySoundOnObject
+    private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
     private void Awake()
     {
         if (Instance == null)
@@ -46,6 +50,9 @@ public class TurretController : MonoBehaviour
 
     void Start()
     {
+        // Znajdź wszystkie obiekty posiadające PlaySoundOnObject i dodaj do listy
+        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+
         playerMovement = Object.FindFirstObjectByType<PlayerMovement>();
         inventory = Object.FindFirstObjectByType<Inventory>();
 
@@ -81,6 +88,8 @@ public class TurretController : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.Q) && isRaised && !isCooldown && !harpoonController.isReturning && harpoonController.canShoot)
             {
                 StartCoroutine(LowerTurret());
+
+                
             }
 
             RotateEnterAreaWithPlayer();
@@ -189,6 +198,15 @@ public class TurretController : MonoBehaviour
 
     private IEnumerator RaiseTurret()
     {
+
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("TurretUp", 0.5f, false);
+
+        }
+
         float targetHeight = turretBase.position.y + raiseHeight;
         float targetEnterAreaHeight = enterArea.position.y + raiseHeight;
 
@@ -219,6 +237,14 @@ public class TurretController : MonoBehaviour
 
     private IEnumerator LowerTurret()
     {
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("TurretDown", 0.5f, false);
+
+        }
+
         isLowering = true; // Rozpocznij opuszczanie
         isCooldown = true;
         float targetHeight = turretBase.position.y - raiseHeight;
