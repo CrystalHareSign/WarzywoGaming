@@ -25,6 +25,10 @@ public class GridManager : MonoBehaviour
 
     public static GridManager Instance { get; private set; }
 
+    // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
+    private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
+
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -48,6 +52,10 @@ public class GridManager : MonoBehaviour
 
     void Start()
     {
+
+        // ZnajdŸ wszystkie obiekty posiadaj¹ce PlaySoundOnObject i dodaj do listy
+        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+
         gridAreaWidth = gridArea.localScale.x;
         gridAreaHeight = gridArea.localScale.z;
         CreateGrid();
@@ -186,6 +194,13 @@ public class GridManager : MonoBehaviour
         {
             Destroy(previewObject);
             previewObject = null;
+        }
+
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("LootDrop", 0.5f, false);
         }
 
         // Ukrywamy kafelki (lub inne obiekty zwi¹zane z trybem budowania)
@@ -375,6 +390,13 @@ public class GridManager : MonoBehaviour
                 // Tworzymy obiekt w miejscu docelowym
                 GameObject buildedObject = Instantiate(buildingPrefabs[currentPrefabIndex], placementPosition, previewObject.transform.rotation);
                 buildedObject.SetActive(true);
+
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+
+                    playSoundOnObject.PlaySound("LootPlace", 0.7f, false);
+                }
 
                 // Dodanie LootColliderController do nowego obiektu
                 Collider buildedCollider = buildedObject.GetComponent<Collider>();

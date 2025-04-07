@@ -40,8 +40,14 @@ public class Inventory : MonoBehaviour
     public Vector3 lootPositionOffset_2x2 = new Vector3(0f, 1.5f, 0f); // Ręczna pozycja lootów 2x2 względem gracza
     public Vector3 lootRotationOffset_2x2 = new Vector3(0f, 0f, 0f); // Ręczna rotacja lootów 2x2 względem gracza
 
+    // Lista wszystkich obiektów, które posiadają PlaySoundOnObject
+    private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
+
     void Start()
     {
+        // Znajdź wszystkie obiekty posiadające PlaySoundOnObject i dodaj do listy
+        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+
         weapons.Clear();
         items.Clear();
         loot.Clear();
@@ -131,6 +137,13 @@ public class Inventory : MonoBehaviour
                             GridManager.Instance.UnmarkTilesAsOccupied(previousPosition, prefabSize);
                             GridManager.Instance.AddToBuildingPrefabs(hit.collider.gameObject);
                         }
+
+                        foreach (var playSoundOnObject in playSoundObjects)
+                        {
+                            if (playSoundOnObject == null) continue;
+
+                            playSoundOnObject.PlaySound("LootPick", 0.8f, false);
+                        }
                     }
                 }
                 else
@@ -146,6 +159,14 @@ public class Inventory : MonoBehaviour
                         }
                         // Odświeżenie listy, aby utrzymać kolejność chronologiczną
                         RefreshItemListChronologically();
+
+                        foreach (var playSoundOnObject in playSoundObjects)
+                        {
+                            if (playSoundOnObject == null) continue;
+
+                            playSoundOnObject.PlaySound("PickUpLiquid", 0.8f, false);
+                            playSoundOnObject.PlaySound("PickUpSteam", 0.6f, false);
+                        }
                     }
                 }
 

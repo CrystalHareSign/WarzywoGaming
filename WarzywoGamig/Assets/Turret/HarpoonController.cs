@@ -159,8 +159,8 @@ public class HarpoonController : MonoBehaviour
                 {
                     if (playSoundOnObject == null) continue;
 
-                    playSoundOnObject.PlaySound("HarpoonFire", 0.6f, false);
-                    playSoundOnObject.PlaySound("HarpoonChainFire", 0.6f, false);
+                    playSoundOnObject.PlaySound("HarpoonFire", 0.5f, false);
+                    playSoundOnObject.PlaySound("HarpoonChainFire", 0.8f, false);
                 }
 
                 GameObject target = FindClosestTreasureInView();

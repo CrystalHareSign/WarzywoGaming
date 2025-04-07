@@ -150,7 +150,7 @@ public class TurretCollector : MonoBehaviour
             slot.resourceVisual = Instantiate(originalResource, slot.slotTransform.position, slot.slotTransform.rotation);
             slot.resourceVisual.transform.SetParent(slot.slotTransform);
             slot.resourceVisual.transform.localPosition = Vector3.zero;
-            slot.resourceVisual.transform.localScale = Vector3.one * 0.2f;
+            slot.resourceVisual.transform.localScale = Vector3.one * 1.0f;
 
             // Usuwanie niepotrzebnych komponentów
             foreach (var script in slot.resourceVisual.GetComponents<MonoBehaviour>())

@@ -53,3 +53,38 @@ MonoBehaviour:
     volume: 0.5
     type: 0
     enabled: 0
+  - name: TurretUp
+    clip: {fileID: 8300000, guid: 9d6075b27772d4948985182ebcdcc46f, type: 3}
+    volume: 0.5
+    type: 0
+    enabled: 0
+  - name: TurretDown
+    clip: {fileID: 8300000, guid: 9285edf632819f849a95df66a686b2d8, type: 3}
+    volume: 0.5
+    type: 0
+    enabled: 0
+  - name: PickUpLiquid
+    clip: {fileID: 8300000, guid: 79fbdd5cdec6ccd46ae1a6b3a35b3769, type: 3}
+    volume: 0.5
+    type: 0
+    enabled: 0
+  - name: PickUpSteam
+    clip: {fileID: 8300000, guid: b6329ecbbe8da8b4897cb483fb662bd6, type: 3}
+    volume: 0.5
+    type: 0
+    enabled: 0
+  - name: LootDrop
+    clip: {fileID: 8300000, guid: 2995531aff8008549aff5cb511e748c2, type: 3}
+    volume: 0.5
+    type: 0
+    enabled: 0
+  - name: LootPick
+    clip: {fileID: 8300000, guid: 8d02ebe329217e341941be1a37eefbb7, type: 3}
+    volume: 0.5
+    type: 0
+    enabled: 0
+  - name: LootPlace
+    clip: {fileID: 8300000, guid: bdacb6d6a2e9f6d459d8152a596e27a9, type: 3}
+    volume: 0.5
+    type: 0
+    enabled: 0
