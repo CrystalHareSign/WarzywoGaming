@@ -95,7 +95,7 @@ public class SceneChanger : MonoBehaviour
             float stormVolume = 0.2f;
             playSoundOnObject.PlaySound("DieselBusEngine", 1f, true);
             playSoundOnObject.PlaySound("TiresOnGravel", 0.05f, true);
-            playSoundOnObject.PlaySound("Storm", stormVolume, true);                            /////// TO
+            //playSoundOnObject.PlaySound("Storm", stormVolume, true);                            /////// TO
 
             // Znajdü obiekt AudioChanger w scenie
             AudioChanger audioChanger = Object.FindFirstObjectByType<AudioChanger>();

@@ -62,8 +62,14 @@ public class LootColliderController : MonoBehaviour
 
     private void ActivateCollider()
     {
+        if (lootCollider == null)
+        {
+            Debug.LogError("Nie mo¿na aktywowaæ collidera — lootCollider jest null!");
+            return;
+        }
+
         lootCollider.isTrigger = false;
-        Debug.Log(" Collider lootu aktywowany!");
+        Debug.Log("Collider lootu aktywowany!");
         Destroy(this); // Usuwamy skrypt po aktywacji
     }
 }

@@ -200,7 +200,7 @@ public class GridManager : MonoBehaviour
         {
             if (playSoundOnObject == null) continue;
 
-            playSoundOnObject.PlaySound("LootDrop", 0.5f, false);
+            playSoundOnObject.PlaySound("LootDrop", 0.6f, false);
         }
 
         // Ukrywamy kafelki (lub inne obiekty zwi¹zane z trybem budowania)

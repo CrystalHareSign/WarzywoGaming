@@ -142,7 +142,7 @@ public class Inventory : MonoBehaviour
                         {
                             if (playSoundOnObject == null) continue;
 
-                            playSoundOnObject.PlaySound("LootPick", 0.8f, false);
+                            playSoundOnObject.PlaySound("LootPick", 1.0f, false);
                         }
                     }
                 }
