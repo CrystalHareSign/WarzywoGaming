@@ -8,131 +8,128 @@ public class PlaySoundOnObject : MonoBehaviour
     {
         public AudioSource audioSource;
         public string soundName;
+        public AudioManager.SoundType soundType;
+        public bool isPlaying;
     }
 
     public List<AudioSourceWithName> audioSourcesWithNames = new List<AudioSourceWithName>();
+    private List<AudioSourceWithName> activeAudioSources = new List<AudioSourceWithName>();
 
-    public void PlaySound(string soundName, float volume = 1f, bool loop = false)
+    // Sprawdzanie poprawnoœci listy audio sources
+    private void CheckAudioSourceList()
     {
         if (audioSourcesWithNames == null || audioSourcesWithNames.Count == 0)
         {
             Debug.LogWarning($"Brak AudioSource w obiekcie {gameObject.name}!");
+        }
+    }
+
+    private AudioSourceWithName GetAudioSourceByName(string soundName)
+    {
+        return audioSourcesWithNames.Find(x => x.soundName == soundName);
+    }
+
+    public void PlaySound(string soundName, float volume = 1f, bool loop = false)
+    {
+        CheckAudioSourceList();
+
+        var foundSource = GetAudioSourceByName(soundName);
+        if (foundSource == null || foundSource.audioSource == null || foundSource.audioSource.clip == null)
+        {
+            Debug.LogWarning($"Brak dŸwiêku '{soundName}' w obiekcie {gameObject.name}!");
             return;
         }
 
-        AudioSourceWithName foundSource = audioSourcesWithNames.Find(x => x.soundName == soundName);
-
-        if (foundSource != null && foundSource.audioSource != null)
+        // Uwzglêdnienie aktualnej g³oœnoœci zale¿nej od typu dŸwiêku
+        float finalVolume = volume;
+        switch (foundSource.soundType)
         {
-            if (foundSource.audioSource.clip == null)
-            {
-                Debug.LogWarning($"AudioSource '{soundName}' w obiekcie {gameObject.name} nie ma przypisanego pliku dŸwiêkowego!");
-                return;
-            }
+            case AudioManager.SoundType.Music:
+                finalVolume *= AudioManager.Instance.masterMusicVolume;
+                break;
+            case AudioManager.SoundType.SFX:
+                finalVolume *= AudioManager.Instance.masterSFXVolume;
+                break;
+            case AudioManager.SoundType.Ambient:
+                finalVolume *= AudioManager.Instance.masterAmbientVolume;
+                break;
+        }
 
-            foundSource.audioSource.loop = loop;
-            foundSource.audioSource.volume = volume;
+        foundSource.audioSource.loop = loop;
+        foundSource.audioSource.volume = finalVolume;
 
-            if (loop)
+        if (loop)
+        {
+            if (!foundSource.audioSource.isPlaying)
             {
-                if (!foundSource.audioSource.isPlaying)
-                {
-                    foundSource.audioSource.Play();
-                    //Debug.Log($"Odtworzono pêtlê dŸwiêku '{soundName}' w obiekcie {gameObject.name}.");
-                }
-            }
-            else
-            {
-                foundSource.audioSource.PlayOneShot(foundSource.audioSource.clip, volume);
-                Debug.Log($"Odtworzono dŸwiêk '{soundName}' na obiekcie {gameObject.name}.");
+                foundSource.audioSource.Play();
+                activeAudioSources.Add(foundSource);  // Dodajemy do aktywnych Ÿróde³
+                Debug.Log($"Odtworzono pêtlê dŸwiêku '{soundName}' w obiekcie {gameObject.name}.");
             }
         }
         else
         {
-            //Debug.LogWarning($"DŸwiêk '{soundName}' nie jest przypisany do {gameObject.name}!");
+            foundSource.audioSource.PlayOneShot(foundSource.audioSource.clip, finalVolume);
+            activeAudioSources.Add(foundSource);  // Dodajemy do aktywnych Ÿróde³
+            Debug.Log($"Odtworzono dŸwiêk '{soundName}' na obiekcie {gameObject.name}.");
+        }
+    }
+
+    // Metoda do dynamicznej zmiany g³oœnoœci dla aktywnych dŸwiêków
+    public void UpdateActiveSoundsVolume()
+    {
+        foreach (var activeSource in activeAudioSources)
+        {
+            if (activeSource.isPlaying)
+            {
+                float finalVolume = 0f;
+                switch (activeSource.soundType)
+                {
+                    case AudioManager.SoundType.Music:
+                        finalVolume = activeSource.audioSource.volume * AudioManager.Instance.masterMusicVolume;
+                        break;
+                    case AudioManager.SoundType.SFX:
+                        finalVolume = activeSource.audioSource.volume * AudioManager.Instance.masterSFXVolume;
+                        break;
+                    case AudioManager.SoundType.Ambient:
+                        finalVolume = activeSource.audioSource.volume * AudioManager.Instance.masterAmbientVolume;
+                        break;
+                }
+                activeSource.audioSource.volume = finalVolume; // Zaktualizowanie g³oœnoœci
+            }
         }
     }
 
     public void StopSound(string soundName)
     {
-        if (audioSourcesWithNames == null || audioSourcesWithNames.Count == 0)
+        CheckAudioSourceList();
+
+        var foundSource = GetAudioSourceByName(soundName);
+        if (foundSource == null || foundSource.audioSource == null)
         {
-            Debug.LogWarning($"Brak AudioSource w obiekcie {gameObject.name}!");
+            Debug.LogWarning($"DŸwiêk '{soundName}' nie znaleziony lub audioSource jest null.");
             return;
         }
 
-        AudioSourceWithName foundSource = audioSourcesWithNames.Find(x => x.soundName == soundName);
-
-        if (foundSource != null && foundSource.audioSource != null)
+        if (foundSource.audioSource.isPlaying)
         {
-            if (foundSource.audioSource.isPlaying)
-            {
-                foundSource.audioSource.Stop();
-            }
-            else
-            {
-                //Debug.LogWarning($"DŸwiêk '{soundName}' nie jest aktualnie odtwarzany na {gameObject.name}.");
-            }
-        }
-        else
-        {
-            //Debug.LogWarning($"DŸwiêk '{soundName}' nie zosta³ znaleziony lub przypisanie audioSource jest niepoprawne w obiekcie {gameObject.name}.");
+            foundSource.audioSource.Stop();
+            activeAudioSources.Remove(foundSource);  // Usuwamy z listy aktywnych dŸwiêków
+            Debug.Log($"Zatrzymano dŸwiêk '{soundName}' w obiekcie {gameObject.name}.");
         }
     }
 
     public void StopAllSounds()
     {
-        if (audioSourcesWithNames == null || audioSourcesWithNames.Count == 0)
-        {
-            Debug.LogWarning($"Brak AudioSource w obiekcie {gameObject.name}!");
-            return;
-        }
+        CheckAudioSourceList();
 
         foreach (var source in audioSourcesWithNames)
         {
             if (source.audioSource != null && source.audioSource.isPlaying)
             {
                 source.audioSource.Stop();
+                activeAudioSources.Remove(source);  // Usuwamy z listy aktywnych dŸwiêków
             }
         }
-    }
-
-    public static void PlaySoundGlobal(string soundName, float volume = 1f, bool loop = false)
-    {
-        PlaySoundOnObject[] allAudioManagers = Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None);
-
-        foreach (var manager in allAudioManagers)
-        {
-            AudioSourceWithName foundSource = manager.audioSourcesWithNames.Find(x => x.soundName == soundName);
-            if (foundSource != null && foundSource.audioSource != null)
-            {
-                if (foundSource.audioSource.clip == null)
-                {
-                    Debug.LogWarning($"AudioSource '{soundName}' w obiekcie {manager.gameObject.name} nie ma przypisanego pliku dŸwiêkowego!");
-                    return;
-                }
-
-                foundSource.audioSource.loop = loop;
-                foundSource.audioSource.volume = volume;
-
-                if (loop)
-                {
-                    if (!foundSource.audioSource.isPlaying)
-                    {
-                        foundSource.audioSource.Play();
-                        Debug.Log($"Odtworzono pêtlê dŸwiêku '{soundName}' w obiekcie {manager.gameObject.name}.");
-                    }
-                }
-                else
-                {
-                    foundSource.audioSource.PlayOneShot(foundSource.audioSource.clip, volume);
-                    Debug.Log($"Odtworzono dŸwiêk '{soundName}' na obiekcie {manager.gameObject.name}.");
-                }
-
-                return; // Przerywamy pêtlê po znalezieniu pierwszego pasuj¹cego dŸwiêku
-            }
-        }
-
-        Debug.LogWarning($"DŸwiêk '{soundName}' nie zosta³ znaleziony w ¿adnym obiekcie w scenie!");
     }
 }

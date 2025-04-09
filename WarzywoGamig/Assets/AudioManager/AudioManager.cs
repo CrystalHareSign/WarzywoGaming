@@ -118,18 +118,15 @@ public class AudioManager : MonoBehaviour
     public void SetMusicVolume(float volume)
     {
         masterMusicVolume = volume;
-        musicSource.volume = volume;
     }
 
     public void SetSFXVolume(float volume)
     {
         masterSFXVolume = volume;
-        // sfxSource.volume = volume; // Dla PlayOneShot g³oœnoœæ jest ustawiana w PlaySound, wiêc ta linia nie jest potrzebna
     }
 
     public void SetAmbientVolume(float volume)
     {
         masterAmbientVolume = volume;
-        ambientSource.volume = volume;
     }
 }
