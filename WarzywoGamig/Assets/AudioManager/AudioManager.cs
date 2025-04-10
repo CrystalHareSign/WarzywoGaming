@@ -120,19 +120,19 @@ public class AudioManager : MonoBehaviour
     public void SetMusicVolume(float volume)
     {
         masterMusicVolume = volume;
-        Debug.Log($"Nowa g³oœnoœæ muzyki: {masterMusicVolume}");
+        //Debug.Log($"Nowa g³oœnoœæ muzyki: {masterMusicVolume}");
     }
 
     public void SetSFXVolume(float volume)
     {
         masterSFXVolume = volume;
-        Debug.Log($"Nowa g³oœnoœæ SFX: {masterSFXVolume}");
+        //Debug.Log($"Nowa g³oœnoœæ SFX: {masterSFXVolume}");
     }
 
     public void SetAmbientVolume(float volume)
     {
         masterAmbientVolume = volume;
-        Debug.Log($"Nowa g³oœnoœæ ambientu: {masterAmbientVolume}");
+        //Debug.Log($"Nowa g³oœnoœæ ambientu: {masterAmbientVolume}");
     }
 
 }

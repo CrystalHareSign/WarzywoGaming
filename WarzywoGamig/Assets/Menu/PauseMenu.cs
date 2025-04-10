@@ -55,6 +55,7 @@ public class PauseMenu : MonoBehaviour
     {
         pauseMenuUI.SetActive(false); // Ukryj menu pauzy
         optionsMenuUI.SetActive(true); // Poka¿ menu opcji
+        Time.timeScale = 0.01f;
     }
 
     public void BackToPauseMenu()

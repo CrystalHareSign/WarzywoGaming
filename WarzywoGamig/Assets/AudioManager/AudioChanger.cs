@@ -57,20 +57,29 @@ public class AudioChanger : MonoBehaviour
         {
             CurrentDistance = GetClosestDistanceToObjects();
 
-            // Im wiêksza odleg³oœæ, tym bardziej wyciszony i wyt³umiony dŸwiêk
+            // Wyliczenie wspó³czynnika odleg³oœci
             float distanceFactor = Mathf.InverseLerp(MinDistance, MaxDistance, CurrentDistance);
+
+            // Zmiana cutoff i volume z uwzglêdnieniem odleg³oœci
             targetCutoff = Mathf.Lerp(outdoorCutoff, indoorCutoff, distanceFactor);
-            targetVolume = Mathf.Lerp(outdoorVolume * stormAudioVolume, outdoorVolume * indoorVolumeMultiplier * stormAudioVolume, distanceFactor);
+            targetVolume = Mathf.Lerp(outdoorVolume, outdoorVolume * indoorVolumeMultiplier, distanceFactor);
+
+            // Mno¿enie przez globaln¹ g³oœnoœæ kategorii Ambient
+            targetVolume *= AudioManager.Instance.masterAmbientVolume;
         }
         else
         {
             targetCutoff = outdoorCutoff;
-            targetVolume = outdoorVolume * stormAudioVolume;
+
+            // G³oœnoœæ dla zewnêtrznego dŸwiêku z uwzglêdnieniem globalnej g³oœnoœci kategorii Ambient
+            targetVolume = outdoorVolume * AudioManager.Instance.masterAmbientVolume;
         }
 
+        // P³ynne przejœcia g³oœnoœci i cutoff
         currentCutoff = Mathf.MoveTowards(currentCutoff, targetCutoff, transitionSpeed * Time.deltaTime * Mathf.Abs(targetCutoff - currentCutoff));
         currentVolume = Mathf.MoveTowards(currentVolume, targetVolume, transitionSpeed * Time.deltaTime);
 
+        // Ustawianie wartoœci filtra i g³oœnoœci
         if (lowPassFilter != null)
         {
             lowPassFilter.cutoffFrequency = currentCutoff;

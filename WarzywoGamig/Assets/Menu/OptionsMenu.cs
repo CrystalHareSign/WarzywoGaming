@@ -8,46 +8,60 @@ public class OptionsMenu : MonoBehaviour
     public Slider sfxVolumeSlider;
     public Slider ambientVolumeSlider;
 
-    private float tempMusicVolume;
-    private float tempSFXVolume;
-    private float tempAmbientVolume;
-
     private void Start()
     {
         LoadCurrentSettings();
 
         // Dodaj s³uchaczy do suwaków
-        musicVolumeSlider.onValueChanged.AddListener(SetTempMusicVolume);
-        sfxVolumeSlider.onValueChanged.AddListener(SetTempSFXVolume);
-        ambientVolumeSlider.onValueChanged.AddListener(SetTempAmbientVolume);
+        musicVolumeSlider.onValueChanged.AddListener(SetMusicVolume);
+        sfxVolumeSlider.onValueChanged.AddListener(SetSFXVolume);
+        ambientVolumeSlider.onValueChanged.AddListener(SetAmbientVolume);
+
+        // Obs³uga braku AudioManager.Instance
+        if (AudioManager.Instance == null)
+        {
+            Debug.LogWarning("AudioManager.Instance is null. Wy³¹czanie suwaków.");
+            musicVolumeSlider.interactable = false;
+            sfxVolumeSlider.interactable = false;
+            ambientVolumeSlider.interactable = false;
+        }
     }
 
-    public void SetTempMusicVolume(float volume)
+    public void SetMusicVolume(float volume)
     {
-        tempMusicVolume = volume;
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.SetMusicVolume(volume); // Dynamiczna aktualizacja
+        }
     }
 
-    public void SetTempSFXVolume(float volume)
+    public void SetSFXVolume(float volume)
     {
-        tempSFXVolume = volume;
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.SetSFXVolume(volume); // Dynamiczna aktualizacja
+        }
     }
 
-    public void SetTempAmbientVolume(float volume)
+    public void SetAmbientVolume(float volume)
     {
-        tempAmbientVolume = volume;
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.SetAmbientVolume(volume); // Dynamiczna aktualizacja
+        }
     }
 
     public void ApplyChanges()
     {
-        // Ustawienie wartoœci w AudioManagerze i zapisanie ich
+        // Zapisanie zmian w AudioManagerze oraz PlayerPrefs
         if (AudioManager.Instance != null)
         {
-            // Zak³adaj¹c, ¿e masz odpowiednie suwaki na g³oœnoœæ:
-            AudioManager.Instance.SetMusicVolume(musicVolumeSlider.value);
-            AudioManager.Instance.SetSFXVolume(sfxVolumeSlider.value);
-            AudioManager.Instance.SetAmbientVolume(ambientVolumeSlider.value);
+            PlayerPrefs.SetFloat("MusicVolume", musicVolumeSlider.value);
+            PlayerPrefs.SetFloat("SFXVolume", sfxVolumeSlider.value);
+            PlayerPrefs.SetFloat("AmbientVolume", ambientVolumeSlider.value);
+            PlayerPrefs.Save();
 
-            Debug.Log("Zmiany g³oœnoœci zosta³y zastosowane!");
+            Debug.Log("Zmiany g³oœnoœci zosta³y zastosowane i zapisane!");
         }
         else
         {
@@ -65,13 +79,19 @@ public class OptionsMenu : MonoBehaviour
     {
         if (AudioManager.Instance != null)
         {
-            tempMusicVolume = AudioManager.Instance.masterMusicVolume;
-            tempSFXVolume = AudioManager.Instance.masterSFXVolume;
-            tempAmbientVolume = AudioManager.Instance.masterAmbientVolume;
+            // Pobranie wartoœci z PlayerPrefs lub ustawienie domyœlnych z AudioManager
+            float savedMusicVolume = PlayerPrefs.HasKey("MusicVolume") ? PlayerPrefs.GetFloat("MusicVolume") : AudioManager.Instance.masterMusicVolume;
+            float savedSFXVolume = PlayerPrefs.HasKey("SFXVolume") ? PlayerPrefs.GetFloat("SFXVolume") : AudioManager.Instance.masterSFXVolume;
+            float savedAmbientVolume = PlayerPrefs.HasKey("AmbientVolume") ? PlayerPrefs.GetFloat("AmbientVolume") : AudioManager.Instance.masterAmbientVolume;
 
-            musicVolumeSlider.value = tempMusicVolume;
-            sfxVolumeSlider.value = tempSFXVolume;
-            ambientVolumeSlider.value = tempAmbientVolume;
+            musicVolumeSlider.value = savedMusicVolume;
+            sfxVolumeSlider.value = savedSFXVolume;
+            ambientVolumeSlider.value = savedAmbientVolume;
+
+            // Aktualizacja AudioManagera
+            AudioManager.Instance.SetMusicVolume(savedMusicVolume);
+            AudioManager.Instance.SetSFXVolume(savedSFXVolume);
+            AudioManager.Instance.SetAmbientVolume(savedAmbientVolume);
         }
         else
         {
@@ -81,6 +101,14 @@ public class OptionsMenu : MonoBehaviour
 
     public void BackToPauseMenu()
     {
-        FindFirstObjectByType<PauseMenu>().BackToPauseMenu(); // Wywo³aj metodê w PauseMenu
+        PauseMenu pauseMenu = Object.FindFirstObjectByType<PauseMenu>();
+        if (pauseMenu != null)
+        {
+            pauseMenu.BackToPauseMenu();
+        }
+        else
+        {
+            Debug.LogWarning("Nie znaleziono PauseMenu");
+        }
     }
 }
