@@ -128,6 +128,7 @@ public class OptionsMenu : MonoBehaviour
 
     public void BackToPauseMenu()
     {
+        LoadCurrentSettings();
         PauseMenu pauseMenu = Object.FindFirstObjectByType<PauseMenu>();
         if (pauseMenu != null)
         {
