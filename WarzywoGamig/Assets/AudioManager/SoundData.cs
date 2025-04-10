@@ -5,13 +5,13 @@ public class Sound
 {
     public string name;
     public AudioClip clip;
-    [Range(0f, 1f)] public float volume = 1f;
-    public AudioManager.SoundType type;
-    public bool enabled = true; // Mo¿liwoœæ w³¹czania/wy³¹czania dŸwiêku
+    [HideInInspector]
+    [Range(0f, 1f)] public float volume = 1f;  // Dodajemy pole volume
 }
+
 
 [CreateAssetMenu(fileName = "New Sound Data", menuName = "Audio/Sound Data")]
 public class SoundData : ScriptableObject
 {
-    public Sound[] sounds;
+    public Sound[] sounds;  // Tablica dŸwiêków
 }

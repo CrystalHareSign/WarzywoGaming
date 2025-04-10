@@ -42,7 +42,8 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    public void PlaySound(string soundName, AudioSource customSource = null, float volume = 1f, bool loop = false)
+    // Metoda PlaySound z uwzglêdnieniem volume
+    public void PlaySound(string soundName, SoundType soundType, AudioSource customSource = null, float volume = 1f, bool loop = false)
     {
         if (!soundDictionary.TryGetValue(soundName, out Sound sound))
         {
@@ -50,17 +51,19 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
+        // Finalna g³oœnoœæ dŸwiêku
         float finalVolume = sound.volume * volume;
 
-        // Mno¿ymy finalVolume przez odpowiedni¹ g³oœnoœæ master
-        finalVolume *= sound.type switch
+        // Dostosowanie finalVolume wed³ug typu dŸwiêku
+        finalVolume *= soundType switch
         {
             SoundType.Music => masterMusicVolume,
             SoundType.SFX => masterSFXVolume,
             SoundType.Ambient => masterAmbientVolume,
-            _ => 1f // Domyœlna wartoœæ, gdyby typ nie by³ rozpoznany
+            _ => 1f
         };
 
+        // Jeœli dostarczono customSource
         if (customSource != null)
         {
             if (customSource.gameObject == null)
@@ -76,8 +79,8 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
-        // Sprawdzenie Ÿróde³ dŸwiêku przed ich u¿yciem
-        switch (sound.type)
+        // Sprawdzamy odpowiednie Ÿród³o dŸwiêku
+        switch (soundType)
         {
             case SoundType.Music:
                 if (musicSource == null)
@@ -114,19 +117,22 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    // Metody do zmiany g³oœnoœci
     public void SetMusicVolume(float volume)
     {
         masterMusicVolume = volume;
+        Debug.Log($"Nowa g³oœnoœæ muzyki: {masterMusicVolume}");
     }
 
     public void SetSFXVolume(float volume)
     {
         masterSFXVolume = volume;
+        Debug.Log($"Nowa g³oœnoœæ SFX: {masterSFXVolume}");
     }
 
     public void SetAmbientVolume(float volume)
     {
         masterAmbientVolume = volume;
+        Debug.Log($"Nowa g³oœnoœæ ambientu: {masterAmbientVolume}");
     }
+
 }

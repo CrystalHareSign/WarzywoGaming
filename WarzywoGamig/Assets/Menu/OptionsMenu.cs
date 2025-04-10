@@ -42,10 +42,12 @@ public class OptionsMenu : MonoBehaviour
         // Ustawienie wartoœci w AudioManagerze i zapisanie ich
         if (AudioManager.Instance != null)
         {
-            AudioManager.Instance.SetMusicVolume(tempMusicVolume);
-            AudioManager.Instance.SetSFXVolume(tempSFXVolume);
-            AudioManager.Instance.SetAmbientVolume(tempAmbientVolume);
-            Debug.LogWarning("Zapisano zmiany");
+            // Zak³adaj¹c, ¿e masz odpowiednie suwaki na g³oœnoœæ:
+            AudioManager.Instance.SetMusicVolume(musicVolumeSlider.value);
+            AudioManager.Instance.SetSFXVolume(sfxVolumeSlider.value);
+            AudioManager.Instance.SetAmbientVolume(ambientVolumeSlider.value);
+
+            Debug.Log("Zmiany g³oœnoœci zosta³y zastosowane!");
         }
         else
         {

@@ -1,5 +1,5 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class PlaySoundOnObject : MonoBehaviour
 {
@@ -9,11 +9,9 @@ public class PlaySoundOnObject : MonoBehaviour
         public AudioSource audioSource;
         public string soundName;
         public AudioManager.SoundType soundType;
-        public bool isPlaying;
     }
 
     public List<AudioSourceWithName> audioSourcesWithNames = new List<AudioSourceWithName>();
-    private List<AudioSourceWithName> activeAudioSources = new List<AudioSourceWithName>();
 
     // Sprawdzanie poprawnoœci listy audio sources
     private void CheckAudioSourceList()
@@ -40,7 +38,7 @@ public class PlaySoundOnObject : MonoBehaviour
             return;
         }
 
-        // Uwzglêdnienie aktualnej g³oœnoœci zale¿nej od typu dŸwiêku
+        // Pocz¹tkowa g³oœnoœæ
         float finalVolume = volume;
         switch (foundSource.soundType)
         {
@@ -55,50 +53,62 @@ public class PlaySoundOnObject : MonoBehaviour
                 break;
         }
 
+        // Ustawienie pocz¹tkowej g³oœnoœci
         foundSource.audioSource.loop = loop;
         foundSource.audioSource.volume = finalVolume;
 
-        if (loop)
+        // Tylko SFX u¿ywa PlayOneShot
+        if (foundSource.soundType == AudioManager.SoundType.SFX)
         {
-            if (!foundSource.audioSource.isPlaying)
-            {
-                foundSource.audioSource.Play();
-                activeAudioSources.Add(foundSource);  // Dodajemy do aktywnych Ÿróde³
-                Debug.Log($"Odtworzono pêtlê dŸwiêku '{soundName}' w obiekcie {gameObject.name}.");
-            }
+            foundSource.audioSource.PlayOneShot(foundSource.audioSource.clip, finalVolume);
+            Debug.Log($"Odtworzono dŸwiêk SFX '{soundName}' na obiekcie {gameObject.name}.");
         }
         else
         {
-            foundSource.audioSource.PlayOneShot(foundSource.audioSource.clip, finalVolume);
-            activeAudioSources.Add(foundSource);  // Dodajemy do aktywnych Ÿróde³
-            Debug.Log($"Odtworzono dŸwiêk '{soundName}' na obiekcie {gameObject.name}.");
-        }
-    }
-
-    // Metoda do dynamicznej zmiany g³oœnoœci dla aktywnych dŸwiêków
-    public void UpdateActiveSoundsVolume()
-    {
-        foreach (var activeSource in activeAudioSources)
-        {
-            if (activeSource.isPlaying)
+            // Dla muzyki i ambientu u¿ywamy Play z ustawion¹ pêtl¹
+            if (!foundSource.audioSource.isPlaying)
             {
-                float finalVolume = 0f;
-                switch (activeSource.soundType)
-                {
-                    case AudioManager.SoundType.Music:
-                        finalVolume = activeSource.audioSource.volume * AudioManager.Instance.masterMusicVolume;
-                        break;
-                    case AudioManager.SoundType.SFX:
-                        finalVolume = activeSource.audioSource.volume * AudioManager.Instance.masterSFXVolume;
-                        break;
-                    case AudioManager.SoundType.Ambient:
-                        finalVolume = activeSource.audioSource.volume * AudioManager.Instance.masterAmbientVolume;
-                        break;
-                }
-                activeSource.audioSource.volume = finalVolume; // Zaktualizowanie g³oœnoœci
+                foundSource.audioSource.Play();
+                Debug.Log($"Odtworzono dŸwiêk '{soundName}' w obiekcie {gameObject.name}.");
             }
         }
     }
+
+    private void Update()
+    {
+        // Przechodzimy przez wszystkie AudioSource w obiekcie
+        var allAudioSources = GetComponentsInChildren<AudioSource>();
+
+        foreach (var audioSource in allAudioSources)
+        {
+            // Jeœli dŸwiêk jest odtwarzany, dostosowujemy jego g³oœnoœæ
+            if (audioSource.isPlaying)
+            {
+                // Finalna g³oœnoœæ na podstawie typu dŸwiêku
+                float finalVolume = audioSource.volume;
+                if (audioSource.clip != null)
+                {
+                    AudioManager.SoundType soundType = AudioManager.SoundType.SFX; // Domyœlnie przypisujemy SFX
+                    switch (soundType)
+                    {
+                        case AudioManager.SoundType.Music:
+                            finalVolume = AudioManager.Instance.masterMusicVolume;
+                            break;
+                        case AudioManager.SoundType.SFX:
+                            finalVolume = AudioManager.Instance.masterSFXVolume;
+                            break;
+                        case AudioManager.SoundType.Ambient:
+                            finalVolume = AudioManager.Instance.masterAmbientVolume;
+                            break;
+                    }
+
+                    // Przypisanie nowej g³oœnoœci
+                    audioSource.volume = finalVolume;
+                }
+            }
+        }
+    }
+
 
     public void StopSound(string soundName)
     {
@@ -114,7 +124,6 @@ public class PlaySoundOnObject : MonoBehaviour
         if (foundSource.audioSource.isPlaying)
         {
             foundSource.audioSource.Stop();
-            activeAudioSources.Remove(foundSource);  // Usuwamy z listy aktywnych dŸwiêków
             Debug.Log($"Zatrzymano dŸwiêk '{soundName}' w obiekcie {gameObject.name}.");
         }
     }
@@ -128,7 +137,6 @@ public class PlaySoundOnObject : MonoBehaviour
             if (source.audioSource != null && source.audioSource.isPlaying)
             {
                 source.audioSource.Stop();
-                activeAudioSources.Remove(source);  // Usuwamy z listy aktywnych dŸwiêków
             }
         }
     }
