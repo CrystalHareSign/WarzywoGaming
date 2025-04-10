@@ -76,39 +76,32 @@ public class PlaySoundOnObject : MonoBehaviour
 
     private void Update()
     {
-        // Przechodzimy przez wszystkie AudioSource w obiekcie
-        var allAudioSources = GetComponentsInChildren<AudioSource>();
-
-        foreach (var audioSource in allAudioSources)
+        // Dynamiczne dostosowanie g³oœnoœci wszystkich odtwarzanych dŸwiêków
+        foreach (var source in audioSourcesWithNames)
         {
-            // Jeœli dŸwiêk jest odtwarzany, dostosowujemy jego g³oœnoœæ
-            if (audioSource.isPlaying)
+            if (source.audioSource != null && source.audioSource.isPlaying)
             {
-                // Finalna g³oœnoœæ na podstawie typu dŸwiêku
-                float finalVolume = audioSource.volume;
-                if (audioSource.clip != null)
-                {
-                    AudioManager.SoundType soundType = AudioManager.SoundType.SFX; // Domyœlnie przypisujemy SFX
-                    switch (soundType)
-                    {
-                        case AudioManager.SoundType.Music:
-                            finalVolume = AudioManager.Instance.masterMusicVolume;
-                            break;
-                        case AudioManager.SoundType.SFX:
-                            finalVolume = AudioManager.Instance.masterSFXVolume;
-                            break;
-                        case AudioManager.SoundType.Ambient:
-                            finalVolume = AudioManager.Instance.masterAmbientVolume;
-                            break;
-                    }
+                float finalVolume = source.audioSource.volume;
 
-                    // Przypisanie nowej g³oœnoœci
-                    audioSource.volume = finalVolume;
+                // Finalna g³oœnoœæ na podstawie typu dŸwiêku
+                switch (source.soundType)
+                {
+                    case AudioManager.SoundType.Music:
+                        finalVolume = AudioManager.Instance.masterMusicVolume;
+                        break;
+                    case AudioManager.SoundType.SFX:
+                        finalVolume = AudioManager.Instance.masterSFXVolume;
+                        break;
+                    case AudioManager.SoundType.Ambient:
+                        finalVolume = AudioManager.Instance.masterAmbientVolume;
+                        break;
                 }
+
+                // Przypisanie dynamicznie obliczonej g³oœnoœci
+                source.audioSource.volume = finalVolume;
             }
         }
     }
-
 
     public void StopSound(string soundName)
     {
