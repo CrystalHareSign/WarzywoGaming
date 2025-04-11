@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using TMPro.Examples;
 using UnityEngine;
 
 public class PauseMenu : MonoBehaviour
@@ -6,7 +8,22 @@ public class PauseMenu : MonoBehaviour
 
     public GameObject pauseMenuUI;
     public GameObject optionsMenuUI; // Dodaj referencjê do menu opcji
+    public MouseLook mouseLook;
 
+    public static PauseMenu instance;
+
+    private void Awake()
+    {
+        if (instance == null)
+        {
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
     void Start()
     {
         Time.timeScale = 1f;
@@ -14,6 +31,15 @@ public class PauseMenu : MonoBehaviour
         optionsMenuUI.SetActive(false); // Upewnij siê, ¿e menu opcji jest niewidoczne na starcie
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        if (mouseLook == null)
+        {
+            mouseLook = Object.FindFirstObjectByType<MouseLook>();
+            if (mouseLook == null)
+            {
+                Debug.LogWarning("Nie znaleziono MouseLook w scenie!");
+            }
+        }
     }
 
     void Update()
@@ -39,6 +65,7 @@ public class PauseMenu : MonoBehaviour
         GameIsPaused = false;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        mouseLook.enabled = true; // w³¹cz kamerê
     }
 
     void Pause()
@@ -49,6 +76,7 @@ public class PauseMenu : MonoBehaviour
         GameIsPaused = true;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        mouseLook.enabled = false; // wy³¹cz kamerê
     }
 
     public void LoadOptionsMenu()

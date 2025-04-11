@@ -4,6 +4,11 @@ using TMPro; // Import TextMeshPro namespace
 
 public class OptionsMenu : MonoBehaviour
 {
+    [Header("Domyœlne wartoœci (0-100)")]
+    public float defaultMusicVolume = 70f;
+    public float defaultSFXVolume = 70f;
+    public float defaultAmbientVolume = 70f;
+
     [Header("Sliders")]
     public Slider musicVolumeSlider;
     public Slider sfxVolumeSlider;
@@ -13,6 +18,21 @@ public class OptionsMenu : MonoBehaviour
     public TMP_Text musicVolumeText;
     public TMP_Text sfxVolumeText;
     public TMP_Text ambientVolumeText;
+
+    public static OptionsMenu instance;
+
+    private void Awake()
+    {
+        if (instance == null)
+        {
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
     private void Start()
     {
@@ -139,4 +159,19 @@ public class OptionsMenu : MonoBehaviour
             Debug.LogWarning("Nie znaleziono PauseMenu");
         }
     }
+
+    public void ResetToDefaults()
+    {
+        musicVolumeSlider.value = defaultMusicVolume;
+        sfxVolumeSlider.value = defaultSFXVolume;
+        ambientVolumeSlider.value = defaultAmbientVolume;
+
+        UpdateSliderValue(musicVolumeSlider, musicVolumeText, SetMusicVolume);
+        UpdateSliderValue(sfxVolumeSlider, sfxVolumeText, SetSFXVolume);
+        UpdateSliderValue(ambientVolumeSlider, ambientVolumeText, SetAmbientVolume);
+
+        ApplyChanges();
+        Debug.Log("Ustawienia zresetowane do wartoœci domyœlnych.");
+    }
+
 }
