@@ -14,7 +14,11 @@ public class TreasureRefiner : MonoBehaviour
     public TextMeshProUGUI[] countTexts;
     public TextMeshProUGUI trashCategoryText; // Nowy tekst dla kategorii trash
     public TextMeshProUGUI trashCountText; // Nowy tekst dla iloœci trash
-    public GameObject[] categoryButtons; // 4 Cubes
+    public TextMeshProUGUI selectedCategoryText; // Nowy tekst UI pokazuj¹cy aktualnie wybran¹ kategoriê
+
+    public GameObject prevCategoryButton;
+    public GameObject nextCategoryButton;
+
     public GameObject refineButton; // 5-ty Cube
     public GameObject prefabToSpawn;
     public Transform spawnPoint;
@@ -36,19 +40,17 @@ public class TreasureRefiner : MonoBehaviour
     private void Start()
     {
         InitializeSlots();
-        if (categoryButtons.Length > 0)
-        {
-            defaultColor = categoryButtons[0].GetComponent<Renderer>().material.color;
-        }
 
         // Sprawdzanie, czy jesteœmy w scenie Home
         UpdateButtonStates();
 
-        // Rejestracja nas³uchiwania na zmianê sceny
         SceneManager.sceneLoaded += OnSceneLoaded;
 
         trashAmount = 0;
         trashCountText.text = "0";
+
+        // Inicjalizacja wybranego tekstu kategorii
+        selectedCategoryText.text = "Brak wybranej kategorii";
     }
 
     void Update()
@@ -65,38 +67,53 @@ public class TreasureRefiner : MonoBehaviour
 
             if (Physics.Raycast(ray, out hit))
             {
-                // Sprawdzamy, czy klikniêto przycisk kategorii
-                for (int i = 0; i < categoryButtons.Length; i++)
+                if (hit.collider.gameObject == prevCategoryButton)
                 {
-                    if (hit.collider.gameObject == categoryButtons[i])
-                    {
-                        SelectCategory(i);
-                        return;
-                    }
+                    SwitchCategory(-1); // Prze³¹cz na poprzedni¹ kategoriê
                 }
 
-                // Sprawdzamy, czy klikniêto przycisk refineButton
+                if (hit.collider.gameObject == nextCategoryButton)
+                {
+                    SwitchCategory(1); // Prze³¹cz na nastêpn¹ kategoriê
+                }
+
                 if (hit.collider.gameObject == refineButton)
                 {
                     RefineResources();
-                    return;
                 }
 
-                // Sprawdzamy, czy klikniêto przycisk supplyTrashButton
                 if (hit.collider.gameObject == supplyTrashButton)
                 {
                     SupplyTrash();
-                    return;
                 }
 
-                // Sprawdzamy, czy klikniêto przycisk refineTrashButton
                 if (hit.collider.gameObject == refineTrashButton)
                 {
                     RefineTrash();
-                    return;
                 }
             }
         }
+    }
+
+    private void SwitchCategory(int direction)
+    {
+        // Jeœli nie ma dostêpnych kategorii, nic nie robimy
+        if (categoryTexts.Length == 0 || selectedCategoryIndex == -1)
+            return;
+
+        // Prze³¹czamy kategoriê w zale¿noœci od kierunku
+        selectedCategoryIndex += direction;
+
+        // Sprawdzamy, czy nie wychodzimy poza dostêpne indeksy
+        if (selectedCategoryIndex < 0)
+            selectedCategoryIndex = 0;
+        else if (selectedCategoryIndex >= categoryTexts.Length)
+            selectedCategoryIndex = categoryTexts.Length - 1;
+
+        // Ustawiamy wybran¹ kategoriê
+        selectedCategoryText.text = categoryTexts[selectedCategoryIndex].text;
+        Debug.Log($"Wybrano kategoriê: {categoryTexts[selectedCategoryIndex].text}");
+
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -118,46 +135,32 @@ public class TreasureRefiner : MonoBehaviour
     {
         string currentScene = SceneManager.GetActiveScene().name;
 
-        // Sprawdzamy, czy supplyTrashButton i refineTrashButton s¹ ró¿ne od null
-        if (supplyTrashButton != null && refineTrashButton != null)
+        // W scenie "Home" Trash jest dostêpny
+        if (currentScene == "Home")
         {
-            // Jeœli jesteœmy w scenie Home, przyciski s¹ aktywne
-            if (currentScene == "Home")
-            {
-                supplyTrashButton.SetActive(true);
-                refineTrashButton.SetActive(true);
-            }
-            else
-            {
-                // W innych scenach przyciski s¹ nieaktywne
-                supplyTrashButton.SetActive(false);
-                refineTrashButton.SetActive(false);
-            }
+            trashCategoryText.gameObject.SetActive(true);
+            trashCountText.gameObject.SetActive(true);
+            supplyTrashButton.SetActive(true);
+            refineTrashButton.SetActive(true);
         }
         else
         {
-            // Je¿eli któryœ z przycisków jest null, wyœwietlamy komunikat w logu
-            if (supplyTrashButton == null)
-            {
-                Debug.LogWarning("supplyTrashButton jest null.");
-            }
-
-            if (refineTrashButton == null)
-            {
-                Debug.LogWarning("refineTrashButton jest null.");
-            }
+            trashCategoryText.gameObject.SetActive(false);
+            trashCountText.gameObject.SetActive(false);
+            supplyTrashButton.SetActive(false);
+            refineTrashButton.SetActive(false);
         }
-    }
 
-    private void SelectCategory(int index)
-    {
-        selectedCategoryIndex = index;
-        Debug.Log($"Wybrano kategoriê: {categoryTexts[index].text} (Index: {index})");
-
-        for (int i = 0; i < categoryButtons.Length; i++)
+        // W³¹cz/wy³¹cz przyciski prze³¹czania kategorii
+        if (categoryTexts.Length > 0)
         {
-            Renderer rend = categoryButtons[i].GetComponent<Renderer>();
-            rend.material.color = (i == index) ? highlightColor : defaultColor;
+            prevCategoryButton.SetActive(true);
+            nextCategoryButton.SetActive(true);
+        }
+        else
+        {
+            prevCategoryButton.SetActive(false);
+            nextCategoryButton.SetActive(false);
         }
     }
 
