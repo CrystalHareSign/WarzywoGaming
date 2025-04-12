@@ -17,6 +17,8 @@ public class TreasureRefiner : MonoBehaviour
     public TextMeshProUGUI trashCountText; // Nowy tekst dla iloœci trash
     public TextMeshProUGUI selectedCategoryText; // Nowy tekst UI pokazuj¹cy aktualnie wybran¹ kategoriê
     public TextMeshProUGUI selectedCountText;
+    public TextMeshProUGUI refineCostText;        // tekst obok kategorii
+    public TextMeshProUGUI trashRefineCostText;   // tekst obok Trash
 
     public GameObject prevCategoryButton;
     public GameObject nextCategoryButton;
@@ -61,6 +63,12 @@ public class TreasureRefiner : MonoBehaviour
 
         trashAmount = 0;
         trashCountText.text = "0";
+
+        if (refineCostText != null)
+            refineCostText.text = "/" + refineAmount.ToString();
+
+        if (trashRefineCostText != null)
+            trashRefineCostText.text = "/" + trashResourceRequired.ToString();
     }
 
     void Update()
@@ -180,11 +188,17 @@ public class TreasureRefiner : MonoBehaviour
         {
             selectedCategoryText.text = "Trash";
             selectedCountText.text = trashAmount.ToString();
+
+            if (refineCostText != null)
+                refineCostText.text = "/" + trashResourceRequired.ToString();
         }
         else
         {
             selectedCategoryText.text = categoryTexts[selectedCategoryIndex].text;
             selectedCountText.text = countTexts[selectedCategoryIndex].text;
+
+            if (refineCostText != null)
+                refineCostText.text = "/" + refineAmount.ToString();
         }
 
         Debug.Log($"Wybrano kategoriê: {selectedCategoryText.text}, Iloœæ: {selectedCountText.text}");
@@ -197,6 +211,10 @@ public class TreasureRefiner : MonoBehaviour
         {
             selectedCategoryText.text = "- - -";
             selectedCountText.text = "0";
+
+            if (refineCostText != null)
+                refineCostText.text = "/-";
+
             return;
         }
 
@@ -205,6 +223,10 @@ public class TreasureRefiner : MonoBehaviour
         {
             selectedCategoryText.text = "Trash";
             selectedCountText.text = trashAmount.ToString();
+
+            if (refineCostText != null)
+                refineCostText.text = "/" + trashResourceRequired.ToString();
+
             return;
         }
 
@@ -213,11 +235,17 @@ public class TreasureRefiner : MonoBehaviour
         {
             selectedCategoryText.text = categoryTexts[selectedCategoryIndex].text;
             selectedCountText.text = countTexts[selectedCategoryIndex].text;
+
+            if (refineCostText != null)
+                refineCostText.text = "/" + refineAmount.ToString();
         }
         else
         {
             selectedCategoryText.text = "- - -";
             selectedCountText.text = "0";
+
+            if (refineCostText != null)
+                refineCostText.text = "/-";
         }
     }
 
@@ -253,24 +281,19 @@ public class TreasureRefiner : MonoBehaviour
     private void UpdateButtonStates()
     {
         string currentScene = SceneManager.GetActiveScene().name;
+        bool isHome = currentScene == "Home";
 
-        // Sprawdzenie czy referencje nie s¹ ju¿ zniszczone
-        if (trashCategoryText == null || trashCountText == null)
-        {
-            Debug.LogWarning("trashCategoryText lub trashCountText s¹ null - prawdopodobnie scena siê zmieni³a.");
-            return;
-        }
+        if (trashCategoryText != null)
+            trashCategoryText.gameObject.SetActive(isHome);
 
-        if (currentScene == "Home")
-        {
-            trashCategoryText.gameObject.SetActive(true);
-            trashCountText.gameObject.SetActive(true);
-        }
-        else
-        {
-            trashCategoryText.gameObject.SetActive(false);
-            trashCountText.gameObject.SetActive(false);
-        }
+        if (trashCountText != null)
+            trashCountText.gameObject.SetActive(isHome);
+
+        if (trashRefineCostText != null)
+            trashRefineCostText.gameObject.SetActive(isHome);
+
+        if (trashRefineCostText != null)
+            trashRefineCostText.text = "/" + trashResourceRequired.ToString();
 
         // W³¹cz/wy³¹cz przyciski prze³¹czania kategorii
         if (categoryTexts.Length > 0)
