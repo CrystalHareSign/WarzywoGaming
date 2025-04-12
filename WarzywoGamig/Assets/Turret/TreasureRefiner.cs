@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -15,6 +16,7 @@ public class TreasureRefiner : MonoBehaviour
     public TextMeshProUGUI trashCategoryText; // Nowy tekst dla kategorii trash
     public TextMeshProUGUI trashCountText; // Nowy tekst dla iloœci trash
     public TextMeshProUGUI selectedCategoryText; // Nowy tekst UI pokazuj¹cy aktualnie wybran¹ kategoriê
+    public TextMeshProUGUI selectedCountText;
 
     public GameObject prevCategoryButton;
     public GameObject nextCategoryButton;
@@ -41,6 +43,17 @@ public class TreasureRefiner : MonoBehaviour
     {
         InitializeSlots();
 
+        selectedCategoryIndex = FindNextValidCategoryIndexLoop(0, 1);
+        if (selectedCategoryIndex != -1)
+        {
+            selectedCategoryText.text = selectedCategoryIndex == categoryTexts.Length ? "Trash" : categoryTexts[selectedCategoryIndex].text;
+        }
+        else
+        {
+            selectedCategoryText.text = "- - -";
+            selectedCountText.text = "0";
+        }
+
         // Sprawdzanie, czy jesteœmy w scenie Home
         UpdateButtonStates();
 
@@ -48,9 +61,6 @@ public class TreasureRefiner : MonoBehaviour
 
         trashAmount = 0;
         trashCountText.text = "0";
-
-        // Inicjalizacja wybranego tekstu kategorii
-        selectedCategoryText.text = "Brak wybranej kategorii";
     }
 
     void Update()
@@ -95,25 +105,125 @@ public class TreasureRefiner : MonoBehaviour
         }
     }
 
+    private int FindNextValidCategoryIndexLoop(int startIndex, int direction)
+    {
+        int total = categoryTexts.Length + (IsHomeScene() ? 1 : 0); // dodajemy Trash jako dodatkowy slot
+        int index = startIndex;
+
+        for (int i = 0; i < total; i++)
+        {
+            index = (index + direction + total) % total;
+
+            // Obs³uga trash slotu
+            if (index == categoryTexts.Length && IsHomeScene())
+            {
+                if (int.Parse(trashCountText.text) > 0)
+                    return index;
+            }
+            else if (index < categoryTexts.Length && categoryTexts[index].text != "-")
+            {
+                return index;
+            }
+        }
+
+        return -1; // Nie znaleziono ¿adnej aktywnej kategorii
+    }
+
+
     private void SwitchCategory(int direction)
     {
-        // Jeœli nie ma dostêpnych kategorii, nic nie robimy
-        if (categoryTexts.Length == 0 || selectedCategoryIndex == -1)
+        List<int> activeIndexes = new List<int>();
+
+        // Zbieramy indeksy slotów, które maj¹ kategoriê
+        for (int i = 0; i < categoryTexts.Length; i++)
+        {
+            if (categoryTexts[i].text != "-")
+                activeIndexes.Add(i);
+        }
+
+        // Jeœli jesteœmy w scenie Home – dodajemy Trash jako dodatkowy "slot"
+        bool isHome = SceneManager.GetActiveScene().name == "Home";
+        if (isHome)
+        {
+            activeIndexes.Add(categoryTexts.Length); // Trash jako ostatni indeks
+        }
+
+        if (activeIndexes.Count == 0)
+        {
+            selectedCategoryIndex = -1;
+            selectedCategoryText.text = "- - -";
+            selectedCountText.text = "0";
             return;
+        }
 
-        // Prze³¹czamy kategoriê w zale¿noœci od kierunku
-        selectedCategoryIndex += direction;
+        // Znajdujemy aktualny indeks w liœcie aktywnych
+        int currentIndexInActive = activeIndexes.IndexOf(selectedCategoryIndex);
 
-        // Sprawdzamy, czy nie wychodzimy poza dostêpne indeksy
-        if (selectedCategoryIndex < 0)
-            selectedCategoryIndex = 0;
-        else if (selectedCategoryIndex >= categoryTexts.Length)
-            selectedCategoryIndex = categoryTexts.Length - 1;
+        // Jeœli obecny index nie jest aktywny (np. reset kategorii), zacznij od pocz¹tku
+        if (currentIndexInActive == -1)
+            currentIndexInActive = 0;
 
-        // Ustawiamy wybran¹ kategoriê
-        selectedCategoryText.text = categoryTexts[selectedCategoryIndex].text;
-        Debug.Log($"Wybrano kategoriê: {categoryTexts[selectedCategoryIndex].text}");
+        // Przeskakujemy
+        currentIndexInActive += direction;
 
+        // Zapêtlenie
+        if (currentIndexInActive < 0)
+            currentIndexInActive = activeIndexes.Count - 1;
+        else if (currentIndexInActive >= activeIndexes.Count)
+            currentIndexInActive = 0;
+
+        // Ustaw nowy index
+        selectedCategoryIndex = activeIndexes[currentIndexInActive];
+
+        // Ustaw teksty UI
+        if (selectedCategoryIndex == categoryTexts.Length && isHome) // Trash
+        {
+            selectedCategoryText.text = "Trash";
+            selectedCountText.text = trashAmount.ToString();
+        }
+        else
+        {
+            selectedCategoryText.text = categoryTexts[selectedCategoryIndex].text;
+            selectedCountText.text = countTexts[selectedCategoryIndex].text;
+        }
+
+        Debug.Log($"Wybrano kategoriê: {selectedCategoryText.text}, Iloœæ: {selectedCountText.text}");
+    }
+
+    public void RefreshSelectedCategoryUI()
+    {
+        // Jeœli nic nie jest wybrane
+        if (selectedCategoryIndex == -1)
+        {
+            selectedCategoryText.text = "- - -";
+            selectedCountText.text = "0";
+            return;
+        }
+
+        // Jeœli wybrany jest Trash
+        if (selectedCategoryIndex == categoryTexts.Length && IsHomeScene())
+        {
+            selectedCategoryText.text = "Trash";
+            selectedCountText.text = trashAmount.ToString();
+            return;
+        }
+
+        // Sprawdzenie poprawnoœci indeksu
+        if (selectedCategoryIndex >= 0 && selectedCategoryIndex < categoryTexts.Length)
+        {
+            selectedCategoryText.text = categoryTexts[selectedCategoryIndex].text;
+            selectedCountText.text = countTexts[selectedCategoryIndex].text;
+        }
+        else
+        {
+            selectedCategoryText.text = "- - -";
+            selectedCountText.text = "0";
+        }
+    }
+
+    private bool IsHomeScene()
+    {
+        return SceneManager.GetActiveScene().name == "Home";
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -121,34 +231,45 @@ public class TreasureRefiner : MonoBehaviour
         // Aktualizujemy stan przycisków po zmianie sceny
         UpdateButtonStates();
 
-        //// Zresetowanie liczby trash po za³adowaniu sceny Home
-        //if (scene.name == "Main")
-        //{
-        //    trashAmount = 0;
-        //    trashCountText.text = "0";  // Zaktualizowanie UI, ¿eby pokazaæ 0
-        //    Debug.Log("Licznik Trash zresetowany do 0 na scenie Main.");
-        //}
+        // Sprawdzamy, czy kategoria zosta³a wybrana i czy jest dostêpna
+        if (selectedCategoryIndex != -1 && selectedCategoryIndex < categoryTexts.Length)
+        {
+            selectedCategoryText.text = categoryTexts[selectedCategoryIndex].text;
+
+            // Aktualizowanie iloœci wybranej kategorii
+            int currentAmount = int.Parse(countTexts[selectedCategoryIndex].text);
+            selectedCountText.text = currentAmount.ToString();
+        }
+        else
+        {
+            // Jeœli ¿adna kategoria nie zosta³a wybrana, ustawiamy "0"
+            selectedCategoryText.text = "- - -";
+            selectedCountText.text = "0";
+        }
     }
+
 
     // Funkcja do aktualizacji stanu przycisków na podstawie sceny
     private void UpdateButtonStates()
     {
         string currentScene = SceneManager.GetActiveScene().name;
 
-        // W scenie "Home" Trash jest dostêpny
+        // Sprawdzenie czy referencje nie s¹ ju¿ zniszczone
+        if (trashCategoryText == null || trashCountText == null)
+        {
+            Debug.LogWarning("trashCategoryText lub trashCountText s¹ null - prawdopodobnie scena siê zmieni³a.");
+            return;
+        }
+
         if (currentScene == "Home")
         {
             trashCategoryText.gameObject.SetActive(true);
             trashCountText.gameObject.SetActive(true);
-            supplyTrashButton.SetActive(true);
-            refineTrashButton.SetActive(true);
         }
         else
         {
             trashCategoryText.gameObject.SetActive(false);
             trashCountText.gameObject.SetActive(false);
-            supplyTrashButton.SetActive(false);
-            refineTrashButton.SetActive(false);
         }
 
         // W³¹cz/wy³¹cz przyciski prze³¹czania kategorii
@@ -172,6 +293,13 @@ public class TreasureRefiner : MonoBehaviour
             return;
         }
 
+        // Jeœli wybrany slot to trash
+        if (selectedCategoryIndex == categoryTexts.Length && IsHomeScene())
+        {
+            RefineTrash();
+            return;
+        }
+
         float currentAmount = int.Parse(countTexts[selectedCategoryIndex].text);
 
         if (currentAmount >= refineAmount)
@@ -185,6 +313,7 @@ public class TreasureRefiner : MonoBehaviour
 
                 // Spawnowanie zwyk³ego zasobu
                 SpawnPrefab(isTrash: false);
+                RefreshSelectedCategoryUI();
             }
             else
             {
@@ -199,8 +328,7 @@ public class TreasureRefiner : MonoBehaviour
 
     private void SpawnPrefab(bool isTrash = false)
     {
-        // Sprawdzenie, czy wybrany indeks jest poprawny
-        if (selectedCategoryIndex < 0 || selectedCategoryIndex >= categoryTexts.Length)
+        if (selectedCategoryIndex < 0 || selectedCategoryIndex > categoryTexts.Length)
         {
             Debug.LogError("Nieprawid³owy indeks kategorii: " + selectedCategoryIndex);
             return;
@@ -259,7 +387,17 @@ public class TreasureRefiner : MonoBehaviour
         TreasureValue treasureValue = spawned.AddComponent<TreasureValue>();
 
         // Przypisujemy kategoriê i iloœæ zasobów
-        string resourceCategory = categoryTexts[selectedCategoryIndex].text;
+        string resourceCategory;
+
+        if (isTrash && selectedCategoryIndex == categoryTexts.Length)
+        {
+            resourceCategory = "Trash";
+        }
+        else
+        {
+            resourceCategory = categoryTexts[selectedCategoryIndex].text;
+        }
+
         treasureValue.category = resourceCategory;
         treasureValue.amount = (int)resourceAmount;
 
@@ -271,6 +409,12 @@ public class TreasureRefiner : MonoBehaviour
 
     public void SupplyTrash()
     {
+        if (!IsHomeScene())
+        {
+            Debug.Log("SupplyTrash dostêpne tylko w scenie Home.");
+            return;
+        }
+
         Debug.Log($"[START] Aktualna iloœæ Trash przed sumowaniem: {trashAmount}");
 
         int totalTrashAmount = 0;
@@ -311,6 +455,7 @@ public class TreasureRefiner : MonoBehaviour
         {
             Debug.Log("Brak zasobów do sumowania w slotach.");
         }
+        RefreshSelectedCategoryUI();
     }
 
     private void RefineTrash()
@@ -323,10 +468,14 @@ public class TreasureRefiner : MonoBehaviour
             if (!IsSpawnPointBlocked())
             {
                 currentTrashAmount -= trashResourceRequired;
+                trashAmount = currentTrashAmount; // <- zaktualizuj wewnêtrzn¹ wartoœæ!
                 trashCountText.text = currentTrashAmount.ToString();
 
                 // Spawnowanie Trash
                 SpawnPrefab(isTrash: true);
+
+                // I DOPIERO TERAZ odœwie¿enie UI:
+                RefreshSelectedCategoryUI();
             }
             else
             {
@@ -338,6 +487,7 @@ public class TreasureRefiner : MonoBehaviour
             Debug.Log("Za ma³o zasobów do przetworzenia trash! Masz tylko " + currentTrashAmount + ", a potrzeba " + trashResourceRequired);
         }
     }
+
 
     public void RemoveOldestItemFromInventory()
     {
