@@ -97,7 +97,7 @@ public class TreasureRefiner : MonoBehaviour
             RaycastHit hit;
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-            if (Physics.Raycast(ray, out hit))
+            if (Physics.Raycast(ray, out hit, maxInteractionDistance))  // Dodanie maksymalnego zasiêgu do raycast
             {
                 if (hit.collider.gameObject == prevCategoryButton)
                 {
@@ -126,6 +126,7 @@ public class TreasureRefiner : MonoBehaviour
             }
         }
     }
+
 
     private int FindNextValidCategoryIndexLoop(int startIndex, int direction)
     {
