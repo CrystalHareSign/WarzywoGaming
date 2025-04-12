@@ -327,14 +327,18 @@ public class TreasureRefiner : MonoBehaviour
 
         if (currentAmount >= refineAmount)
         {
-            // Sprawdzamy, czy miejsce na spawnowanie nie jest zablokowane
             if (!IsSpawnPointBlocked())
             {
-                // Odejmujemy zasoby, tylko gdy spawnowanie jest mo¿liwe
                 currentAmount -= refineAmount;
                 countTexts[selectedCategoryIndex].text = currentAmount.ToString();
 
-                // Spawnowanie zwyk³ego zasobu
+                // Reset slotu jeœli pusto
+                if (currentAmount == 0)
+                {
+                    categoryTexts[selectedCategoryIndex].text = "-";
+                    countTexts[selectedCategoryIndex].text = "0";
+                }
+
                 SpawnPrefab(isTrash: false);
                 RefreshSelectedCategoryUI();
             }
@@ -473,6 +477,9 @@ public class TreasureRefiner : MonoBehaviour
                 trashCountText.text = trashAmount.ToString();
                 Debug.Log($"Przekroczono limit! Trash zosta³ ustawiony na maksymaln¹ wartoœæ: {trashAmount}. Nadmiar {excessTrash} zasobów zosta³ zignorowany.");
             }
+
+            SwitchCategory(1); // Prze³¹cz na nastêpn¹ kategoriê
+
         }
         else
         {
@@ -586,18 +593,16 @@ public class TreasureRefiner : MonoBehaviour
                         resourcesAdded = true;
 
                         // Odejmujemy od ekwipunku gracza tylko tyle, ile brakowa³o do maksymalnej wartoœci w Refinerze
-                        item.GetComponent<TreasureResources>().resourceCategories[0].resourceCount -= resourceCount;
+                        treasureResources.resourceCategories[0].resourceCount -= resourceCount;
+
+                        // Odœwie¿amy UI wybranej kategorii
+                        if (selectedCategoryIndex == i)
+                        {
+                            RefreshSelectedCategoryUI();
+                        }
                     }
                     else
                     {
-                        // Jeœli suma zasobów przekroczy limit, po prostu nie dodajemy
-                        countTexts[i].text = countTexts[i].text; // Nie zmienia tekstu w ogóle
-                        addedToExistingSlot = false;
-
-                        //GÓWNO
-                        //// Nie dodajemy ¿adnych zasobów, tylko usuwamy nadmiar z ekwipunku gracza
-                        //item.GetComponent<TreasureResources>().resourceCategories[0].resourceCount -= (newCount - (int)maxResourcePerSlot);
-                        //GÓWNO
                         Debug.Log("Zasoby nie zosta³y dodane. Przekroczono maksymalny limit.");
                     }
 
@@ -605,7 +610,7 @@ public class TreasureRefiner : MonoBehaviour
                 }
             }
 
-            // Jeœli nie znaleziono istniej¹cego slotu, spróbuj dodaæ nowy slot tylko, gdy nie ma ju¿ slotu dla tej kategorii
+            // Jeœli nie znaleziono istniej¹cego slotu, spróbuj dodaæ nowy slot
             if (!addedToExistingSlot)
             {
                 bool categoryExists = false;
@@ -635,16 +640,24 @@ public class TreasureRefiner : MonoBehaviour
                                 countTexts[i].text = newCount.ToString();
 
                                 // Odejmujemy tyle zasobów z ekwipunku, ile zosta³o dodane do nowego slotu
-                                item.GetComponent<TreasureResources>().resourceCategories[0].resourceCount -= newCount;
+                                treasureResources.resourceCategories[0].resourceCount -= newCount;
 
                                 // Flaga wskazuj¹ca, ¿e zasoby zosta³y dodane
                                 resourcesAdded = true;
+
+                                // Je¿eli nie by³o jeszcze wybranej kategorii, ustawiamy j¹
+                                if (selectedCategoryIndex == -1)
+                                {
+                                    selectedCategoryIndex = i;
+                                    RefreshSelectedCategoryUI();
+                                }
+
+                                break;
                             }
                             else
                             {
                                 Debug.Log("Przekroczono dozwolony limit zasobów w nowym slocie. Przedmiot nie zosta³ dodany.");
                             }
-                            break;
                         }
                     }
                 }
@@ -655,7 +668,6 @@ public class TreasureRefiner : MonoBehaviour
             }
         }
     }
-
 
     public void InitializeSlots()
     {
