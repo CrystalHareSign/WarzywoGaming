@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -26,20 +27,26 @@ public class TreasureRefiner : MonoBehaviour
     public GameObject refineButton; // 5-ty Cube
     public GameObject prefabToSpawn;
     public Transform spawnPoint;
+    // Zmienna do przechowywania pocz¹tkowej pozycji obiektu
+
+    public GameObject door;
+    public float doorDistance = 3;
+    public float doorMoveDuration = 1f;  // Prêdkoœæ ruchu drzwi
+    public Vector3 doorStartingPosition; // Rêcznie ustawiona pocz¹tkowa pozycja drzwi
+
     public float spawnYPosition = 2f; // ustawiasz dok³adne Y w inspektorze
     public float refineAmount = 10;
     public float maxResourcePerSlot = 50f;
     private float trashAmount = 0;
     public float trashResourceRequired = 10f; // Wymagana iloœæ zasobów na trash
     public float trashMaxAmount = 100f;
+    public float spawnDelay = 5;
 
     // Nowe zmienne dla supplyTrash i refineTrash
     public GameObject supplyTrashButton;
     public GameObject refineTrashButton;
 
     private int selectedCategoryIndex;
-    private Color defaultColor;
-    public Color highlightColor = Color.green;
 
     private void Start()
     {
@@ -69,11 +76,18 @@ public class TreasureRefiner : MonoBehaviour
 
         if (trashRefineCostText != null)
             trashRefineCostText.text = "/" + trashResourceRequired.ToString();
+
     }
 
     void Update()
     {
         HandleMouseClick();
+
+        // Sprawdzenie, czy spawnPoint nie ma ju¿ dzieci
+        if (spawnPoint.childCount == 0)
+        {
+            MoveBackDoor(); // Jeœli brak dzieci, przesuwamy drzwi w lewo
+        }
     }
 
     private void HandleMouseClick()
@@ -276,35 +290,44 @@ public class TreasureRefiner : MonoBehaviour
         }
     }
 
-
-    // Funkcja do aktualizacji stanu przycisków na podstawie sceny
     private void UpdateButtonStates()
     {
         string currentScene = SceneManager.GetActiveScene().name;
         bool isHome = currentScene == "Home";
 
-        if (trashCategoryText != null)
+        // Sprawdzamy, czy obiekt trashCategoryText istnieje, zanim ustawimy jego widocznoœæ
+        if (trashCategoryText != null && trashCategoryText.gameObject != null)
             trashCategoryText.gameObject.SetActive(isHome);
 
-        if (trashCountText != null)
+        // Sprawdzamy, czy obiekt trashCountText istnieje, zanim ustawimy jego widocznoœæ
+        if (trashCountText != null && trashCountText.gameObject != null)
             trashCountText.gameObject.SetActive(isHome);
 
-        if (trashRefineCostText != null)
+        // Sprawdzamy, czy obiekt trashRefineCostText istnieje, zanim ustawimy jego widocznoœæ
+        if (trashRefineCostText != null && trashRefineCostText.gameObject != null)
             trashRefineCostText.gameObject.SetActive(isHome);
 
+        // Ustawienie tekstu dla trashRefineCostText, sprawdzaj¹c, czy obiekt jest dostêpny
         if (trashRefineCostText != null)
             trashRefineCostText.text = "/" + trashResourceRequired.ToString();
 
-        // W³¹cz/wy³¹cz przyciski prze³¹czania kategorii
+        // Sprawdzamy, czy lista categoryTexts zawiera jakieœ elementy przed manipulowaniem przyciskami
         if (categoryTexts.Length > 0)
         {
-            prevCategoryButton.SetActive(true);
-            nextCategoryButton.SetActive(true);
+            if (prevCategoryButton != null && prevCategoryButton.gameObject != null)
+                prevCategoryButton.SetActive(true);
+
+            if (nextCategoryButton != null && nextCategoryButton.gameObject != null)
+                nextCategoryButton.SetActive(true);
         }
         else
         {
-            prevCategoryButton.SetActive(false);
-            nextCategoryButton.SetActive(false);
+            // Jeœli lista categoryTexts jest pusta, wy³¹czamy przyciski
+            if (prevCategoryButton != null && prevCategoryButton.gameObject != null)
+                prevCategoryButton.SetActive(false);
+
+            if (nextCategoryButton != null && nextCategoryButton.gameObject != null)
+                nextCategoryButton.SetActive(false);
         }
     }
 
@@ -339,7 +362,8 @@ public class TreasureRefiner : MonoBehaviour
                     countTexts[selectedCategoryIndex].text = "0";
                 }
 
-                SpawnPrefab(isTrash: false);
+                // Wywo³anie SpawnPrefab z opóŸnieniem
+                StartCoroutine(DelayedSpawn(false));
                 RefreshSelectedCategoryUI();
             }
             else
@@ -351,6 +375,50 @@ public class TreasureRefiner : MonoBehaviour
         {
             Debug.Log("Za ma³o zasobów w wybranej kategorii!");
         }
+    }
+
+    // Metoda do przesuwania drzwi w prawo
+    private void MoveRightDoor()
+    {
+        // Rozpoczynamy przesuwanie drzwi w prawo, podaj¹c czas trwania
+        StartCoroutine(MoveDoorCoroutine(doorStartingPosition.x + doorDistance, doorMoveDuration));
+    }
+
+    // Metoda do przesuwania drzwi w lewo
+    private void MoveBackDoor()
+    {
+        // Rozpoczynamy przesuwanie drzwi w lewo, podaj¹c czas trwania
+        StartCoroutine(MoveDoorCoroutine(doorStartingPosition.x, doorMoveDuration));
+    }
+
+    // Coroutine do animacji przesuwania drzwi
+    private IEnumerator MoveDoorCoroutine(float targetLocalXPosition, float duration)
+    {
+        float elapsedTime = 0f;
+        float startingLocalXPosition = door.transform.localPosition.x;
+
+        // Dopóki drzwi nie osi¹gn¹ docelowej pozycji lokalnej, kontynuujemy ich przesuwanie
+        while (elapsedTime < duration)
+        {
+            // Obliczamy, jak¹ czêœæ ruchu nale¿y wykonaæ w danym czasie
+            float t = elapsedTime / duration;
+
+            // Interpolujemy miêdzy pocz¹tkow¹ pozycj¹ a docelow¹ pozycj¹ w lokalnych wspó³rzêdnych
+            float newX = Mathf.Lerp(startingLocalXPosition, targetLocalXPosition, t);
+            door.transform.localPosition = new Vector3(newX, door.transform.localPosition.y, door.transform.localPosition.z);
+
+            elapsedTime += Time.deltaTime; // Aktualizujemy czas, który up³yn¹³
+            yield return null;
+        }
+
+        // Zapewniamy, ¿e drzwi skoñcz¹ dok³adnie w docelowej pozycji lokalnej
+        door.transform.localPosition = new Vector3(targetLocalXPosition, door.transform.localPosition.y, door.transform.localPosition.z);
+    }
+
+    private IEnumerator DelayedSpawn(bool isTrash)
+    {
+        yield return new WaitForSeconds(spawnDelay); // Czekaj okreœlony czas
+        SpawnPrefab(isTrash); // Wywo³anie metody SpawnPrefab
     }
 
     private void SpawnPrefab(bool isTrash = false)
@@ -432,6 +500,8 @@ public class TreasureRefiner : MonoBehaviour
         spawned.tag = "Loot";
 
         Debug.Log("Prefab zespawnowany na Y = " + spawnPos.y + " z kategori¹: " + resourceCategory + " i iloœci¹: " + resourceAmount);
+
+        MoveRightDoor();
     }
 
     public void SupplyTrash()
@@ -501,8 +571,8 @@ public class TreasureRefiner : MonoBehaviour
                 trashAmount = currentTrashAmount; // <- zaktualizuj wewnêtrzn¹ wartoœæ!
                 trashCountText.text = currentTrashAmount.ToString();
 
-                // Spawnowanie Trash
-                SpawnPrefab(isTrash: true);
+                // Wywo³anie SpawnPrefab z opóŸnieniem
+                StartCoroutine(DelayedSpawn(true));
 
                 // I DOPIERO TERAZ odœwie¿enie UI:
                 RefreshSelectedCategoryUI();
