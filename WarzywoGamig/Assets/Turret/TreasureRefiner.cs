@@ -24,11 +24,11 @@ public class TreasureRefiner : MonoBehaviour
     public GameObject prevCategoryButton;
     public GameObject nextCategoryButton;
 
-    public GameObject refineButton; // 5-ty Cube
+    public GameObject refineButton;
+    public float maxInteractionDistance = 5f; // Maksymalny zasiêg interakcji z przyciskami
+
     public GameObject prefabToSpawn;
     public Transform spawnPoint;
-    // Zmienna do przechowywania pocz¹tkowej pozycji obiektu
-
     public GameObject door;
     public float doorDistance = 3;
     public float doorMoveDuration = 1f;  // Prêdkoœæ ruchu drzwi
@@ -92,7 +92,7 @@ public class TreasureRefiner : MonoBehaviour
 
     private void HandleMouseClick()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetKeyDown(KeyCode.E))
         {
             RaycastHit hit;
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
