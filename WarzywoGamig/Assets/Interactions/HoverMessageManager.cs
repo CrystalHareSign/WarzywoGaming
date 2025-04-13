@@ -4,6 +4,7 @@ using TMPro;
 public class HoverMessageManager : MonoBehaviour
 {
     public TMP_Text messageText; // Tekst, który bêdzie wyœwietlany po najechaniu kursorem
+    public TMP_Text keyText; // Tekst z przyciskiem (np. "E")
     private Camera mainCamera;
 
     public static HoverMessageManager Instance;
@@ -30,45 +31,56 @@ public class HoverMessageManager : MonoBehaviour
         {
             messageText.gameObject.SetActive(false);
         }
-        // Pobierz g³ówn¹ kamerê
+
+        if (keyText != null)
+        {
+            keyText.gameObject.SetActive(false); // Upewnij siê, ¿e jest zakomentowane!
+        }
+
         mainCamera = Camera.main;
     }
 
+
     void Update()
     {
-        // Rzutowanie promienia z pozycji kursora
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
 
-        // Sprawdzenie, czy promieñ trafia w collider obiektu
         if (Physics.Raycast(ray, out hit))
         {
             HoverMessage hoverMessage = hit.transform.GetComponent<HoverMessage>();
             if (hoverMessage != null && hit.distance <= hoverMessage.interactionDistance && !hoverMessage.isInteracted && InteractivityManager.Instance.IsInteractable(hit.transform.gameObject))
             {
-                // Wyœwietl komunikat po najechaniu kursorem na obiekt
-                if (messageText != null)
+                if (messageText != null && keyText != null)
                 {
                     messageText.text = hoverMessage.message;
+                    keyText.text = hoverMessage.keyText; // Nie zapomnij u¿yæ hoverMessage.keyText
+
+                    messageText.fontSize = hoverMessage.fontSize;
+                    keyText.fontSize = hoverMessage.fontSize;
+
                     messageText.gameObject.SetActive(true);
+                    keyText.gameObject.SetActive(true); // W³¹czamy keyText, jak messageText
                 }
             }
             else
             {
-                // Ukryj komunikat, jeœli kursor nie jest nad obiektem
-                if (messageText != null)
+                // Ukrywamy oba teksty
+                if (messageText != null && keyText != null)
                 {
                     messageText.gameObject.SetActive(false);
+                    keyText.gameObject.SetActive(false);
                 }
             }
         }
         else
         {
-            // Ukryj komunikat, jeœli kursor nie jest nad obiektem
-            if (messageText != null)
+            if (messageText != null && keyText != null)
             {
                 messageText.gameObject.SetActive(false);
+                keyText.gameObject.SetActive(false);
             }
         }
     }
+
 }

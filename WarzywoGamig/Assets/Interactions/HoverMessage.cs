@@ -1,9 +1,11 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class HoverMessage : MonoBehaviour
 {
     public string message;
+    public string keyText;
     public float interactionDistance = 5f;
     public bool isInteracted = false;
     public bool alwaysActive = false;
@@ -12,6 +14,9 @@ public class HoverMessage : MonoBehaviour
     public bool UsingSceneSystem = false; // Nowy prze³¹cznik
     public bool SceneMain = false;
     public bool SceneHome = false;
+
+    [Header("Wygl¹d")]
+    public int fontSize = 30;
 
     private void Start()
     {

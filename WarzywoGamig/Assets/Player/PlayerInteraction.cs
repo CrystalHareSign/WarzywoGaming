@@ -10,6 +10,7 @@ public class PlayerInteraction : MonoBehaviour
     public Camera playerCamera;
     public Image progressCircle;
     public TMP_Text messageText;
+    public TMP_Text keyText;
     public Inventory inventory;
     public InventoryUI inventoryUI;
 
@@ -57,6 +58,11 @@ public class PlayerInteraction : MonoBehaviour
         {
             messageText.gameObject.SetActive(false);
         }
+
+        if (keyText != null)
+        {
+            keyText.gameObject.SetActive(false);
+        }
     }
 
     void Update()
@@ -84,7 +90,15 @@ public class PlayerInteraction : MonoBehaviour
                 if (messageText != null && interactableItem.hoverMessage != null)
                 {
                     messageText.text = interactableItem.hoverMessage.message;
+                    messageText.fontSize = interactableItem.hoverMessage.fontSize;
                     messageText.gameObject.SetActive(true);
+                }
+
+                if (keyText != null && interactableItem.hoverMessage != null)
+                {
+                    keyText.text = interactableItem.hoverMessage.keyText;
+                    keyText.fontSize = interactableItem.hoverMessage.fontSize;
+                    keyText.gameObject.SetActive(true);
                 }
 
                 if (progressCircle != null)
@@ -213,6 +227,11 @@ public class PlayerInteraction : MonoBehaviour
         {
             messageText.gameObject.SetActive(false);
         }
+
+        if (keyText != null)
+        {
+            keyText.gameObject.SetActive(false);
+        }
     }
 
     private void ResetInteraction()
@@ -227,6 +246,11 @@ public class PlayerInteraction : MonoBehaviour
         if (messageText != null)
         {
             messageText.gameObject.SetActive(false);
+        }
+
+        if (keyText != null)
+        {
+            keyText.gameObject.SetActive(false);
         }
 
         currentInteractableItem = null;
