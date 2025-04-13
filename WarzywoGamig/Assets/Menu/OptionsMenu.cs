@@ -59,7 +59,7 @@ public class OptionsMenu : MonoBehaviour
     {
         generalOptionsPanel.SetActive(false);
         soundOptionsPanel.SetActive(false);
-        //visualOptionsPanel.SetActive(true);
+        visualOptionsPanel.SetActive(true);
         optionsMenuUI.SetActive(false); // Ukryj menu opcji
     }
     public void BackToPauseMenu()

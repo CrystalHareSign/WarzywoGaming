@@ -9,6 +9,9 @@ public class PauseMenu : MonoBehaviour
 
     public GameObject pauseMenuUI;
     public GameObject optionsMenuUI; // Dodaj referencjê do menu opcji
+    public GameObject generalOptionsMenuUI;
+    public GameObject visualOptionsMenuUI;
+    public GameObject soundOptionsMenuUI;
     public MouseLook mouseLook;
 
     [Header("Teksty przycisków")]
@@ -61,16 +64,34 @@ public class PauseMenu : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (GameIsPaused)
+            // Jeœli jesteœ w jednym z podmenu opcji – wracaj do optionsMenuUI
+            if (generalOptionsMenuUI.activeSelf || visualOptionsMenuUI.activeSelf || soundOptionsMenuUI.activeSelf)
+            {
+                generalOptionsMenuUI.SetActive(false);
+                visualOptionsMenuUI.SetActive(false);
+                soundOptionsMenuUI.SetActive(false);
+
+                optionsMenuUI.SetActive(true);
+            }
+            // Jeœli jesteœ w menu opcji – wracaj do menu pauzy
+            else if (optionsMenuUI.activeSelf)
+            {
+                optionsMenuUI.SetActive(false);
+                pauseMenuUI.SetActive(true);
+            }
+            // Jeœli jesteœ w menu pauzy – wznow grê
+            else if (pauseMenuUI.activeSelf)
             {
                 Resume();
             }
+            // W innym wypadku – zapauzuj grê
             else
             {
                 Pause();
             }
         }
     }
+
 
     public void Resume()
     {

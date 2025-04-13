@@ -26,6 +26,13 @@ public class UITranslations
     public string music;
     public string sfx;
     public string ambient;
+    [Header("VisualMenu")]
+    public string apply3;
+    public string cancel3;
+    public string back3;
+    public string reset3;
+    public string resolution;
+    public string fullscreen;
 }
 
 public class LanguageManager : MonoBehaviour
