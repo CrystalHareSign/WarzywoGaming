@@ -23,6 +23,15 @@ public class SoundOptionsMenu : MonoBehaviour
     public TMP_Text sfxVolumeText;
     public TMP_Text ambientVolumeText;
 
+    [Header("Teksty przycisków")]
+    public TMP_Text apply2ButtonText;
+    public TMP_Text cancel2ButtonText;
+    public TMP_Text back2ButtonText;
+    public TMP_Text reset2ButtonText;
+    public TMP_Text musicText;
+    public TMP_Text sfxText;
+    public TMP_Text ambientText;
+
     public static SoundOptionsMenu instance;
 
     private void Awake()
@@ -63,6 +72,15 @@ public class SoundOptionsMenu : MonoBehaviour
             sfxVolumeSlider.interactable = false;
             ambientVolumeSlider.interactable = false;
         }
+
+        // Subskrybuj zmiany jêzyka
+        if (LanguageManager.Instance != null)
+        {
+            LanguageManager.Instance.OnLanguageChanged += UpdateButtonTexts;
+        }
+
+        // Zaktualizuj teksty przycisków
+        UpdateButtonTexts();
     }
 
     private void UpdateSliderValue(Slider slider, TMP_Text text, System.Action<float> updateAction)
@@ -181,4 +199,19 @@ public class SoundOptionsMenu : MonoBehaviour
         Debug.Log("Ustawienia zresetowane do wartoœci domyœlnych.");
     }
 
+    public void UpdateButtonTexts()
+    {
+        Debug.Log("UpdateButtonTexts called");
+
+        if (LanguageManager.Instance == null) return;
+        var uiTexts = LanguageManager.Instance.CurrentUITexts;
+
+        if (apply2ButtonText != null) apply2ButtonText.text = uiTexts.apply1;
+        if (cancel2ButtonText != null) cancel2ButtonText.text = uiTexts.cancel1;
+        if (back2ButtonText != null) back2ButtonText.text = uiTexts.back1;
+        if (reset2ButtonText != null) reset2ButtonText.text = uiTexts.reset1;
+        if (musicText != null) musicText.text = uiTexts.music;
+        if (sfxText != null) sfxText.text = uiTexts.sfx;
+        if (ambientText != null) ambientText.text = uiTexts.ambient;
+    }
 }

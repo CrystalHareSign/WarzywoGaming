@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 public class OptionsMenu : MonoBehaviour
@@ -7,6 +8,12 @@ public class OptionsMenu : MonoBehaviour
     public GameObject generalOptionsPanel;
     public GameObject soundOptionsPanel;
     public GameObject visualOptionsPanel;
+
+    [Header("Teksty przycisków")]
+    public TMP_Text generalSettingsText;
+    public TMP_Text soundSettingsText;
+    public TMP_Text visualSettingsText;
+    public TMP_Text backButtonText;
 
     public static OptionsMenu instance;
 
@@ -25,6 +32,11 @@ public class OptionsMenu : MonoBehaviour
     void Start()
     {
         optionsMenuUI.SetActive(false); // Upewnij siê, ¿e menu opcji jest niewidoczne na starcie
+
+        if (LanguageManager.Instance != null)
+        {
+            LanguageManager.Instance.OnLanguageChanged += UpdateButtonTexts;
+        }
     }
 
     public void ShowGeneralSettings()
@@ -54,5 +66,17 @@ public class OptionsMenu : MonoBehaviour
     {
         optionsMenuUI.SetActive(false); // Ukryj menu opcji
         pauseMenuUI.SetActive(true); // Poka¿ menu pauzy
+    }
+
+    public void UpdateButtonTexts()
+    {
+        if (LanguageManager.Instance == null) return;
+
+        var texts = LanguageManager.Instance.CurrentUITexts;
+
+        if (generalSettingsText != null) generalSettingsText.text = texts.generalSettings;
+        if (soundSettingsText != null) soundSettingsText.text = texts.soundSettings;
+        if (visualSettingsText != null) visualSettingsText.text = texts.visualSettings;
+        if (backButtonText != null) backButtonText.text = texts.back;
     }
 }

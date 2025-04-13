@@ -15,6 +15,13 @@ public class GeneralOptionsMenu : MonoBehaviour
 
     private LanguageManager.Language tempSelectedLanguage;
 
+    [Header("Teksty przycisków")]
+    public TMP_Text apply1ButtonText;
+    public TMP_Text cancel1ButtonText;
+    public TMP_Text back1ButtonText;
+    public TMP_Text reset1ButtonText;
+    public TMP_Text languageText;
+
     private void Awake()
     {
         if (instance == null)
@@ -31,6 +38,15 @@ public class GeneralOptionsMenu : MonoBehaviour
     void Start()
     {
         InitializeDropdown();
+
+        // Subskrybuj zmiany jêzyka
+        if (LanguageManager.Instance != null)
+        {
+            LanguageManager.Instance.OnLanguageChanged += UpdateButtonTexts;
+        }
+
+        // Zaktualizuj teksty przycisków
+        UpdateButtonTexts();
     }
 
     void InitializeDropdown()
@@ -96,5 +112,19 @@ public class GeneralOptionsMenu : MonoBehaviour
         CancelChanges();
         generalOptionsMenuUI.SetActive(false);
         optionsMenuUI.SetActive(true);
+    }
+
+    public void UpdateButtonTexts()
+    {
+        Debug.Log("UpdateButtonTexts called");
+
+        if (LanguageManager.Instance == null) return;
+        var uiTexts = LanguageManager.Instance.CurrentUITexts;
+
+        if (apply1ButtonText != null) apply1ButtonText.text = uiTexts.apply1;
+        if (cancel1ButtonText != null) cancel1ButtonText.text = uiTexts.cancel1;
+        if (back1ButtonText != null) back1ButtonText.text = uiTexts.back1;
+        if (reset1ButtonText != null) reset1ButtonText.text = uiTexts.reset1;
+        if (languageText != null) languageText.text = uiTexts.language;
     }
 }

@@ -3,9 +3,29 @@ using UnityEngine;
 [System.Serializable]
 public class UITranslations
 {
+    [Header("PauseMenu")]
     public string resume;
     public string options;
     public string quit;
+    [Header("OptionsMenu")]
+    public string generalSettings;
+    public string soundSettings;
+    public string visualSettings;
+    public string back;
+    [Header("GeneralMenu")]
+    public string apply1;
+    public string cancel1;
+    public string back1;
+    public string reset1;
+    public string language;
+    [Header("SoundMenu")]
+    public string apply2;
+    public string cancel2;
+    public string back2;
+    public string reset2;
+    public string music;
+    public string sfx;
+    public string ambient;
 }
 
 public class LanguageManager : MonoBehaviour
@@ -19,6 +39,7 @@ public class LanguageManager : MonoBehaviour
     public UITranslations englishTexts;
     public UITranslations polishTexts;
     public UITranslations germanTexts;
+
 
     public UITranslations CurrentUITexts
     {

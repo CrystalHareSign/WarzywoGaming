@@ -46,6 +46,15 @@ public class PauseMenu : MonoBehaviour
                 Debug.LogWarning("Nie znaleziono MouseLook w scenie!");
             }
         }
+
+        // Subskrybuj zmiany jêzyka
+        if (LanguageManager.Instance != null)
+        {
+            LanguageManager.Instance.OnLanguageChanged += UpdateButtonTexts;
+        }
+
+        // Zaktualizuj teksty przycisków
+        UpdateButtonTexts();
     }
 
     void Update()
@@ -104,8 +113,8 @@ public class PauseMenu : MonoBehaviour
 
         var uiTexts = LanguageManager.Instance.CurrentUITexts;
 
-        resumeButtonText.text = uiTexts.resume;
-        optionsButtonText.text = uiTexts.options;
-        quitButtonText.text = uiTexts.quit;
+        if (resumeButtonText != null) resumeButtonText.text = uiTexts.resume;
+        if (optionsButtonText != null) optionsButtonText.text = uiTexts.options;
+        if (quitButtonText != null) quitButtonText.text = uiTexts.quit;
     }
 }
