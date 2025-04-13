@@ -441,13 +441,20 @@ public class Inventory : MonoBehaviour
             return;
         }
 
+        Debug.Log($"LootParent: {lootParent.name}");
+        Debug.Log($"Obiekt do usunięcia: {objectToRemove.name} (ID: {objectToRemove.GetInstanceID()})");
+
+        string objectToRemoveName = objectToRemove.name.Replace("(Clone)", "").Replace("(Clone)(Clone)", "").Trim();
+
         Transform foundObject = null;
 
-        // Przeszukujemy dzieci LootParent, ignorując nazwę i skupiając się na prefabriku
         foreach (Transform child in lootParent)
         {
-            if (PrefabUtility.GetCorrespondingObjectFromSource(child.gameObject) ==
-                PrefabUtility.GetCorrespondingObjectFromSource(objectToRemove))
+            string childName = child.gameObject.name.Replace("(Clone)", "").Replace("(Clone)(Clone)", "").Trim();
+
+            Debug.Log($"Porównuję: {childName} z {objectToRemoveName}");
+
+            if (childName == objectToRemoveName)
             {
                 foundObject = child;
                 break;
@@ -456,12 +463,12 @@ public class Inventory : MonoBehaviour
 
         if (foundObject != null)
         {
-            Debug.Log("Usuwam obiekt z LootParent: " + foundObject.name);
-            Destroy(foundObject.gameObject); // Usuwamy obiekt z LootParent
+            Debug.Log($"Usuwam obiekt z LootParent: {foundObject.name}");
+            Destroy(foundObject.gameObject);
         }
         else
         {
-            Debug.LogWarning("Nie znaleziono odpowiedniego obiektu w LootParent dla: " + objectToRemove.name);
+            Debug.LogWarning($"Nie znaleziono odpowiedniego obiektu w LootParent dla: {objectToRemove.name}");
         }
     }
 

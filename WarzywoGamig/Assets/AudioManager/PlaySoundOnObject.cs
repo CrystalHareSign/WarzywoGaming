@@ -25,7 +25,7 @@ public class PlaySoundOnObject : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning($"AudioSource dla dŸwiêku '{source.soundName}' nie jest przypisany w obiekcie {gameObject.name}!");
+                //Debug.LogWarning($"AudioSource dla dŸwiêku '{source.soundName}' nie jest przypisany w obiekcie {gameObject.name}!");
             }
         }
     }
@@ -36,7 +36,7 @@ public class PlaySoundOnObject : MonoBehaviour
         var foundSource = GetAudioSourceByName(soundName);
         if (foundSource == null || foundSource.audioSource == null || foundSource.audioSource.clip == null)
         {
-            Debug.LogWarning($"Brak dŸwiêku '{soundName}' w obiekcie {gameObject.name}!");
+            //Debug.LogWarning($"Brak dŸwiêku '{soundName}' w obiekcie {gameObject.name}!");
             return;
         }
 
@@ -60,7 +60,7 @@ public class PlaySoundOnObject : MonoBehaviour
         {
             // Metoda PlayOneShot dla SFX
             foundSource.audioSource.PlayOneShot(foundSource.audioSource.clip, finalVolume);
-            Debug.Log($"Odtworzono SFX '{soundName}' jako PlayOneShot w obiekcie {gameObject.name}.");
+            //Debug.Log($"Odtworzono SFX '{soundName}' jako PlayOneShot w obiekcie {gameObject.name}.");
         }
         else
         {
@@ -71,11 +71,11 @@ public class PlaySoundOnObject : MonoBehaviour
             if (!foundSource.audioSource.isPlaying)
             {
                 foundSource.audioSource.Play(); // Odtwórz dŸwiêk
-                Debug.Log($"Odtworzono dŸwiêk '{soundName}' w obiekcie {gameObject.name}.");
+                //Debug.Log($"Odtworzono dŸwiêk '{soundName}' w obiekcie {gameObject.name}.");
             }
             else
             {
-                Debug.Log($"DŸwiêk '{soundName}' ju¿ jest odtwarzany w obiekcie {gameObject.name}.");
+                //Debug.Log($"DŸwiêk '{soundName}' ju¿ jest odtwarzany w obiekcie {gameObject.name}.");
             }
         }
     }
@@ -116,14 +116,14 @@ public class PlaySoundOnObject : MonoBehaviour
         var foundSource = GetAudioSourceByName(soundName);
         if (foundSource == null || foundSource.audioSource == null)
         {
-            Debug.LogWarning($"DŸwiêk '{soundName}' nie znaleziony lub audioSource jest null.");
+            //Debug.LogWarning($"DŸwiêk '{soundName}' nie znaleziony lub audioSource jest null.");
             return;
         }
 
         if (foundSource.audioSource.isPlaying)
         {
             foundSource.audioSource.Stop();
-            Debug.Log($"Zatrzymano dŸwiêk '{soundName}' w obiekcie {gameObject.name}.");
+            //Debug.Log($"Zatrzymano dŸwiêk '{soundName}' w obiekcie {gameObject.name}.");
         }
     }
 
