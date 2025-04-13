@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using TMPro.Examples;
 using UnityEngine;
 
@@ -9,6 +10,12 @@ public class PauseMenu : MonoBehaviour
     public GameObject pauseMenuUI;
     public GameObject optionsMenuUI; // Dodaj referencjê do menu opcji
     public MouseLook mouseLook;
+
+    [Header("Teksty przycisków")]
+    public TMP_Text resumeButtonText;
+    public TMP_Text optionsButtonText;
+    public TMP_Text quitButtonText;
+
 
     public static PauseMenu instance;
 
@@ -28,7 +35,6 @@ public class PauseMenu : MonoBehaviour
     {
         Time.timeScale = 1f;
         pauseMenuUI.SetActive(false); // Upewnij siê, ¿e menu pauzy jest niewidoczne na starcie
-        optionsMenuUI.SetActive(false); // Upewnij siê, ¿e menu opcji jest niewidoczne na starcie
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
@@ -86,15 +92,20 @@ public class PauseMenu : MonoBehaviour
         Time.timeScale = 0.01f;
     }
 
-    public void BackToPauseMenu()
-    {
-        optionsMenuUI.SetActive(false); // Ukryj menu opcji
-        pauseMenuUI.SetActive(true); // Poka¿ menu pauzy
-    }
-
     public void QuitGame()
     {
         Debug.Log("Quit game");
         Application.Quit();
+    }
+
+    public void UpdateButtonTexts()
+    {
+        if (LanguageManager.Instance == null) return;
+
+        var uiTexts = LanguageManager.Instance.CurrentUITexts;
+
+        resumeButtonText.text = uiTexts.resume;
+        optionsButtonText.text = uiTexts.options;
+        quitButtonText.text = uiTexts.quit;
     }
 }

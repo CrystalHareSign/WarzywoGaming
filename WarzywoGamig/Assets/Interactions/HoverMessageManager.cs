@@ -56,8 +56,8 @@ public class HoverMessageManager : MonoBehaviour
                     messageText.text = hoverMessage.message;
                     keyText.text = hoverMessage.keyText; // Nie zapomnij u¿yæ hoverMessage.keyText
 
-                    messageText.fontSize = hoverMessage.fontSize;
-                    keyText.fontSize = hoverMessage.fontSize;
+                    messageText.fontSize = hoverMessage.messageFontSize;
+                    keyText.fontSize = hoverMessage.keyFontSize;
 
                     messageText.gameObject.SetActive(true);
                     keyText.gameObject.SetActive(true); // W³¹czamy keyText, jak messageText

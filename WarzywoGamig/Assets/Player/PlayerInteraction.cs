@@ -90,14 +90,14 @@ public class PlayerInteraction : MonoBehaviour
                 if (messageText != null && interactableItem.hoverMessage != null)
                 {
                     messageText.text = interactableItem.hoverMessage.message;
-                    messageText.fontSize = interactableItem.hoverMessage.fontSize;
+                    messageText.fontSize = interactableItem.hoverMessage.messageFontSize;
                     messageText.gameObject.SetActive(true);
                 }
 
                 if (keyText != null && interactableItem.hoverMessage != null)
                 {
                     keyText.text = interactableItem.hoverMessage.keyText;
-                    keyText.fontSize = interactableItem.hoverMessage.fontSize;
+                    keyText.fontSize = interactableItem.hoverMessage.keyFontSize;
                     keyText.gameObject.SetActive(true);
                 }
 
