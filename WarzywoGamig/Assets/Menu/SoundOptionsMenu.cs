@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro; // Import TextMeshPro namespace
+using System.Collections.Generic;
 
 public class SoundOptionsMenu : MonoBehaviour
 {
@@ -33,6 +34,9 @@ public class SoundOptionsMenu : MonoBehaviour
     public TMP_Text ambientText;
 
     public static SoundOptionsMenu instance;
+
+    // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
+    private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
     private void Awake()
     {
@@ -81,6 +85,9 @@ public class SoundOptionsMenu : MonoBehaviour
 
         // Zaktualizuj teksty przycisków
         UpdateButtonTexts();
+
+        // ZnajdŸ wszystkie obiekty posiadaj¹ce PlaySoundOnObject i dodaj do listy
+        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
     }
 
     private void UpdateSliderValue(Slider slider, TMP_Text text, System.Action<float> updateAction)
@@ -213,5 +220,36 @@ public class SoundOptionsMenu : MonoBehaviour
         if (musicText != null) musicText.text = uiTexts.music;
         if (sfxText != null) sfxText.text = uiTexts.sfx;
         if (ambientText != null) ambientText.text = uiTexts.ambient;
+    }
+
+    public void EnterButtonSound()
+    {
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("MenuEnter", 0.4f, false);
+        }
+    }
+
+    public void ExitButtonSound()
+    {
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("MenuExit", 0.4f, false);
+        }
+    }
+
+    public void HoverButtonSound()
+    {
+        Debug.Log("dzia³a przucisk");
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("MenuMouseOn", 0.8f, false);
+        }
     }
 }

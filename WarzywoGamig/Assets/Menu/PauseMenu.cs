@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using TMPro.Examples;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class PauseMenu : MonoBehaviour
 {
@@ -21,6 +22,9 @@ public class PauseMenu : MonoBehaviour
 
 
     public static PauseMenu instance;
+
+    // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
+    private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
     private void Awake()
     {
@@ -58,6 +62,9 @@ public class PauseMenu : MonoBehaviour
 
         // Zaktualizuj teksty przycisków
         UpdateButtonTexts();
+
+        // ZnajdŸ wszystkie obiekty posiadaj¹ce PlaySoundOnObject i dodaj do listy
+        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
     }
 
     void Update()
@@ -72,22 +79,50 @@ public class PauseMenu : MonoBehaviour
                 soundOptionsMenuUI.SetActive(false);
 
                 optionsMenuUI.SetActive(true);
+
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+
+                    playSoundOnObject.PlaySound("MenuExit", 0.6f, false);
+                }
             }
             // Jeœli jesteœ w menu opcji – wracaj do menu pauzy
             else if (optionsMenuUI.activeSelf)
             {
                 optionsMenuUI.SetActive(false);
                 pauseMenuUI.SetActive(true);
+
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+
+                    playSoundOnObject.PlaySound("MenuExit", 0.6f, false);
+                }
             }
             // Jeœli jesteœ w menu pauzy – wznow grê
             else if (pauseMenuUI.activeSelf)
             {
                 Resume();
+
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+
+                    playSoundOnObject.PlaySound("MenuExit", 0.6f, false);
+                }
             }
             // W innym wypadku – zapauzuj grê
             else
             {
                 Pause();
+
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+
+                    playSoundOnObject.PlaySound("MenuEnter", 0.6f, false);
+                }
             }
         }
     }
@@ -102,6 +137,13 @@ public class PauseMenu : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         mouseLook.enabled = true; // w³¹cz kamerê
+
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.StopSound("PauseMenuMusic");
+        }
     }
 
     void Pause()
@@ -113,6 +155,13 @@ public class PauseMenu : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         mouseLook.enabled = false; // wy³¹cz kamerê
+
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("PauseMenuMusic", 1.0f, true);
+        }
     }
 
     public void LoadOptionsMenu()
@@ -137,5 +186,35 @@ public class PauseMenu : MonoBehaviour
         if (resumeButtonText != null) resumeButtonText.text = uiTexts.resume;
         if (optionsButtonText != null) optionsButtonText.text = uiTexts.options;
         if (quitButtonText != null) quitButtonText.text = uiTexts.quit;
+    }
+    public void EnterButtonSound()
+    {
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("MenuEnter", 0.4f, false);
+        }
+    }
+
+    public void ExitButtonSound()
+    {
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("MenuExit", 0.4f, false);
+        }
+    }
+
+    public void HoverButtonSound()
+    {
+        Debug.Log("dzia³a przucisk");
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("MenuMouseOn", 0.8f, false);
+        }
     }
 }

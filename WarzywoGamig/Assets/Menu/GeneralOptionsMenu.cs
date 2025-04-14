@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -21,6 +22,9 @@ public class GeneralOptionsMenu : MonoBehaviour
     public TMP_Text back1ButtonText;
     public TMP_Text reset1ButtonText;
     public TMP_Text languageText;
+
+    // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
+    private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
     private void Awake()
     {
@@ -47,6 +51,9 @@ public class GeneralOptionsMenu : MonoBehaviour
 
         // Zaktualizuj teksty przycisków
         UpdateButtonTexts();
+
+        // ZnajdŸ wszystkie obiekty posiadaj¹ce PlaySoundOnObject i dodaj do listy
+        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
     }
 
     void InitializeDropdown()
@@ -126,5 +133,36 @@ public class GeneralOptionsMenu : MonoBehaviour
         if (back1ButtonText != null) back1ButtonText.text = uiTexts.back1;
         if (reset1ButtonText != null) reset1ButtonText.text = uiTexts.reset1;
         if (languageText != null) languageText.text = uiTexts.language;
+    }
+
+    public void EnterButtonSound()
+    {
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("MenuEnter", 0.4f, false);
+        }
+    }
+
+    public void ExitButtonSound()
+    {
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("MenuExit", 0.4f, false);
+        }
+    }
+
+    public void HoverButtonSound()
+    {
+        Debug.Log("dzia³a przucisk");
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("MenuMouseOn", 0.8f, false);
+        }
     }
 }

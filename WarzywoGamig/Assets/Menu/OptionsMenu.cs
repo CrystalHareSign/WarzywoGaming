@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -16,6 +17,9 @@ public class OptionsMenu : MonoBehaviour
     public TMP_Text backButtonText;
 
     public static OptionsMenu instance;
+
+    // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
+    private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
     private void Awake()
     {
@@ -37,6 +41,9 @@ public class OptionsMenu : MonoBehaviour
         {
             LanguageManager.Instance.OnLanguageChanged += UpdateButtonTexts;
         }
+
+        // ZnajdŸ wszystkie obiekty posiadaj¹ce PlaySoundOnObject i dodaj do listy
+        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
     }
 
     public void ShowGeneralSettings()
@@ -78,5 +85,36 @@ public class OptionsMenu : MonoBehaviour
         if (soundSettingsText != null) soundSettingsText.text = texts.soundSettings;
         if (visualSettingsText != null) visualSettingsText.text = texts.visualSettings;
         if (backButtonText != null) backButtonText.text = texts.back;
+    }
+
+    public void EnterButtonSound()
+    {
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("MenuEnter", 0.4f, false);
+        }
+    }
+
+    public void ExitButtonSound()
+    {
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("MenuExit", 0.4f, false);
+        }
+    }
+
+    public void HoverButtonSound()
+    {
+        Debug.Log("dzia³a przucisk");
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("MenuMouseOn", 0.8f, false);
+        }
     }
 }

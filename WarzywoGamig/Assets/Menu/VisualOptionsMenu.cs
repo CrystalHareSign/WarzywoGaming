@@ -25,6 +25,9 @@ public class VisualOptionsMenu : MonoBehaviour
     public TMP_Text resolutionText;
     public TMP_Text fullscreenText;
 
+    // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
+    private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
+
     void Start()
     {
         InitializeResolutions();
@@ -40,6 +43,9 @@ public class VisualOptionsMenu : MonoBehaviour
         {
             LanguageManager.Instance.OnLanguageChanged += UpdateButtonTexts;
         }
+
+        // ZnajdŸ wszystkie obiekty posiadaj¹ce PlaySoundOnObject i dodaj do listy
+        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
     }
 
     void InitializeResolutions()
@@ -146,5 +152,36 @@ public class VisualOptionsMenu : MonoBehaviour
         fullscreenToggle.isOn = tempFullscreen;
 
         resolutionDropdown.RefreshShownValue();
+    }
+
+    public void EnterButtonSound()
+    {
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("MenuEnter", 0.4f, false);
+        }
+    }
+
+    public void ExitButtonSound()
+    {
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("MenuExit", 0.4f, false);
+        }
+    }
+
+    public void HoverButtonSound()
+    {
+        Debug.Log("dzia³a przucisk");
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("MenuMouseOn", 0.8f, false);
+        }
     }
 }
