@@ -5,13 +5,16 @@ public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float sprintSpeed = 8f; // Nowa zmienna - sprint
     [SerializeField] private float gravity = -9.81f;
     [SerializeField] private float jumpHeight = 1.5f;
+    [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift; // Klawisz sprintu
 
     [Header("Sound Settings")]
-    [SerializeField] private string[] indoorWalkingSounds; // Dźwięki wewnątrz
-    [SerializeField] private string[] outdoorWalkingSounds; // Dźwięki na zewnątrz
+    [SerializeField] private string[] indoorWalkingSounds;
+    [SerializeField] private string[] outdoorWalkingSounds;
     [SerializeField] private float walkSoundDelay = 0.5f;
+    [SerializeField] private float sprintSoundDelay = 0.3f; // Dźwięki sprintu
 
     private CharacterController controller;
     private Vector3 velocity;
@@ -23,15 +26,13 @@ public class PlayerMovement : MonoBehaviour
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
     private float lastSoundTime = 0f;
 
-    private AudioChanger audioChanger; // Referencja do skryptu AudioChanger
+    private AudioChanger audioChanger;
 
     private void Start()
     {
         controller = GetComponent<CharacterController>();
         playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
-        audioChanger = FindObjectOfType<AudioChanger>(); // Pobranie referencji do AudioChanger
-
-        // Możesz zainicjować dźwięki wewnętrzne i zewnętrzne według potrzeby
+        audioChanger = FindObjectOfType<AudioChanger>();
     }
 
     private void Update()
@@ -69,9 +70,13 @@ public class PlayerMovement : MonoBehaviour
         float moveZ = Input.GetAxis("Vertical");
         Vector3 move = transform.right * moveX + transform.forward * moveZ;
 
-        controller.Move(move * moveSpeed * Time.deltaTime);
+        bool isSprinting = Input.GetKey(sprintKey) && move.magnitude > 0.1f && isGrounded;
+        float currentSpeed = isSprinting ? sprintSpeed : moveSpeed;
+        float currentSoundDelay = isSprinting ? sprintSoundDelay : walkSoundDelay;
 
-        if (move.magnitude > 0f && isGrounded && Time.time - lastSoundTime >= walkSoundDelay)
+        controller.Move(move * currentSpeed * Time.deltaTime);
+
+        if (move.magnitude > 0f && isGrounded && Time.time - lastSoundTime >= currentSoundDelay)
         {
             PlayRandomWalkSounds();
             lastSoundTime = Time.time;
@@ -109,7 +114,7 @@ public class PlayerMovement : MonoBehaviour
     {
         if (audioChanger != null)
         {
-            if (audioChanger.isPlayerInside) // Debug: Sprawdzanie, czy gracz jest wewnątrz
+            if (audioChanger.isPlayerInside)
             {
                 Debug.Log("Gracz jest wewnątrz, odtwarzanie dźwięków wewnętrznych.");
                 PlayRandomSounds(indoorWalkingSounds);
@@ -128,13 +133,13 @@ public class PlayerMovement : MonoBehaviour
 
         int randomIndex = Random.Range(0, sounds.Length);
         string randomSound = sounds[randomIndex];
-        Debug.Log("Odtwarzanie dźwięku: " + randomSound); // Debug: Sprawdzanie, który dźwięk jest odtwarzany
+        Debug.Log("Odtwarzanie dźwięku: " + randomSound);
 
         foreach (var playSoundOnObject in playSoundObjects)
         {
             if (playSoundOnObject == null) continue;
 
-            playSoundOnObject.PlaySound(randomSound, 1f, false);
+            playSoundOnObject.PlaySound(randomSound, 0.5f, false);
         }
     }
 }
