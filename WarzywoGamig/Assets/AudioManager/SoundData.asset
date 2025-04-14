@@ -70,3 +70,18 @@ MonoBehaviour:
   - name: MenuMouseOn
     clip: {fileID: 8300000, guid: 244e16d681347ec41990417deaffa3f1, type: 3}
     volume: 1
+  - name: Step1
+    clip: {fileID: 8300000, guid: 8096e4218efa54142ab19aa90bd30773, type: 3}
+    volume: 1
+  - name: Step2
+    clip: {fileID: 8300000, guid: 68f9bcb5aed8907469564eb9939ad649, type: 3}
+    volume: 1
+  - name: Step3
+    clip: {fileID: 8300000, guid: 9384d34a803c4dd4f94e8b5586b20d66, type: 3}
+    volume: 1
+  - name: Step4
+    clip: {fileID: 8300000, guid: 190b24882d253db4e87c8ac0d999d896, type: 3}
+    volume: 1
+  - name: Step5
+    clip: {fileID: 8300000, guid: 9485f97f9cf9db246ba59ac2c8b7e069, type: 3}
+    volume: 1
