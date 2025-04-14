@@ -9,8 +9,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float jumpHeight = 1.5f;
 
     [Header("Sound Settings")]
-    [SerializeField] private string[] walkingSounds; // Tablica nazw dźwięków chodzenia
-    [SerializeField] private float walkSoundDelay = 0.5f; // Opóźnienie między kolejnymi dźwiękami (w sekundach)
+    [SerializeField] private string[] indoorWalkingSounds; // Dźwięki wewnątrz
+    [SerializeField] private string[] outdoorWalkingSounds; // Dźwięki na zewnątrz
+    [SerializeField] private float walkSoundDelay = 0.5f;
 
     private CharacterController controller;
     private Vector3 velocity;
@@ -19,17 +20,18 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 lastPlatformPosition;
     private bool isJumping = false;
 
-    // Lista wszystkich obiektów, które posiadają PlaySoundOnObject
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
+    private float lastSoundTime = 0f;
 
-    private float lastSoundTime = 0f; // Czas, kiedy ostatni dźwięk został odtworzony
+    private AudioChanger audioChanger; // Referencja do skryptu AudioChanger
 
     private void Start()
     {
         controller = GetComponent<CharacterController>();
-
-        // Znajdź wszystkie obiekty posiadające PlaySoundOnObject i dodaj do listy
         playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+        audioChanger = FindObjectOfType<AudioChanger>(); // Pobranie referencji do AudioChanger
+
+        // Możesz zainicjować dźwięki wewnętrzne i zewnętrzne według potrzeby
     }
 
     private void Update()
@@ -41,11 +43,10 @@ public class PlayerMovement : MonoBehaviour
     {
         if (platform != null && isGrounded)
         {
-            // Oblicz różnicę pozycji platformy i zastosuj ją do gracza
             Vector3 platformMovement = platform.position - lastPlatformPosition;
-            controller.enabled = false; // Wyłącz CharacterController, aby pozwolić na ręczne przesunięcie
+            controller.enabled = false;
             transform.position += platformMovement;
-            controller.enabled = true; // Włącz ponownie CharacterController
+            controller.enabled = true;
         }
 
         if (platform != null)
@@ -70,11 +71,10 @@ public class PlayerMovement : MonoBehaviour
 
         controller.Move(move * moveSpeed * Time.deltaTime);
 
-        // Odtwarzaj dźwięki chodzenia tylko wtedy, gdy gracz się porusza i minął odpowiedni czas
         if (move.magnitude > 0f && isGrounded && Time.time - lastSoundTime >= walkSoundDelay)
         {
             PlayRandomWalkSounds();
-            lastSoundTime = Time.time; // Aktualizuj czas ostatniego odtwarzania dźwięku
+            lastSoundTime = Time.time;
         }
 
         if (Input.GetButtonDown("Jump") && isGrounded)
@@ -107,18 +107,34 @@ public class PlayerMovement : MonoBehaviour
 
     private void PlayRandomWalkSounds()
     {
-        if (walkingSounds.Length == 0) return;
+        if (audioChanger != null)
+        {
+            if (audioChanger.isPlayerInside) // Debug: Sprawdzanie, czy gracz jest wewnątrz
+            {
+                Debug.Log("Gracz jest wewnątrz, odtwarzanie dźwięków wewnętrznych.");
+                PlayRandomSounds(indoorWalkingSounds);
+            }
+            else
+            {
+                Debug.Log("Gracz jest na zewnątrz, odtwarzanie dźwięków zewnętrznych.");
+                PlayRandomSounds(outdoorWalkingSounds);
+            }
+        }
+    }
 
-        // Wybierz losowy dźwięk z tablicy walkingSounds
-        int randomIndex = Random.Range(0, walkingSounds.Length);
-        string randomSound = walkingSounds[randomIndex];
+    private void PlayRandomSounds(string[] sounds)
+    {
+        if (sounds.Length == 0) return;
 
-        // Odtwórz wybrany dźwięk na wszystkich obiektach
+        int randomIndex = Random.Range(0, sounds.Length);
+        string randomSound = sounds[randomIndex];
+        Debug.Log("Odtwarzanie dźwięku: " + randomSound); // Debug: Sprawdzanie, który dźwięk jest odtwarzany
+
         foreach (var playSoundOnObject in playSoundObjects)
         {
             if (playSoundOnObject == null) continue;
 
-            playSoundOnObject.PlaySound(randomSound, 0.2f, false);
+            playSoundOnObject.PlaySound(randomSound, 1f, false);
         }
     }
 }

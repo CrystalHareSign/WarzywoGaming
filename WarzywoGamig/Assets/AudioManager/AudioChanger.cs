@@ -11,7 +11,7 @@ public class AudioChanger : MonoBehaviour
     private float outdoorVolume;
 
     private bool hasEntered = false;
-    private bool isPlayerInside = false;
+    public bool isPlayerInside = false;
 
     private Collider triggerCollider;
 
