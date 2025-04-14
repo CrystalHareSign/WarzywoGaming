@@ -84,7 +84,7 @@ public class PauseMenu : MonoBehaviour
                 {
                     if (playSoundOnObject == null) continue;
 
-                    playSoundOnObject.PlaySound("MenuExit", 0.6f, false);
+                    playSoundOnObject.PlaySound("MenuExit", 0.4f, false);
                 }
             }
             // Jeœli jesteœ w menu opcji – wracaj do menu pauzy
@@ -97,7 +97,7 @@ public class PauseMenu : MonoBehaviour
                 {
                     if (playSoundOnObject == null) continue;
 
-                    playSoundOnObject.PlaySound("MenuExit", 0.6f, false);
+                    playSoundOnObject.PlaySound("MenuExit", 0.4f, false);
                 }
             }
             // Jeœli jesteœ w menu pauzy – wznow grê
@@ -109,7 +109,7 @@ public class PauseMenu : MonoBehaviour
                 {
                     if (playSoundOnObject == null) continue;
 
-                    playSoundOnObject.PlaySound("MenuExit", 0.6f, false);
+                    playSoundOnObject.PlaySound("MenuExit", 0.4f, false);
                 }
             }
             // W innym wypadku – zapauzuj grê
@@ -121,7 +121,7 @@ public class PauseMenu : MonoBehaviour
                 {
                     if (playSoundOnObject == null) continue;
 
-                    playSoundOnObject.PlaySound("MenuEnter", 0.6f, false);
+                    playSoundOnObject.PlaySound("MenuEnter", 0.4f, false);
                 }
             }
         }
