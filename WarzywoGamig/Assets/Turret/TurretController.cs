@@ -165,6 +165,11 @@ public class TurretController : MonoBehaviour
 
             TeleportPlayer(enterArea);
 
+            if (harpoonController != null)
+            {
+                harpoonController.ResetReloadState(); // <- Reset stanu przeładowania i UI
+            }
+
             if (playerMovement != null)
             {
                 playerMovement.enabled = false;
@@ -290,6 +295,11 @@ public class TurretController : MonoBehaviour
         if (inventory != null && inventory.currentWeaponPrefab != null)
         {
             inventory.currentWeaponPrefab.SetActive(true);
+        }
+
+        if (harpoonController != null)
+        {
+            harpoonController.ResetReloadState(); // <- Reset stanu przeładowania i UI
         }
 
         // Resetowanie rotacji barrelPivot po zakończeniu

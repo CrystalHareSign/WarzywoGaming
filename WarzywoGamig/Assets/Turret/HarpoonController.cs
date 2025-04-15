@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UIElements;
+using UnityEngine.UI;
 using static TurretCollector;
-using static UnityEngine.InputSystem.LowLevel.InputStateHistory;
 
 public class HarpoonController : MonoBehaviour
 {
@@ -26,6 +25,10 @@ public class HarpoonController : MonoBehaviour
     public float detectionRange = 100f;
     public float minDetectionRange = 10f;
     public bool showRangesInScene = true;
+    [Header("UI Przeładowania")]
+    public Image reloadFillImage;
+    public Image revealFillImage; // kopia paska – maska dla tekstu
+    public TextMeshProUGUI revealText; // tekst który się odsłania
 
     private GameObject currentHarpoon;
     private Rigidbody harpoonRb;
@@ -56,14 +59,14 @@ public class HarpoonController : MonoBehaviour
     public float moveDistance = 5f; // Odległość, na jaką obiekt ma się wysunąć
 
     [Header("TABLET")]
-    public GameObject rotatingObject; // Obiekt, który ma się obracać
-    private Quaternion initialRotation; // Początkowa rotacja obiektu
-    private Quaternion targetRotation;  // Docelowa rotacja obiektu
-    private bool isRotated = false; // Zmienna do śledzenia, czy obiekt jest obrócony wokół osi Z
-    private bool isRotating = false; // Zmienna do sprawdzenia, czy obiekt jest w trakcie rotacji
-    public float rotationDuration = 1f; // Czas trwania rotacji (można ustawić w inspektorze)
+    public Transform tablet;                // Referencja do tabletu
+    public GameObject tabletCanvas;         // UI tabletu
+    public float rotationSpeed = 5f;        // Prędkość animacji obrotu
 
-    public Canvas objectCanvas;  // Canvas na obiekcie
+    private Quaternion closedRotation;      // Początkowa rotacja tabletu
+    private Quaternion openRotation;        // Docelowa rotacja (otwarty tablet)
+    private bool isOpen = false;            // Czy tablet jest otwarty
+    private bool isRotating = false;        // Czy aktualnie trwa obrót
 
     public TextMeshProUGUI[] categoryTexts;  // Tablica dla tekstów kategorii
     public TextMeshProUGUI[] quantityTexts;  // Tablica dla tekstów ilości zasobów
@@ -90,14 +93,14 @@ public class HarpoonController : MonoBehaviour
         pauseTime = reloadTime * 0.125f;
         timeAfterAnimation = reloadTime * 0.25f;
 
-        if (objectCanvas == null)
+        if (tabletCanvas == null)
         {
-            objectCanvas = GetComponentInChildren<Canvas>();
+            tabletCanvas = GetComponentInChildren<GameObject>();
         }
 
-        if (objectCanvas != null)
+        if (tabletCanvas != null)
         {
-            objectCanvas.gameObject.SetActive(false); // Na początku Canvas jest nieaktywny
+            tabletCanvas.gameObject.SetActive(false); // Na początku Canvas jest nieaktywny
         }
 
         // Znajdź TurretCollector (można również przypisać bezpośrednio w inspektorze)
@@ -140,12 +143,32 @@ public class HarpoonController : MonoBehaviour
             initialLocalRotation = movingObject.transform.localRotation;
         }
 
-        // Inicjalizujemy początkową rotację
-        if (rotatingObject != null)
+        if (tablet == null) tablet = transform;
+
+        closedRotation = tablet.localRotation;
+        openRotation = closedRotation * Quaternion.Euler(0, 0, -90f);
+
+        if (tabletCanvas != null)
+            tabletCanvas.SetActive(false);
+
+        if (reloadFillImage == null)
         {
-            initialRotation = rotatingObject.transform.localRotation;
-            targetRotation = initialRotation * Quaternion.Euler(0f, 90f, 0f); // Obrót o 90 stopni w prawo
+            GameObject reloadGO = GameObject.Find("TurretReload");
+            if (reloadGO != null)
+            {
+                reloadFillImage = reloadGO.GetComponent<Image>();
+                if (reloadFillImage == null)
+                {
+                    Debug.LogWarning("Obiekt 'TurretReload' znaleziony, ale nie ma komponentu Image!");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Nie znaleziono obiektu o nazwie 'TurretReload' w scenie!");
+            }
         }
+
+        ResetReloadUI();
     }
 
     void Update()
@@ -176,29 +199,21 @@ public class HarpoonController : MonoBehaviour
                 }
             }
 
-            if (Input.GetMouseButtonDown(1)) // Prawy przycisk myszy (PPM)
+            if (Input.GetMouseButtonDown(1) && !isRotating) // PPM
             {
-                if (Input.GetMouseButtonDown(1) && !isRotating) // Prawy przycisk myszy (PPM) oraz sprawdzamy, czy rotacja się nie odbywa
+                ToggleTablet();
+            }
+
+            if (isRotating)
+            {
+                Quaternion targetRotation = isOpen ? openRotation : closedRotation;
+                tablet.localRotation = Quaternion.Lerp(tablet.localRotation, targetRotation, Time.deltaTime * rotationSpeed);
+
+                // Gdy jesteśmy blisko docelowego kąta — kończ obrót
+                if (Quaternion.Angle(tablet.localRotation, targetRotation) < 0.5f)
                 {
-                    // Aktywujemy lub dezaktywujemy Canvas przed rozpoczęciem rotacji
-                    if (objectCanvas != null)
-                    {
-                        objectCanvas.gameObject.SetActive(false);
-                    }
-
-                    if (isRotated)
-                    {
-                        // Jeśli obiekt jest obrócony, wróć do początkowej rotacji wokół osi Z
-                        StartCoroutine(RotateObject(rotatingObject, rotatingObject.transform.localRotation, initialRotation));
-                    }
-                    else
-                    {
-                        // Jeśli obiekt nie jest obrócony, obróć go o 90 stopni wokół osi Z
-                        StartCoroutine(RotateObject(rotatingObject, rotatingObject.transform.localRotation, initialRotation * Quaternion.Euler(0f, 0f, -90f)));
-                    }
-
-                    // Zmieniamy stan obrotu
-                    isRotated = !isRotated;
+                    tablet.localRotation = targetRotation;
+                    isRotating = false;
                 }
             }
 
@@ -212,24 +227,39 @@ public class HarpoonController : MonoBehaviour
                 StartReturnHarpoon();
             }
 
-            // Jeśli harpun wrócił, zaczynamy odliczać czas przeładowania
             if (reloadTimer > 0f)
             {
-                // Pobieramy komponent Harpoon z currentHarpoon
                 Harpoon harpoonScript = currentHarpoon.GetComponent<Harpoon>();
 
                 if (harpoonScript != null)
                 {
-                    // Ustawiamy zmienną hasTreasureAttached na wartość z harpoonScript
                     bool hasTreasure = harpoonScript.hasTreasureAttached;
-                    //Debug.Log("hasTreasureAttached: " + hasTreasure);
 
-                    // Rozpoczynamy ruch obiektu podczas przeładowania tylko jeśli jest dołączony skarb
                     if (!isMoving && hasTreasure)
                     {
-                        //Debug.Log("Startuję ruch obiektu!");
                         isMoving = true;
                         StartCoroutine(MoveObjectDuringReload());
+                    }
+
+                    float progress = 1f - (reloadTimer / reloadTime);
+
+                    if (reloadFillImage != null)
+                    {
+                        reloadFillImage.fillAmount = progress;
+                        reloadFillImage.gameObject.SetActive(true);
+                    }
+
+                    // 🔄 Aktualizacja maski do tekstu
+                    if (revealFillImage != null)
+                    {
+                        revealFillImage.fillAmount = progress;
+                        revealFillImage.gameObject.SetActive(true);
+                    }
+
+                    // 🔄 Włączenie tekstu
+                    if (revealText != null)
+                    {
+                        revealText.gameObject.SetActive(true);
                     }
                 }
                 else
@@ -239,10 +269,11 @@ public class HarpoonController : MonoBehaviour
 
                 reloadTimer -= Time.deltaTime;
             }
-
             else
             {
                 isMoving = false;
+
+                ResetReloadUI();
             }
         }
 
@@ -252,34 +283,45 @@ public class HarpoonController : MonoBehaviour
         }
     }
 
-    private IEnumerator RotateObject(GameObject obj, Quaternion fromRotation, Quaternion toRotation)
+    void ToggleTablet()
     {
-        isRotating = true; // Zaczynamy rotację, ustawiamy flagę na true
-        float elapsedTime = 0f;
+        isOpen = !isOpen;
+        isRotating = true;
 
-        while (elapsedTime < rotationDuration) // Używamy publicznej zmiennej rotationDuration
+        if (tabletCanvas != null)
+            tabletCanvas.SetActive(isOpen);
+
+        if (isOpen)
         {
-            obj.transform.localRotation = Quaternion.Slerp(fromRotation, toRotation, elapsedTime / rotationDuration);
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-
-        obj.transform.localRotation = toRotation; // Ustawiamy końcową rotację
-
-        // Po zakończeniu rotacji, aktywujemy Canvas jeśli obiekt wrócił do pierwotnej rotacji
-        if (objectCanvas != null)
-        {
-            objectCanvas.gameObject.SetActive(true);
-
             foreach (var playSoundOnObject in playSoundObjects)
             {
                 if (playSoundOnObject == null) continue;
-
-                playSoundOnObject.PlaySound("TabletOn", 0.8f, false);
+                playSoundOnObject.PlaySound("TabletOn", 0.5f, false);
             }
         }
+    }
 
-        isRotating = false; // Rotacja zakończona, ustawiamy flagę na false
+    public void ResetReloadUI()
+    {
+        // Zresetuj pasek główny
+        if (reloadFillImage != null)
+            reloadFillImage.fillAmount = 0f;
+
+        // Zresetuj pasek tekstowy
+        if (revealFillImage != null)
+            revealFillImage.fillAmount = 0f;
+
+        // Ukryj tekst
+        if (revealText != null)
+            revealText.gameObject.SetActive(false);
+    }
+
+    public void ResetReloadState()
+    {
+        canShoot = true;
+        isReloading = false;
+        reloadTimer = 0f;
+        ResetReloadUI();
     }
 
     public void UpdateResourceUI(List<ResourceSlot> resourceSlots)
@@ -453,6 +495,11 @@ public class HarpoonController : MonoBehaviour
                 reloadTimer = reloadTime; // Zainicjuj czas przeładowania
                 canShoot = true; // Pozwól na strzał po zakończeniu przeładowania
 
+                if (reloadFillImage != null)
+                {
+                    reloadFillImage.fillAmount = 0f;
+                    reloadFillImage.gameObject.SetActive(true);
+                }
                 // Zatrzymaj wszystkie odtwarzane dźwięki
                 foreach (var playSoundOnObject in playSoundObjects)
                 {
