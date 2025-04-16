@@ -46,7 +46,12 @@ public class TreasureRefiner : MonoBehaviour
     public GameObject supplyTrashButton;
     public GameObject refineTrashButton;
 
+    private bool isProcessing;
+
     private int selectedCategoryIndex;
+
+    // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
+    private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
     private void Start()
     {
@@ -77,6 +82,8 @@ public class TreasureRefiner : MonoBehaviour
         if (trashRefineCostText != null)
             trashRefineCostText.text = "/" + trashResourceRequired.ToString();
 
+        // ZnajdŸ wszystkie obiekty posiadaj¹ce PlaySoundOnObject i dodaj do listy
+        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
     }
 
     void Update()
@@ -97,31 +104,111 @@ public class TreasureRefiner : MonoBehaviour
             RaycastHit hit;
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-            if (Physics.Raycast(ray, out hit, maxInteractionDistance))  // Dodanie maksymalnego zasiêgu do raycast
+            if (Physics.Raycast(ray, out hit, maxInteractionDistance))
             {
+                string[] highSounds = { "RefinerHigh1", "RefinerHigh2" };
+                string[] lowSounds = { "RefinerLow1", "RefinerLow2" };
+                string[] refineSounds = { "Refine1", "Refine2", "Refine3", "Refine4" };
+
                 if (hit.collider.gameObject == prevCategoryButton)
                 {
-                    SwitchCategory(-1); // Prze³¹cz na poprzedni¹ kategoriê
+                    SwitchCategory(-1);
+
+                    foreach (var playSoundOnObject in playSoundObjects)
+                    {
+                        if (playSoundOnObject == null) continue;
+
+                        string chosen = highSounds[Random.Range(0, highSounds.Length)];
+                        playSoundOnObject.PlaySound(chosen, 0.5f, false);
+
+                        playSoundOnObject.PlaySound("RefinerBeep", 0.3f, false);
+                    }
                 }
 
                 if (hit.collider.gameObject == nextCategoryButton)
                 {
-                    SwitchCategory(1); // Prze³¹cz na nastêpn¹ kategoriê
+                    SwitchCategory(1);
+
+                    foreach (var playSoundOnObject in playSoundObjects)
+                    {
+                        if (playSoundOnObject == null) continue;
+
+                        string chosen = highSounds[Random.Range(0, highSounds.Length)];
+                        playSoundOnObject.PlaySound(chosen, 0.5f, false);
+
+                        playSoundOnObject.PlaySound("RefinerBeep", 0.3f, false);
+                    }
                 }
 
                 if (hit.collider.gameObject == refineButton)
                 {
-                    RefineResources();
+                    if (!IsSpawnPointBlocked() && !isProcessing)
+                    {
+                        RefineResources();
+
+                        foreach (var playSoundOnObject in playSoundObjects)
+                        {
+                            if (playSoundOnObject == null) continue;
+
+                            string chosen = lowSounds[Random.Range(0, lowSounds.Length)];
+                            playSoundOnObject.PlaySound(chosen, 0.5f, false);
+                        }
+
+                        foreach (var playSoundOnObject in playSoundObjects)
+                        {
+                            if (playSoundOnObject == null) continue;
+
+                            string chosen = refineSounds[Random.Range(0, refineSounds.Length)];
+                            playSoundOnObject.PlaySound(chosen, 0.5f, false);
+                        }
+                    }
+                    else
+                    {
+                        foreach (var playSoundOnObject in playSoundObjects)
+                        {
+                            if (playSoundOnObject == null) continue;
+
+                            playSoundOnObject.PlaySound("RefinerError", 0.2f, false);
+                        }
+                    }
                 }
 
                 if (hit.collider.gameObject == supplyTrashButton)
                 {
-                    SupplyTrash();
+                    if (IsHomeScene())
+                    {    
+                        SupplyTrash();
+
+                        foreach (var playSoundOnObject in playSoundObjects)
+                        {
+                            if (playSoundOnObject == null) continue;
+
+                            string chosen = lowSounds[Random.Range(0, lowSounds.Length)];
+                            playSoundOnObject.PlaySound(chosen, 0.5f, false);
+                        }
+                    }
+                    else
+                    {
+                        foreach (var playSoundOnObject in playSoundObjects)
+                        {
+                            if (playSoundOnObject == null) continue;
+
+                            playSoundOnObject.PlaySound("RefinerError", 0.2f, false);
+                        }
+                    }
                 }
 
                 if (hit.collider.gameObject == refineTrashButton)
                 {
                     RefineTrash();
+
+                    //foreach (var playSoundOnObject in playSoundObjects)
+                    //{
+                    //    if (playSoundOnObject == null) continue;
+
+                    //    string chosen = lowSounds[Random.Range(0, lowSounds.Length)];
+                    //    playSoundOnObject.PlaySound(chosen, 0.5f, false);
+                    //}
                 }
             }
         }
@@ -418,8 +505,20 @@ public class TreasureRefiner : MonoBehaviour
 
     private IEnumerator DelayedSpawn(bool isTrash)
     {
+        isProcessing = true;
         yield return new WaitForSeconds(spawnDelay); // Czekaj okreœlony czas
         SpawnPrefab(isTrash); // Wywo³anie metody SpawnPrefab
+        isProcessing = false;
+
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.StopSound("Refine1");
+            playSoundOnObject.StopSound("Refine2");
+            playSoundOnObject.StopSound("Refine3");
+            playSoundOnObject.StopSound("Refine4");
+        }
     }
 
     private void SpawnPrefab(bool isTrash = false)

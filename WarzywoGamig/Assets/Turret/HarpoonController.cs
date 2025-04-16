@@ -49,6 +49,7 @@ public class HarpoonController : MonoBehaviour
     private Vector3 initialLocalPosition; // Zmienna do przechowywania początkowej lokalnej pozycji obiektu
     private Quaternion initialLocalRotation; // Zmienna do przechowywania początkowej lokalnej rotacji obiektu
     private bool isMoving = false;
+    public float rotationTubeSpeed = 500;
 
     //private bool isMovingForward = true; // Nowa zmienna do śledzenia, w którą stronę porusza się obiekt
 
@@ -363,86 +364,84 @@ public class HarpoonController : MonoBehaviour
 
     private IEnumerator MoveObjectDuringReload()
     {
-        // Czekamy na opóźnienie przed animacją
         yield return new WaitForSeconds(timeBeforeAnimation);
 
         float elapsedTime = 0f;
         Vector3 initialLocalPos = movingObject.transform.localPosition;
-        Vector3 targetPosition = initialLocalPos + Vector3.forward * moveDistance; // Cel ruchu do przodu
-        Vector3 reverseTargetPosition = initialLocalPos - Vector3.forward * moveDistance; // Cel ruchu do tyłu
         Quaternion initialRotation = movingObject.transform.localRotation;
+        Vector3 targetPosition = initialLocalPos + Vector3.forward * moveDistance;
 
-        // Całkowity czas na animację
-        float movementTime = fullAnimationTime;
-
-        // Ruch do przodu (3/4 czasu)
-        float forwardMovementTime = movementTime * 3f / 4f;
-
-        // Ruch w tył (1/4 czasu)
-        float reverseMovementTime = movementTime / 4f;
-
-        // Czas na przerwę
-        float pauseDuration = pauseTime;
-
-        // Czas przeładowania minus czas animacji
+        float forwardMovementTime = fullAnimationTime * 0.75f;
+        float reverseMovementTime = fullAnimationTime * 0.25f;
         float remainingTimeAfterAnim = reloadTimer - fullAnimationTime;
 
-        foreach (var playSoundOnObject in playSoundObjects)
+        foreach (var sfx in playSoundObjects)
         {
-            if (playSoundOnObject == null) continue;
-
-            playSoundOnObject.PlaySound("Tube1", 0.5f, false);
+            if (sfx == null) continue;
+            sfx.PlaySound("Tube1", 0.5f, false);
+            sfx.PlaySound("TubeSaw", 0.5f, false);
         }
 
-        // Ruch do przodu
+        // 🔁 Ruch do przodu + obrót
         while (elapsedTime < forwardMovementTime)
         {
             float t = elapsedTime / forwardMovementTime;
             movingObject.transform.localPosition = Vector3.Lerp(initialLocalPos, targetPosition, t);
-            movingObject.transform.localRotation = initialRotation;
+            movingObject.transform.Rotate(Vector3.up, rotationTubeSpeed * Time.deltaTime, Space.Self);
             elapsedTime += Time.deltaTime;
             yield return null;
         }
 
-        // Przerwa po zakończeniu ruchu do przodu
-        yield return new WaitForSeconds(pauseDuration);
+        movingObject.transform.localPosition = targetPosition;
 
-        foreach (var playSoundOnObject in playSoundObjects)
+        // ⏸ Pauza + obrót
+        elapsedTime = 0f;
+        while (elapsedTime < pauseTime)
         {
-            if (playSoundOnObject == null) continue;
-
-            playSoundOnObject.PlaySound("Tube2", 0.5f, false);
+            movingObject.transform.Rotate(Vector3.up, rotationTubeSpeed * Time.deltaTime, Space.Self);
+            elapsedTime += Time.deltaTime;
+            yield return null;
         }
 
-        // Resetujemy czas, by rozpocząć ruch w tył
-        elapsedTime = 0f;
+        foreach (var sfx in playSoundObjects)
+        {
+            if (sfx == null) continue;
+            sfx.PlaySound("Tube2", 0.5f, false);
+        }
 
-        // Ruch w tył (1/4 czasu)
+        // 🔁 Ruch w tył + obrót
+        elapsedTime = 0f;
         while (elapsedTime < reverseMovementTime)
         {
             float t = elapsedTime / reverseMovementTime;
             movingObject.transform.localPosition = Vector3.Lerp(targetPosition, initialLocalPos, t);
-            movingObject.transform.localRotation = initialRotation;
+            movingObject.transform.Rotate(Vector3.up, rotationTubeSpeed * Time.deltaTime, Space.Self);
             elapsedTime += Time.deltaTime;
             yield return null;
         }
 
-        // Zapewniamy, że po zakończeniu animacji obiekt wróci dokładnie na początkową pozycję
         movingObject.transform.localPosition = initialLocalPos;
-        movingObject.transform.localRotation = initialRotation;
 
-        // Czekamy na pozostały czas po zakończeniu animacji
-        yield return new WaitForSeconds(remainingTimeAfterAnim);
-
-
-        foreach (var playSoundOnObject in playSoundObjects)
+        // ⏳ Dodatkowy czas po animacji + zwalnianie obrotu
+        elapsedTime = 0f;
+        while (elapsedTime < remainingTimeAfterAnim)
         {
-            if (playSoundOnObject == null) continue;
+            float t = elapsedTime / remainingTimeAfterAnim; // 0 → 1
+            float easedT = 1f - Mathf.Pow(1f - t, 2); // Można też użyć t dla liniowego
+            float currentSpeed = Mathf.Lerp(rotationTubeSpeed, 0f, easedT); // Stopniowo do zera
 
-            playSoundOnObject.PlaySound("Tube3", 0.5f, false);
+            movingObject.transform.Rotate(Vector3.up, currentSpeed * Time.deltaTime, Space.Self);
+
+            elapsedTime += Time.deltaTime;
+            yield return null;
         }
 
-        // Kończymy animację
+        foreach (var sfx in playSoundObjects)
+        {
+            if (sfx == null) continue;
+            sfx.PlaySound("Tube3", 0.5f, false);
+        }
+
         isMoving = false;
     }
 
