@@ -46,7 +46,8 @@ public class TreasureRefiner : MonoBehaviour
     public GameObject supplyTrashButton;
     public GameObject refineTrashButton;
 
-    private bool isProcessing;
+    private bool isProcessing = false;
+    private bool isRefiningInProgress = false;
 
     private int selectedCategoryIndex;
 
@@ -142,41 +143,56 @@ public class TreasureRefiner : MonoBehaviour
 
                 if (hit.collider.gameObject == refineButton)
                 {
-                    if (!IsSpawnPointBlocked() && !isProcessing)
+                    // Sprawdzenie, czy refinacja ju¿ jest w toku
+                    if (!isRefiningInProgress)
                     {
-                        RefineResources();
+                        // Jeœli refinacja nie jest w toku, ustawiamy flagê na true
+                        isRefiningInProgress = true;
 
-                        foreach (var playSoundOnObject in playSoundObjects)
+                        if (!IsSpawnPointBlocked() && !isProcessing)
                         {
-                            if (playSoundOnObject == null) continue;
+                            RefineResources();
 
-                            string chosen = lowSounds[Random.Range(0, lowSounds.Length)];
-                            playSoundOnObject.PlaySound(chosen, 0.5f, false);
+                            // Odtwarzanie dŸwiêków dla refinacji
+                            foreach (var playSoundOnObject in playSoundObjects)
+                            {
+                                if (playSoundOnObject == null) continue;
+
+                                string chosen = lowSounds[Random.Range(0, lowSounds.Length)];
+                                playSoundOnObject.PlaySound(chosen, 0.5f, false);
+                            }
+
+                            //foreach (var playSoundOnObject in playSoundObjects)
+                            //{
+                            //    if (playSoundOnObject == null) continue;
+
+                            //    string chosen = refineSounds[Random.Range(0, refineSounds.Length)];
+                            //    playSoundOnObject.PlaySound(chosen, 0.5f, false);
+                            //}
+                        }
+                        else
+                        {
+                            // Jeœli nie mo¿na refinowaæ (np. brak zasobów), odtwarzamy dŸwiêk b³êdu
+                            foreach (var playSoundOnObject in playSoundObjects)
+                            {
+                                if (playSoundOnObject == null) continue;
+
+                                playSoundOnObject.PlaySound("RefinerError", 0.2f, false);
+                            }
                         }
 
-                        foreach (var playSoundOnObject in playSoundObjects)
-                        {
-                            if (playSoundOnObject == null) continue;
+                        // Po zakoñczeniu refinacji, ustawiamy flagê z powrotem na false
+                        // Mo¿esz to zrobiæ np. w metodzie, która obs³uguje zakoñczenie procesu refinacji (np. po zakoñczeniu procesu w `RefineResources()`).
+                        // Na razie ustawiamy flagê po jakimœ czasie, by symulowaæ zakoñczenie procesu.
 
-                            string chosen = refineSounds[Random.Range(0, refineSounds.Length)];
-                            playSoundOnObject.PlaySound(chosen, 0.5f, false);
-                        }
-                    }
-                    else
-                    {
-                        foreach (var playSoundOnObject in playSoundObjects)
-                        {
-                            if (playSoundOnObject == null) continue;
-
-                            playSoundOnObject.PlaySound("RefinerError", 0.2f, false);
-                        }
+                        StartCoroutine(ResetRefiningFlag());
                     }
                 }
 
                 if (hit.collider.gameObject == supplyTrashButton)
                 {
                     if (IsHomeScene())
-                    {    
+                    {
                         SupplyTrash();
 
                         foreach (var playSoundOnObject in playSoundObjects)
@@ -202,18 +218,20 @@ public class TreasureRefiner : MonoBehaviour
                 {
                     RefineTrash();
 
-                    //foreach (var playSoundOnObject in playSoundObjects)
-                    //{
-                    //    if (playSoundOnObject == null) continue;
-
-                    //    string chosen = lowSounds[Random.Range(0, lowSounds.Length)];
-                    //    playSoundOnObject.PlaySound(chosen, 0.5f, false);
-                    //}
+                    // DŸwiêk dla refineTrashButton mo¿e byæ dodany tutaj, jeœli potrzebny
                 }
             }
         }
     }
 
+    // Korutyna do resetowania flagi po zakoñczeniu refinacji
+    private IEnumerator ResetRefiningFlag()
+    {
+        // W tym przypadku zak³adamy, ¿e proces refinacji trwa 3 sekundy (mo¿esz dostosowaæ czas)
+        yield return new WaitForSeconds(3f);  // Czekamy na zakoñczenie procesu refinacji
+
+        isRefiningInProgress = false;  // Ustawiamy flagê na false po zakoñczeniu
+    }
 
     private int FindNextValidCategoryIndexLoop(int startIndex, int direction)
     {
@@ -480,10 +498,10 @@ public class TreasureRefiner : MonoBehaviour
     }
 
     // Coroutine do animacji przesuwania drzwi
-    private IEnumerator MoveDoorCoroutine(float targetLocalXPosition, float duration)
+    private IEnumerator MoveDoorCoroutine(float targetLocalZPosition, float duration)
     {
         float elapsedTime = 0f;
-        float startingLocalXPosition = door.transform.localPosition.x;
+        float startingLocalZPosition = door.transform.localPosition.z;
 
         // Dopóki drzwi nie osi¹gn¹ docelowej pozycji lokalnej, kontynuujemy ich przesuwanie
         while (elapsedTime < duration)
@@ -492,16 +510,17 @@ public class TreasureRefiner : MonoBehaviour
             float t = elapsedTime / duration;
 
             // Interpolujemy miêdzy pocz¹tkow¹ pozycj¹ a docelow¹ pozycj¹ w lokalnych wspó³rzêdnych
-            float newX = Mathf.Lerp(startingLocalXPosition, targetLocalXPosition, t);
-            door.transform.localPosition = new Vector3(newX, door.transform.localPosition.y, door.transform.localPosition.z);
+            float newZ = Mathf.Lerp(startingLocalZPosition, targetLocalZPosition, t);
+            door.transform.localPosition = new Vector3(door.transform.localPosition.x, door.transform.localPosition.y, newZ);
 
             elapsedTime += Time.deltaTime; // Aktualizujemy czas, który up³yn¹³
             yield return null;
         }
 
         // Zapewniamy, ¿e drzwi skoñcz¹ dok³adnie w docelowej pozycji lokalnej
-        door.transform.localPosition = new Vector3(targetLocalXPosition, door.transform.localPosition.y, door.transform.localPosition.z);
+        door.transform.localPosition = new Vector3(door.transform.localPosition.x, door.transform.localPosition.y, targetLocalZPosition);
     }
+
 
     private IEnumerator DelayedSpawn(bool isTrash)
     {
