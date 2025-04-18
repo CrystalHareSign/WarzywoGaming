@@ -208,7 +208,7 @@ public class SoundOptionsMenu : MonoBehaviour
 
     public void UpdateButtonTexts()
     {
-        Debug.Log("UpdateButtonTexts called");
+        //Debug.Log("UpdateButtonTexts called");
 
         if (LanguageManager.Instance == null) return;
         var uiTexts = LanguageManager.Instance.CurrentUITexts;

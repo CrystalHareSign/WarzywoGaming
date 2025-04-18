@@ -22,7 +22,7 @@ public class LootColliderController : MonoBehaviour
             return;
         }
 
-        Debug.Log(" LootColliderController aktywowany!");
+        //Debug.Log(" LootColliderController aktywowany!");
     }
 
     private void Update()
@@ -45,7 +45,7 @@ public class LootColliderController : MonoBehaviour
         // Jeœli gracz jeszcze nie wyszed³, sprawdzamy, czy ju¿ nie jest w colliderze
         if (!playerExited && !lootCollider.bounds.Intersects(playerCollider.bounds))
         {
-            Debug.Log("Gracz opuœci³ strefê lootu (wykryto w FixedUpdate)!");
+            //Debug.Log("Gracz opuœci³ strefê lootu (wykryto w FixedUpdate)!");
             ActivateCollider();
         }
     }
@@ -54,7 +54,7 @@ public class LootColliderController : MonoBehaviour
     {
         if (other.gameObject == player)
         {
-            Debug.Log(" Gracz wyszed³ z colliderea lootu!");
+            //Debug.Log(" Gracz wyszed³ z colliderea lootu!");
             playerExited = true; // Ustawiamy flagê
             ActivateCollider();
         }
@@ -69,7 +69,7 @@ public class LootColliderController : MonoBehaviour
         }
 
         lootCollider.isTrigger = false;
-        Debug.Log("Collider lootu aktywowany!");
+        //Debug.Log("Collider lootu aktywowany!");
         Destroy(this); // Usuwamy skrypt po aktywacji
     }
 }

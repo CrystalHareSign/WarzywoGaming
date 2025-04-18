@@ -11,7 +11,7 @@ public class TreasureRefiner : MonoBehaviour
 
     private bool isRefining = false;
     public bool toDestroy = false;
-
+    [Header("Canva")]
     public TextMeshProUGUI[] categoryTexts;
     public TextMeshProUGUI[] countTexts;
     public TextMeshProUGUI trashCategoryText; // Nowy tekst dla kategorii trash
@@ -20,36 +20,47 @@ public class TreasureRefiner : MonoBehaviour
     public TextMeshProUGUI selectedCountText;
     public TextMeshProUGUI refineCostText;        // tekst obok kategorii
     public TextMeshProUGUI trashRefineCostText;   // tekst obok Trash
-
+    [Header("Przyciski")]
     public GameObject prevCategoryButton;
     public GameObject nextCategoryButton;
-
+    // Nowe zmienne dla supplyTrash i refineTrash
+    public GameObject supplyTrashButton;
+    private GameObject refineTrashButton;
     public GameObject refineButton;
     public float maxInteractionDistance = 5f; // Maksymalny zasiêg interakcji z przyciskami
-
+    [Header("Prefab")]
     public GameObject prefabToSpawn;
     public Transform spawnPoint;
-    public GameObject door;
-    public float doorDistance = 3;
-    public float doorMoveDuration = 1f;  // Prêdkoœæ ruchu drzwi
-    public Vector3 doorStartingPosition; // Rêcznie ustawiona pocz¹tkowa pozycja drzwi
-
     public float spawnYPosition = 2f; // ustawiasz dok³adne Y w inspektorze
+    [Header("Drzwi")]
+    public GameObject door;
+    private bool areDoorsClosed = true; // Flaga wskazuj¹ca, czy drzwi s¹ zamkniête
+    public float doorDistance = 3;
+    public float doorMoveRightDuration = 1f; // Czas przesuwania drzwi w prawo
+    public float doorMoveLeftDuration = 1f;  // Czas przesuwania drzwi w lewo
+    public Vector3 doorStartingPosition; // Rêcznie ustawiona pocz¹tkowa pozycja drzwi
+    [Header("Rafinowanie")]
     public float refineAmount = 10;
     public float maxResourcePerSlot = 50f;
     private float trashAmount = 0;
     public float trashResourceRequired = 10f; // Wymagana iloœæ zasobów na trash
     public float trashMaxAmount = 100f;
     public float spawnDelay = 5;
-
-    // Nowe zmienne dla supplyTrash i refineTrash
-    public GameObject supplyTrashButton;
-    public GameObject refineTrashButton;
-
     private bool isProcessing = false;
     private bool isRefiningInProgress = false;
-
     private int selectedCategoryIndex;
+    [Header("Mierniki")]
+    // Dodajemy zmienne do ustawienia minimalnego i maksymalnego k¹ta w Inspektorze
+    public float minRotationAngle = -15f; // Minimalny k¹t obrotu
+    public float maxRotationAngle = 15f;  // Maksymalny k¹t obrotu
+
+    // Szybkoœæ rotacji (mo¿esz ustawiæ tê wartoœæ w Inspektorze Unity)
+    public float rotationSpeed = 1f;
+
+    // Lista obiektów, które maj¹ drgaæ
+    public List<GameObject> rotatingObjects = new List<GameObject>();
+    private Dictionary<GameObject, Vector3> initialPositions = new Dictionary<GameObject, Vector3>(); // Pocz¹tkowe pozycje
+    private Dictionary<GameObject, Quaternion> initialRotations = new Dictionary<GameObject, Quaternion>(); // Pocz¹tkowe rotacje
 
     // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
@@ -85,16 +96,25 @@ public class TreasureRefiner : MonoBehaviour
 
         // ZnajdŸ wszystkie obiekty posiadaj¹ce PlaySoundOnObject i dodaj do listy
         playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+
+        // Zapisanie pocz¹tkowej pozycji i rotacji dla ka¿dego obiektu
+        foreach (var obj in rotatingObjects)
+        {
+            if (obj == null) continue;
+
+            initialPositions[obj] = obj.transform.position; // Zapis pozycji
+            initialRotations[obj] = obj.transform.rotation; // Zapis rotacji
+        }
     }
 
     void Update()
     {
         HandleMouseClick();
 
-        // Sprawdzenie, czy spawnPoint nie ma ju¿ dzieci
-        if (spawnPoint.childCount == 0)
+        // Sprawdzenie, czy spawnPoint nie ma ju¿ dzieci i drzwi nie s¹ zamkniête
+        if (spawnPoint.childCount == 0 && !areDoorsClosed)
         {
-            MoveBackDoor(); // Jeœli brak dzieci, przesuwamy drzwi w lewo
+            MoveBackDoor(); // Przesuwamy drzwi w lewo
         }
     }
 
@@ -109,7 +129,7 @@ public class TreasureRefiner : MonoBehaviour
             {
                 string[] highSounds = { "RefinerHigh1", "RefinerHigh2" };
                 string[] lowSounds = { "RefinerLow1", "RefinerLow2" };
-                string[] refineSounds = { "Refine1", "Refine2", "Refine3", "Refine4" };
+                string[] refineSounds = { "Refine1", "Refine2", "Refine3", "Refine4" }; // Dodano refineSounds
 
                 if (hit.collider.gameObject == prevCategoryButton)
                 {
@@ -143,49 +163,88 @@ public class TreasureRefiner : MonoBehaviour
 
                 if (hit.collider.gameObject == refineButton)
                 {
-                    // Sprawdzenie, czy refinacja ju¿ jest w toku
-                    if (!isRefiningInProgress)
+                    // Sprawdzenie przed rozpoczêciem rafinacji
+                    if (selectedCategoryIndex != -1)
                     {
-                        // Jeœli refinacja nie jest w toku, ustawiamy flagê na true
-                        isRefiningInProgress = true;
-
-                        if (!IsSpawnPointBlocked() && !isProcessing)
+                        if (selectedCategoryIndex == categoryTexts.Length && IsHomeScene()) // Trash
                         {
-                            RefineResources();
-
-                            // Odtwarzanie dŸwiêków dla refinacji
-                            foreach (var playSoundOnObject in playSoundObjects)
+                            float currentTrashAmount = int.Parse(trashCountText.text);
+                            if (currentTrashAmount >= trashResourceRequired)
                             {
-                                if (playSoundOnObject == null) continue;
+                                //// Odtwarzanie losowego dŸwiêku rafinacji
+                                //foreach (var playSoundOnObject in playSoundObjects)
+                                //{
+                                //    if (playSoundOnObject == null) continue;
 
-                                string chosen = lowSounds[Random.Range(0, lowSounds.Length)];
-                                playSoundOnObject.PlaySound(chosen, 0.5f, false);
+                                //    string chosenSound = refineSounds[Random.Range(0, refineSounds.Length)];
+                                //    playSoundOnObject.PlaySound(chosenSound, 0.8f, false);
+                                //}
+
+                                RefineTrash();
+
+                                foreach (var playSoundOnObject in playSoundObjects)
+                                {
+                                    if (playSoundOnObject == null) continue;
+
+                                    string chosen = lowSounds[Random.Range(0, lowSounds.Length)];
+                                    playSoundOnObject.PlaySound(chosen, 0.5f, false);
+                                }
                             }
-
-                            //foreach (var playSoundOnObject in playSoundObjects)
-                            //{
-                            //    if (playSoundOnObject == null) continue;
-
-                            //    string chosen = refineSounds[Random.Range(0, refineSounds.Length)];
-                            //    playSoundOnObject.PlaySound(chosen, 0.5f, false);
-                            //}
+                            else
+                            {
+                                Debug.Log("Za ma³o zasobów w Trash, rafinacja niemo¿liwa.");
+                                foreach (var playSoundOnObject in playSoundObjects)
+                                {
+                                    if (playSoundOnObject == null) continue;
+                                    playSoundOnObject.PlaySound("RefinerError", 0.2f, false);
+                                }
+                                return;
+                            }
                         }
-                        else
+                        else // Zwyk³a kategoria
                         {
-                            // Jeœli nie mo¿na refinowaæ (np. brak zasobów), odtwarzamy dŸwiêk b³êdu
-                            foreach (var playSoundOnObject in playSoundObjects)
+                            float currentAmount = int.Parse(countTexts[selectedCategoryIndex].text);
+                            if (currentAmount >= refineAmount)
                             {
-                                if (playSoundOnObject == null) continue;
+                                //// Odtwarzanie losowego dŸwiêku rafinacji
+                                //foreach (var playSoundOnObject in playSoundObjects)
+                                //{
+                                //    if (playSoundOnObject == null) continue;
 
-                                playSoundOnObject.PlaySound("RefinerError", 0.2f, false);
+                                //    string chosenSound = refineSounds[Random.Range(0, refineSounds.Length)];
+                                //    playSoundOnObject.PlaySound(chosenSound, 0.8f, false);
+                                //}
+
+                                RefineResources();
+
+                                foreach (var playSoundOnObject in playSoundObjects)
+                                {
+                                    if (playSoundOnObject == null) continue;
+
+                                    string chosen = lowSounds[Random.Range(0, lowSounds.Length)];
+                                    playSoundOnObject.PlaySound(chosen, 0.5f, false);
+                                }
+                            }
+                            else
+                            {
+                                Debug.Log("Za ma³o zasobów w wybranej kategorii, rafinacja niemo¿liwa.");
+                                foreach (var playSoundOnObject in playSoundObjects)
+                                {
+                                    if (playSoundOnObject == null) continue;
+                                    playSoundOnObject.PlaySound("RefinerError", 0.2f, false);
+                                }
+                                return;
                             }
                         }
-
-                        // Po zakoñczeniu refinacji, ustawiamy flagê z powrotem na false
-                        // Mo¿esz to zrobiæ np. w metodzie, która obs³uguje zakoñczenie procesu refinacji (np. po zakoñczeniu procesu w `RefineResources()`).
-                        // Na razie ustawiamy flagê po jakimœ czasie, by symulowaæ zakoñczenie procesu.
-
-                        StartCoroutine(ResetRefiningFlag());
+                    }
+                    else
+                    {
+                        Debug.Log("Nie wybrano kategorii. Wybierz kategoriê, aby przeprowadziæ rafinacjê.");
+                        foreach (var playSoundOnObject in playSoundObjects)
+                        {
+                            if (playSoundOnObject == null) continue;
+                            playSoundOnObject.PlaySound("RefinerError", 0.2f, false);
+                        }
                     }
                 }
 
@@ -216,9 +275,29 @@ public class TreasureRefiner : MonoBehaviour
 
                 if (hit.collider.gameObject == refineTrashButton)
                 {
-                    RefineTrash();
+                    float currentTrashAmount = int.Parse(trashCountText.text);
+                    if (currentTrashAmount >= trashResourceRequired)
+                    {
+                        // Odtwarzanie losowego dŸwiêku rafinacji
+                        foreach (var playSoundOnObject in playSoundObjects)
+                        {
+                            if (playSoundOnObject == null) continue;
 
-                    // DŸwiêk dla refineTrashButton mo¿e byæ dodany tutaj, jeœli potrzebny
+                            string chosenSound = refineSounds[Random.Range(0, refineSounds.Length)];
+                            playSoundOnObject.PlaySound(chosenSound, 0.5f, false);
+                        }
+
+                        RefineTrash();
+                    }
+                    else
+                    {
+                        Debug.Log("Za ma³o zasobów w Trash, rafinacja niemo¿liwa.");
+                        foreach (var playSoundOnObject in playSoundObjects)
+                        {
+                            if (playSoundOnObject == null) continue;
+                            playSoundOnObject.PlaySound("RefinerError", 0.2f, false);
+                        }
+                    }
                 }
             }
         }
@@ -454,89 +533,203 @@ public class TreasureRefiner : MonoBehaviour
 
         float currentAmount = int.Parse(countTexts[selectedCategoryIndex].text);
 
-        if (currentAmount >= refineAmount)
+        if (currentAmount >= refineAmount && !IsSpawnPointBlocked())
         {
-            if (!IsSpawnPointBlocked())
-            {
-                currentAmount -= refineAmount;
-                countTexts[selectedCategoryIndex].text = currentAmount.ToString();
+            currentAmount -= refineAmount;
+            countTexts[selectedCategoryIndex].text = currentAmount.ToString();
 
-                // Reset slotu jeœli pusto
-                if (currentAmount == 0)
-                {
-                    categoryTexts[selectedCategoryIndex].text = "-";
-                    countTexts[selectedCategoryIndex].text = "0";
-                }
-
-                // Wywo³anie SpawnPrefab z opóŸnieniem
-                StartCoroutine(DelayedSpawn(false));
-                RefreshSelectedCategoryUI();
-            }
-            else
+            // Reset slotu jeœli pusto
+            if (currentAmount == 0)
             {
-                Debug.Log("Nie mo¿na zespawnowaæ – kolizja z obiektem!");
+                categoryTexts[selectedCategoryIndex].text = "-";
+                countTexts[selectedCategoryIndex].text = "0";
             }
+
+            // Wywo³anie SpawnPrefab z opóŸnieniem
+            StartCoroutine(DelayedSpawn(false));
+            RefreshSelectedCategoryUI();
         }
         else
         {
-            Debug.Log("Za ma³o zasobów w wybranej kategorii!");
+            Debug.Log("Nie mo¿na rafinowaæ – za ma³o zasobów lub zablokowany punkt spawnowania!");
         }
     }
 
-    // Metoda do przesuwania drzwi w prawo
+    // Metoda do przesuwania drzwi w prawo (otwieranie)
     private void MoveRightDoor()
     {
-        // Rozpoczynamy przesuwanie drzwi w prawo, podaj¹c czas trwania
-        StartCoroutine(MoveDoorCoroutine(doorStartingPosition.x + doorDistance, doorMoveDuration));
+        if (!areDoorsClosed) return; // Jeœli drzwi s¹ ju¿ otwarte, ignoruj
+
+        //Debug.Log("Przesuwanie drzwi w prawo (otwieranie).");
+        areDoorsClosed = false; // Ustawiamy flagê, ¿e drzwi s¹ otwarte
+        StartCoroutine(MoveDoorCoroutine(doorStartingPosition.x + doorDistance, doorMoveRightDuration, "HatchOpen"));
     }
 
-    // Metoda do przesuwania drzwi w lewo
+    // Metoda do przesuwania drzwi w lewo (zamykanie)
     private void MoveBackDoor()
     {
-        // Rozpoczynamy przesuwanie drzwi w lewo, podaj¹c czas trwania
-        StartCoroutine(MoveDoorCoroutine(doorStartingPosition.x, doorMoveDuration));
+        if (areDoorsClosed) return; // Jeœli drzwi s¹ ju¿ zamkniête, ignoruj
+
+        //Debug.Log("Przesuwanie drzwi w lewo (zamykanie).");
+        areDoorsClosed = true; // Ustawiamy flagê, ¿e drzwi s¹ zamkniête
+        StartCoroutine(MoveDoorCoroutine(doorStartingPosition.x, doorMoveLeftDuration, "HatchClose"));
     }
 
     // Coroutine do animacji przesuwania drzwi
-    private IEnumerator MoveDoorCoroutine(float targetLocalZPosition, float duration)
+    private IEnumerator MoveDoorCoroutine(float targetLocalZPosition, float duration, string soundName)
     {
+        //Debug.Log("Rozpoczêcie coroutine: Ruch drzwi.");
         float elapsedTime = 0f;
         float startingLocalZPosition = door.transform.localPosition.z;
 
-        // Dopóki drzwi nie osi¹gn¹ docelowej pozycji lokalnej, kontynuujemy ich przesuwanie
+        // Odtwarzanie dŸwiêku
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+            playSoundOnObject.PlaySound(soundName, 1.0f, false);
+        }
+
+        // Animacja ruchu drzwi
         while (elapsedTime < duration)
         {
-            // Obliczamy, jak¹ czêœæ ruchu nale¿y wykonaæ w danym czasie
             float t = elapsedTime / duration;
-
-            // Interpolujemy miêdzy pocz¹tkow¹ pozycj¹ a docelow¹ pozycj¹ w lokalnych wspó³rzêdnych
             float newZ = Mathf.Lerp(startingLocalZPosition, targetLocalZPosition, t);
             door.transform.localPosition = new Vector3(door.transform.localPosition.x, door.transform.localPosition.y, newZ);
 
-            elapsedTime += Time.deltaTime; // Aktualizujemy czas, który up³yn¹³
+            elapsedTime += Time.deltaTime;
             yield return null;
         }
 
-        // Zapewniamy, ¿e drzwi skoñcz¹ dok³adnie w docelowej pozycji lokalnej
+        // Ustaw drzwi w koñcowej pozycji
         door.transform.localPosition = new Vector3(door.transform.localPosition.x, door.transform.localPosition.y, targetLocalZPosition);
+
+        //Debug.Log("Ruch drzwi zakoñczony.");
     }
 
+    private IEnumerator ShakeObjectsDuringSpawn(float delay)
+    {
+        float elapsedTime = 0f;
+
+        // Przechowuje docelowe k¹ty dla ka¿dego obiektu
+        Dictionary<GameObject, float> targetAngles = new Dictionary<GameObject, float>();
+
+        // Przypisz losowe k¹ty pocz¹tkowe jako cele
+        foreach (var obj in rotatingObjects)
+        {
+            if (obj == null) continue;
+            targetAngles[obj] = Random.Range(minRotationAngle, maxRotationAngle);
+        }
+
+        // Dopóki czas spawnowania prefabów nie minie
+        while (elapsedTime < delay)
+        {
+            foreach (var obj in rotatingObjects)
+            {
+                if (obj == null) continue;
+
+                // Aktualny k¹t obiektu w osi Z
+                float currentAngle = obj.transform.eulerAngles.z;
+
+                // Docelowy k¹t dla tego obiektu
+                float targetAngle = targetAngles[obj];
+
+                // Oblicz ró¿nicê miêdzy aktualnym k¹tem a celem
+                float angleDifference = targetAngle - currentAngle;
+
+                // Jeœli ró¿nica jest bardzo ma³a, wybierz nowy losowy cel
+                if (Mathf.Abs(angleDifference) < 1f)
+                {
+                    targetAngle = Random.Range(minRotationAngle, maxRotationAngle);
+                    targetAngles[obj] = targetAngle;
+                }
+
+                // Oblicz krok obrotu w kierunku celu
+                float step = Mathf.Sign(angleDifference) * rotationSpeed * Time.deltaTime;
+
+                // Upewnij siê, ¿e nie przekraczamy celu
+                if (Mathf.Abs(step) > Mathf.Abs(angleDifference))
+                {
+                    step = angleDifference;
+                }
+
+                // Obrót obiektu o krok (wokó³ jego w³asnej osi Z)
+                obj.transform.RotateAround(obj.transform.position, Vector3.forward, step);
+            }
+
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Opcjonalnie: Przywrócenie pierwotnej pozycji i rotacji
+        ResetObjectsToInitialState();
+    }
+
+    // Metoda do przywracania obiektów do ich pocz¹tkowej pozycji i rotacji
+    private void ResetObjectsToInitialState()
+    {
+        foreach (var obj in rotatingObjects)
+        {
+            if (obj == null) continue;
+
+            if (initialPositions.ContainsKey(obj))
+            {
+                obj.transform.position = initialPositions[obj]; // Przywrócenie pozycji
+            }
+
+            if (initialRotations.ContainsKey(obj))
+            {
+                obj.transform.rotation = initialRotations[obj]; // Przywrócenie rotacji
+            }
+        }
+    }
 
     private IEnumerator DelayedSpawn(bool isTrash)
     {
         isProcessing = true;
-        yield return new WaitForSeconds(spawnDelay); // Czekaj okreœlony czas
-        SpawnPrefab(isTrash); // Wywo³anie metody SpawnPrefab
+
+        // Rozpoczynamy drganie obiektów podczas spawnowania
+        StartCoroutine(ShakeObjectsDuringSpawn(spawnDelay));
+
+        // Losowy dŸwiêk z refineSounds
+        string[] refineSounds = { "Refine1", "Refine2", "Refine3", "Refine4" };
+        string chosenSound = refineSounds[Random.Range(0, refineSounds.Length)];
+
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+            playSoundOnObject.PlaySound(chosenSound, 0.8f, false);
+        }
+
+        // Odczekaj spawnDelay - 1 sekundê
+        spawnDelay = Mathf.Max(spawnDelay - 0.5f, 0f); // zabezpieczenie przed ujemnym czasem
+        yield return new WaitForSeconds(spawnDelay);
+
+        // Rozpocznij FadeOut (1 sekunda)
+        MuteAllRefineSounds();
+
+        // Poczekaj pozosta³¹ 1 sekundê
+        yield return new WaitForSeconds(1f);
+
+        // Spawn
+        SpawnPrefab(isTrash);
+
         isProcessing = false;
+    }
+
+    // Metoda wyciszaj¹ca wszystkie dŸwiêki Refine
+    private void MuteAllRefineSounds()
+    {
+        string[] refineSounds = { "Refine1", "Refine2", "Refine3", "Refine4" };
 
         foreach (var playSoundOnObject in playSoundObjects)
         {
             if (playSoundOnObject == null) continue;
 
-            playSoundOnObject.StopSound("Refine1");
-            playSoundOnObject.StopSound("Refine2");
-            playSoundOnObject.StopSound("Refine3");
-            playSoundOnObject.StopSound("Refine4");
+            foreach (string soundName in refineSounds)
+            {
+                // Wycisz dŸwiêk
+                playSoundOnObject.FadeOutSound(soundName, 0.5f); // Zak³adam, ¿e masz metodê StopSound z fade-out
+            }
         }
     }
 
@@ -681,29 +874,21 @@ public class TreasureRefiner : MonoBehaviour
     {
         float currentTrashAmount = int.Parse(trashCountText.text);
 
-        if (currentTrashAmount >= trashResourceRequired)
+        if (currentTrashAmount >= trashResourceRequired && !IsSpawnPointBlocked())
         {
-            // Sprawdzamy, czy mo¿emy zespawnowaæ obiekt (czy nie ma kolizji)
-            if (!IsSpawnPointBlocked())
-            {
-                currentTrashAmount -= trashResourceRequired;
-                trashAmount = currentTrashAmount; // <- zaktualizuj wewnêtrzn¹ wartoœæ!
-                trashCountText.text = currentTrashAmount.ToString();
+            currentTrashAmount -= trashResourceRequired;
+            trashAmount = currentTrashAmount; // <- zaktualizuj wewnêtrzn¹ wartoœæ!
+            trashCountText.text = currentTrashAmount.ToString();
 
-                // Wywo³anie SpawnPrefab z opóŸnieniem
-                StartCoroutine(DelayedSpawn(true));
+            // Wywo³anie SpawnPrefab z opóŸnieniem
+            StartCoroutine(DelayedSpawn(true));
 
-                // I DOPIERO TERAZ odœwie¿enie UI:
-                RefreshSelectedCategoryUI();
-            }
-            else
-            {
-                Debug.Log("Nie mo¿na zespawnowaæ – kolizja z obiektem.");
-            }
+            // Odœwie¿enie UI
+            RefreshSelectedCategoryUI();
         }
         else
         {
-            Debug.Log("Za ma³o zasobów do przetworzenia trash! Masz tylko " + currentTrashAmount + ", a potrzeba " + trashResourceRequired);
+            Debug.Log("Nie mo¿na rafinowaæ trash – za ma³o zasobów lub zablokowany punkt spawnowania!");
         }
     }
 

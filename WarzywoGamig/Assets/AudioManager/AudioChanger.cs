@@ -113,7 +113,7 @@ public class AudioChanger : MonoBehaviour
         {
             hasEntered = true;
             isPlayerInside = true;
-            Debug.Log("Gracz wszed³ do wnêtrza.");
+            //Debug.Log("Gracz wszed³ do wnêtrza.");
         }
     }
 
@@ -123,7 +123,7 @@ public class AudioChanger : MonoBehaviour
         {
             hasEntered = false;
             isPlayerInside = false;
-            Debug.Log("Gracz wyszed³ na zewn¹trz.");
+            //Debug.Log("Gracz wyszed³ na zewn¹trz.");
         }
     }
 }

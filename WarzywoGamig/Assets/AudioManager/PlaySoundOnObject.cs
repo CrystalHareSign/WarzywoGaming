@@ -127,6 +127,37 @@ public class PlaySoundOnObject : MonoBehaviour
         }
     }
 
+    public void FadeOutSound(string soundName, float fadeDuration)
+    {
+        var foundSource = GetAudioSourceByName(soundName);
+        if (foundSource == null || foundSource.audioSource == null || !foundSource.audioSource.isPlaying)
+        {
+            //Debug.LogWarning($"Nie mo¿na wyciszyæ dŸwiêku '{soundName}' – Ÿród³o nie istnieje lub nie jest odtwarzane.");
+            return;
+        }
+
+        StartCoroutine(FadeOutCoroutine(foundSource, fadeDuration));
+    }
+
+    private System.Collections.IEnumerator FadeOutCoroutine(AudioSourceWithName source, float duration)
+    {
+        AudioSource audio = source.audioSource;
+        float startVolume = audio.volume;
+
+        float time = 0f;
+        while (time < duration)
+        {
+            time += Time.deltaTime;
+            float t = Mathf.Clamp01(time / duration);
+            audio.volume = Mathf.Lerp(startVolume, 0f, t);
+            yield return null;
+        }
+
+        audio.Stop();
+        audio.volume = source.originalVolume; // Przywróæ oryginaln¹ g³oœnoœæ do przysz³ego odtwarzania
+    }
+
+
     public void StopAllSounds()
     {
         foreach (var source in audioSourcesWithNames)

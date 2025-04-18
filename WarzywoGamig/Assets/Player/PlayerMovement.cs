@@ -116,12 +116,12 @@ public class PlayerMovement : MonoBehaviour
         {
             if (audioChanger.isPlayerInside)
             {
-                Debug.Log("Gracz jest wewnątrz, odtwarzanie dźwięków wewnętrznych.");
+                //Debug.Log("Gracz jest wewnątrz, odtwarzanie dźwięków wewnętrznych.");
                 PlayRandomSounds(indoorWalkingSounds);
             }
             else
             {
-                Debug.Log("Gracz jest na zewnątrz, odtwarzanie dźwięków zewnętrznych.");
+                //Debug.Log("Gracz jest na zewnątrz, odtwarzanie dźwięków zewnętrznych.");
                 PlayRandomSounds(outdoorWalkingSounds);
             }
         }
@@ -133,7 +133,7 @@ public class PlayerMovement : MonoBehaviour
 
         int randomIndex = Random.Range(0, sounds.Length);
         string randomSound = sounds[randomIndex];
-        Debug.Log("Odtwarzanie dźwięku: " + randomSound);
+        //Debug.Log("Odtwarzanie dźwięku: " + randomSound);
 
         foreach (var playSoundOnObject in playSoundObjects)
         {
