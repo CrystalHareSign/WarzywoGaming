@@ -953,7 +953,7 @@ public class TreasureRefiner : MonoBehaviour
                     {
                         if (playSoundOnObject == null) continue;
 
-                        playSoundOnObject.PlaySound("PickUpLiquid1", 1.0f, false);
+                        playSoundOnObject.PlaySound("PickUpLiquid1", 1.1f, false);
                     }
 
                     if (inventoryUI != null)

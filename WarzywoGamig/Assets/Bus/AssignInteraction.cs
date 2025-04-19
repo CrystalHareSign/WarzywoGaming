@@ -11,9 +11,11 @@ public class AssignInteraction : MonoBehaviour
     [Header("TAGS: Body")]
     public GameObject[] manualMoveObjects; // Rêcznie przypisane obiekty
     private List<GameObject> moveObjects = new List<GameObject>(); // Lista przedmiotów do przenoszenia
-    private GameObject bus; // Obiekt Busa, który ma byæ ustawiony w pierwotnym po³o¿eniu
-    private Vector3 busOriginalPosition; // Zapisana pozycja obiektu Busa
-    
+    public GameObject bus; // Rêcznie przypisany obiekt Busa
+    private Vector3 busOriginalPosition;
+    public Vector3 playerStartPosition;
+    public GameObject player; // Przypisz gracza rêcznie
+
     private int lastLootCount = 0;
     public float moveDistance = 1.0f; // Odleg³oœæ przenoszenia obiektów
     public float moveDuration = 1.0f; // Czas trwania przenoszenia obiektów
@@ -23,13 +25,20 @@ public class AssignInteraction : MonoBehaviour
     private SceneChanger sceneChanger; // Referencja do SceneChanger
     void Start()
     {
-        // ZnajdŸ obiekt Busa po tagu
-        bus = GameObject.FindGameObjectWithTag("Bus");
 
-        // Zapamiêtanie pierwotnej pozycji obiektu Busa, jeœli znaleziono
         if (bus != null)
         {
             busOriginalPosition = bus.transform.position;
+        }
+
+        if (player != null && bus != null)
+        {
+            player.transform.position = playerStartPosition;
+        }
+
+        else
+        {
+            Debug.LogWarning("Bus is not assigned in the inspector.");
         }
 
         // Dodajemy listenera do za³adowania sceny
@@ -52,20 +61,34 @@ public class AssignInteraction : MonoBehaviour
         //AddObjectsWithTag("Weapon");
         AddObjectsWithTag("Turret"); // Dodane dla tagu "Turret"
 
-        // Przypisz funkcje do interaktywnych przedmiotów
         if (interactableLeft != null)
         {
             InteractableItem item1 = interactableLeft.GetComponent<InteractableItem>();
-            item1.hasCooldown = true; // Ustaw cooldown dla tego przedmiotu
-            item1.onInteract = () => MoveAll(Vector3.forward);
+            if (item1 != null)
+            {
+                item1.hasCooldown = true;
+                item1.onInteract = () => MoveAll(Vector3.forward);
+            }
+            else
+            {
+                Debug.LogWarning("interactableLeft nie ma komponentu InteractableItem!");
+            }
         }
 
         if (interactableRight != null)
         {
             InteractableItem item2 = interactableRight.GetComponent<InteractableItem>();
-            item2.hasCooldown = true; // Ustaw cooldown dla tego przedmiotu
-            item2.onInteract = () => MoveAll(Vector3.back);
+            if (item2 != null)
+            {
+                item2.hasCooldown = true;
+                item2.onInteract = () => MoveAll(Vector3.back);
+            }
+            else
+            {
+                Debug.LogWarning("interactableRight nie ma komponentu InteractableItem!");
+            }
         }
+
         // Pobierz referencjê do SceneChanger
         sceneChanger = Object.FindFirstObjectByType<SceneChanger>();
     }
@@ -81,15 +104,20 @@ public class AssignInteraction : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // Po za³adowaniu sceny ustawienie obiektu Busa w pierwotnej pozycji
         if (bus != null)
         {
-            //Debug.Log($"Bus found at {bus.transform.position}. Restoring to original position.");
             bus.transform.position = busOriginalPosition;
+
         }
+
+        if (player != null)
+        {
+            player.transform.position = playerStartPosition;
+        }
+
         else
         {
-            Debug.LogWarning("Bus object not found in the scene.");
+            Debug.LogWarning("Bus is not assigned. Cannot reset position.");
         }
 
         // Po za³adowaniu sceny wyczyœæ listê i dodaj wszystkie obiekty z tagami
