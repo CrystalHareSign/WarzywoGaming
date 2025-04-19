@@ -64,7 +64,7 @@ public class PauseMenu : MonoBehaviour
         UpdateButtonTexts();
 
         // Znajdü wszystkie obiekty posiadajπce PlaySoundOnObject i dodaj do listy
-        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+        playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
     }
 
     void Update()
@@ -142,7 +142,7 @@ public class PauseMenu : MonoBehaviour
         {
             if (playSoundOnObject == null) continue;
 
-            playSoundOnObject.StopSound("PauseMenuMusic");
+            playSoundOnObject.FadeOutSound("PauseMenuMusic", 1f);
         }
     }
 

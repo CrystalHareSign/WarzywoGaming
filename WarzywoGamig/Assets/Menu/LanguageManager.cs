@@ -85,7 +85,7 @@ public class LanguageManager : MonoBehaviour
         OnLanguageChanged?.Invoke();
 
         // Aktualizacja HoverMessages w scenie
-        foreach (var hover in FindObjectsOfType<HoverMessage>())
+        foreach (var hover in Object .FindObjectsByType<HoverMessage>(FindObjectsSortMode.None))
         {
             hover.UpdateLocalizedMessage();
         }

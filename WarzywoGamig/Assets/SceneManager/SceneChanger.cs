@@ -24,7 +24,7 @@ public class SceneChanger : MonoBehaviour
         assignInteraction = Object.FindFirstObjectByType<AssignInteraction>();
 
         // Znajdü wszystkie obiekty posiadajπce PlaySoundOnObject i dodaj do listy
-        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+        playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
     }
 
     private void Update()
@@ -93,18 +93,16 @@ public class SceneChanger : MonoBehaviour
         {
             if (playSoundOnObject == null) continue;
 
-            playSoundOnObject.PlaySound("TiresOnGravel", 0.01f, true);
-            playSoundOnObject.PlaySound("DieselBusEngine", 1f, true);
-            
-            playSoundOnObject.PlaySound("Storm", 0.2f, true);                            /////// TO
 
-            //// Znajdü obiekt AudioChanger w scenie
-            //AudioChanger audioChanger = Object.FindFirstObjectByType<AudioChanger>();
-            //if (audioChanger != null)
-            //{
-            //    // Ustaw poczπtkowπ g≥oúnoúÊ w AudioChanger
-            //    audioChanger.stormAudioVolume = stormVolume;  // Przyk≥ad ustawienia g≥oúnoúci  /////// TUTAJ
-            //}
+        }
+
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+            playSoundOnObject.PlaySound("TiresOnGravel", 0.01f, true);
+            playSoundOnObject.PlaySound("DieselBusEngine", 1.2f, true);
+            playSoundOnObject.PlaySound("Storm", 0.1f, true);
         }
 
         Inventory inventory = Object.FindFirstObjectByType<Inventory>();
@@ -168,6 +166,14 @@ public class SceneChanger : MonoBehaviour
             playSoundOnObject.StopSound("DieselBusEngine");
             playSoundOnObject.StopSound("TiresOnGravel");
             playSoundOnObject.StopSound("Storm");
+
+        }
+
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+
+
         }
     }
 

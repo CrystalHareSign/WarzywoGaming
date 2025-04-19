@@ -43,7 +43,7 @@ public class OptionsMenu : MonoBehaviour
         }
 
         // Znajdü wszystkie obiekty posiadajπce PlaySoundOnObject i dodaj do listy
-        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+        playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
     }
 
     public void ShowGeneralSettings()
@@ -109,7 +109,6 @@ public class OptionsMenu : MonoBehaviour
 
     public void HoverButtonSound()
     {
-        Debug.Log("dzia≥a przucisk");
         foreach (var playSoundOnObject in playSoundObjects)
         {
             if (playSoundOnObject == null) continue;

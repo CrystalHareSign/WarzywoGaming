@@ -179,7 +179,7 @@ public class SpawnManager : MonoBehaviour
             }
         }
 
-        Debug.LogWarning("Nie znaleziono wolnego miejsca do spawnowania.");
+        //Debug.LogWarning("Nie znaleziono wolnego miejsca do spawnowania.");
     }
 
     GameObject ChoosePrefabByChance(List<SpawnablePrefab> spawnablePrefabs)

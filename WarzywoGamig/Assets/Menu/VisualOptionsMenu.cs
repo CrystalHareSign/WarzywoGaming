@@ -45,7 +45,7 @@ public class VisualOptionsMenu : MonoBehaviour
         }
 
         // Znajdü wszystkie obiekty posiadajπce PlaySoundOnObject i dodaj do listy
-        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+        playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
     }
 
     void InitializeResolutions()

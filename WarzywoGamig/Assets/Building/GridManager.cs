@@ -54,7 +54,7 @@ public class GridManager : MonoBehaviour
     {
 
         // Znajdü wszystkie obiekty posiadajπce PlaySoundOnObject i dodaj do listy
-        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+        playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
 
         gridAreaWidth = gridArea.localScale.x;
         gridAreaHeight = gridArea.localScale.z;

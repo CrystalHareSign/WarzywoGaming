@@ -39,6 +39,9 @@ public class TreasureRefiner : MonoBehaviour
     public float doorMoveRightDuration = 1f; // Czas przesuwania drzwi w prawo
     public float doorMoveLeftDuration = 1f;  // Czas przesuwania drzwi w lewo
     public Vector3 doorStartingPosition; // Rêcznie ustawiona pocz¹tkowa pozycja drzwi
+    private bool isMoving = false;
+    private bool pendingOpenRequest = false;
+    private bool pendingCloseRequest = false;
     [Header("Rafinowanie")]
     public float refineAmount = 10;
     public float maxResourcePerSlot = 50f;
@@ -46,8 +49,7 @@ public class TreasureRefiner : MonoBehaviour
     public float trashResourceRequired = 10f; // Wymagana iloœæ zasobów na trash
     public float trashMaxAmount = 100f;
     public float spawnDelay = 5;
-    private bool isProcessing = false;
-    private bool isRefiningInProgress = false;
+
     private int selectedCategoryIndex;
     [Header("Mierniki")]
     // Dodajemy zmienne do ustawienia minimalnego i maksymalnego k¹ta w Inspektorze
@@ -95,7 +97,7 @@ public class TreasureRefiner : MonoBehaviour
             trashRefineCostText.text = "/" + trashResourceRequired.ToString();
 
         // ZnajdŸ wszystkie obiekty posiadaj¹ce PlaySoundOnObject i dodaj do listy
-        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+        playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
 
         // Zapisanie pocz¹tkowej pozycji i rotacji dla ka¿dego obiektu
         foreach (var obj in rotatingObjects)
@@ -171,14 +173,6 @@ public class TreasureRefiner : MonoBehaviour
                             float currentTrashAmount = int.Parse(trashCountText.text);
                             if (currentTrashAmount >= trashResourceRequired)
                             {
-                                //// Odtwarzanie losowego dŸwiêku rafinacji
-                                //foreach (var playSoundOnObject in playSoundObjects)
-                                //{
-                                //    if (playSoundOnObject == null) continue;
-
-                                //    string chosenSound = refineSounds[Random.Range(0, refineSounds.Length)];
-                                //    playSoundOnObject.PlaySound(chosenSound, 0.8f, false);
-                                //}
 
                                 RefineTrash();
 
@@ -188,6 +182,7 @@ public class TreasureRefiner : MonoBehaviour
 
                                     string chosen = lowSounds[Random.Range(0, lowSounds.Length)];
                                     playSoundOnObject.PlaySound(chosen, 0.5f, false);
+                                    playSoundOnObject.FadeOutSound("RefinerIdle", 1f);
                                 }
                             }
                             else
@@ -206,14 +201,6 @@ public class TreasureRefiner : MonoBehaviour
                             float currentAmount = int.Parse(countTexts[selectedCategoryIndex].text);
                             if (currentAmount >= refineAmount)
                             {
-                                //// Odtwarzanie losowego dŸwiêku rafinacji
-                                //foreach (var playSoundOnObject in playSoundObjects)
-                                //{
-                                //    if (playSoundOnObject == null) continue;
-
-                                //    string chosenSound = refineSounds[Random.Range(0, refineSounds.Length)];
-                                //    playSoundOnObject.PlaySound(chosenSound, 0.8f, false);
-                                //}
 
                                 RefineResources();
 
@@ -223,6 +210,7 @@ public class TreasureRefiner : MonoBehaviour
 
                                     string chosen = lowSounds[Random.Range(0, lowSounds.Length)];
                                     playSoundOnObject.PlaySound(chosen, 0.5f, false);
+                                    playSoundOnObject.FadeOutSound("RefinerIdle", 1f);
                                 }
                             }
                             else
@@ -284,7 +272,7 @@ public class TreasureRefiner : MonoBehaviour
                             if (playSoundOnObject == null) continue;
 
                             string chosenSound = refineSounds[Random.Range(0, refineSounds.Length)];
-                            playSoundOnObject.PlaySound(chosenSound, 0.5f, false);
+                            playSoundOnObject.PlaySound(chosenSound, 0.9f, false);
                         }
 
                         RefineTrash();
@@ -302,16 +290,6 @@ public class TreasureRefiner : MonoBehaviour
             }
         }
     }
-
-    // Korutyna do resetowania flagi po zakoñczeniu refinacji
-    private IEnumerator ResetRefiningFlag()
-    {
-        // W tym przypadku zak³adamy, ¿e proces refinacji trwa 3 sekundy (mo¿esz dostosowaæ czas)
-        yield return new WaitForSeconds(3f);  // Czekamy na zakoñczenie procesu refinacji
-
-        isRefiningInProgress = false;  // Ustawiamy flagê na false po zakoñczeniu
-    }
-
     private int FindNextValidCategoryIndexLoop(int startIndex, int direction)
     {
         int total = categoryTexts.Length + (IsHomeScene() ? 1 : 0); // dodajemy Trash jako dodatkowy slot
@@ -555,137 +533,179 @@ public class TreasureRefiner : MonoBehaviour
         }
     }
 
-    // Metoda do przesuwania drzwi w prawo (otwieranie)
     private void MoveRightDoor()
     {
-        if (!areDoorsClosed) return; // Jeœli drzwi s¹ ju¿ otwarte, ignoruj
+        if (!areDoorsClosed)
+            return; // Drzwi ju¿ otwarte — nic nie rób
 
-        //Debug.Log("Przesuwanie drzwi w prawo (otwieranie).");
-        areDoorsClosed = false; // Ustawiamy flagê, ¿e drzwi s¹ otwarte
-        StartCoroutine(MoveDoorCoroutine(doorStartingPosition.x + doorDistance, doorMoveRightDuration, "HatchOpen"));
-    }
+        if (isMoving)
+        {
+            pendingOpenRequest = true; // Zapamiêtaj chêæ otwarcia
+            return;
+        }
 
-    // Metoda do przesuwania drzwi w lewo (zamykanie)
-    private void MoveBackDoor()
-    {
-        if (areDoorsClosed) return; // Jeœli drzwi s¹ ju¿ zamkniête, ignoruj
+        areDoorsClosed = false;
 
-        //Debug.Log("Przesuwanie drzwi w lewo (zamykanie).");
-        areDoorsClosed = true; // Ustawiamy flagê, ¿e drzwi s¹ zamkniête
-        StartCoroutine(MoveDoorCoroutine(doorStartingPosition.x, doorMoveLeftDuration, "HatchClose"));
-    }
-
-    // Coroutine do animacji przesuwania drzwi
-    private IEnumerator MoveDoorCoroutine(float targetLocalZPosition, float duration, string soundName)
-    {
-        //Debug.Log("Rozpoczêcie coroutine: Ruch drzwi.");
-        float elapsedTime = 0f;
-        float startingLocalZPosition = door.transform.localPosition.z;
-
-        // Odtwarzanie dŸwiêku
         foreach (var playSoundOnObject in playSoundObjects)
         {
             if (playSoundOnObject == null) continue;
-            playSoundOnObject.PlaySound(soundName, 1.0f, false);
+            playSoundOnObject.PlaySound("SteamHigh1", 0.5f, false);
         }
 
-        // Animacja ruchu drzwi
+        StartCoroutine(MoveDoorCoroutine(doorStartingPosition.x + doorDistance, doorMoveRightDuration, "HatchOpen"));
+    }
+
+    private void MoveBackDoor()
+    {
+        if (areDoorsClosed)
+            return; // Drzwi ju¿ zamkniête — nic nie rób
+
+        if (isMoving)
+        {
+            pendingCloseRequest = true; // Zapamiêtaj chêæ zamkniêcia
+            return;
+        }
+
+        areDoorsClosed = true;
+
+        StartCoroutine(MoveDoorCoroutine(doorStartingPosition.x, doorMoveLeftDuration, "HatchClose"));
+
+
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+            playSoundOnObject.PlaySound("SteamHigh1", 0.5f, false);
+        }
+    }
+
+    private IEnumerator MoveDoorCoroutine(float targetLocalZPosition, float duration, string soundName)
+    {
+        isMoving = true;
+        float elapsedTime = 0f;
+        float startingLocalZPosition = door.transform.localPosition.z;
+
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+            playSoundOnObject.PlaySound(soundName, 1.2f, false);
+        }
+
         while (elapsedTime < duration)
         {
             float t = elapsedTime / duration;
             float newZ = Mathf.Lerp(startingLocalZPosition, targetLocalZPosition, t);
-            door.transform.localPosition = new Vector3(door.transform.localPosition.x, door.transform.localPosition.y, newZ);
+            door.transform.localPosition = new Vector3(
+                door.transform.localPosition.x,
+                door.transform.localPosition.y,
+                newZ
+            );
 
             elapsedTime += Time.deltaTime;
             yield return null;
         }
 
-        // Ustaw drzwi w koñcowej pozycji
-        door.transform.localPosition = new Vector3(door.transform.localPosition.x, door.transform.localPosition.y, targetLocalZPosition);
+        // Ustaw ostateczn¹ pozycjê
+        door.transform.localPosition = new Vector3(
+            door.transform.localPosition.x,
+            door.transform.localPosition.y,
+            targetLocalZPosition
+        );
 
-        //Debug.Log("Ruch drzwi zakoñczony.");
+        isMoving = false;
+
+        // SprawdŸ, czy czeka jakaœ akcja do wykonania
+        if (pendingOpenRequest)
+        {
+            pendingOpenRequest = false;
+            MoveRightDoor(); // uruchamiamy jeszcze raz, ju¿ nie bêdzie isMoving = true
+        }
+        else if (pendingCloseRequest)
+        {
+            pendingCloseRequest = false;
+            MoveBackDoor(); // analogicznie
+        }
     }
 
     private IEnumerator ShakeObjectsDuringSpawn(float delay)
     {
         float elapsedTime = 0f;
 
-        // Przechowuje docelowe k¹ty dla ka¿dego obiektu
-        Dictionary<GameObject, float> targetAngles = new Dictionary<GameObject, float>();
+        // Przechowuje pocz¹tkowe rotacje ka¿dego obiektu
+        Dictionary<GameObject, Quaternion> initialRotations = new Dictionary<GameObject, Quaternion>();
 
-        // Przypisz losowe k¹ty pocz¹tkowe jako cele
+        // Przechowuje aktualne fazy sinusoidy dla ka¿dego obiektu, aby uzyskaæ niezale¿ne ruchy
+        Dictionary<GameObject, float> oscillationPhases = new Dictionary<GameObject, float>();
+
+        // Zapisz pocz¹tkowe rotacje i zainicjalizuj fazy oscylacji
         foreach (var obj in rotatingObjects)
         {
             if (obj == null) continue;
-            targetAngles[obj] = Random.Range(minRotationAngle, maxRotationAngle);
+
+            initialRotations[obj] = obj.transform.localRotation;
+            oscillationPhases[obj] = Random.Range(0f, Mathf.PI * 2f); // Losowa faza
         }
 
-        // Dopóki czas spawnowania prefabów nie minie
         while (elapsedTime < delay)
         {
             foreach (var obj in rotatingObjects)
             {
                 if (obj == null) continue;
 
-                // Aktualny k¹t obiektu w osi Z
-                float currentAngle = obj.transform.eulerAngles.z;
+                // Oblicz oscylacjê (sinusoida dla ruchu w lewo i prawo)
+                float phase = oscillationPhases[obj];
+                float amplitude = (maxRotationAngle - minRotationAngle) / 2f; // Amplituda oscylacji
+                float meanAngle = (maxRotationAngle + minRotationAngle) / 2f; // Œrodek zakresu
+                float oscillation = Mathf.Sin(Time.time * rotationSpeed + phase) * amplitude;
 
-                // Docelowy k¹t dla tego obiektu
-                float targetAngle = targetAngles[obj];
-
-                // Oblicz ró¿nicê miêdzy aktualnym k¹tem a celem
-                float angleDifference = targetAngle - currentAngle;
-
-                // Jeœli ró¿nica jest bardzo ma³a, wybierz nowy losowy cel
-                if (Mathf.Abs(angleDifference) < 1f)
-                {
-                    targetAngle = Random.Range(minRotationAngle, maxRotationAngle);
-                    targetAngles[obj] = targetAngle;
-                }
-
-                // Oblicz krok obrotu w kierunku celu
-                float step = Mathf.Sign(angleDifference) * rotationSpeed * Time.deltaTime;
-
-                // Upewnij siê, ¿e nie przekraczamy celu
-                if (Mathf.Abs(step) > Mathf.Abs(angleDifference))
-                {
-                    step = angleDifference;
-                }
-
-                // Obrót obiektu o krok (wokó³ jego w³asnej osi Z)
-                obj.transform.RotateAround(obj.transform.position, Vector3.forward, step);
+                // Zastosuj rotacjê wokó³ lokalnej osi Z
+                Quaternion targetRotation = initialRotations[obj] * Quaternion.Euler(0, oscillation, 0);
+                obj.transform.localRotation = targetRotation;
             }
 
             elapsedTime += Time.deltaTime;
-            yield return null;
+            yield return null; // Zaczekaj na nastêpny frame
         }
 
-        // Opcjonalnie: Przywrócenie pierwotnej pozycji i rotacji
-        ResetObjectsToInitialState();
-    }
-
-    // Metoda do przywracania obiektów do ich pocz¹tkowej pozycji i rotacji
-    private void ResetObjectsToInitialState()
-    {
+        // Opcjonalnie: Przywrócenie pierwotnej rotacji po zakoñczeniu (jeœli wymagane)
         foreach (var obj in rotatingObjects)
         {
             if (obj == null) continue;
 
-            if (initialPositions.ContainsKey(obj))
-            {
-                obj.transform.position = initialPositions[obj]; // Przywrócenie pozycji
-            }
+            obj.transform.localRotation = initialRotations[obj];
+        }
+    }
 
-            if (initialRotations.ContainsKey(obj))
-            {
-                obj.transform.rotation = initialRotations[obj]; // Przywrócenie rotacji
-            }
+    // Dodanie Gizmos do wizualizacji zakresu k¹tów obrotu
+    private void OnDrawGizmos()
+    {
+        if (rotatingObjects == null || rotatingObjects.Count == 0)
+            return;
+
+        // Ustaw kolor Gizmos
+        Gizmos.color = Color.yellow;
+
+        foreach (var obj in rotatingObjects)
+        {
+            if (obj == null) continue;
+
+            // Pozycja obiektu do rysowania Gizmos
+            Vector3 position = obj.transform.position;
+
+            // Oblicz kierunki dla min i max k¹tów
+            Vector3 minDirection = Quaternion.Euler(0, 0, minRotationAngle) * Vector3.up;
+            Vector3 maxDirection = Quaternion.Euler(0, 0, maxRotationAngle) * Vector3.up;
+
+            // Rysuj linie reprezentuj¹ce zakres k¹tów
+            Gizmos.DrawLine(position, position + minDirection * 2f); // Linia dla minimalnego k¹ta
+            Gizmos.DrawLine(position, position + maxDirection * 2f); // Linia dla maksymalnego k¹ta
+
+            // Rysuj sferê w pozycji obiektu dla lepszej widocznoœci
+            Gizmos.DrawSphere(position, 0.1f);
         }
     }
 
     private IEnumerator DelayedSpawn(bool isTrash)
     {
-        isProcessing = true;
 
         // Rozpoczynamy drganie obiektów podczas spawnowania
         StartCoroutine(ShakeObjectsDuringSpawn(spawnDelay));
@@ -707,13 +727,24 @@ public class TreasureRefiner : MonoBehaviour
         // Rozpocznij FadeOut (1 sekunda)
         MuteAllRefineSounds();
 
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+            playSoundOnObject.PlaySound("SteamLow1", 0.5f, false);
+        }
+
         // Poczekaj pozosta³¹ 1 sekundê
         yield return new WaitForSeconds(1f);
 
         // Spawn
         SpawnPrefab(isTrash);
 
-        isProcessing = false;
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+            playSoundOnObject.PlaySound("RefinerIdle", 0.5f, false);
+            playSoundOnObject.PlaySound("SteamHigh1", 0.5f, false);
+        }
     }
 
     // Metoda wyciszaj¹ca wszystkie dŸwiêki Refine
@@ -811,7 +842,7 @@ public class TreasureRefiner : MonoBehaviour
         // Nadanie tagu "Loot"
         spawned.tag = "Loot";
 
-        Debug.Log("Prefab zespawnowany na Y = " + spawnPos.y + " z kategori¹: " + resourceCategory + " i iloœci¹: " + resourceAmount);
+        //Debug.Log("Prefab zespawnowany na Y = " + spawnPos.y + " z kategori¹: " + resourceCategory + " i iloœci¹: " + resourceAmount);
 
         MoveRightDoor();
     }
@@ -917,6 +948,14 @@ public class TreasureRefiner : MonoBehaviour
                     inventory.items.RemoveAt(i);
                     Destroy(itemToRemove);
 
+
+                    foreach (var playSoundOnObject in playSoundObjects)
+                    {
+                        if (playSoundOnObject == null) continue;
+
+                        playSoundOnObject.PlaySound("PickUpLiquid1", 1.0f, false);
+                    }
+
                     if (inventoryUI != null)
                     {
                         inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items);
@@ -929,7 +968,7 @@ public class TreasureRefiner : MonoBehaviour
         // Jeœli ¿aden przedmiot nie pasowa³
         if (!resourcesAdded)
         {
-            Debug.Log("Nie mo¿na dodaæ zasobów. Wszystkie sloty przekroczy³yby max");
+            Debug.Log("Nie mo¿na dodaæ zasobów albo wszystkie sloty przekroczy³yby max");
         }
 
         isRefining = false;

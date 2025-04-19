@@ -87,7 +87,7 @@ public class SoundOptionsMenu : MonoBehaviour
         UpdateButtonTexts();
 
         // Znajdü wszystkie obiekty posiadajπce PlaySoundOnObject i dodaj do listy
-        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+        playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
     }
 
     private void UpdateSliderValue(Slider slider, TMP_Text text, System.Action<float> updateAction)

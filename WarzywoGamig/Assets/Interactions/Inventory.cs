@@ -46,7 +46,7 @@ public class Inventory : MonoBehaviour
     void Start()
     {
         // Znajdź wszystkie obiekty posiadające PlaySoundOnObject i dodaj do listy
-        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+        playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
 
         weapons.Clear();
         items.Clear();
@@ -91,14 +91,14 @@ public class Inventory : MonoBehaviour
             // ❌ Jeśli gracz trzyma loot, nie może podnosić broni
             if (lootParent != null && lootParent.childCount > 0 && interactableItem.isWeapon)
             {
-                Debug.Log("Nie możesz podnieść broni, gdy trzymasz loot.");
+                //Debug.Log("Nie możesz podnieść broni, gdy trzymasz loot.");
                 return;
             }
 
             // ❌ Jeśli gracz trzyma loot, nie może podnosić innych przedmiotów (poza bronią, ale to już blokujemy powyżej)
             if (lootParent != null && lootParent.childCount > 0 && !interactableItem.isWeapon)
             {
-                Debug.Log("Nie możesz podnieść przedmiotu, ponieważ trzymasz loot.");
+                //Debug.Log("Nie możesz podnieść przedmiotu, ponieważ trzymasz loot.");
                 return;
             }
 
@@ -441,8 +441,8 @@ public class Inventory : MonoBehaviour
             return;
         }
 
-        Debug.Log($"LootParent: {lootParent.name}");
-        Debug.Log($"Obiekt do usunięcia: {objectToRemove.name} (ID: {objectToRemove.GetInstanceID()})");
+        //Debug.Log($"LootParent: {lootParent.name}");
+        //Debug.Log($"Obiekt do usunięcia: {objectToRemove.name} (ID: {objectToRemove.GetInstanceID()})");
 
         string objectToRemoveName = objectToRemove.name.Replace("(Clone)", "").Replace("(Clone)(Clone)", "").Trim();
 
@@ -452,7 +452,7 @@ public class Inventory : MonoBehaviour
         {
             string childName = child.gameObject.name.Replace("(Clone)", "").Replace("(Clone)(Clone)", "").Trim();
 
-            Debug.Log($"Porównuję: {childName} z {objectToRemoveName}");
+            //Debug.Log($"Porównuję: {childName} z {objectToRemoveName}");
 
             if (childName == objectToRemoveName)
             {
@@ -463,7 +463,7 @@ public class Inventory : MonoBehaviour
 
         if (foundObject != null)
         {
-            Debug.Log($"Usuwam obiekt z LootParent: {foundObject.name}");
+            //Debug.Log($"Usuwam obiekt z LootParent: {foundObject.name}");
             Destroy(foundObject.gameObject);
         }
         else

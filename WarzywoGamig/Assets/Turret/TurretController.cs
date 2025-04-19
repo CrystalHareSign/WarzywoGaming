@@ -51,7 +51,7 @@ public class TurretController : MonoBehaviour
     void Start()
     {
         // Znajdź wszystkie obiekty posiadające PlaySoundOnObject i dodaj do listy
-        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+        playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
 
         playerMovement = Object.FindFirstObjectByType<PlayerMovement>();
         inventory = Object.FindFirstObjectByType<Inventory>();

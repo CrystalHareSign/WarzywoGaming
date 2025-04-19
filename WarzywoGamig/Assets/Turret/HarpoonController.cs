@@ -41,7 +41,7 @@ public class HarpoonController : MonoBehaviour
     private TurretController turretController;
     private TurretCollector turretCollector;
     private float reloadTimer = 0f; // Nowa zmienna do liczenia czasu przeładowania
-    private bool isReloading;
+
 
     [Header("TUBE - Pamietej aby całkowity czas wszyskich etapow musi byc równy ReloadTime")]
     // Dodajemy referencję do obiektu, który ma się poruszać
@@ -85,7 +85,7 @@ public class HarpoonController : MonoBehaviour
     {
 
         // Znajdź wszystkie obiekty posiadające PlaySoundOnObject i dodaj do listy
-        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
+        playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
 
         // Zakładając, że zmienna Reload jest już zdefiniowana
         treasureLifetime = reloadTime * 0.5f;
@@ -320,7 +320,6 @@ public class HarpoonController : MonoBehaviour
     public void ResetReloadState()
     {
         canShoot = true;
-        isReloading = false;
         reloadTimer = 0f;
         ResetReloadUI();
     }
@@ -379,7 +378,7 @@ public class HarpoonController : MonoBehaviour
         {
             if (sfx == null) continue;
             sfx.PlaySound("Tube1", 0.5f, false);
-            sfx.PlaySound("TubeSaw", 0.5f, false);
+            sfx.PlaySound("TubeSaw", 0.3f, false);
         }
 
         // 🔁 Ruch do przodu + obrót
@@ -420,6 +419,12 @@ public class HarpoonController : MonoBehaviour
             yield return null;
         }
 
+        foreach (var sfx in playSoundObjects)
+        {
+            if (sfx == null) continue;
+            sfx.PlaySound("SteamLow", 0.6f, false);
+        }
+
         movingObject.transform.localPosition = initialLocalPos;
 
         // ⏳ Dodatkowy czas po animacji + zwalnianie obrotu
@@ -440,6 +445,7 @@ public class HarpoonController : MonoBehaviour
         {
             if (sfx == null) continue;
             sfx.PlaySound("Tube3", 0.5f, false);
+            sfx.PlaySound("SteamHigh", 0.5f, false);
         }
 
         isMoving = false;
@@ -498,16 +504,6 @@ public class HarpoonController : MonoBehaviour
                 {
                     reloadFillImage.fillAmount = 0f;
                     reloadFillImage.gameObject.SetActive(true);
-                }
-                // Zatrzymaj wszystkie odtwarzane dźwięki
-                foreach (var playSoundOnObject in playSoundObjects)
-                {
-                    if (playSoundOnObject == null) continue;
-
-                    //playSoundOnObject.StopSound("HarpoonFire");
-                    //playSoundOnObject.StopSound("HarpoonChainFire");
-
-                    //playSoundOnObject.PlaySound("HarpoonChainBack2", 0.3f, false);
                 }
             }
         }

@@ -31,8 +31,8 @@ public class PlayerMovement : MonoBehaviour
     private void Start()
     {
         controller = GetComponent<CharacterController>();
-        playSoundObjects.AddRange(Object.FindObjectsOfType<PlaySoundOnObject>());
-        audioChanger = FindObjectOfType<AudioChanger>();
+        playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
+        audioChanger = Object.FindAnyObjectByType<AudioChanger>();
     }
 
     private void Update()
