@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
+using System.Collections;
 
 public class SceneChanger : MonoBehaviour
 {
@@ -10,51 +11,54 @@ public class SceneChanger : MonoBehaviour
     [SerializeField] private Transform button2;
     [SerializeField] private string scene2;
 
-    public bool isSceneChanging = false;
-    private AssignInteraction assignInteraction;
+    [Header("Ustaw punkt spawnu gracza po za³adowaniu sceny")]
+    [SerializeField] private Transform playerSpawnPoint;
+    [Header("Pozycja startowa busa")]
+    [SerializeField] private Vector3 busStartPosition = new Vector3(0f, 0f, 0f);
+    [SerializeField] private GameObject bus;
+    [Header("Dane z Turreta do skryptów")]
+    [SerializeField] private GameObject TurretBody;
+    [SerializeField] private Vector3 turretStartPosition = new Vector3(0f, 0f, 0f);
+    [SerializeField] private Quaternion turretStartRotation = Quaternion.identity;
 
-    // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
+    private bool isSceneChanging = false;
+    private AssignInteraction assignInteraction;
+    private GameObject player;
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
-    public GameObject TurretBody;
 
     void Start()
     {
-        // Pobierz referencjê do skryptu AssignInteraction
         assignInteraction = Object.FindFirstObjectByType<AssignInteraction>();
-
-        // ZnajdŸ wszystkie obiekty posiadaj¹ce PlaySoundOnObject i dodaj do listy
         playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
+
+        assignInteraction = Object.FindFirstObjectByType<AssignInteraction>();
+        playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
+
+        if (TurretBody != null)
+        {
+            turretStartPosition = TurretBody.transform.position;
+            turretStartRotation = TurretBody.transform.rotation;
+        }
     }
 
     private void Update()
     {
-        // Sprawdzamy, czy lewy przycisk myszy zosta³ wciœniêty i czy nie ma ju¿ trwaj¹cej zmiany sceny
         if (Input.GetMouseButtonDown(0) && !isSceneChanging)
         {
-            // Sprawdzamy, czy obiekt wci¹¿ siê porusza
             if (assignInteraction != null && assignInteraction.isMoving)
             {
                 Debug.Log("Nie mo¿esz zmieniæ sceny, gdy obiekt siê porusza.");
                 return;
             }
 
-            // Tworzymy promieñ z kamery na pozycjê myszy
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-
-            // Sprawdzamy, czy promieñ trafi³ w jakikolwiek obiekt
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
-                // Sprawdzamy, czy button1 jest przypisany i klikniêto w button1
                 if (button1 != null && hit.transform == button1)
-                {
-                    TryChangeScene(scene1);  // Próba zmiany sceny na scene1
-                }
-                // Sprawdzamy, czy button2 jest przypisany i klikniêto w button2
+                    TryChangeScene(scene1);
                 else if (button2 != null && hit.transform == button2)
-                {
-                    TryChangeScene(scene2);  // Próba zmiany sceny na scene2
-                }
+                    TryChangeScene(scene2);
             }
         }
     }
@@ -86,101 +90,92 @@ public class SceneChanger : MonoBehaviour
 
     private void ExecuteMethodsForMainScene()
     {
-        //Debug.Log("ExecuteMethodsForMainScene() called.");
-
-        // Przechodzimy przez wszystkie obiekty z PlaySoundOnObject i odtwarzamy odpowiednie dŸwiêki
-        foreach (var playSoundOnObject in playSoundObjects)
+        foreach (var playSound in playSoundObjects)
         {
-            if (playSoundOnObject == null) continue;
-
-
+            if (playSound == null) continue;
+            playSound.PlaySound("TiresOnGravel", 0.01f, true);
+            playSound.PlaySound("DieselBusEngine", 1.2f, true);
+            playSound.PlaySound("Storm", 0.1f, true);
         }
 
-        foreach (var playSoundOnObject in playSoundObjects)
-        {
-            if (playSoundOnObject == null) continue;
+        var inventory = Object.FindFirstObjectByType<Inventory>();
+        if (inventory != null) inventory.ClearInventory();
 
-            playSoundOnObject.PlaySound("TiresOnGravel", 0.01f, true);
-            playSoundOnObject.PlaySound("DieselBusEngine", 1.2f, true);
-            playSoundOnObject.PlaySound("Storm", 0.1f, true);
-        }
+        var treasureRefiner = Object.FindFirstObjectByType<TreasureRefiner>();
+        if (treasureRefiner != null) treasureRefiner.ResetSlots();
 
-        Inventory inventory = Object.FindFirstObjectByType<Inventory>();
-        if (inventory == null)
-        {
-            Debug.LogWarning("Nie znaleziono komponentu Inventory w scenie.");
-        }
-        else
-        {
-            inventory.ClearInventory();
-        }
-
-        TreasureRefiner treasureRefiner = Object.FindFirstObjectByType<TreasureRefiner>();
-        if (treasureRefiner == null)
-        {
-            Debug.LogWarning("Nie znaleziono komponentu TreasureRefiner w scenie.");
-        }
-        else
-        {
-            treasureRefiner.ResetSlots();
-        }
-
-        // Sprawdzamy, czy TurretBody istnieje w scenie
         if (TurretBody != null)
         {
-            TurretController turretController = TurretBody.GetComponent<TurretController>();
-
+            var turretController = TurretBody.GetComponent<TurretController>();
             if (turretController != null)
             {
-                TurretCollector turretCollector = turretController.GetComponentInChildren<TurretCollector>();
-
-                if (turretCollector != null)
-                {
-                    turretCollector.ClearAllSlots();
-                }
-                else
-                {
-                    Debug.LogWarning("Nie znaleziono komponentu TurretCollector na dziecku obiektu.");
-                }
+                var turretCollector = turretController.GetComponentInChildren<TurretCollector>();
+                if (turretCollector != null) turretCollector.ClearAllSlots();
             }
-            else
-            {
-                Debug.LogWarning("Nie znaleziono komponentu TurretController na obiekcie.");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("TurretBody nie istnieje w scenie.");
         }
     }
 
     private void ExecuteMethodsForHomeScene()
     {
-        //Debug.Log("ExecuteMethodsForHomeScene() called.");
-
-        // Zatrzymaj wszystkie odtwarzane dŸwiêki
-        foreach (var playSoundOnObject in playSoundObjects)
+        foreach (var playSound in playSoundObjects)
         {
-            if (playSoundOnObject == null) continue;
-
-            playSoundOnObject.StopSound("DieselBusEngine");
-            playSoundOnObject.StopSound("TiresOnGravel");
-            playSoundOnObject.StopSound("Storm");
-
-        }
-
-        foreach (var playSoundOnObject in playSoundObjects)
-        {
-            if (playSoundOnObject == null) continue;
-
-
+            if (playSound == null) continue;
+            playSound.StopSound("DieselBusEngine");
+            playSound.StopSound("TiresOnGravel");
+            playSound.StopSound("Storm");
         }
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        isSceneChanging = false; // Zmieniamy flagê na false po za³adowaniu sceny
+        isSceneChanging = false;
+
+        if (bus != null)
+        {
+            bus.transform.position = busStartPosition;
+        }
+        else
+        {
+            Debug.LogWarning("Bus nie zosta³ przypisany w inspektorze!");
+        }
+
+        // Reset turret position and rotation
+        if (TurretBody != null)
+        {
+            TurretBody.transform.position = turretStartPosition;
+            TurretBody.transform.rotation = turretStartRotation;
+        }
+        else
+        {
+            Debug.LogWarning("TurretBody nie zosta³ przypisany w inspektorze!");
+        }
+
+        StartCoroutine(SpawnPlayerWhenBusIsReady());
     }
+
+    private IEnumerator SpawnPlayerWhenBusIsReady()
+    {
+        yield return null;
+
+        player = GameObject.FindGameObjectWithTag("Player");
+
+        if (bus == null)
+        {
+            Debug.LogWarning("Bus nie przypisany – nie mo¿na ustawiæ gracza.");
+            yield break;
+        }
+
+        if (player != null && playerSpawnPoint != null)
+        {
+            player.transform.position = playerSpawnPoint.position;
+            player.transform.rotation = playerSpawnPoint.rotation;
+        }
+        else
+        {
+            Debug.LogWarning("Brak gracza lub punktu spawnu!");
+        }
+    }
+
 
     private void OnEnable()
     {
@@ -191,6 +186,4 @@ public class SceneChanger : MonoBehaviour
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
-
-
 }
