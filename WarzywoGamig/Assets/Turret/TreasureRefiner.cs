@@ -10,6 +10,7 @@ public class TreasureRefiner : MonoBehaviour
     public InventoryUI inventoryUI;
 
     private bool isRefining = false;
+    private bool isSpawning = false; // Flaga do œledzenia stanu spawnowania
     public bool toDestroy = false;
     [Header("Canva")]
     public TextMeshProUGUI[] categoryTexts;
@@ -201,16 +202,28 @@ public class TreasureRefiner : MonoBehaviour
                             float currentAmount = int.Parse(countTexts[selectedCategoryIndex].text);
                             if (currentAmount >= refineAmount)
                             {
-
-                                RefineResources();
-
-                                foreach (var playSoundOnObject in playSoundObjects)
+                                if (!isSpawning && !IsSpawnPointBlocked())
                                 {
-                                    if (playSoundOnObject == null) continue;
+                                    RefineResources();
 
-                                    string chosen = lowSounds[Random.Range(0, lowSounds.Length)];
-                                    playSoundOnObject.PlaySound(chosen, 0.5f, false);
-                                    playSoundOnObject.FadeOutSound("RefinerIdle", 1f);
+                                    foreach (var playSoundOnObject in playSoundObjects)
+                                    {
+                                        if (playSoundOnObject == null) continue;
+
+                                        string chosen = lowSounds[Random.Range(0, lowSounds.Length)];
+                                        playSoundOnObject.PlaySound(chosen, 0.5f, false);
+                                        playSoundOnObject.FadeOutSound("RefinerIdle", 1f);
+                                    }
+                                }
+                                else
+                                {
+                                    Debug.Log("Rafinacja w toku");
+                                    foreach (var playSoundOnObject in playSoundObjects)
+                                    {
+                                        if (playSoundOnObject == null) continue;
+                                        playSoundOnObject.PlaySound("RefinerError", 0.2f, false);
+                                    }
+                                    return;
                                 }
                             }
                             else
@@ -496,6 +509,13 @@ public class TreasureRefiner : MonoBehaviour
 
     private void RefineResources()
     {
+
+        if (isSpawning)
+        {
+            Debug.LogWarning("Spawn jest ju¿ w toku. Nie mo¿na rozpocz¹æ kolejnego spawnowania.");
+            return;
+        }
+
         if (selectedCategoryIndex == -1)
         {
             Debug.Log("Wybierz kategoriê zanim przetworzysz zasoby!");
@@ -707,6 +727,14 @@ public class TreasureRefiner : MonoBehaviour
     private IEnumerator DelayedSpawn(bool isTrash)
     {
 
+        if (isSpawning)
+        {
+            Debug.LogWarning("Spawn jest ju¿ w toku. Nie mo¿na rozpocz¹æ kolejnego spawnowania.");
+            yield break; // Jeœli spawnowanie jest w toku, zakoñcz korutynê
+        }
+
+        isSpawning = true; // Ustaw flagê na true, aby zablokowaæ nowe spawnowanie
+
         // Rozpoczynamy drganie obiektów podczas spawnowania
         StartCoroutine(ShakeObjectsDuringSpawn(spawnDelay));
 
@@ -738,6 +766,8 @@ public class TreasureRefiner : MonoBehaviour
 
         // Spawn
         SpawnPrefab(isTrash);
+
+        isSpawning = false;
 
         foreach (var playSoundOnObject in playSoundObjects)
         {
