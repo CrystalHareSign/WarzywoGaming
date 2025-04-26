@@ -391,7 +391,7 @@ public class TreasureRefiner : MonoBehaviour
                 refineCostText.text = "/" + refineAmount.ToString();
         }
 
-        Debug.Log($"Wybrano kategoriê: {selectedCategoryText.text}, Iloœæ: {selectedCountText.text}");
+        //Debug.Log($"Wybrano kategoriê: {selectedCategoryText.text}, Iloœæ: {selectedCountText.text}");
     }
 
     public void RefreshSelectedCategoryUI()
@@ -881,18 +881,18 @@ public class TreasureRefiner : MonoBehaviour
     {
         if (!IsHomeScene())
         {
-            Debug.Log("SupplyTrash dostêpne tylko w scenie Home.");
+            //Debug.Log("SupplyTrash dostêpne tylko w scenie Home.");
             return;
         }
 
-        Debug.Log($"[START] Aktualna iloœæ Trash przed sumowaniem: {trashAmount}");
+        //Debug.Log($"[START] Aktualna iloœæ Trash przed sumowaniem: {trashAmount}");
 
         int totalTrashAmount = 0;
 
         for (int i = 0; i < categoryTexts.Length; i++)
         {
             int currentAmount = int.Parse(countTexts[i].text);
-            Debug.Log($"[Slot {i + 1}] Kategoria: {categoryTexts[i].text}, Iloœæ: {currentAmount}");
+            //Debug.Log($"[Slot {i + 1}] Kategoria: {categoryTexts[i].text}, Iloœæ: {currentAmount}");
 
             totalTrashAmount += currentAmount;
 
@@ -910,7 +910,7 @@ public class TreasureRefiner : MonoBehaviour
             {
                 trashAmount += totalTrashAmount;
                 trashCountText.text = trashAmount.ToString();
-                Debug.Log($"Sumowano {totalTrashAmount} zasobów do Trash. Ca³kowita iloœæ Trash: {trashAmount}");
+                //Debug.Log($"Sumowano {totalTrashAmount} zasobów do Trash. Ca³kowita iloœæ Trash: {trashAmount}");
             }
             else
             {
@@ -918,7 +918,7 @@ public class TreasureRefiner : MonoBehaviour
                 float excessTrash = (trashAmount + totalTrashAmount) - trashMaxAmount;
                 trashAmount = trashMaxAmount;
                 trashCountText.text = trashAmount.ToString();
-                Debug.Log($"Przekroczono limit! Trash zosta³ ustawiony na maksymaln¹ wartoœæ: {trashAmount}. Nadmiar {excessTrash} zasobów zosta³ zignorowany.");
+                //Debug.Log($"Przekroczono limit! Trash zosta³ ustawiony na maksymaln¹ wartoœæ: {trashAmount}. Nadmiar {excessTrash} zasobów zosta³ zignorowany.");
             }
 
             SwitchCategory(1); // Prze³¹cz na nastêpn¹ kategoriê
@@ -926,7 +926,7 @@ public class TreasureRefiner : MonoBehaviour
         }
         else
         {
-            Debug.Log("Brak zasobów do sumowania w slotach.");
+            //Debug.Log("Brak zasobów do sumowania w slotach.");
         }
         RefreshSelectedCategoryUI();
     }
@@ -949,7 +949,7 @@ public class TreasureRefiner : MonoBehaviour
         }
         else
         {
-            Debug.Log("Nie mo¿na rafinowaæ trash – za ma³o zasobów lub zablokowany punkt spawnowania!");
+            //Debug.Log("Nie mo¿na rafinowaæ trash – za ma³o zasobów lub zablokowany punkt spawnowania!");
         }
     }
 
@@ -998,7 +998,7 @@ public class TreasureRefiner : MonoBehaviour
         // Jeœli ¿aden przedmiot nie pasowa³
         if (!resourcesAdded)
         {
-            Debug.Log("Nie mo¿na dodaæ zasobów albo wszystkie sloty przekroczy³yby max");
+            //Debug.Log("Nie mo¿na dodaæ zasobów albo wszystkie sloty przekroczy³yby max");
         }
 
         isRefining = false;
