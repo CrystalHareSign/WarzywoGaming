@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 public class GridManager : MonoBehaviour
 {
@@ -63,6 +64,31 @@ public class GridManager : MonoBehaviour
 
     void Update()
     {
+
+        // Obs³uguje naciœniêcie Q do wyjœcia z trybu budowania i upuszczenia przedmiotu
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            // Jeœli gracz ma podniesiony przedmiot Loot
+            if (LootParent.childCount > 0)
+            {
+                GameObject lootItem = LootParent.GetChild(0).gameObject; // Zak³adamy, ¿e gracz ma tylko jeden przedmiot w rêce
+                //Debug.Log("Dropping loot item");
+                DropLootItem(lootItem); // Upuszczamy przedmiot
+            }
+        }
+
+        // Zabezpieczenie: dzia³a tylko w scenie "Home"
+        if (SceneManager.GetActiveScene().name != "Home")
+        {
+            if (isBuildingMode)
+            {
+                isBuildingMode = false;
+                ToggleGridVisibility(false);
+            }
+
+            return; // Ca³a dalsza logika nie wykona siê poza scen¹ Home
+        }
+
         if (isBuildingMode && previewObject != null)
         {
             Vector3 mousePosition = GetMouseWorldPosition();
@@ -81,18 +107,6 @@ public class GridManager : MonoBehaviour
             {
                 //Debug.Log("Placing object");
                 PlaceObject();
-            }
-        }
-
-        // Obs³uguje naciœniêcie Q do wyjœcia z trybu budowania i upuszczenia przedmiotu
-        if (Input.GetKeyDown(KeyCode.Q))
-        {
-            // Jeœli gracz ma podniesiony przedmiot Loot
-            if (LootParent.childCount > 0)
-            {
-                GameObject lootItem = LootParent.GetChild(0).gameObject; // Zak³adamy, ¿e gracz ma tylko jeden przedmiot w rêce
-                //Debug.Log("Dropping loot item");
-                DropLootItem(lootItem); // Upuszczamy przedmiot
             }
         }
 
@@ -550,6 +564,12 @@ public class GridManager : MonoBehaviour
 
     private void ToggleGridVisibility(bool isVisible)
     {
+        //// Pokazuj siatkê tylko w scenie o nazwie "Home"
+        //if (SceneManager.GetActiveScene().name != "Home")
+        //{
+        //    isVisible = false;
+        //}
+
         foreach (Transform child in gridArea)
         {
             child.gameObject.SetActive(isVisible);
