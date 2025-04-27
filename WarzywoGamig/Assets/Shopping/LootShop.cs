@@ -16,9 +16,20 @@ public class LootShop : MonoBehaviour
     [Header("Kategorie i ceny (przypisane w Inspektorze)")]
     [SerializeField] private List<CategoryPricePair> categoryPricePairs = new List<CategoryPricePair>(); // Lista par kategoria-cena
 
+    [Header("Tekst gracza – waluta")]
+    public TMP_Text playerCurrencyText;
+
+    [Header("Ustawienia interakcji")]
+    public Transform player;
+    public float interactionRange = 5f;
+
+    [Header("Przycisk interakcji")]
+    public Transform buttonTransform; // Obiekt w œwiecie, np. fizyczny przycisk
+
     private Dictionary<string, float> lootContents = new Dictionary<string, float>();  // S³ownik przechowuj¹cy kategorie i ich iloœci
     private Dictionary<string, float> unitPrices = new Dictionary<string, float>();    // S³ownik przechowuj¹cy ceny jednostkowe
     private List<string> categories = new List<string>();  // Lista przechowuj¹ca kategorie, które zosta³y znalezione
+    private List<GameObject> objectsInTrigger = new List<GameObject>();
 
     private float defaultPrice = 1.0f; // Domyœlna cena jednostkowa
 
@@ -47,6 +58,123 @@ public class LootShop : MonoBehaviour
         {
             valueText.text = "0";
         }
+
+        // Automatyczne znajdowanie gracza tylko w scenie "Home"
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Home")
+        {
+            GameObject foundPlayer = GameObject.FindWithTag("Player");
+            if (foundPlayer != null)
+            {
+                player = foundPlayer.transform;
+            }
+            else
+            {
+                Debug.LogWarning("Nie znaleziono gracza z tagiem 'Player' w scenie Home.");
+            }
+        }
+
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            if (buttonTransform != null && player != null)
+            {
+                float distance = Vector3.Distance(player.position, buttonTransform.position);
+                if (distance <= interactionRange)
+                {
+                    CollectLootValue();
+                }
+            }
+        }
+    }
+    private void CollectLootValue()
+    {
+        float totalValue = 0f;
+        Debug.Log("CollectLootValue started. Calculating total value...");
+
+        // Obliczanie ca³kowitej wartoœci
+        foreach (var category in categories)
+        {
+            if (lootContents.ContainsKey(category))
+            {
+                float categoryAmount = lootContents[category];
+                float categoryPrice = unitPrices[category];
+                float value = categoryAmount * categoryPrice;
+
+                // Debug: wypisz szczegó³y dla ka¿dej kategorii
+                Debug.Log($"Category: {category}, Amount: {categoryAmount}, Price: {categoryPrice}, Value: {value}");
+
+                totalValue += value;
+            }
+        }
+
+        // Debug: wypisz ca³kowit¹ wartoœæ po obliczeniach
+        Debug.Log($"Total value after summing up categories: {totalValue}");
+
+        // Pobierz obecny stan waluty gracza
+        float currentCurrency = 0f;
+
+        // Usuwamy niepotrzebne znaki (np. spacje, inne znaki) i upewniamy siê, ¿e mamy poprawny format
+        string currencyText = playerCurrencyText.text.Trim();
+
+        // Zamieniamy przecinek na kropkê (jeœli separator dziesiêtny to przecinek)
+        currencyText = currencyText.Replace(',', '.');
+
+        // Sprawdzenie, czy tekst waluty jest liczb¹
+        if (float.TryParse(currencyText, out currentCurrency))
+        {
+            // Dodajemy totalValue do obecnej waluty gracza
+            currentCurrency += totalValue;
+            Debug.Log($"Player's currency after sale: {currentCurrency}");
+
+            // Wyœwietlamy zaktualizowan¹ walutê gracza
+            playerCurrencyText.text = currentCurrency.ToString("0.##");
+        }
+        else
+        {
+            // Jeœli waluta nie jest poprawna, logujemy b³¹d
+            Debug.LogError($"Player currency text '{currencyText}' is not a valid number.");
+        }
+
+        // Resetowanie iloœci i wartoœci w UI
+        for (int i = 0; i < categories.Count; i++)
+        {
+            amountTexts[i].text = "0";
+            valueTexts[i].text = "0";
+        }
+
+        // Zniszczenie wszystkich obiektów w triggerze
+        List<GameObject> objectsToDestroy = new List<GameObject>(objectsInTrigger);
+
+        foreach (GameObject obj in objectsToDestroy)
+        {
+            if (obj != null)
+            {
+                Destroy(obj);
+                Debug.Log($"Destroyed object: {obj.name}");
+
+                // Usuwamy obiekt z listy po zniszczeniu
+                objectsInTrigger.Remove(obj);
+            }
+            else
+            {
+                Debug.LogWarning("Attempted to destroy a null object.");
+            }
+        }
+
+        // Resetowanie kategorii na UI
+        for (int i = 0; i < categoryTexts.Length; i++)
+        {
+            categoryTexts[i].text = "- - -";
+        }
+
+        // Resetowanie listy kategorii
+        categories.Clear();
+        lootContents.Clear();
+
+        Debug.Log("Loot sale complete. UI and data reset.");
     }
 
     private void OnTriggerEnter(Collider other)
@@ -55,32 +183,30 @@ public class LootShop : MonoBehaviour
 
         if (treasure != null)
         {
-            //Debug.Log($"Znaleziono TreasureValue z kategori¹: {treasure.category}");
+            if (!objectsInTrigger.Contains(other.gameObject))
+            {
+                objectsInTrigger.Add(other.gameObject);
+            }
 
-            // Jeœli kategoria jeszcze nie istnieje, dodajemy j¹ do s³ownika i kategorii
             if (!lootContents.ContainsKey(treasure.category))
             {
                 lootContents[treasure.category] = 0;
-                categories.Add(treasure.category); // Dodajemy kategoriê do listy
+                categories.Add(treasure.category);
 
-                // Jeœli kategoria nie ma przypisanej ceny, ustawiamy domyœln¹ cenê
                 if (!unitPrices.ContainsKey(treasure.category))
                 {
                     unitPrices[treasure.category] = defaultPrice;
                 }
 
-                // Sprawdzamy, czy mamy wystarczaj¹co du¿o miejsca na UI
                 ResizeUI(categories.Count);
 
-                // Ustawiamy nazwê kategorii w odpowiednim miejscu w UI
                 int index = categories.IndexOf(treasure.category);
                 if (index != -1 && index < categoryTexts.Length)
                 {
-                    categoryTexts[index].text = treasure.category; // Przypisanie nazwy kategorii
+                    categoryTexts[index].text = treasure.category;
                 }
             }
 
-            // Aktualizacja iloœci tej kategorii
             lootContents[treasure.category] += treasure.amount;
             UpdateAmount(treasure.category);
         }
@@ -90,30 +216,30 @@ public class LootShop : MonoBehaviour
     {
         TreasureValue treasure = other.GetComponent<TreasureValue>();
 
+        if (objectsInTrigger.Contains(other.gameObject))
+        {
+            objectsInTrigger.Remove(other.gameObject);
+        }
+
         if (treasure != null && lootContents.ContainsKey(treasure.category))
         {
-            // Odejmujemy iloœæ od danej kategorii
             lootContents[treasure.category] -= treasure.amount;
 
-            // Jeœli iloœæ spadnie poni¿ej zera, ustawiamy j¹ na 0
             if (lootContents[treasure.category] <= 0)
             {
                 lootContents[treasure.category] = 0;
 
-                // Usuwamy kategoriê z listy i UI
                 int index = categories.IndexOf(treasure.category);
                 if (index != -1)
                 {
-                    categories.RemoveAt(index); // Usuwamy kategoriê z listy
-                    lootContents.Remove(treasure.category); // Usuwamy kategoriê ze s³ownika
+                    categories.RemoveAt(index);
+                    lootContents.Remove(treasure.category);
 
-                    // Aktualizujemy UI
                     RemoveCategoryFromUI(index);
                 }
             }
             else
             {
-                // Aktualizujemy iloœæ w interfejsie u¿ytkownika
                 UpdateAmount(treasure.category);
             }
         }
