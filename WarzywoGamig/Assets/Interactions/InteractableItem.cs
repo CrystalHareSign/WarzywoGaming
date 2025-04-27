@@ -124,7 +124,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
             }
             else
             {
-                Debug.LogWarning($"[WARNING] Próba interakcji z nieinteraktywnym obiektem: {itemName}");
+                //Debug.LogWarning($"[WARNING] Próba interakcji z nieinteraktywnym obiektem: {itemName}");
             }
         }
         else

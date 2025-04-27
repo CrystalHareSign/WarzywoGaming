@@ -533,18 +533,22 @@ public class TreasureRefiner : MonoBehaviour
 
         if (currentAmount >= refineAmount && !IsSpawnPointBlocked())
         {
+            // Przypisz kategoriê do zmiennej lokalnej
+            string categoryToSpawn = categoryTexts[selectedCategoryIndex].text;
+
+            // Zmniejsz iloœæ zasobów
             currentAmount -= refineAmount;
             countTexts[selectedCategoryIndex].text = currentAmount.ToString();
 
-            // Reset slotu jeœli pusto
+            // Reset slotu jeœli iloœæ spad³a do zera
             if (currentAmount == 0)
             {
                 categoryTexts[selectedCategoryIndex].text = "-";
                 countTexts[selectedCategoryIndex].text = "0";
             }
 
-            // Wywo³anie SpawnPrefab z opóŸnieniem
-            StartCoroutine(DelayedSpawn(false));
+            // Wywo³anie DelayedSpawn z opóŸnieniem i kategori¹
+            StartCoroutine(DelayedSpawn(false, categoryToSpawn));
             RefreshSelectedCategoryUI();
         }
         else
@@ -724,7 +728,7 @@ public class TreasureRefiner : MonoBehaviour
         }
     }
 
-    private IEnumerator DelayedSpawn(bool isTrash)
+    private IEnumerator DelayedSpawn(bool isTrash, string category)
     {
 
         if (isSpawning)
@@ -765,7 +769,7 @@ public class TreasureRefiner : MonoBehaviour
         yield return new WaitForSeconds(1f);
 
         // Spawn
-        SpawnPrefab(isTrash);
+        SpawnPrefab(isTrash, category);
 
         isSpawning = false;
 
@@ -794,7 +798,7 @@ public class TreasureRefiner : MonoBehaviour
         }
     }
 
-    private void SpawnPrefab(bool isTrash = false)
+    private void SpawnPrefab(bool isTrash, string category)
     {
         if (selectedCategoryIndex < 0 || selectedCategoryIndex > categoryTexts.Length)
         {
@@ -863,7 +867,8 @@ public class TreasureRefiner : MonoBehaviour
         }
         else
         {
-            resourceCategory = categoryTexts[selectedCategoryIndex].text;
+            // Upewnij siê, ¿e kategoria jest poprawna
+            resourceCategory = string.IsNullOrEmpty(category) ? categoryTexts[selectedCategoryIndex].text : category;
         }
 
         treasureValue.category = resourceCategory;
@@ -872,7 +877,15 @@ public class TreasureRefiner : MonoBehaviour
         // Nadanie tagu "Loot"
         spawned.tag = "Loot";
 
-        //Debug.Log("Prefab zespawnowany na Y = " + spawnPos.y + " z kategori¹: " + resourceCategory + " i iloœci¹: " + resourceAmount);
+        // Dodanie dodatkowego sprawdzania, aby upewniæ siê, ¿e zespawnowany obiekt ma odpowiednie dane
+        if (string.IsNullOrEmpty(treasureValue.category) || treasureValue.category == "-")
+        {
+            Debug.LogError("Kategoria zespawnowanego obiektu jest niepoprawna: " + treasureValue.category);
+        }
+        else
+        {
+            Debug.Log($"Prefab zespawnowany na Y = {spawnPos.y} z kategori¹: {treasureValue.category} i iloœci¹: {treasureValue.amount}");
+        }
 
         MoveRightDoor();
     }
@@ -941,18 +954,17 @@ public class TreasureRefiner : MonoBehaviour
             trashAmount = currentTrashAmount; // <- zaktualizuj wewnêtrzn¹ wartoœæ!
             trashCountText.text = currentTrashAmount.ToString();
 
-            // Wywo³anie SpawnPrefab z opóŸnieniem
-            StartCoroutine(DelayedSpawn(true));
+            // Wywo³anie DelayedSpawn z opóŸnieniem i kategori¹ "Trash"
+            StartCoroutine(DelayedSpawn(true, "Trash"));
 
             // Odœwie¿enie UI
             RefreshSelectedCategoryUI();
         }
         else
         {
-            //Debug.Log("Nie mo¿na rafinowaæ trash – za ma³o zasobów lub zablokowany punkt spawnowania!");
+            Debug.Log("Nie mo¿na rafinowaæ trash – za ma³o zasobów lub zablokowany punkt spawnowania!");
         }
     }
-
 
     public void RemoveOldestItemFromInventory()
     {
