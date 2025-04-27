@@ -91,6 +91,13 @@ public class LootShop : MonoBehaviour
     }
     private void CollectLootValue()
     {
+        // Sprawdzamy, czy w obszarze znajduje siê jakikolwiek przedmiot
+        if (objectsInTrigger.Count == 0)
+        {
+            Debug.LogWarning("Brak przedmiotów do sprzeda¿y w obszarze.");
+            return; // Jeœli nie ma przedmiotów w obszarze, przerywamy wykonanie metody
+        }
+
         float totalValue = 0f;
         Debug.Log("CollectLootValue started. Calculating total value...");
 
