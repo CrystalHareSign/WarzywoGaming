@@ -394,6 +394,7 @@ public class TreasureRefiner : MonoBehaviour
         //Debug.Log($"Wybrano kategoriê: {selectedCategoryText.text}, Iloœæ: {selectedCountText.text}");
     }
 
+    // Zaktualizowana metoda RefreshSelectedCategoryUI, która uwzglêdnia ukrywanie pustych slotów
     public void RefreshSelectedCategoryUI()
     {
         // Jeœli nic nie jest wybrane
@@ -425,6 +426,16 @@ public class TreasureRefiner : MonoBehaviour
         {
             selectedCategoryText.text = categoryTexts[selectedCategoryIndex].text;
             selectedCountText.text = countTexts[selectedCategoryIndex].text;
+
+            // Jeœli wybrany slot ma wartoœæ "0", wywo³aj ReorganizeSlots i ukryj slot
+            if (countTexts[selectedCategoryIndex].text == "0")
+            {
+                categoryTexts[selectedCategoryIndex].text = "-";
+                categoryTexts[selectedCategoryIndex].gameObject.SetActive(false); // Ukryj slot
+                countTexts[selectedCategoryIndex].gameObject.SetActive(false);   // Ukryj slot
+
+                ReorganizeSlots(); // Reorganizuj sloty
+            }
 
             if (refineCostText != null)
                 refineCostText.text = "/" + refineAmount.ToString();
@@ -942,6 +953,7 @@ public class TreasureRefiner : MonoBehaviour
             //Debug.Log("Brak zasobów do sumowania w slotach.");
         }
         RefreshSelectedCategoryUI();
+        ReorganizeSlots(); // Upewnij siê, ¿e puste sloty s¹ ukryte
     }
 
     private void RefineTrash()
@@ -1050,6 +1062,10 @@ public class TreasureRefiner : MonoBehaviour
                         // Odejmujemy od ekwipunku gracza tylko tyle, ile brakowa³o do maksymalnej wartoœci w Refinerze
                         treasureResources.resourceCategories[0].resourceCount -= resourceCount;
 
+                        // Aktywuj slot, jeœli by³ ukryty
+                        categoryTexts[i].gameObject.SetActive(true);
+                        countTexts[i].gameObject.SetActive(true);
+
                         // Odœwie¿amy UI wybranej kategorii
                         if (selectedCategoryIndex == i)
                         {
@@ -1100,6 +1116,10 @@ public class TreasureRefiner : MonoBehaviour
                                 // Flaga wskazuj¹ca, ¿e zasoby zosta³y dodane
                                 resourcesAdded = true;
 
+                                // Aktywuj nowy slot
+                                categoryTexts[i].gameObject.SetActive(true);
+                                countTexts[i].gameObject.SetActive(true);
+
                                 // Je¿eli nie by³o jeszcze wybranej kategorii, ustawiamy j¹
                                 if (selectedCategoryIndex == -1)
                                 {
@@ -1128,8 +1148,13 @@ public class TreasureRefiner : MonoBehaviour
     {
         for (int i = 0; i < categoryTexts.Length; i++)
         {
+            // Resetuj wartoœci tekstów
             categoryTexts[i].text = "-";
             countTexts[i].text = "0";
+
+            // Ukryj puste sloty
+            categoryTexts[i].gameObject.SetActive(false);
+            countTexts[i].gameObject.SetActive(false);
         }
     }
 
@@ -1167,5 +1192,50 @@ public class TreasureRefiner : MonoBehaviour
         }
 
         //Debug.Log("Wszystkie sloty zosta³y zresetowane.");
+    }
+
+    // Funkcja reorganizuj¹ca sloty w UI, aby nie by³o pustych miejsc i ukrywa puste sloty
+    private void ReorganizeSlots()
+    {
+        int writeIndex = 0;
+
+        for (int readIndex = 0; readIndex < categoryTexts.Length; readIndex++)
+        {
+            // SprawdŸ, czy slot nie jest pusty
+            if (categoryTexts[readIndex].text != "-" && countTexts[readIndex].text != "0")
+            {
+                // Przenieœ zawartoœæ z slotu readIndex do slotu writeIndex
+                if (writeIndex != readIndex)
+                {
+                    categoryTexts[writeIndex].text = categoryTexts[readIndex].text;
+                    countTexts[writeIndex].text = countTexts[readIndex].text;
+
+                    // Wyczyœæ obecny slot readIndex
+                    categoryTexts[readIndex].text = "-";
+                    countTexts[readIndex].text = "0";
+
+                    // Ukryj slot, który zosta³ przeniesiony
+                    categoryTexts[readIndex].gameObject.SetActive(false);
+                    countTexts[readIndex].gameObject.SetActive(false);
+                }
+
+                // Ustaw widocznoœæ slotu na aktywn¹
+                categoryTexts[writeIndex].gameObject.SetActive(true);
+                countTexts[writeIndex].gameObject.SetActive(true);
+
+                writeIndex++; // Przesuwamy siê do nastêpnego slotu do zapisania
+            }
+        }
+
+        // Deaktywuj pozosta³e puste sloty
+        for (int i = writeIndex; i < categoryTexts.Length; i++)
+        {
+            categoryTexts[i].text = "-";
+            countTexts[i].text = "0";
+
+            // Ukryj sloty
+            categoryTexts[i].gameObject.SetActive(false);
+            countTexts[i].gameObject.SetActive(false);
+        }
     }
 }
