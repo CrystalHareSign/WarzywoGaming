@@ -21,6 +21,8 @@ public class SceneChanger : MonoBehaviour
     [SerializeField] private Vector3 turretStartPosition = new Vector3(0f, 0f, 0f);
     [SerializeField] private Quaternion turretStartRotation = Quaternion.identity;
 
+    [SerializeField] private CameraToMonitor cameraToMonitor; // Referencja do CameraToMonitor
+
     private bool isSceneChanging = false;
     private AssignInteraction assignInteraction;
     private GameObject player;
@@ -42,28 +44,18 @@ public class SceneChanger : MonoBehaviour
         }
     }
 
-    private void Update()
+    public void OnMainSceneButtonClick()
     {
-        if (Input.GetMouseButtonDown(0) && !isSceneChanging)
-        {
-            if (assignInteraction != null && assignInteraction.isMoving)
-            {
-                Debug.Log("Nie mo¿esz zmieniæ sceny, gdy obiekt siê porusza.");
-                return;
-            }
-
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit))
-            {
-                if (button1 != null && hit.transform == button1)
-                    TryChangeScene(scene1);
-                else if (button2 != null && hit.transform == button2)
-                    TryChangeScene(scene2);
-            }
-        }
+        if (!isSceneChanging)
+            TryChangeScene(scene1);
+    }
+    public void OnHomeSceneButtonClick()
+    {
+        if (!isSceneChanging)
+            TryChangeScene(scene2);
     }
 
-    private void TryChangeScene(string sceneName)
+    public void TryChangeScene(string sceneName)
     {
         string currentScene = SceneManager.GetActiveScene().name;
 
@@ -80,11 +72,23 @@ public class SceneChanger : MonoBehaviour
                 ExecuteMethodsForHomeScene();
             }
 
+            // Wyœwietlenie logu w konsoli monitora
+            if (cameraToMonitor != null)
+            {
+                cameraToMonitor.ShowConsoleMessage("Próba zmiany sceny...");
+            }
+
             SceneManager.LoadScene(sceneName);
         }
         else
         {
             Debug.Log("Ju¿ jesteœ w tej scenie!");
+
+            // Wyœwietlenie logu w konsoli monitora
+            if (cameraToMonitor != null)
+            {
+                cameraToMonitor.ShowConsoleMessage("Ju¿ jesteœ w tej scenie");
+            }
         }
     }
 
