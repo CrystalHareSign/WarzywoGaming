@@ -18,6 +18,7 @@ public class CameraToMonitor : MonoBehaviour
 
     private Vector3 originalCameraPosition; // Pocz¹tkowa pozycja kamery
     private Quaternion originalCameraRotation; // Pocz¹tkowa rotacja kamery
+    public bool canInteract = false;  // Flaga, która pozwala na interakcjê po zakoñczeniu logów
     private bool isInteracting = false; // Czy gracz jest w trakcie interakcji
     private bool isCameraMoving = false; // Flaga sprawdzaj¹ca, czy kamera jest w ruchu
 
@@ -26,11 +27,15 @@ public class CameraToMonitor : MonoBehaviour
     private Queue<ConsoleMessage> messageQueue = new Queue<ConsoleMessage>();  // Kolejka wiadomoœci
     public float messageDuration = 5f;  // Czas trwania ka¿dej wiadomoœci w sekundach
     public int maxMessages = 5;  // Maksymalna liczba wiadomoœci w kolejce
+    public float startNextLogBefore = 1;
 
     private bool isCursorVisible = true;  // Czy kursor (|) jest widoczny
     private float cursorBlinkInterval = 0.5f;  // Czas w sekundach miêdzy miganiem kursora
     private float cursorBlinkTimer = 0f;  // Licznik czasu migania kursora
     private float currentTime = 0f;
+
+
+    public List<LogEntry> logEntries; // Lista wpisów logów
 
     private void Start()
     {
@@ -75,14 +80,13 @@ public class CameraToMonitor : MonoBehaviour
             StartCoroutine(MoveCameraBackToOriginalPosition());
         }
 
-        // SprawdŸ, czy min¹³ czas dla jakiejkolwiek wiadomoœci i usuñ j¹, jeœli wygas³a
         if (messageQueue.Count > 0)
         {
-            if (messageQueue.Peek().expireTime <= Time.time)
+            ConsoleMessage msg = messageQueue.Peek();
+            if (msg.IsExpired(Time.time))
             {
-                // Usuñ najstarsz¹ wiadomoœæ, jeœli jej czas wygaœniêcia min¹³
                 messageQueue.Dequeue();
-                UpdateConsoleText(); // Zaktualizuj konsolê po usuniêciu wiadomoœci
+                UpdateConsoleText();
             }
         }
 
@@ -154,7 +158,8 @@ public class CameraToMonitor : MonoBehaviour
         Cursor.lockState = CursorLockMode.None; // Kursor mo¿e byæ u¿ywany
         Cursor.visible = true; // Kursor jest widoczny
 
-        ShowConsoleMessage("Uruchamianie terminalu...");
+        ShowConsoleMessage(">>>Uruchamianie terminalu...",5,0.5f, "#00E700");
+        StartLogSequence();
     }
 
     // P³ynne przesuniêcie kamery z powrotem do pierwotniej pozycji
@@ -234,49 +239,56 @@ public class CameraToMonitor : MonoBehaviour
         }
     }
 
-    public void ShowConsoleMessage(string message)
+    public void ShowConsoleMessage(string rawMessage, float visibleDuration, float fadeDuration, string hexColor)
     {
-        // SprawdŸ, czy liczba wiadomoœci przekroczy³a limit
-        if (messageQueue.Count >= maxMessages)
+        Color color = Color.white;
+        if (ColorUtility.TryParseHtmlString(hexColor, out Color parsedColor))
         {
-            messageQueue.Dequeue(); // Usuñ najstarsz¹ wiadomoœæ, jeœli przekroczono limit
+            color = parsedColor;
         }
 
-        // Dodaj wiadomoœæ z czasem wygaœniêcia
-        ConsoleMessage newMessage = new ConsoleMessage(message, Time.time + messageDuration);
-        messageQueue.Enqueue(newMessage);  // Dodaj now¹ wiadomoœæ do kolejki
+        var newMessage = new ConsoleMessage(rawMessage, Time.time, visibleDuration, fadeDuration, color);
+        messageQueue.Enqueue(newMessage);
 
-        // Zaktualizuj tekst w konsoli
-        UpdateConsoleText();
+        while (messageQueue.Count > maxMessages)
+            messageQueue.Dequeue();
     }
 
     private void UpdateConsoleText()
     {
         string consoleText = "";
 
-        // Kursor: zawsze na pocz¹tku, ale jego widocznoœæ zmienia siê
-        string cursor = isCursorVisible ? "<color=#00E700>|</color>" : "<color=#00000000>|</color>";  // Przezroczysty kursor
-
-        // Dodaj migaj¹cy kursor na pocz¹tku tekstu
+        string cursor = isCursorVisible ? "<color=#00E700>|</color>" : "<color=#00000000>|</color>";            /////   #00E700
         consoleText += cursor + " ";
 
-        // Zapisz aktualne wiadomoœci do listy i odwróæ je
+        currentTime = Time.time;
+
         List<ConsoleMessage> activeMessages = new List<ConsoleMessage>();
+
+        // Zbieranie tylko aktywnych wiadomoœci
         foreach (var msg in messageQueue)
         {
-            if (msg.expireTime > currentTime)
+            if (!msg.IsExpired(Time.time))
             {
                 activeMessages.Add(msg);
             }
         }
 
-        // Odwróæ kolejnoœæ, by nowe by³y wy¿ej
+        // Odwróæ kolejnoœæ – nowsze wiadomoœci u góry
         activeMessages.Reverse();
 
-        // Sklej wiadomoœci
         foreach (var msg in activeMessages)
         {
-            consoleText += msg.message + "\n";
+            float alpha = msg.GetFadeAlpha(currentTime);
+            int alphaInt = Mathf.RoundToInt(alpha * 255);
+            string hexAlpha = alphaInt.ToString("X2");
+
+            // Konwertowanie koloru na hex
+            Color msgColor = msg.color;
+            string hexColor = ColorUtility.ToHtmlStringRGB(msgColor);
+
+            // Dodanie wiadomoœci z odpowiednim kolorem i przezroczystoœci¹
+            consoleText += $"<color=#{hexColor}{hexAlpha}>{msg.message}</color>\n";
         }
 
         if (consoleTextDisplay != null)
@@ -285,17 +297,6 @@ public class CameraToMonitor : MonoBehaviour
         }
     }
 
-    private struct ConsoleMessage
-    {
-        public string message;  // Treœæ wiadomoœci
-        public float expireTime;  // Czas wygaœniêcia wiadomoœci
-
-        public ConsoleMessage(string message, float expireTime)
-        {
-            this.message = message;
-            this.expireTime = expireTime;
-        }
-    }
 
     public void ClearMonitorConsole()
     {
@@ -303,5 +304,116 @@ public class CameraToMonitor : MonoBehaviour
         {
             consoleTextDisplay.text = "";
         }
+    }
+
+    [System.Serializable]
+    public class ConsoleMessage
+    {
+        public string message;
+        public float timeAdded;
+        public float visibleDuration;
+        public float fadeDuration;
+        public Color color;
+
+        public ConsoleMessage(string message, float timeAdded, float visibleDuration, float fadeDuration, Color color)
+        {
+            this.message = message;
+            this.timeAdded = timeAdded;
+            this.visibleDuration = visibleDuration;
+            this.fadeDuration = fadeDuration;
+            this.color = color;
+        }
+
+        public float GetFadeAlpha(float currentTime)
+        {
+            float elapsed = currentTime - timeAdded;
+
+            if (elapsed <= visibleDuration)
+                return 1f; // Pe³na widocznoœæ
+
+            float fadeTime = elapsed - visibleDuration;
+            return Mathf.Clamp01(1f - fadeTime / fadeDuration); // Od 1 do 0
+        }
+
+        public bool IsExpired(float currentTime)
+        {
+            return currentTime - timeAdded > (visibleDuration + fadeDuration);
+        }
+    }
+
+    [System.Serializable]
+    public class LogEntry
+    {
+        public string[] messages;   // Mo¿liwe wiadomoœci
+        public float messageDuration;
+        public float fadeDuration;
+        [Range(0f, 100f)]  // Atrybut Range sprawi, ¿e bêdzie slider od 0 do 1
+        public float probability;  // Prawdopodobieñstwo wyœwietlenia tego logu (od 0 do 1)
+    }
+
+    private void StartLogSequence()
+    {
+        // Zablokowanie interakcji przed rozpoczêciem logowania
+        canInteract = false;
+
+        // Bêdziemy losowaæ wiadomoœci z listy logEntries
+        List<LogEntry> availableLogs = new List<LogEntry>(logEntries);  // Kopia listy, aby móc usuwaæ u¿yte logi
+
+        // Rozpoczynamy losowanie logów przy w³¹czeniu monitora
+        StartCoroutine(DisplayLogsSequence(availableLogs));
+    }
+
+    private IEnumerator DisplayLogsSequence(List<LogEntry> availableLogs)
+    {
+        while (availableLogs.Count > 0)
+        {
+            // Losowanie logu na podstawie prawdopodobieñstwa
+            LogEntry logEntry = GetRandomLogWithProbability(availableLogs);
+
+            // Ustawienie domyœlnego fadeDuration (np. 0.5f)
+            float fadeDuration = 0.5f;
+
+            // Dodaj wiadomoœæ do konsoli
+            ShowConsoleMessage(logEntry.messages[Random.Range(0, logEntry.messages.Length)], messageDuration, fadeDuration, "#00E700");
+
+            // Usuñ ten log z dostêpnej listy, ¿eby nie pojawi³ siê ponownie
+            availableLogs.Remove(logEntry);
+
+            // Czekaj, zanim poka¿emy kolejny log
+            yield return new WaitForSeconds(messageDuration - startNextLogBefore);
+        }
+
+        // Tylko po zakoñczeniu wszystkich logów — dodaj wiadomoœæ koñcow¹
+        ShowConsoleMessage(">>>Terminal gotowy.", 5f, 0.5f, "#FFD200");
+
+        canInteract = true;
+    }
+
+
+    private LogEntry GetRandomLogWithProbability(List<LogEntry> availableLogs)
+    {
+        float totalProbability = 0f;
+
+        // Obliczamy sumê wszystkich prawdopodobieñstw
+        foreach (var log in availableLogs)
+        {
+            totalProbability += log.probability;
+        }
+
+        // Losowanie, które logi wybraæ na podstawie prawdopodobieñstwa
+        float randomValue = Random.Range(0f, totalProbability);
+        float cumulativeProbability = 0f;
+
+        foreach (var log in availableLogs)
+        {
+            cumulativeProbability += log.probability;
+            if (randomValue <= cumulativeProbability)
+            {
+                return log;
+            }
+        }
+
+        // W przypadku b³êdu, zwróæ pierwszy dostêpny log
+        return availableLogs[0];
     }
 }

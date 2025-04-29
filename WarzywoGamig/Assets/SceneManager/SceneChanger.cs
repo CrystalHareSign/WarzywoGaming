@@ -59,7 +59,7 @@ public class SceneChanger : MonoBehaviour
     {
         string currentScene = SceneManager.GetActiveScene().name;
 
-        if (currentScene != sceneName && !isSceneChanging)
+        if (currentScene != sceneName && !isSceneChanging && cameraToMonitor.canInteract == true)
         {
             isSceneChanging = true;
 
@@ -75,7 +75,7 @@ public class SceneChanger : MonoBehaviour
             // Wyœwietlenie logu w konsoli monitora
             if (cameraToMonitor != null)
             {
-                cameraToMonitor.ShowConsoleMessage("Próba zmiany sceny...");
+                cameraToMonitor.ShowConsoleMessage("Próba zmiany sceny...",3, 0.5f, "#00E700");
             }
 
             SceneManager.LoadScene(sceneName);
@@ -85,9 +85,9 @@ public class SceneChanger : MonoBehaviour
             Debug.Log("Ju¿ jesteœ w tej scenie!");
 
             // Wyœwietlenie logu w konsoli monitora
-            if (cameraToMonitor != null)
+            if (cameraToMonitor != null && cameraToMonitor.canInteract == true)
             {
-                cameraToMonitor.ShowConsoleMessage("Ju¿ jesteœ w tej scenie");
+                cameraToMonitor.ShowConsoleMessage("Ju¿ jesteœ w tej scenie...",3, 0.5f, "#00E700");
             }
         }
     }
