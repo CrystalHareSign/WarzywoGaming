@@ -10,6 +10,7 @@ public class CameraToMonitor : MonoBehaviour
     public MouseLook mouseLookScript;
     public SceneChanger sceneChanger;
     public HoverMessage monitorHoverMessage;
+    public TreasureRefiner treasureRefiner;
     public GameObject crossHair;
     public GameObject monitorCanvas;
 
@@ -91,6 +92,18 @@ public class CameraToMonitor : MonoBehaviour
 
     private IEnumerator ExitAndDelaySceneChange(string sceneName, float delay)
     {
+        // Znajdü TreasureRefiner w scenie
+        TreasureRefiner treasureRefiner = UnityEngine.Object.FindFirstObjectByType<TreasureRefiner>();
+
+        // Sprawdü, czy TreasureRefiner istnieje i czy rafinacja jest w toku
+        if (treasureRefiner != null && treasureRefiner.isSpawning)
+        {
+            Debug.Log("Rafinacja w toku. Nie moøna zmieniÊ sceny.");
+            ShowConsoleMessage(">>> Rafinacja w toku. Nie moøna zmieniÊ sceny.", "#FF0000");
+            yield break; // Zatrzymaj korutynÍ, jeúli rafinacja w toku
+        }
+
+        // Jeúli nie ma rafinacji, przechodzimy do dalszych operacji
         yield return StartCoroutine(MoveCameraBackToOriginalPosition());
 
         CanUseMenu = false;
@@ -131,7 +144,7 @@ public class CameraToMonitor : MonoBehaviour
                 StartCoroutine(MoveCameraToPosition());
                 ClearMonitorConsole();
             }
-            else if (Input.GetKeyDown(KeyCode.Q) && isInteracting && !isCameraMoving)
+            else if ((Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.Escape)) && isInteracting && !isCameraMoving)
             {
                 StartCoroutine(MoveCameraBackToOriginalPosition());
             }
@@ -185,8 +198,8 @@ public class CameraToMonitor : MonoBehaviour
 
         isCameraMoving = false;
 
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        //Cursor.lockState = CursorLockMode.None;
+        //Cursor.visible = true;
 
         ShowConsoleMessage(">>>Uruchamianie terminalu...", "#00E700");
 

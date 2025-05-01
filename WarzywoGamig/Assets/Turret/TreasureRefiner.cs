@@ -10,7 +10,7 @@ public class TreasureRefiner : MonoBehaviour
     public InventoryUI inventoryUI;
 
     private bool isRefining = false;
-    private bool isSpawning = false; // Flaga do œledzenia stanu spawnowania
+    public bool isSpawning = false; // Flaga do œledzenia stanu spawnowania
     public bool toDestroy = false;
     [Header("Canva")]
     public TextMeshProUGUI[] categoryTexts;

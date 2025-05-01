@@ -57,10 +57,43 @@ public class SceneChanger : MonoBehaviour
     {
         string currentScene = SceneManager.GetActiveScene().name;
 
-        if (currentScene != sceneName && !isSceneChanging && cameraToMonitor.canInteract == true)
+        // Znajdü TreasureRefiner w scenie
+        TreasureRefiner treasureRefiner = Object.FindFirstObjectByType<TreasureRefiner>();
+
+        // Sprawdü, czy rafinacja jest w toku
+        if (treasureRefiner != null && treasureRefiner.isSpawning)
+        {
+            Debug.Log("Rafinacja w toku. Nie moøna zmieniÊ sceny.");
+
+            // Wyúwietl komunikat w konsoli monitora tylko, gdy moøemy wchodziÊ w interakcje
+            if (cameraToMonitor != null && cameraToMonitor.canInteract)
+            {
+                cameraToMonitor.ShowConsoleMessage(">>> Rafinacja w toku. Nie moøna zmieniÊ sceny.", "#FF0000");
+            }
+
+            return; // ZakoÒcz dzia≥anie metody, nie zmieniajπc sceny
+        }
+
+        // Sprawdzenie, czy prÛba zmiany sceny na tÍ samπ
+        if (currentScene == sceneName)
+        {
+            Debug.Log("Juø jesteú w tej scenie!");
+
+            // Wyúwietl komunikat w konsoli monitora
+            if (cameraToMonitor != null && cameraToMonitor.canInteract)
+            {
+                cameraToMonitor.ShowConsoleMessage(">>> Juø jesteú w tej scenie...", "#FF0000");
+            }
+
+            return; // ZakoÒcz dzia≥anie metody, nie zmieniajπc sceny
+        }
+
+        // Jeøeli scena jest inna i rafinacja nie jest w toku, przeprowadü zmianÍ sceny
+        if (!isSceneChanging && cameraToMonitor.canInteract)
         {
             isSceneChanging = true;
 
+            // Dostosowanie: Wykonaj metody specyficzne dla scen
             if (currentScene == "Home" && sceneName == "Main")
             {
                 ExecuteMethodsForMainScene();
@@ -76,17 +109,8 @@ public class SceneChanger : MonoBehaviour
                 cameraToMonitor.ShowConsoleMessage(">>> PrÛba zmiany sceny...", "#00E700");
             }
 
+            // Za≥aduj scenÍ
             SceneManager.LoadScene(sceneName);
-        }
-        else
-        {
-            Debug.Log("Juø jesteú w tej scenie!");
-
-            // Wyúwietlenie logu w konsoli monitora
-            if (cameraToMonitor != null && cameraToMonitor.canInteract == true)
-            {
-                cameraToMonitor.ShowConsoleMessage(">>> Juø jesteú w tej scenie...","#FF0000");
-            }
         }
     }
 
