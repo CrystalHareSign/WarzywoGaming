@@ -24,14 +24,17 @@ public class CameraToMonitor : MonoBehaviour
 
     [Header("UI – Konsola monitora")]
     public TextMeshProUGUI consoleTextDisplay;
+    public TMP_InputField inputField; // Pole tekstowe dla wpisywania komend
     private Queue<ConsoleMessage> messageQueue = new Queue<ConsoleMessage>();
     public int maxMessages = 5;
 
     public float letterDisplayDelay = 0.05f; // OpóŸnienie miêdzy literami w sekundach
-    private bool isCursorVisible = true;
-    private float cursorBlinkInterval = 0.5f;
+    public float cursorBlinkInterval = 0.5f;
 
     public List<LogEntry> logEntries;
+
+    private Coroutine cursorBlinkCoroutine;
+    private bool isCursorBlinking = false;
 
     private void Start()
     {
@@ -45,8 +48,11 @@ public class CameraToMonitor : MonoBehaviour
             Debug.LogError("Brak przypisanego TextMeshProUGUI dla konsoli!");
         }
 
-        // Rozpocznij miganie kursora
-        InvokeRepeating(nameof(ToggleCursorVisibility), cursorBlinkInterval, cursorBlinkInterval);
+        if (inputField != null)
+        {
+            inputField.gameObject.SetActive(false); // Ukryj pole edycji na starcie
+            inputField.onEndEdit.AddListener(HandleCommandInput); // Dodaj obs³ugê zakoñczenia edycji
+        }
     }
 
     void Update()
@@ -118,6 +124,9 @@ public class CameraToMonitor : MonoBehaviour
         Cursor.visible = true;
 
         ShowConsoleMessage(">>>Uruchamianie terminalu...", "#00E700");
+
+        yield return new WaitForSeconds(1f);
+
         StartLogSequence();
     }
 
@@ -211,7 +220,7 @@ public class CameraToMonitor : MonoBehaviour
         {
             currentLine += fullMessage[i];
 
-            // Aktualizuj tymczasow¹ wiadomoœæ z kursorem
+            // Aktualizuj tymczasow¹ wiadomoœæ
             UpdateConsolePreview(currentLine, color);
 
             yield return new WaitForSeconds(letterDisplayDelay);
@@ -224,7 +233,7 @@ public class CameraToMonitor : MonoBehaviour
         while (messageQueue.Count > maxMessages)
             messageQueue.Dequeue();
 
-        // Po zakoñczeniu wpisywania odœwie¿ tekst, aby usun¹æ tymczasowy kursor
+        // Po zakoñczeniu wpisywania odœwie¿ tekst
         UpdateConsoleText();
     }
 
@@ -241,22 +250,10 @@ public class CameraToMonitor : MonoBehaviour
             lines.Add($"<color=#{hexColor}>{msg.message}</color>");
         }
 
-        // Dodaj aktualnie wpisywan¹ liniê
-        string hexTypingColor = ColorUtility.ToHtmlStringRGB(color);
-        lines.Add($"<color=#{hexTypingColor}>{typingLine}</color>");
-
-        // Dodaj kursor
-        string cursor = isCursorVisible ? "<color=#00E700>|</color>" : "<color=#00000000>|</color>";
-        lines.Add(cursor);
+        lines.Add($"<color=#{ColorUtility.ToHtmlStringRGB(color)}>{typingLine}</color>");
 
         // Ustaw tekst w UI
         consoleTextDisplay.text = string.Join("\n", lines);
-    }
-
-    private void ToggleCursorVisibility()
-    {
-        isCursorVisible = !isCursorVisible;
-        UpdateConsoleText();
     }
 
     private void UpdateConsoleText()
@@ -272,10 +269,6 @@ public class CameraToMonitor : MonoBehaviour
             lines.Add($"<color=#{hexColor}>{msg.message}</color>");
         }
 
-        // Dodaj kursor jako ostatni¹ liniê
-        string cursor = isCursorVisible ? "<color=#00E700>|</color>" : "<color=#00000000>|</color>";
-        lines.Add(cursor);
-
         // £¹cz tekst w jeden string
         consoleTextDisplay.text = string.Join("\n", lines);
     }
@@ -288,6 +281,82 @@ public class CameraToMonitor : MonoBehaviour
         {
             consoleTextDisplay.text = "";
         }
+    }
+
+    private void HandleCommandInput(string command)
+    {
+        if (!string.IsNullOrEmpty(command))
+        {
+            ShowConsoleMessage($">>> {command}", "#FFFFFF"); // Wyœwietla wpisan¹ komendê w terminalu
+            ShowConsoleMessage(">>> polecenie nieznane. spróbuj ponownie", "#FF0000"); // Wyœwietla odpowiedŸ
+
+            inputField.text = ""; // Czyœci pole tekstowe
+            inputField.ActivateInputField(); // Ustawia fokus na polu tekstowym
+        }
+    }
+
+    private void StartLogSequence()
+    {
+        canInteract = false;
+        List<LogEntry> availableLogs = new List<LogEntry>(logEntries);
+        StartCoroutine(DisplayLogsSequence(availableLogs));
+    }
+
+    private IEnumerator DisplayLogsSequence(List<LogEntry> availableLogs)
+    {
+        while (availableLogs.Count > 0)
+        {
+            LogEntry logEntry = GetRandomLogWithProbability(availableLogs);
+
+            ShowConsoleMessage(logEntry.messages[Random.Range(0, logEntry.messages.Length)], "#00E700");
+
+            availableLogs.Remove(logEntry);
+
+            yield return new WaitForSeconds(logEntry.delayAfterPrevious);
+        }
+
+        ShowConsoleMessage(">>>Terminal gotowy.", "#FFD200");
+
+        yield return new WaitForSeconds(1f);
+
+        canInteract = true;
+
+        // Aktywuj pole tekstowe do wpisywania komend
+        if (inputField != null)
+        {
+            inputField.gameObject.SetActive(true);
+            inputField.ActivateInputField();
+        }
+
+        // Zatrzymaj miganie kursora w logach
+        if (cursorBlinkCoroutine != null)
+        {
+            StopCoroutine(cursorBlinkCoroutine);
+            isCursorBlinking = false;
+        }
+    }
+
+    private LogEntry GetRandomLogWithProbability(List<LogEntry> availableLogs)
+    {
+        float totalProbability = 0f;
+        foreach (var log in availableLogs)
+        {
+            totalProbability += log.probability;
+        }
+
+        float randomValue = Random.Range(0f, totalProbability);
+        float cumulativeProbability = 0f;
+
+        foreach (var log in availableLogs)
+        {
+            cumulativeProbability += log.probability;
+            if (randomValue <= cumulativeProbability)
+            {
+                return log;
+            }
+        }
+
+        return availableLogs[0];
     }
 
     [System.Serializable]
@@ -312,52 +381,5 @@ public class CameraToMonitor : MonoBehaviour
         [Range(0f, 100f)]
         public float probability;
         public float delayAfterPrevious = 1f;
-    }
-
-    private void StartLogSequence()
-    {
-        canInteract = false;
-        List<LogEntry> availableLogs = new List<LogEntry>(logEntries);
-        StartCoroutine(DisplayLogsSequence(availableLogs));
-    }
-
-    private IEnumerator DisplayLogsSequence(List<LogEntry> availableLogs)
-    {
-        while (availableLogs.Count > 0)
-        {
-            LogEntry logEntry = GetRandomLogWithProbability(availableLogs);
-
-            ShowConsoleMessage(logEntry.messages[Random.Range(0, logEntry.messages.Length)], "#00E700");
-
-            availableLogs.Remove(logEntry);
-
-            yield return new WaitForSeconds(logEntry.delayAfterPrevious);
-        }
-
-        ShowConsoleMessage(">>>Terminal gotowy.", "#FFD200");
-        canInteract = true;
-    }
-
-    private LogEntry GetRandomLogWithProbability(List<LogEntry> availableLogs)
-    {
-        float totalProbability = 0f;
-        foreach (var log in availableLogs)
-        {
-            totalProbability += log.probability;
-        }
-
-        float randomValue = Random.Range(0f, totalProbability);
-        float cumulativeProbability = 0f;
-
-        foreach (var log in availableLogs)
-        {
-            cumulativeProbability += log.probability;
-            if (randomValue <= cumulativeProbability)
-            {
-                return log;
-            }
-        }
-
-        return availableLogs[0];
     }
 }
