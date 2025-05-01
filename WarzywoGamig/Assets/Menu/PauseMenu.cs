@@ -69,6 +69,9 @@ public class PauseMenu : MonoBehaviour
 
     void Update()
     {
+        // Dodanie warunku, który sprawdza, czy menu jest dostêpne
+        if (!CameraToMonitor.CanUseMenu) return; // Jeœli flaga jest ustawiona na false, zablokuj dostêp do menu
+
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             // Jeœli jesteœ w jednym z podmenu opcji – wracaj do optionsMenuUI

@@ -23,6 +23,7 @@ public class CameraToMonitor : MonoBehaviour
     public bool canInteract = false;
     private bool isInteracting = false;
     private bool isCameraMoving = false;
+    public static bool CanUseMenu = true; // Flaga, która kontroluje, czy menu jest dostêpne
 
     [Header("UI – Konsola monitora")]
     public TextMeshProUGUI consoleTextDisplay;
@@ -57,6 +58,7 @@ public class CameraToMonitor : MonoBehaviour
         {
             inputField.gameObject.SetActive(false); // Ukryj pole edycji na starcie
             inputField.onEndEdit.AddListener(HandleCommandInput); // Dodaj obs³ugê zakoñczenia edycji
+            inputField.characterLimit = 30;//Ogranicz liczbê znaków do 20 (zmieñ na wartoœæ, któr¹ chcesz)
         }
 
         commandDictionary = new Dictionary<string, CommandData>
@@ -89,8 +91,9 @@ public class CameraToMonitor : MonoBehaviour
 
     private IEnumerator ExitAndDelaySceneChange(string sceneName, float delay)
     {
-
         yield return StartCoroutine(MoveCameraBackToOriginalPosition());
+
+        CanUseMenu = false;
 
         // Zablokuj mo¿liwoœæ interakcji
         DisablePlayerMovementAndMouseLook();
@@ -111,6 +114,7 @@ public class CameraToMonitor : MonoBehaviour
 
         // Po zmianie sceny, przywróæ kontrolki
         EnablePlayerMovementAndMouseLook();
+        CanUseMenu = true;
     }
 
 
@@ -140,6 +144,7 @@ public class CameraToMonitor : MonoBehaviour
 
     IEnumerator MoveCameraToPosition()
     {
+        CanUseMenu = false;
         isInteracting = true;
 
         if (monitorHoverMessage != null)
@@ -241,6 +246,7 @@ public class CameraToMonitor : MonoBehaviour
         }
 
         ClearMonitorConsole();
+        CanUseMenu = true;
     }
 
     private void DisablePlayerMovementAndMouseLook()
