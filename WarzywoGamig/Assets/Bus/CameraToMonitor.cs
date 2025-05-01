@@ -37,7 +37,6 @@ public class CameraToMonitor : MonoBehaviour
     // S³ownik komend do metod
     private Dictionary<string, CommandData> commandDictionary;
 
-    private Coroutine cursorBlinkCoroutine;
     private Coroutine logSequenceCoroutine = null;
     private string pendingCommand = null;
     private bool isTerminalInterrupted = false;
@@ -90,14 +89,17 @@ public class CameraToMonitor : MonoBehaviour
 
     private IEnumerator ExitAndDelaySceneChange(string sceneName, float delay)
     {
-        // Symuluj wciœniêcie Q – czyli wyjœcie z terminala
+
         yield return StartCoroutine(MoveCameraBackToOriginalPosition());
+
+        // Zablokuj mo¿liwoœæ interakcji
+        DisablePlayerMovementAndMouseLook();
 
         ShowConsoleMessage($">>> Zmieniam scenê na {sceneName} za {delay} sekund...", "#FFD200");
 
         yield return new WaitForSeconds(delay);
 
-        // Zmieñ scenê przez SceneChanger
+        // Zmieñ scenê
         if (sceneChanger != null)
         {
             sceneChanger.TryChangeScene(sceneName);
@@ -106,6 +108,9 @@ public class CameraToMonitor : MonoBehaviour
         {
             Debug.LogError("Brak referencji do SceneChanger!");
         }
+
+        // Po zmianie sceny, przywróæ kontrolki
+        EnablePlayerMovementAndMouseLook();
     }
 
 
@@ -451,12 +456,6 @@ public class CameraToMonitor : MonoBehaviour
         {
             inputField.gameObject.SetActive(true);
             inputField.ActivateInputField();
-        }
-
-        // Zatrzymaj miganie kursora w logach
-        if (cursorBlinkCoroutine != null)
-        {
-            StopCoroutine(cursorBlinkCoroutine);
         }
     }
 
