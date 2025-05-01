@@ -5,10 +5,8 @@ using System.Collections;
 
 public class SceneChanger : MonoBehaviour
 {
-    [SerializeField] private Transform button1;
-    [SerializeField] private string scene1;
 
-    [SerializeField] private Transform button2;
+    [SerializeField] private string scene1;
     [SerializeField] private string scene2;
 
     [Header("Ustaw punkt spawnu gracza po za³adowaniu sceny")]
@@ -155,6 +153,13 @@ public class SceneChanger : MonoBehaviour
         }
 
         StartCoroutine(SpawnPlayerWhenBusIsReady());
+
+        var cameraToMonitor = Object.FindFirstObjectByType<CameraToMonitor>();
+        if (cameraToMonitor != null && cameraToMonitor.inputField != null)
+        {
+            cameraToMonitor.inputField.gameObject.SetActive(true);
+            cameraToMonitor.inputField.ActivateInputField(); // <- TO JEST KLUCZOWE
+        }
     }
 
     private IEnumerator SpawnPlayerWhenBusIsReady()

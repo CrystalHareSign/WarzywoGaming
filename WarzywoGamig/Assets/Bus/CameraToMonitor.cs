@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -7,6 +8,7 @@ public class CameraToMonitor : MonoBehaviour
 {
     public PlayerMovement playerMovementScript;
     public MouseLook mouseLookScript;
+    public SceneChanger sceneChanger;
     public HoverMessage monitorHoverMessage;
     public GameObject crossHair;
     public GameObject monitorCanvas;
@@ -32,9 +34,13 @@ public class CameraToMonitor : MonoBehaviour
     public float cursorBlinkInterval = 0.5f;
 
     public List<LogEntry> logEntries;
+    // S³ownik komend do metod
+    private Dictionary<string, CommandData> commandDictionary;
 
     private Coroutine cursorBlinkCoroutine;
-    private bool isCursorBlinking = false;
+    private Coroutine logSequenceCoroutine = null;
+    private string pendingCommand = null;
+    private bool isTerminalInterrupted = false;
 
     private void Start()
     {
@@ -53,7 +59,55 @@ public class CameraToMonitor : MonoBehaviour
             inputField.gameObject.SetActive(false); // Ukryj pole edycji na starcie
             inputField.onEndEdit.AddListener(HandleCommandInput); // Dodaj obs³ugê zakoñczenia edycji
         }
+
+        commandDictionary = new Dictionary<string, CommandData>
+
+        {
+            { "main", new CommandData(() => ExitTerminalAndChangeScene("Main", 3f), true) },
+            { "home", new CommandData(() => ExitTerminalAndChangeScene("Home", 3f), true) },
+        };
+
+        // Jeœli trzeba, przypisz referencjê do obiektu ButtonMethods (jeœli jeszcze nie zosta³o przypisane)
+        if (sceneChanger == null)
+        {
+            sceneChanger = UnityEngine.Object.FindAnyObjectByType<SceneChanger>();
+        }
+
     }
+
+    public void ExitTerminalAndChangeScene(string targetSceneName, float delaySeconds = 3f)
+    {
+        string currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+
+        if (currentScene == targetSceneName)
+        {
+            ShowConsoleMessage($">>> Ju¿ jesteœ w scenie \"{targetSceneName}\".", "#FF0000");
+            return; // Przerywamy – nie wychodzimy z terminala ani nie zmieniamy sceny
+        }
+
+        StartCoroutine(ExitAndDelaySceneChange(targetSceneName, delaySeconds));
+    }
+
+    private IEnumerator ExitAndDelaySceneChange(string sceneName, float delay)
+    {
+        // Symuluj wciœniêcie Q – czyli wyjœcie z terminala
+        yield return StartCoroutine(MoveCameraBackToOriginalPosition());
+
+        ShowConsoleMessage($">>> Zmieniam scenê na {sceneName} za {delay} sekund...", "#FFD200");
+
+        yield return new WaitForSeconds(delay);
+
+        // Zmieñ scenê przez SceneChanger
+        if (sceneChanger != null)
+        {
+            sceneChanger.TryChangeScene(sceneName);
+        }
+        else
+        {
+            Debug.LogError("Brak referencji do SceneChanger!");
+        }
+    }
+
 
     void Update()
     {
@@ -66,6 +120,7 @@ public class CameraToMonitor : MonoBehaviour
                 originalCameraPosition = Camera.main.transform.position;
                 originalCameraRotation = Camera.main.transform.rotation;
                 StartCoroutine(MoveCameraToPosition());
+                ClearMonitorConsole();
             }
             else if (Input.GetKeyDown(KeyCode.Q) && isInteracting && !isCameraMoving)
             {
@@ -133,6 +188,7 @@ public class CameraToMonitor : MonoBehaviour
     IEnumerator MoveCameraBackToOriginalPosition()
     {
         isInteracting = false;
+        isTerminalInterrupted = true;
 
         if (monitorHoverMessage != null)
         {
@@ -173,6 +229,12 @@ public class CameraToMonitor : MonoBehaviour
         EnablePlayerMovementAndMouseLook();
         isCameraMoving = false;
 
+        if (logSequenceCoroutine != null)
+        {
+            StopCoroutine(logSequenceCoroutine);
+            logSequenceCoroutine = null;
+        }
+
         ClearMonitorConsole();
     }
 
@@ -204,6 +266,8 @@ public class CameraToMonitor : MonoBehaviour
 
     public void ShowConsoleMessage(string rawMessage, string hexColor)
     {
+        isTerminalInterrupted = false;
+
         Color color = Color.white;
         if (ColorUtility.TryParseHtmlString(hexColor, out Color parsedColor))
         {
@@ -218,22 +282,23 @@ public class CameraToMonitor : MonoBehaviour
         string currentLine = "";
         for (int i = 0; i < fullMessage.Length; i++)
         {
+            if (isTerminalInterrupted)
+                yield break; // Przerwij wyœwietlanie wiadomoœci jeœli terminal zosta³ zamkniêty
+
             currentLine += fullMessage[i];
-
-            // Aktualizuj tymczasow¹ wiadomoœæ
             UpdateConsolePreview(currentLine, color);
-
             yield return new WaitForSeconds(letterDisplayDelay);
         }
 
-        // Po zakoñczeniu wpisywania dodajemy wiadomoœæ do kolejki na sta³e
+        if (isTerminalInterrupted)
+            yield break;
+
         var finalMessage = new ConsoleMessage(fullMessage, Time.time, color);
         messageQueue.Enqueue(finalMessage);
 
         while (messageQueue.Count > maxMessages)
             messageQueue.Dequeue();
 
-        // Po zakoñczeniu wpisywania odœwie¿ tekst
         UpdateConsoleText();
     }
 
@@ -282,24 +347,69 @@ public class CameraToMonitor : MonoBehaviour
             consoleTextDisplay.text = "";
         }
     }
-
     private void HandleCommandInput(string command)
     {
+        command = command.ToLower().Trim();
+
+        if (!string.IsNullOrEmpty(pendingCommand))
+        {
+            if (command == "t")
+            {
+                ShowConsoleMessage($">>> Wykonujê: {pendingCommand}", "#00E700");
+                commandDictionary[pendingCommand].command.Invoke();
+            }
+            else
+            {
+                ShowConsoleMessage(">>> Anulowano polecenie.", "#FF0000");
+            }
+
+            pendingCommand = null;
+            inputField.text = "";
+            inputField.ActivateInputField();
+            return;
+        }
+
         if (!string.IsNullOrEmpty(command))
         {
-            ShowConsoleMessage($">>> {command}", "#FFFFFF"); // Wyœwietla wpisan¹ komendê w terminalu
-            ShowConsoleMessage(">>> polecenie nieznane. spróbuj ponownie", "#FF0000"); // Wyœwietla odpowiedŸ
+            ShowConsoleMessage($">>> {command}", "#FFFFFF");
 
-            inputField.text = ""; // Czyœci pole tekstowe
-            inputField.ActivateInputField(); // Ustawia fokus na polu tekstowym
+            if (commandDictionary.ContainsKey(command))
+            {
+                var data = commandDictionary[command];
+
+                // Sprawdzenie, czy gracz ju¿ jest w tej scenie
+                string currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+
+                if (data.requiresConfirmation && command != currentScene.ToLower())
+                {
+                    ShowConsoleMessage(">>> Czy jesteœ pewny? [T/N]", "#FFD200");
+                    pendingCommand = command;
+                }
+                else
+                {
+                    data.command.Invoke();
+                }
+            }
+            else
+            {
+                ShowConsoleMessage(">>> polecenie nieznane. spróbuj ponownie", "#FF0000");
+            }
+
+            inputField.text = "";
+            inputField.ActivateInputField();
         }
     }
+
 
     private void StartLogSequence()
     {
         canInteract = false;
         List<LogEntry> availableLogs = new List<LogEntry>(logEntries);
-        StartCoroutine(DisplayLogsSequence(availableLogs));
+        if (logSequenceCoroutine != null)
+        {
+            StopCoroutine(logSequenceCoroutine); // zatrzymaj poprzedni¹ sekwencjê
+        }
+        logSequenceCoroutine = StartCoroutine(DisplayLogsSequence(availableLogs));
     }
 
     private IEnumerator DisplayLogsSequence(List<LogEntry> availableLogs)
@@ -308,14 +418,29 @@ public class CameraToMonitor : MonoBehaviour
         {
             LogEntry logEntry = GetRandomLogWithProbability(availableLogs);
 
-            ShowConsoleMessage(logEntry.messages[Random.Range(0, logEntry.messages.Length)], "#00E700");
+            // Debugowanie: wypisanie d³ugoœci tablicy messages
+            //Debug.Log("D³ugoœæ tablicy messages: " + logEntry.messages.Length);
+
+            // Sprawdzamy, czy tablica 'messages' w logEntry nie jest pusta
+            if (logEntry.messages.Length > 0)
+            {
+                // Losujemy jeden z komunikatów w tablicy
+                int randomIndex = UnityEngine.Random.Range(0, logEntry.messages.Length); // Poprawne losowanie
+                //Debug.Log("Losowy indeks: " + randomIndex);  // Debugowanie: jaki indeks zosta³ wybrany
+                ShowConsoleMessage(logEntry.messages[randomIndex], "#00E700");
+            }
+            else
+            {
+                // Jeœli tablica jest pusta, wyœwietlamy komunikat o b³êdzie
+                ShowConsoleMessage(">>> Brak wiadomoœci do wyœwietlenia.", "#FF0000");
+            }
 
             availableLogs.Remove(logEntry);
 
             yield return new WaitForSeconds(logEntry.delayAfterPrevious);
         }
 
-        ShowConsoleMessage(">>>Terminal gotowy.", "#FFD200");
+        ShowConsoleMessage(">>> Terminal gotowy.", "#FFD200");
 
         yield return new WaitForSeconds(1f);
 
@@ -332,30 +457,35 @@ public class CameraToMonitor : MonoBehaviour
         if (cursorBlinkCoroutine != null)
         {
             StopCoroutine(cursorBlinkCoroutine);
-            isCursorBlinking = false;
         }
     }
 
     private LogEntry GetRandomLogWithProbability(List<LogEntry> availableLogs)
     {
+        // Sumujemy wszystkie prawdopodobieñstwa
         float totalProbability = 0f;
         foreach (var log in availableLogs)
         {
             totalProbability += log.probability;
         }
 
-        float randomValue = Random.Range(0f, totalProbability);
+        // Generujemy losow¹ wartoœæ
+        float randomValue = UnityEngine.Random.Range(0f, totalProbability);
         float cumulativeProbability = 0f;
 
+        // Iterujemy po dostêpnych logach, aby znaleŸæ ten na podstawie losowego prawdopodobieñstwa
         foreach (var log in availableLogs)
         {
             cumulativeProbability += log.probability;
+
+            // Jeœli randomValue mieœci siê w tym przedziale, zwróæ log
             if (randomValue <= cumulativeProbability)
             {
                 return log;
             }
         }
 
+        // Jeœli nic nie znaleziono, zwróæ pierwszy log (to mo¿e byæ domyœlny przypadek)
         return availableLogs[0];
     }
 
@@ -381,5 +511,18 @@ public class CameraToMonitor : MonoBehaviour
         [Range(0f, 100f)]
         public float probability;
         public float delayAfterPrevious = 1f;
+    }
+
+    [System.Serializable]
+    public class CommandData
+    {
+        public Action command;
+        public bool requiresConfirmation;
+
+        public CommandData(Action command, bool requiresConfirmation)
+        {
+            this.command = command;
+            this.requiresConfirmation = requiresConfirmation;
+        }
     }
 }
