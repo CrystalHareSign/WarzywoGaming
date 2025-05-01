@@ -133,25 +133,42 @@ public class CameraToMonitor : MonoBehaviour
 
     void Update()
     {
-        float distanceToInteraction = Vector3.Distance(player.position, finalCameraRotation.position);
+        //float distanceToInteraction = Vector3.Distance(player.position, finalCameraRotation.position);
 
-        if (distanceToInteraction <= interactionRange)
-        {
-            if (Input.GetKeyDown(KeyCode.E) && !isInteracting && !isCameraMoving)
-            {
-                originalCameraPosition = Camera.main.transform.position;
-                originalCameraRotation = Camera.main.transform.rotation;
-                StartCoroutine(MoveCameraToPosition());
-                ClearMonitorConsole();
-            }
-            else if ((Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.Escape)) && isInteracting && !isCameraMoving)
-            {
-                StartCoroutine(MoveCameraBackToOriginalPosition());
-            }
-        }
-        else if (isInteracting && !isCameraMoving)
+        //if (distanceToInteraction <= interactionRange)
+        //{
+        //    if (Input.GetKeyDown(KeyCode.E) && !isInteracting && !isCameraMoving)
+        //    {
+        //        originalCameraPosition = Camera.main.transform.position;
+        //        originalCameraRotation = Camera.main.transform.rotation;
+        //        StartCoroutine(MoveCameraToPosition());
+        //        ClearMonitorConsole();
+        //    }
+        //    else if ((Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.Escape)) && isInteracting && !isCameraMoving)
+        //    {
+        //        StartCoroutine(MoveCameraBackToOriginalPosition());
+        //    }
+        //}
+        //else if (isInteracting && !isCameraMoving)
+        //{
+        //    StartCoroutine(MoveCameraBackToOriginalPosition());
+        //}
+
+
+        if ((Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.Escape)) && isInteracting && !isCameraMoving)
         {
             StartCoroutine(MoveCameraBackToOriginalPosition());
+        }
+    }
+
+    public void UseMonitor()
+    {
+        if (!isInteracting && !isCameraMoving)
+        {
+            originalCameraPosition = Camera.main.transform.position;
+            originalCameraRotation = Camera.main.transform.rotation;
+            StartCoroutine(MoveCameraToPosition());
+            ClearMonitorConsole();
         }
     }
 

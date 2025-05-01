@@ -19,6 +19,7 @@ public class PlayerInteraction : MonoBehaviour
     private float requiredHoldTime = 5f;
     private TurretController turretController; // Dodajemy referencjê do TurretController
     private TreasureRefiner treasureRefiner;
+    private CameraToMonitor cameraToMonitor;
     private bool hasRefinerBeenUsed = false; // Flaga kontroluj¹ca, czy refiner ju¿ zosta³ u¿yty
 
     void Awake()
@@ -46,6 +47,12 @@ public class PlayerInteraction : MonoBehaviour
         if (treasureRefiner == null)
         {
             Debug.LogError("Brak obiektu TurretController w scenie.");
+        }
+
+        cameraToMonitor = Object.FindFirstObjectByType<CameraToMonitor>();
+        if (cameraToMonitor == null)
+        {
+            Debug.LogError("Brak obiektu CameraToMonitor w scenie.");
         }
 
         if (progressCircle != null)
@@ -122,6 +129,11 @@ public class PlayerInteraction : MonoBehaviour
                             if (currentInteractableItem.isTurret) // Sprawdzamy, czy obiekt to wie¿yczka
                             {
                                 UseTurret(interactableItem); // Uruchamiamy tryb wie¿yczki
+                            }
+
+                            if (currentInteractableItem.isMonitor) // Sprawdzamy, czy obiekt to monitor
+                            {
+                                UseMonitor(interactableItem); // Uruchamiamy tryb wie¿yczki
                             }
 
                             if (currentInteractableItem.isRefiner && !hasRefinerBeenUsed) // Sprawdzamy, czy to refiner i czy nie by³ ju¿ u¿yty
@@ -208,6 +220,16 @@ public class PlayerInteraction : MonoBehaviour
             turretController.UseTurret(); // U¿ywamy metody z TurretController do aktywacji wie¿yczki
         }
     }
+
+    private void UseMonitor(InteractableItem interactableItem)
+    {
+        if (cameraToMonitor != null)
+        {
+            //Debug.Log($"{interactableItem.itemName} jest teraz w trybie wie¿yczki!");
+            cameraToMonitor.UseMonitor(); // U¿ywamy metody z TurretController do aktywacji wie¿yczki
+        }
+    }
+
     private void RemoveOldestItemFromInventory(InteractableItem interactableItem)
     {
         if (treasureRefiner != null)

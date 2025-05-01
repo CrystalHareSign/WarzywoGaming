@@ -25,6 +25,9 @@ public class InteractableItem : MonoBehaviour, IInteractable
     [Header("Refiner")]
     public bool isRefiner = false; //  czy jest Refiner
 
+    [Header("Monitor")]
+    public bool isMonitor = false; //  czy jest Refiner
+
     [Header("System kierowczy")]
     public bool alwaysInteractive = false;
     public bool hasCooldown = false;
