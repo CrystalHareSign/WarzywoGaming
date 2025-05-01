@@ -5,37 +5,33 @@ using UnityEngine;
 
 public class CameraToMonitor : MonoBehaviour
 {
-    public PlayerMovement playerMovementScript; // Skrypt odpowiedzialny za ruch gracza
-    public MouseLook mouseLookScript; // Skrypt odpowiedzialny za ruch kamery
+    public PlayerMovement playerMovementScript;
+    public MouseLook mouseLookScript;
     public HoverMessage monitorHoverMessage;
     public GameObject crossHair;
-    public GameObject monitorCanvas; // UI z przyciskami
+    public GameObject monitorCanvas;
 
-    public Transform player; // Transform gracza
-    public Transform finalCameraRotation; // Transform, który definiuje finaln¹ rotacjê i pozycjê kamery
-    public float interactionRange = 5f; // Zasiêg, w którym gracz mo¿e zbli¿yæ siê do monitora
-    public float cameraMoveSpeed = 5f; // Prêdkoœæ przesuwania kamery
+    public Transform player;
+    public Transform finalCameraRotation;
+    public float interactionRange = 5f;
+    public float cameraMoveSpeed = 5f;
 
-    private Vector3 originalCameraPosition; // Pocz¹tkowa pozycja kamery
-    private Quaternion originalCameraRotation; // Pocz¹tkowa rotacja kamery
-    public bool canInteract = false;  // Flaga, która pozwala na interakcjê po zakoñczeniu logów
-    private bool isInteracting = false; // Czy gracz jest w trakcie interakcji
-    private bool isCameraMoving = false; // Flaga sprawdzaj¹ca, czy kamera jest w ruchu
+    private Vector3 originalCameraPosition;
+    private Quaternion originalCameraRotation;
+    public bool canInteract = false;
+    private bool isInteracting = false;
+    private bool isCameraMoving = false;
 
     [Header("UI – Konsola monitora")]
     public TextMeshProUGUI consoleTextDisplay;
-    private Queue<ConsoleMessage> messageQueue = new Queue<ConsoleMessage>();  // Kolejka wiadomoœci
-    public float messageDuration = 5f;  // Czas trwania ka¿dej wiadomoœci w sekundach
-    public int maxMessages = 5;  // Maksymalna liczba wiadomoœci w kolejce
-    public float startNextLogBefore = 1;
+    private Queue<ConsoleMessage> messageQueue = new Queue<ConsoleMessage>();
+    public int maxMessages = 5;
 
-    private bool isCursorVisible = true;  // Czy kursor (|) jest widoczny
-    private float cursorBlinkInterval = 0.5f;  // Czas w sekundach miêdzy miganiem kursora
-    private float cursorBlinkTimer = 0f;  // Licznik czasu migania kursora
-    private float currentTime = 0f;
+    public float letterDisplayDelay = 0.05f; // OpóŸnienie miêdzy literami w sekundach
+    private bool isCursorVisible = true;
+    private float cursorBlinkInterval = 0.5f;
 
-
-    public List<LogEntry> logEntries; // Lista wpisów logów
+    public List<LogEntry> logEntries;
 
     private void Start()
     {
@@ -44,73 +40,42 @@ public class CameraToMonitor : MonoBehaviour
             monitorCanvas.SetActive(false);
         }
 
-        // Inicjalizacja tekstu
         if (consoleTextDisplay == null)
         {
             Debug.LogError("Brak przypisanego TextMeshProUGUI dla konsoli!");
         }
+
+        // Rozpocznij miganie kursora
+        InvokeRepeating(nameof(ToggleCursorVisibility), cursorBlinkInterval, cursorBlinkInterval);
     }
 
     void Update()
     {
-        // Oblicz odleg³oœæ gracza od miejsca interakcji
         float distanceToInteraction = Vector3.Distance(player.position, finalCameraRotation.position);
 
-        // Sprawdzenie, czy gracz znajduje siê w zasiêgu
         if (distanceToInteraction <= interactionRange)
         {
             if (Input.GetKeyDown(KeyCode.E) && !isInteracting && !isCameraMoving)
             {
-                // Rozpoczêcie interakcji – zapamiêtanie pozycji kamery przed przesuniêciem
                 originalCameraPosition = Camera.main.transform.position;
                 originalCameraRotation = Camera.main.transform.rotation;
-
-                // Rozpoczêcie interakcji – przesuwanie kamery do obiektu
                 StartCoroutine(MoveCameraToPosition());
             }
             else if (Input.GetKeyDown(KeyCode.Q) && isInteracting && !isCameraMoving)
             {
-                // Wyjœcie z interakcji – przywrócenie kamery do pierwotnej pozycji
                 StartCoroutine(MoveCameraBackToOriginalPosition());
             }
         }
-        // Je¿eli gracz oddali siê poza zasiêg, kamera wróci do pierwotnej pozycji
         else if (isInteracting && !isCameraMoving)
         {
             StartCoroutine(MoveCameraBackToOriginalPosition());
         }
-
-        if (messageQueue.Count > 0)
-        {
-            ConsoleMessage msg = messageQueue.Peek();
-            if (msg.IsExpired(Time.time))
-            {
-                messageQueue.Dequeue();
-                UpdateConsoleText();
-            }
-        }
-
-        if (isInteracting)
-        {
-            currentTime = Time.time;
-
-            // Aktualizowanie tekstu konsoli
-            UpdateConsoleText();
-
-            // Migaj¹cy kursor
-            cursorBlinkTimer += Time.deltaTime;
-            if (cursorBlinkTimer >= cursorBlinkInterval)
-            {
-                cursorBlinkTimer = 0f;
-                isCursorVisible = !isCursorVisible;  // Zmiana stanu kursora (widoczny / niewidoczny)
-            }
-        }
     }
 
-    // P³ynne przesuniêcie kamery do wskazanej pozycji
     IEnumerator MoveCameraToPosition()
     {
         isInteracting = true;
+
         if (monitorHoverMessage != null)
         {
             monitorHoverMessage.isInteracted = true;
@@ -126,46 +91,40 @@ public class CameraToMonitor : MonoBehaviour
             monitorCanvas.SetActive(true);
         }
 
-        // Zatrzymanie ruchu gracza i kamery
         DisablePlayerMovementAndMouseLook();
         isCameraMoving = true;
 
-        isInteracting = true;
+        Vector3 startPos = Camera.main.transform.position;
+        Quaternion startRot = Camera.main.transform.rotation;
 
-        // Okreœlamy pozycjê kamery wzglêdem obiektu finalCameraRotation (z uwzglêdnieniem odleg³oœci)
-        Vector3 targetCameraPosition = new Vector3(finalCameraRotation.position.x, finalCameraRotation.position.y, finalCameraRotation.position.z);
-
-        // Ustawiamy rotacjê kamery, patrz¹c w kierunku obiektu
+        Vector3 targetCameraPosition = finalCameraRotation.position;
         Quaternion targetCameraRotation = finalCameraRotation.rotation;
 
-        // P³ynne przejœcie kamery
         float elapsedTime = 0f;
         while (elapsedTime < 1f)
         {
-            Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, targetCameraPosition, elapsedTime);
-            Camera.main.transform.rotation = Quaternion.Slerp(Camera.main.transform.rotation, targetCameraRotation, elapsedTime);
+            Camera.main.transform.position = Vector3.Lerp(startPos, targetCameraPosition, elapsedTime);
+            Camera.main.transform.rotation = Quaternion.Slerp(startRot, targetCameraRotation, elapsedTime);
             elapsedTime += Time.deltaTime * cameraMoveSpeed;
             yield return null;
         }
 
-        // Ustawiamy kamerê dok³adnie w docelowej pozycji i rotacji
         Camera.main.transform.position = targetCameraPosition;
         Camera.main.transform.rotation = targetCameraRotation;
 
         isCameraMoving = false;
 
-        // Od³¹czenie kursora
-        Cursor.lockState = CursorLockMode.None; // Kursor mo¿e byæ u¿ywany
-        Cursor.visible = true; // Kursor jest widoczny
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
 
-        ShowConsoleMessage(">>>Uruchamianie terminalu...",5,0.5f, "#00E700");
+        ShowConsoleMessage(">>>Uruchamianie terminalu...", "#00E700");
         StartLogSequence();
     }
 
-    // P³ynne przesuniêcie kamery z powrotem do pierwotniej pozycji
     IEnumerator MoveCameraBackToOriginalPosition()
     {
         isInteracting = false;
+
         if (monitorHoverMessage != null)
         {
             monitorHoverMessage.isInteracted = false;
@@ -180,66 +139,61 @@ public class CameraToMonitor : MonoBehaviour
         {
             monitorCanvas.SetActive(false);
         }
-        // Przywrócenie blokady kursora przed rozpoczêciem ruchu kamery
-        Cursor.lockState = CursorLockMode.Locked; // Blokujemy kursor
-        Cursor.visible = false; // Ukrywamy kursor
 
-        // Zatrzymanie ruchu gracza i kamery
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
         DisablePlayerMovementAndMouseLook();
         isCameraMoving = true;
 
-        // P³ynne przejœcie kamery do jej pierwotnej pozycji
+        Vector3 startPos = Camera.main.transform.position;
+        Quaternion startRot = Camera.main.transform.rotation;
+
         float elapsedTime = 0f;
         while (elapsedTime < 1f)
         {
-            Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, originalCameraPosition, elapsedTime);
-            Camera.main.transform.rotation = Quaternion.Slerp(Camera.main.transform.rotation, originalCameraRotation, elapsedTime);
+            Camera.main.transform.position = Vector3.Lerp(startPos, originalCameraPosition, elapsedTime);
+            Camera.main.transform.rotation = Quaternion.Slerp(startRot, originalCameraRotation, elapsedTime);
             elapsedTime += Time.deltaTime * cameraMoveSpeed;
             yield return null;
         }
 
-        // Po zakoñczeniu animacji, ustawiamy kamerê dok³adnie w pierwotniej pozycji
         Camera.main.transform.position = originalCameraPosition;
         Camera.main.transform.rotation = originalCameraRotation;
 
-        // Po zakoñczeniu animacji, przywracamy mo¿liwoœæ poruszania siê
         EnablePlayerMovementAndMouseLook();
         isCameraMoving = false;
-
-        isInteracting = false;
 
         ClearMonitorConsole();
     }
 
-    // Funkcja wy³¹czaj¹ca skrypty odpowiedzialne za ruch gracza i kamery
     private void DisablePlayerMovementAndMouseLook()
     {
         if (playerMovementScript != null)
         {
-            playerMovementScript.enabled = false; // Wy³¹cza skrypt odpowiedzialny za ruch gracza
+            playerMovementScript.enabled = false;
         }
 
         if (mouseLookScript != null)
         {
-            mouseLookScript.enabled = false; // Wy³¹cza skrypt odpowiedzialny za ruch kamery
+            mouseLookScript.enabled = false;
         }
     }
 
-    // Funkcja przywracaj¹ca skrypty odpowiedzialne za ruch gracza i kamery
     private void EnablePlayerMovementAndMouseLook()
     {
         if (playerMovementScript != null)
         {
-            playerMovementScript.enabled = true; // W³¹cza skrypt odpowiedzialny za ruch gracza
+            playerMovementScript.enabled = true;
         }
 
         if (mouseLookScript != null)
         {
-            mouseLookScript.enabled = true; // W³¹cza skrypt odpowiedzialny za ruch kamery
+            mouseLookScript.enabled = true;
         }
     }
 
-    public void ShowConsoleMessage(string rawMessage, float visibleDuration, float fadeDuration, string hexColor)
+    public void ShowConsoleMessage(string rawMessage, string hexColor)
     {
         Color color = Color.white;
         if (ColorUtility.TryParseHtmlString(hexColor, out Color parsedColor))
@@ -247,59 +201,89 @@ public class CameraToMonitor : MonoBehaviour
             color = parsedColor;
         }
 
-        var newMessage = new ConsoleMessage(rawMessage, Time.time, visibleDuration, fadeDuration, color);
-        messageQueue.Enqueue(newMessage);
+        StartCoroutine(TypeMessageCoroutine(rawMessage, color));
+    }
+
+    private IEnumerator TypeMessageCoroutine(string fullMessage, Color color)
+    {
+        string currentLine = "";
+        for (int i = 0; i < fullMessage.Length; i++)
+        {
+            currentLine += fullMessage[i];
+
+            // Aktualizuj tymczasow¹ wiadomoœæ z kursorem
+            UpdateConsolePreview(currentLine, color);
+
+            yield return new WaitForSeconds(letterDisplayDelay);
+        }
+
+        // Po zakoñczeniu wpisywania dodajemy wiadomoœæ do kolejki na sta³e
+        var finalMessage = new ConsoleMessage(fullMessage, Time.time, color);
+        messageQueue.Enqueue(finalMessage);
 
         while (messageQueue.Count > maxMessages)
             messageQueue.Dequeue();
+
+        // Po zakoñczeniu wpisywania odœwie¿ tekst, aby usun¹æ tymczasowy kursor
+        UpdateConsoleText();
+    }
+
+    private void UpdateConsolePreview(string typingLine, Color color)
+    {
+        if (consoleTextDisplay == null) return;
+
+        List<string> lines = new List<string>();
+
+        // Dodaj istniej¹ce wiadomoœci
+        foreach (var msg in messageQueue)
+        {
+            string hexColor = ColorUtility.ToHtmlStringRGB(msg.color);
+            lines.Add($"<color=#{hexColor}>{msg.message}</color>");
+        }
+
+        // Dodaj aktualnie wpisywan¹ liniê
+        string hexTypingColor = ColorUtility.ToHtmlStringRGB(color);
+        lines.Add($"<color=#{hexTypingColor}>{typingLine}</color>");
+
+        // Dodaj kursor
+        string cursor = isCursorVisible ? "<color=#00E700>|</color>" : "<color=#00000000>|</color>";
+        lines.Add(cursor);
+
+        // Ustaw tekst w UI
+        consoleTextDisplay.text = string.Join("\n", lines);
+    }
+
+    private void ToggleCursorVisibility()
+    {
+        isCursorVisible = !isCursorVisible;
+        UpdateConsoleText();
     }
 
     private void UpdateConsoleText()
     {
-        string consoleText = "";
+        if (consoleTextDisplay == null) return;
 
-        string cursor = isCursorVisible ? "<color=#00E700>|</color>" : "<color=#00000000>|</color>";            /////   #00E700
-        consoleText += cursor + " ";
+        List<string> lines = new List<string>();
 
-        currentTime = Time.time;
-
-        List<ConsoleMessage> activeMessages = new List<ConsoleMessage>();
-
-        // Zbieranie tylko aktywnych wiadomoœci
+        // Dodaj wszystkie wiadomoœci w kolejnoœci FIFO
         foreach (var msg in messageQueue)
         {
-            if (!msg.IsExpired(Time.time))
-            {
-                activeMessages.Add(msg);
-            }
+            string hexColor = ColorUtility.ToHtmlStringRGB(msg.color);
+            lines.Add($"<color=#{hexColor}>{msg.message}</color>");
         }
 
-        // Odwróæ kolejnoœæ – nowsze wiadomoœci u góry
-        activeMessages.Reverse();
+        // Dodaj kursor jako ostatni¹ liniê
+        string cursor = isCursorVisible ? "<color=#00E700>|</color>" : "<color=#00000000>|</color>";
+        lines.Add(cursor);
 
-        foreach (var msg in activeMessages)
-        {
-            float alpha = msg.GetFadeAlpha(currentTime);
-            int alphaInt = Mathf.RoundToInt(alpha * 255);
-            string hexAlpha = alphaInt.ToString("X2");
-
-            // Konwertowanie koloru na hex
-            Color msgColor = msg.color;
-            string hexColor = ColorUtility.ToHtmlStringRGB(msgColor);
-
-            // Dodanie wiadomoœci z odpowiednim kolorem i przezroczystoœci¹
-            consoleText += $"<color=#{hexColor}{hexAlpha}>{msg.message}</color>\n";
-        }
-
-        if (consoleTextDisplay != null)
-        {
-            consoleTextDisplay.text = consoleText;
-        }
+        // £¹cz tekst w jeden string
+        consoleTextDisplay.text = string.Join("\n", lines);
     }
-
 
     public void ClearMonitorConsole()
     {
+        messageQueue.Clear();
+
         if (consoleTextDisplay != null)
         {
             consoleTextDisplay.text = "";
@@ -311,55 +295,29 @@ public class CameraToMonitor : MonoBehaviour
     {
         public string message;
         public float timeAdded;
-        public float visibleDuration;
-        public float fadeDuration;
         public Color color;
 
-        public ConsoleMessage(string message, float timeAdded, float visibleDuration, float fadeDuration, Color color)
+        public ConsoleMessage(string message, float timeAdded, Color color)
         {
             this.message = message;
             this.timeAdded = timeAdded;
-            this.visibleDuration = visibleDuration;
-            this.fadeDuration = fadeDuration;
             this.color = color;
-        }
-
-        public float GetFadeAlpha(float currentTime)
-        {
-            float elapsed = currentTime - timeAdded;
-
-            if (elapsed <= visibleDuration)
-                return 1f; // Pe³na widocznoœæ
-
-            float fadeTime = elapsed - visibleDuration;
-            return Mathf.Clamp01(1f - fadeTime / fadeDuration); // Od 1 do 0
-        }
-
-        public bool IsExpired(float currentTime)
-        {
-            return currentTime - timeAdded > (visibleDuration + fadeDuration);
         }
     }
 
     [System.Serializable]
     public class LogEntry
     {
-        public string[] messages;   // Mo¿liwe wiadomoœci
-        public float messageDuration;
-        public float fadeDuration;
-        [Range(0f, 100f)]  // Atrybut Range sprawi, ¿e bêdzie slider od 0 do 1
-        public float probability;  // Prawdopodobieñstwo wyœwietlenia tego logu (od 0 do 1)
+        public string[] messages;
+        [Range(0f, 100f)]
+        public float probability;
+        public float delayAfterPrevious = 1f;
     }
 
     private void StartLogSequence()
     {
-        // Zablokowanie interakcji przed rozpoczêciem logowania
         canInteract = false;
-
-        // Bêdziemy losowaæ wiadomoœci z listy logEntries
-        List<LogEntry> availableLogs = new List<LogEntry>(logEntries);  // Kopia listy, aby móc usuwaæ u¿yte logi
-
-        // Rozpoczynamy losowanie logów przy w³¹czeniu monitora
+        List<LogEntry> availableLogs = new List<LogEntry>(logEntries);
         StartCoroutine(DisplayLogsSequence(availableLogs));
     }
 
@@ -367,40 +325,27 @@ public class CameraToMonitor : MonoBehaviour
     {
         while (availableLogs.Count > 0)
         {
-            // Losowanie logu na podstawie prawdopodobieñstwa
             LogEntry logEntry = GetRandomLogWithProbability(availableLogs);
 
-            // Ustawienie domyœlnego fadeDuration (np. 0.5f)
-            float fadeDuration = 0.5f;
+            ShowConsoleMessage(logEntry.messages[Random.Range(0, logEntry.messages.Length)], "#00E700");
 
-            // Dodaj wiadomoœæ do konsoli
-            ShowConsoleMessage(logEntry.messages[Random.Range(0, logEntry.messages.Length)], messageDuration, fadeDuration, "#00E700");
-
-            // Usuñ ten log z dostêpnej listy, ¿eby nie pojawi³ siê ponownie
             availableLogs.Remove(logEntry);
 
-            // Czekaj, zanim poka¿emy kolejny log
-            yield return new WaitForSeconds(messageDuration - startNextLogBefore);
+            yield return new WaitForSeconds(logEntry.delayAfterPrevious);
         }
 
-        // Tylko po zakoñczeniu wszystkich logów — dodaj wiadomoœæ koñcow¹
-        ShowConsoleMessage(">>>Terminal gotowy.", 5f, 0.5f, "#FFD200");
-
+        ShowConsoleMessage(">>>Terminal gotowy.", "#FFD200");
         canInteract = true;
     }
-
 
     private LogEntry GetRandomLogWithProbability(List<LogEntry> availableLogs)
     {
         float totalProbability = 0f;
-
-        // Obliczamy sumê wszystkich prawdopodobieñstw
         foreach (var log in availableLogs)
         {
             totalProbability += log.probability;
         }
 
-        // Losowanie, które logi wybraæ na podstawie prawdopodobieñstwa
         float randomValue = Random.Range(0f, totalProbability);
         float cumulativeProbability = 0f;
 
@@ -413,7 +358,6 @@ public class CameraToMonitor : MonoBehaviour
             }
         }
 
-        // W przypadku b³êdu, zwróæ pierwszy dostêpny log
         return availableLogs[0];
     }
 }

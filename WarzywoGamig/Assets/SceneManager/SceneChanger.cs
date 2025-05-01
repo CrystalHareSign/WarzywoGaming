@@ -75,7 +75,7 @@ public class SceneChanger : MonoBehaviour
             // Wyœwietlenie logu w konsoli monitora
             if (cameraToMonitor != null)
             {
-                cameraToMonitor.ShowConsoleMessage("Próba zmiany sceny...",3, 0.5f, "#00E700");
+                cameraToMonitor.ShowConsoleMessage("Próba zmiany sceny...","#00E700");
             }
 
             SceneManager.LoadScene(sceneName);
@@ -87,7 +87,7 @@ public class SceneChanger : MonoBehaviour
             // Wyœwietlenie logu w konsoli monitora
             if (cameraToMonitor != null && cameraToMonitor.canInteract == true)
             {
-                cameraToMonitor.ShowConsoleMessage("Ju¿ jesteœ w tej scenie...",3, 0.5f, "#00E700");
+                cameraToMonitor.ShowConsoleMessage("Ju¿ jesteœ w tej scenie...","#00E700");
             }
         }
     }
