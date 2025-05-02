@@ -34,6 +34,7 @@ public class CameraToMonitor : MonoBehaviour
     [Header("UI – Konsola monitora")]
     public TextMeshProUGUI consoleTextDisplay;
     public TMP_InputField inputField; // Pole tekstowe dla wpisywania komend
+    public TextMeshProUGUI modelText; // Dodatkowy tekst, który ma zmieniæ treœæ na losowe znaki
     private Queue<ConsoleMessage> messageQueue = new Queue<ConsoleMessage>();
     public int maxMessages = 5;
 
@@ -73,6 +74,11 @@ public class CameraToMonitor : MonoBehaviour
 
     private void Start()
     {
+        if (modelText != null)
+        {
+            modelText.text = "Siegdu v2.7_4_1998";
+        }
+
         if (randomPanel != null)
         {
             randomPanel.SetActive(false);
@@ -129,6 +135,16 @@ public class CameraToMonitor : MonoBehaviour
     {
         // Tworzymy pusty s³ownik komend
         commandDictionary = new Dictionary<string, CommandData>();
+
+        // Dodajemy komendê Hack/hakuj w zale¿noœci od jêzyka
+        string localizedHack = LanguageManager.Instance.currentLanguage switch
+        {
+            LanguageManager.Language.Polski => "hakuj", // Polski
+            LanguageManager.Language.Deutsch => "hacken", // Niemiecki
+            _ => "hack" // Angielski
+        };
+
+        commandDictionary[localizedHack] = new CommandData(() => DisplayRandomPanels(), false);
 
         // Dodanie komendy wyjœcia zale¿nej od jêzyka
         string localizedExit = LanguageManager.Instance.currentLanguage switch
@@ -276,11 +292,13 @@ public class CameraToMonitor : MonoBehaviour
         if (sharedHelpLogs.Count == 0)
         {
             // Pauza przed wyœwietleniem wiadomoœci
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.2f);
             ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("terminalExit")}", "#00E700");
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.2f);
+            ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("hack")}", "#00E700");
+            yield return new WaitForSeconds(0.2f);
             ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("locations")}", "#00E700");
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.2f);
             ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("command_home_desc")}", "#00E700");
             ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("command_main_desc")}", "#00E700");
 
@@ -599,12 +617,16 @@ public class CameraToMonitor : MonoBehaviour
                 ClearMonitorConsole(); // Wyczyœæ logi
                 InitializeLocalizedCommands(); // Inicjalizacja komend po odblokowaniu
                 StartLogSequence(); // Rozpocznij sekwencjê od nowa
+
+                if (modelText != null)
+                {
+                    modelText.text = "Siegdu v2.7_4_1998";
+
+                }
             }
             else
             {
                 ShowConsoleMessage(">>> Incorrect password. Try again.", "#FF0000");
-
-                DisplayRandomPanels(); // Wyœwietl panel losowych znaków
             }
 
             inputField.text = ""; // Wyczyœæ pole tekstowe
@@ -689,6 +711,12 @@ public class CameraToMonitor : MonoBehaviour
 
     private void DisplayRandomPanels()
     {
+        // Ukryj consoleTextDisplay
+        if (consoleTextDisplay != null)
+        {
+            consoleTextDisplay.gameObject.SetActive(false);
+        }
+
         // Aktywuj pierwszy panel
         randomPanel.SetActive(true);
         StartCoroutine(TypeRandomCharacters(randomPanelText, numberOfRandomCharactersPanel1));
@@ -703,7 +731,11 @@ public class CameraToMonitor : MonoBehaviour
 
         // Aktywuj drugi panel
         randomPanel2.SetActive(true);
+
+        // Wyœwietlaj losowe znaki na drugim panelu
         StartCoroutine(TypeRandomCharacters(randomPanel2Text, numberOfRandomCharactersPanel2));
+
+        ModelNameRandomSymbols();
 
         // Po zakoñczeniu animacji drugiego panelu, odlicz czas trwania obu paneli
         yield return new WaitForSeconds(randomPanelDuration);
@@ -717,13 +749,16 @@ public class CameraToMonitor : MonoBehaviour
         {
             inputField.ActivateInputField();
         }
+
+        // Przywróæ consoleTextDisplay
+        if (consoleTextDisplay != null)
+        {
+            consoleTextDisplay.gameObject.SetActive(true);
+        }
     }
 
     private IEnumerator TypeRandomCharacters(TextMeshProUGUI textComponent, int numberOfCharacters)
     {
-        // Wyczyœæ tekst na pocz¹tku
-        textComponent.text = "";
-
         // Generuj losowe znaki
         string randomText = GenerateRandomText(numberOfCharacters);
 
@@ -742,11 +777,20 @@ public class CameraToMonitor : MonoBehaviour
 
         for (int i = 0; i < length; i++)
         {
-            char randomChar = chars[UnityEngine.Random.Range(0, chars.Length)]; // U¿ycie UnityEngine.Random
+            char randomChar = chars[UnityEngine.Random.Range(0, chars.Length)];
             sb.Append(randomChar);
         }
 
         return sb.ToString();
+    }
+
+    private void ModelNameRandomSymbols()
+    {
+        if (modelText != null)
+        {
+            modelText.text = "******+^!./_%_"+ generatedPassword+"";
+                           //"Siegdu v2.7_4_1998";
+        }
     }
 
     private void StartLogSequence()

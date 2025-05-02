@@ -61,6 +61,7 @@ public class TerminalTranslations
     public string terminalSecured;
     public string terminalExit;
     public string locations;
+    public string hack;
 }
 
 public class LanguageManager : MonoBehaviour
