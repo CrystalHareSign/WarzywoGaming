@@ -114,7 +114,7 @@ public class CameraToMonitor : MonoBehaviour
         // Dodanie komend do s≥ownika
         commandDictionary[localizedHome] = new CommandData(() => ExitTerminalAndChangeScene("Home", 3f), true);
         commandDictionary[localizedMain] = new CommandData(() => ExitTerminalAndChangeScene("Main", 3f), true);
-        commandDictionary[localizedHelp] = new CommandData(DisplayHelpLogs, false);
+        commandDictionary[localizedHelp] = new CommandData(() => StartCoroutine(DisplayHelpLogs()), false);
     }
 
     public void HandleLanguageChanged()
@@ -202,7 +202,7 @@ public class CameraToMonitor : MonoBehaviour
         CanUseMenu = true;
     }
 
-    private void DisplayHelpLogs()
+    private IEnumerator DisplayHelpLogs()
     {
         if (logSequenceCoroutine != null)
         {
@@ -212,20 +212,24 @@ public class CameraToMonitor : MonoBehaviour
         if (LanguageManager.Instance == null)
         {
             Debug.LogWarning("LanguageManager is not initialized.");
-            return;
+            yield break;
         }
 
         if (sharedHelpLogs.Count == 0)
         {
+            // Pauza przed wyúwietleniem wiadomoúci
+            yield return new WaitForSeconds(1f);
+
             ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("command_home_desc")}", "#00E700");
             ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("command_main_desc")}", "#00E700");
-            return;
+            yield break;
         }
 
         // Skopiuj, øeby oryginalna lista by≥a bezpieczna
         List<LogEntry> copiedLogs = new List<LogEntry>(sharedHelpLogs);
         logSequenceCoroutine = StartCoroutine(DisplayLogsSequence(copiedLogs));
     }
+
 
     public static void AddHelpLog(string[] messages, float delayAfterPrevious = 0.5f)
     {
@@ -553,7 +557,7 @@ public class CameraToMonitor : MonoBehaviour
         // Jeúli mamy oczekujπce polecenie (potwierdzenie), sprawdzamy odpowiedü
         if (!string.IsNullOrEmpty(pendingCommand))
         {
-            Debug.Log($"[HandleCommandInput] Oczekujπce polecenie: {pendingCommand}");
+            //Debug.Log($"[HandleCommandInput] Oczekujπce polecenie: {pendingCommand}");
 
             string confirmYesKey = LanguageManager.Instance.GetLocalizedMessage("confirmYesKey").ToLower();
             string confirmNoKey = LanguageManager.Instance.GetLocalizedMessage("confirmNoKey").ToLower();

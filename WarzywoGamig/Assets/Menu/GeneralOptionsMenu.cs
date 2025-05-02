@@ -157,7 +157,6 @@ public class GeneralOptionsMenu : MonoBehaviour
 
     public void HoverButtonSound()
     {
-        Debug.Log("dzia³a przucisk");
         foreach (var playSoundOnObject in playSoundObjects)
         {
             if (playSoundOnObject == null) continue;
