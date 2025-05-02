@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using TMPro;
 using UnityEngine;
 
@@ -14,6 +15,9 @@ public class CameraToMonitor : MonoBehaviour
     public TreasureRefiner treasureRefiner;
     public GameObject crossHair;
     public GameObject monitorCanvas;
+    public GameObject monitorMainPanel;
+    public GameObject monitorBlackPanel;
+    public GameObject monitorRiddlePanel;
 
     public Transform player;
     public Transform finalCameraRotation;
@@ -36,6 +40,19 @@ public class CameraToMonitor : MonoBehaviour
     public float letterDisplayDelay = 0.05f; // OpóŸnienie miêdzy literami w sekundach
     public float cursorBlinkInterval = 0.5f;
 
+    [Header("Panele losowych znaków")]
+    public GameObject randomPanel; // Pierwszy panel
+    public TextMeshProUGUI randomPanelText; // Tekst na pierwszym panelu
+    public int numberOfRandomCharactersPanel1 = 50; // Liczba znaków na pierwszym panelu
+
+    public GameObject randomPanel2; // Drugi panel
+    public TextMeshProUGUI randomPanel2Text; // Tekst na drugim panelu
+    public int numberOfRandomCharactersPanel2 = 100; // Liczba znaków na drugim panelu
+
+    public float panelDelay = 2f; // OpóŸnienie przed wyœwietleniem drugiego panelu
+    public float randomPanelDuration = 5f; // Czas trwania obu paneli (liczony od pojawienia siê drugiego panelu)
+    public float typingSpeed = 0.05f; // Prêdkoœæ "pisania" tekstu
+
     [Header("Logi w ró¿nych jêzykach")]
     public List<LogEntry> logEntriesEnglish = new List<LogEntry>();
     public List<LogEntry> logEntriesPolish = new List<LogEntry>();
@@ -56,6 +73,16 @@ public class CameraToMonitor : MonoBehaviour
 
     private void Start()
     {
+        if (randomPanel != null)
+        {
+            randomPanel.SetActive(false);
+        }
+
+        if (randomPanel2 != null)
+        {
+            randomPanel2.SetActive(false);
+        }
+
         if (monitorCanvas != null)
         {
             monitorCanvas.SetActive(false);
@@ -576,6 +603,8 @@ public class CameraToMonitor : MonoBehaviour
             else
             {
                 ShowConsoleMessage(">>> Incorrect password. Try again.", "#FF0000");
+
+                DisplayRandomPanels(); // Wyœwietl panel losowych znaków
             }
 
             inputField.text = ""; // Wyczyœæ pole tekstowe
@@ -656,6 +685,68 @@ public class CameraToMonitor : MonoBehaviour
             inputField.text = "";
             inputField.ActivateInputField();
         }
+    }
+
+    private void DisplayRandomPanels()
+    {
+        // Aktywuj pierwszy panel
+        randomPanel.SetActive(true);
+        StartCoroutine(TypeRandomCharacters(randomPanelText, numberOfRandomCharactersPanel1));
+
+        // Wyœwietl drugi panel po okreœlonym opóŸnieniu
+        StartCoroutine(ShowSecondPanelAfterDelay());
+    }
+
+    private IEnumerator ShowSecondPanelAfterDelay()
+    {
+        yield return new WaitForSeconds(panelDelay);
+
+        // Aktywuj drugi panel
+        randomPanel2.SetActive(true);
+        StartCoroutine(TypeRandomCharacters(randomPanel2Text, numberOfRandomCharactersPanel2));
+
+        // Po zakoñczeniu animacji drugiego panelu, odlicz czas trwania obu paneli
+        yield return new WaitForSeconds(randomPanelDuration);
+
+        // Ukryj oba panele
+        randomPanel.SetActive(false);
+        randomPanel2.SetActive(false);
+
+        // Aktywuj pole tekstowe po zamkniêciu paneli
+        if (inputField != null)
+        {
+            inputField.ActivateInputField();
+        }
+    }
+
+    private IEnumerator TypeRandomCharacters(TextMeshProUGUI textComponent, int numberOfCharacters)
+    {
+        // Wyczyœæ tekst na pocz¹tku
+        textComponent.text = "";
+
+        // Generuj losowe znaki
+        string randomText = GenerateRandomText(numberOfCharacters);
+
+        // Wyœwietlaj znaki jeden po drugim
+        foreach (char c in randomText)
+        {
+            textComponent.text += c;
+            yield return new WaitForSeconds(typingSpeed); // Odczekaj przed dodaniem kolejnego znaku
+        }
+    }
+
+    private string GenerateRandomText(int length)
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < length; i++)
+        {
+            char randomChar = chars[UnityEngine.Random.Range(0, chars.Length)]; // U¿ycie UnityEngine.Random
+            sb.Append(randomChar);
+        }
+
+        return sb.ToString();
     }
 
     private void StartLogSequence()
