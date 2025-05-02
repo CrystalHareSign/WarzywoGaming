@@ -103,10 +103,20 @@ public class CameraToMonitor : MonoBehaviour
         // Tworzymy pusty s³ownik komend
         commandDictionary = new Dictionary<string, CommandData>();
 
-        // Jeœli terminal jest zabezpieczony, nie dodajemy komend
+        // Dodanie komendy wyjœcia zale¿nej od jêzyka
+        string localizedExit = LanguageManager.Instance.currentLanguage switch
+        {
+            LanguageManager.Language.Polski => "zamknij", // Polski
+            LanguageManager.Language.Deutsch => "beenden", // Niemiecki
+            _ => "exit" // Angielski
+        };
+
+        commandDictionary[localizedExit] = new CommandData(() => StartCoroutine(MoveCameraBackToOriginalPosition()), false);
+
+        // Jeœli terminal jest zabezpieczony, nie dodajemy innych komend
         if (securedMonitor)
         {
-            Debug.Log("Terminal jest zabezpieczony. Komendy s¹ zablokowane.");
+            //Debug.Log("Terminal jest zabezpieczony. Komendy ograniczone.");
             return;
         }
 
@@ -114,21 +124,21 @@ public class CameraToMonitor : MonoBehaviour
         string localizedHome = LanguageManager.Instance.currentLanguage switch
         {
             LanguageManager.Language.Polski => "dom", // Polski
-            LanguageManager.Language.Deutsch => "", // Niemiecki
+            LanguageManager.Language.Deutsch => "haus", // Niemiecki
             _ => "home" // Angielski
         };
 
         string localizedMain = LanguageManager.Instance.currentLanguage switch
         {
             LanguageManager.Language.Polski => "trasa", // Polski
-            LanguageManager.Language.Deutsch => "", // Niemiecki
+            LanguageManager.Language.Deutsch => "route", // Niemiecki
             _ => "route" // Angielski
         };
 
         string localizedHelp = LanguageManager.Instance.currentLanguage switch
         {
             LanguageManager.Language.Polski => "pomoc", // Polski
-            LanguageManager.Language.Deutsch => "", // Niemiecki
+            LanguageManager.Language.Deutsch => "hilfe", // Niemiecki
             _ => "help" // Angielski
         };
 
@@ -239,10 +249,14 @@ public class CameraToMonitor : MonoBehaviour
         if (sharedHelpLogs.Count == 0)
         {
             // Pauza przed wyœwietleniem wiadomoœci
-            yield return new WaitForSeconds(1f);
-
+            yield return new WaitForSeconds(0.5f);
+            ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("terminalExit")}", "#00E700");
+            yield return new WaitForSeconds(0.5f);
+            ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("locations")}", "#00E700");
+            yield return new WaitForSeconds(0.5f);
             ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("command_home_desc")}", "#00E700");
             ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("command_main_desc")}", "#00E700");
+
             yield break;
         }
 
@@ -274,7 +288,7 @@ public class CameraToMonitor : MonoBehaviour
 
     void Update()
     {
-        if ((Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.Escape)) && isInteracting && !isCameraMoving)
+        if ((Input.GetKeyDown(KeyCode.Escape) && isInteracting && !isCameraMoving))
         {
             StartCoroutine(MoveCameraBackToOriginalPosition());
         }
@@ -540,11 +554,23 @@ public class CameraToMonitor : MonoBehaviour
         // Jeœli terminal jest zabezpieczony, sprawdŸ has³o
         if (securedMonitor)
         {
+
+            // Obs³uga komendy wyjœcia
+            if (commandDictionary.ContainsKey(command))
+            {
+                var data = commandDictionary[command];
+                data.command.Invoke(); // Wywo³anie komendy wyjœcia
+                inputField.text = "";  // Wyczyœæ pole tekstowe
+                inputField.ActivateInputField(); // Ponownie aktywuj pole tekstowe
+                return; // Zakoñcz dalsze przetwarzanie
+            }
+
             if (command == generatedPassword) // Sprawdzenie poprawnoœci has³a
             {
                 ShowConsoleMessage(">>> Password correct. Terminal unlocked.", "#00E700");
                 securedMonitor = false; // Odblokowanie terminala
                 ClearMonitorConsole(); // Wyczyœæ logi
+                InitializeLocalizedCommands(); // Inicjalizacja komend po odblokowaniu
                 StartLogSequence(); // Rozpocznij sekwencjê od nowa
             }
             else
@@ -634,7 +660,10 @@ public class CameraToMonitor : MonoBehaviour
 
     private void StartLogSequence()
     {
-
+        if (inputField != null)
+        {
+            inputField.gameObject.SetActive(false);
+        }
 
         canInteract = false;
         List<LogEntry> availableLogs = new List<LogEntry>(logEntries);

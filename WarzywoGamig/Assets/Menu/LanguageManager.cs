@@ -59,6 +59,8 @@ public class TerminalTranslations
     public string command_main_desc;
     public string command_help_key;
     public string terminalSecured;
+    public string terminalExit;
+    public string locations;
 }
 
 public class LanguageManager : MonoBehaviour
