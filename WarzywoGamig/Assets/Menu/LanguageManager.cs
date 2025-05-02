@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 
 [System.Serializable]
 public class UITranslations
@@ -7,17 +8,20 @@ public class UITranslations
     public string resume;
     public string options;
     public string quit;
+
     [Header("OptionsMenu")]
     public string generalSettings;
     public string soundSettings;
     public string visualSettings;
     public string back;
+
     [Header("GeneralMenu")]
     public string apply1;
     public string cancel1;
     public string back1;
     public string reset1;
     public string language;
+
     [Header("SoundMenu")]
     public string apply2;
     public string cancel2;
@@ -26,6 +30,7 @@ public class UITranslations
     public string music;
     public string sfx;
     public string ambient;
+
     [Header("VisualMenu")]
     public string apply3;
     public string cancel3;
@@ -33,6 +38,26 @@ public class UITranslations
     public string reset3;
     public string resolution;
     public string fullscreen;
+}
+
+[System.Serializable]
+public class TerminalTranslations
+{
+    public string initializingTerminal; // ">>> Uruchamianie terminalu..."
+    public string alreadyInScene;
+    public string refiningBlocked;
+    public string changingScene;
+    public string terminalReady;
+    public string commandCancelled;
+    public string unknownCommand;
+    public string confirmCommand;
+    public string confirmYesKey;
+    public string confirmNoKey;
+    public string executingCommand;
+    public string invalidResponse;
+    public string command_home_desc;
+    public string command_main_desc;
+    public string command_help_key;
 }
 
 public class LanguageManager : MonoBehaviour
@@ -47,19 +72,24 @@ public class LanguageManager : MonoBehaviour
     public UITranslations polishTexts;
     public UITranslations germanTexts;
 
+    [Header("T³umaczenia terminala")]
+    public TerminalTranslations englishTerminal;
+    public TerminalTranslations polishTerminal;
+    public TerminalTranslations germanTerminal;
 
-    public UITranslations CurrentUITexts
+    public UITranslations CurrentUITexts => currentLanguage switch
     {
-        get
-        {
-            return currentLanguage switch
-            {
-                Language.Polski => polishTexts,
-                Language.Deutsch => germanTexts,
-                _ => englishTexts,
-            };
-        }
-    }
+        Language.Polski => polishTexts,
+        Language.Deutsch => germanTexts,
+        _ => englishTexts
+    };
+
+    public TerminalTranslations CurrentTerminalTexts => currentLanguage switch
+    {
+        Language.Polski => polishTerminal,
+        Language.Deutsch => germanTerminal,
+        _ => englishTerminal
+    };
 
     public delegate void LanguageChanged();
     public event LanguageChanged OnLanguageChanged;
@@ -85,9 +115,25 @@ public class LanguageManager : MonoBehaviour
         OnLanguageChanged?.Invoke();
 
         // Aktualizacja HoverMessages w scenie
-        foreach (var hover in Object .FindObjectsByType<HoverMessage>(FindObjectsSortMode.None))
+        foreach (var hover in UnityEngine.Object.FindObjectsByType<HoverMessage>(FindObjectsSortMode.None))
         {
             hover.UpdateLocalizedMessage();
         }
+    }
+
+    public string GetLocalizedMessage(string key)
+    {
+        var terminal = CurrentTerminalTexts;
+
+        // U¿ycie refleksji do dynamicznego mapowania kluczy na pola
+        var field = typeof(TerminalTranslations).GetField(key, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        if (field != null)
+        {
+            return field.GetValue(terminal)?.ToString() ?? $"[[UNKNOWN KEY: {key}]]";
+        }
+
+        // Loguj brakuj¹cy klucz (pomocne w debugowaniu)
+        //Debug.LogWarning($"[GetLocalizedMessage] Key '{key}' not found in TerminalTranslations.");
+        return $"{key}";
     }
 }

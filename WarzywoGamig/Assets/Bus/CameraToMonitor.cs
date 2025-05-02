@@ -35,6 +35,11 @@ public class CameraToMonitor : MonoBehaviour
     public float letterDisplayDelay = 0.05f; // OpóŸnienie miêdzy literami w sekundach
     public float cursorBlinkInterval = 0.5f;
 
+    [Header("Logi w ró¿nych jêzykach")]
+    public List<LogEntry> logEntriesEnglish = new List<LogEntry>();
+    public List<LogEntry> logEntriesPolish = new List<LogEntry>();
+    public List<LogEntry> logEntriesGerman = new List<LogEntry>();
+
     public List<LogEntry> logEntries;
     public static List<LogEntry> sharedHelpLogs = new List<LogEntry>();
 
@@ -64,21 +69,84 @@ public class CameraToMonitor : MonoBehaviour
             inputField.characterLimit = 30;//Ogranicz liczbê znaków do 20 (zmieñ na wartoœæ, któr¹ chcesz)
         }
 
-        commandDictionary = new Dictionary<string, CommandData>
-
-        {
-            { "main", new CommandData(() => ExitTerminalAndChangeScene("Main", 3f), true) },
-            { "home", new CommandData(() => ExitTerminalAndChangeScene("Home", 3f), true) },
-            { "help", new CommandData(DisplayHelpLogs, false) },
-
-        };
-
         // Jeœli trzeba, przypisz referencjê do obiektu ButtonMethods (jeœli jeszcze nie zosta³o przypisane)
         if (sceneChanger == null)
         {
             sceneChanger = UnityEngine.Object.FindAnyObjectByType<SceneChanger>();
         }
 
+        // Subskrybuj zdarzenie zmiany jêzyka
+        LanguageManager.Instance.OnLanguageChanged += HandleLanguageChanged;
+
+        // Inicjalizuj komendy dla bie¿¹cego jêzyka
+        InitializeLocalizedCommands();
+
+        UpdateLogEntriesLanguage(); // Ustaw pocz¹tkowy jêzyk
+    }
+
+    private void InitializeLocalizedCommands()
+    {
+        // Tworzymy pusty s³ownik komend
+        commandDictionary = new Dictionary<string, CommandData>();
+
+        // Ustawienie komend zale¿nie od jêzyka
+        string localizedHome = LanguageManager.Instance.currentLanguage switch
+        {
+            LanguageManager.Language.Polski => "dom", // Polski
+            LanguageManager.Language.Deutsch => "", // Niemiecki
+            _ => "home" // Angielski
+        };
+
+        string localizedMain = LanguageManager.Instance.currentLanguage switch
+        {
+            LanguageManager.Language.Polski => "trasa", // Polski
+            LanguageManager.Language.Deutsch => "", // Niemiecki
+            _ => "route" // Angielski
+        };
+
+        string localizedHelp = LanguageManager.Instance.currentLanguage switch
+        {
+            LanguageManager.Language.Polski => "pomoc", // Polski
+            LanguageManager.Language.Deutsch => "", // Niemiecki
+            _ => "help" // Angielski
+        };
+
+        // Dodanie komend do s³ownika
+        commandDictionary[localizedHome] = new CommandData(() => ExitTerminalAndChangeScene("Home", 3f), true);
+        commandDictionary[localizedMain] = new CommandData(() => ExitTerminalAndChangeScene("Main", 3f), true);
+        commandDictionary[localizedHelp] = new CommandData(DisplayHelpLogs, false);
+    }
+
+    public void HandleLanguageChanged()
+    {
+        // Ponowna inicjalizacja komend po zmianie jêzyka
+        InitializeLocalizedCommands();
+    }
+
+    private void OnDestroy()
+    {
+        // Usuñ subskrypcjê zdarzenia, aby unikn¹æ b³êdów
+        if (LanguageManager.Instance != null)
+        {
+            LanguageManager.Instance.OnLanguageChanged -= HandleLanguageChanged;
+        }
+    }
+
+    // Dynamiczne przypisanie logów wg jêzyka
+    private void UpdateLogEntriesLanguage()
+    {
+        switch (LanguageManager.Instance.currentLanguage)
+        {
+            case LanguageManager.Language.Polski:
+                logEntries = new List<LogEntry>(logEntriesPolish);
+                break;
+            case LanguageManager.Language.Deutsch:
+                logEntries = new List<LogEntry>(logEntriesGerman);
+                break;
+            default:
+                logEntries = new List<LogEntry>(logEntriesEnglish);
+                break;
+        }
     }
 
     public void ExitTerminalAndChangeScene(string targetSceneName, float delaySeconds = 3f)
@@ -87,7 +155,7 @@ public class CameraToMonitor : MonoBehaviour
 
         if (currentScene == targetSceneName)
         {
-            ShowConsoleMessage($">>> Ju¿ jesteœ w scenie \"{targetSceneName}\".", "#FF0000");
+            ShowConsoleMessage(string.Format(LanguageManager.Instance.GetLocalizedMessage("alreadyInScene"), targetSceneName), "#FF0000");
             return; // Przerywamy – nie wychodzimy z terminala ani nie zmieniamy sceny
         }
 
@@ -103,7 +171,7 @@ public class CameraToMonitor : MonoBehaviour
         if (treasureRefiner != null && treasureRefiner.isSpawning)
         {
             Debug.Log("Rafinacja w toku. Nie mo¿na zmieniæ sceny.");
-            ShowConsoleMessage(">>> Rafinacja w toku. Nie mo¿na zmieniæ sceny.", "#FF0000");
+            ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("refiningBlocked"), "#FF0000");
             yield break; // Zatrzymaj korutynê, jeœli rafinacja w toku
         }
 
@@ -115,7 +183,7 @@ public class CameraToMonitor : MonoBehaviour
         // Zablokuj mo¿liwoœæ interakcji
         DisablePlayerMovementAndMouseLook();
 
-        ShowConsoleMessage($">>> Zmieniam scenê na {sceneName} za {delay} sekund...", "#FFD200");
+        ShowConsoleMessage(string.Format(LanguageManager.Instance.GetLocalizedMessage("changingScene"), sceneName, delay), "#FFD200");
 
         yield return new WaitForSeconds(delay);
 
@@ -141,18 +209,21 @@ public class CameraToMonitor : MonoBehaviour
             StopCoroutine(logSequenceCoroutine);
         }
 
+        if (LanguageManager.Instance == null)
+        {
+            Debug.LogWarning("LanguageManager is not initialized.");
+            return;
+        }
+
         if (sharedHelpLogs.Count == 0)
         {
-
-            ShowConsoleMessage(">>> Home - Dom", "#00E700");
-            ShowConsoleMessage(">>> Main - Podró¿", "#00E700");
-
+            ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("command_home_desc")}", "#00E700");
+            ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("command_main_desc")}", "#00E700");
             return;
         }
 
         // Skopiuj, ¿eby oryginalna lista by³a bezpieczna
         List<LogEntry> copiedLogs = new List<LogEntry>(sharedHelpLogs);
-
         logSequenceCoroutine = StartCoroutine(DisplayLogsSequence(copiedLogs));
     }
 
@@ -214,11 +285,13 @@ public class CameraToMonitor : MonoBehaviour
             originalCameraRotation = Camera.main.transform.rotation;
             StartCoroutine(MoveCameraToPosition());
             ClearMonitorConsole();
+            UpdateLogEntriesLanguage();
         }
     }
 
     IEnumerator MoveCameraToPosition()
     {
+        isTerminalInterrupted = false;
         CanUseMenu = false;
         isInteracting = true;
 
@@ -263,7 +336,7 @@ public class CameraToMonitor : MonoBehaviour
         //Cursor.lockState = CursorLockMode.None;
         //Cursor.visible = true;
 
-        ShowConsoleMessage(">>> Uruchamianie terminalu...", "#00E700");
+        ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("initializingTerminal")}", "#00E700");
 
         yield return new WaitForSeconds(1f);
 
@@ -350,9 +423,20 @@ public class CameraToMonitor : MonoBehaviour
         }
     }
 
-    public void ShowConsoleMessage(string rawMessage, string hexColor)
+    public void ShowConsoleMessage(string key, string hexColor)
     {
-        isTerminalInterrupted = false;
+        //Debug.Log($"[ShowConsoleMessage] Otrzymany klucz: {key}");
+
+        string translatedMessage = LanguageManager.Instance.GetLocalizedMessage(key);
+
+        if (translatedMessage.StartsWith("[[UNKNOWN KEY"))
+        {
+            Debug.Log($"[ShowConsoleMessage] Nieznany klucz: {key}");
+        }
+        else
+        {
+            //Debug.Log($"[ShowConsoleMessage] Przet³umaczona wiadomoœæ: {translatedMessage}");
+        }
 
         Color color = Color.white;
         if (ColorUtility.TryParseHtmlString(hexColor, out Color parsedColor))
@@ -360,31 +444,46 @@ public class CameraToMonitor : MonoBehaviour
             color = parsedColor;
         }
 
-        StartCoroutine(TypeMessageCoroutine(rawMessage, color));
+        // Wyœwietl wiadomoœæ
+        StartCoroutine(TypeMessageCoroutine(translatedMessage, color));
     }
 
-    private IEnumerator TypeMessageCoroutine(string fullMessage, Color color)
+    private IEnumerator TypeMessageCoroutine(string messageKey, Color color)
     {
+        // Pobranie wiadomoœci z LanguageManager na podstawie messageKey
+        string fullMessage = LanguageManager.Instance.GetLocalizedMessage(messageKey);
+
         string currentLine = "";
+
+        // Iteracja po wszystkich znakach wiadomoœci
         for (int i = 0; i < fullMessage.Length; i++)
         {
+            // Sprawdzamy, czy terminal zosta³ przerwany
             if (isTerminalInterrupted)
-                yield break; // Przerwij wyœwietlanie wiadomoœci jeœli terminal zosta³ zamkniêty
+                yield break; // Przerwij wyœwietlanie, je¿eli terminal zosta³ przerwany
 
-            currentLine += fullMessage[i];
-            UpdateConsolePreview(currentLine, color);
+            currentLine += fullMessage[i]; // Dodajemy nowy znak do linii
+            UpdateConsolePreview(currentLine, color); // Aktualizujemy podgl¹d konsoli
+
+            // OpóŸnienie pomiêdzy literami
             yield return new WaitForSeconds(letterDisplayDelay);
         }
 
+        // Je¿eli terminal zosta³ przerwany, przerywamy dalsze dzia³anie
         if (isTerminalInterrupted)
             yield break;
 
+        // Tworzymy obiekt finalnej wiadomoœci
         var finalMessage = new ConsoleMessage(fullMessage, Time.time, color);
+
+        // Dodajemy wiadomoœæ do kolejki
         messageQueue.Enqueue(finalMessage);
 
+        // Je¿eli liczba wiadomoœci przekroczy maksymaln¹ dozwolon¹, usuwamy najstarsz¹
         while (messageQueue.Count > maxMessages)
             messageQueue.Dequeue();
 
+        // Aktualizujemy tekst na konsoli
         UpdateConsoleText();
     }
 
@@ -437,18 +536,44 @@ public class CameraToMonitor : MonoBehaviour
     {
         command = command.ToLower().Trim();
 
+        //Debug.Log($"[HandleCommandInput] Otrzymana komenda: {command}");
+
+        // Sprawdzamy, czy gracz jest ju¿ w tej samej scenie
+        string currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.ToLower();
+
+        if (command == currentScene)
+        {
+            // Gracz jest ju¿ w tej samej scenie, wyœwietlamy komunikat, ale nie wykonujemy komendy
+            ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("alreadyInScene"), "#FFD200");
+            inputField.text = "";
+            inputField.ActivateInputField();
+            return; // Koñczymy funkcjê, bez dalszego przetwarzania
+        }
+
+        // Jeœli mamy oczekuj¹ce polecenie (potwierdzenie), sprawdzamy odpowiedŸ
         if (!string.IsNullOrEmpty(pendingCommand))
         {
-            if (command == "t")
+            Debug.Log($"[HandleCommandInput] Oczekuj¹ce polecenie: {pendingCommand}");
+
+            string confirmYesKey = LanguageManager.Instance.GetLocalizedMessage("confirmYesKey").ToLower();
+            string confirmNoKey = LanguageManager.Instance.GetLocalizedMessage("confirmNoKey").ToLower();
+
+            // Sprawdzamy odpowiedŸ
+            if (command == confirmYesKey)
             {
-                ShowConsoleMessage($">>> Wykonujê: {pendingCommand}", "#00E700");
+                ShowConsoleMessage(string.Format(LanguageManager.Instance.GetLocalizedMessage("executingCommand"), pendingCommand), "#00E700");
                 commandDictionary[pendingCommand].command.Invoke();
+            }
+            else if (command == confirmNoKey)
+            {
+                ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("commandCancelled"), "#FF0000");
             }
             else
             {
-                ShowConsoleMessage(">>> Anulowano polecenie.", "#FF0000");
+                ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("invalidResponse"), "#FF0000");
             }
 
+            // Resetowanie oczekuj¹cej komendy
             pendingCommand = null;
             inputField.text = "";
             inputField.ActivateInputField();
@@ -457,28 +582,38 @@ public class CameraToMonitor : MonoBehaviour
 
         if (!string.IsNullOrEmpty(command))
         {
+            //Debug.Log($"[HandleCommandInput] Sprawdzanie komendy: {command}");
             ShowConsoleMessage($">>> {command}", "#FFFFFF");
 
             if (commandDictionary.ContainsKey(command))
             {
                 var data = commandDictionary[command];
 
-                // Sprawdzenie, czy gracz ju¿ jest w tej scenie
-                string currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-
-                if (data.requiresConfirmation && command != currentScene.ToLower())
+                if (data.requiresConfirmation)
                 {
-                    ShowConsoleMessage(">>> Czy jesteœ pewny? [T/N]", "#FFD200");
-                    pendingCommand = command;
+                    // Sprawdzamy, czy gracz próbuje przenieœæ siê do tej samej sceny
+                    if (command == currentScene)
+                    {
+                        // Jeœli gracz ju¿ jest w tej scenie, pomijamy potwierdzenie i nie wykonujemy komendy
+                        ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("alreadyInScene"), "#FFD200");
+                    }
+                    else
+                    {
+                        // Wyœwietlamy potwierdzenie, jeœli komenda wymaga potwierdzenia
+                        ShowConsoleMessage($"{LanguageManager.Instance.GetLocalizedMessage("confirmCommand")} [{LanguageManager.Instance.GetLocalizedMessage("confirmYesKey")}/{LanguageManager.Instance.GetLocalizedMessage("confirmNoKey")}]", "#FFD200");
+                        pendingCommand = command;
+                    }
                 }
                 else
                 {
+                    // Wykonujemy komendê, jeœli nie wymaga potwierdzenia
                     data.command.Invoke();
                 }
             }
             else
             {
-                ShowConsoleMessage(">>> polecenie nieznane. spróbuj ponownie", "#FF0000");
+                //Debug.Log($"[HandleCommandInput] Nieznana komenda: {command}");
+                ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("unknownCommand"), "#FF0000");
             }
 
             inputField.text = "";
@@ -486,15 +621,16 @@ public class CameraToMonitor : MonoBehaviour
         }
     }
 
-
     private void StartLogSequence()
     {
+
+
         canInteract = false;
         List<LogEntry> availableLogs = new List<LogEntry>(logEntries);
+
         if (logSequenceCoroutine != null)
-        {
-            StopCoroutine(logSequenceCoroutine); // zatrzymaj poprzedni¹ sekwencjê
-        }
+            StopCoroutine(logSequenceCoroutine);
+
         logSequenceCoroutine = StartCoroutine(DisplayLogsSequence(availableLogs));
     }
 
@@ -504,21 +640,14 @@ public class CameraToMonitor : MonoBehaviour
         {
             LogEntry logEntry = GetRandomLogWithProbability(availableLogs);
 
-            // Debugowanie: wypisanie d³ugoœci tablicy messages
-            //Debug.Log("D³ugoœæ tablicy messages: " + logEntry.messages.Length);
-
-            // Sprawdzamy, czy tablica 'messages' w logEntry nie jest pusta
             if (logEntry.messages.Length > 0)
             {
-                // Losujemy jeden z komunikatów w tablicy
-                int randomIndex = UnityEngine.Random.Range(0, logEntry.messages.Length); // Poprawne losowanie
-                //Debug.Log("Losowy indeks: " + randomIndex);  // Debugowanie: jaki indeks zosta³ wybrany
+                int randomIndex = UnityEngine.Random.Range(0, logEntry.messages.Length);
                 ShowConsoleMessage(logEntry.messages[randomIndex], "#00E700");
             }
             else
             {
-                // Jeœli tablica jest pusta, wyœwietlamy komunikat o b³êdzie
-                ShowConsoleMessage(">>> Brak wiadomoœci do wyœwietlenia.", "#FF0000");
+                ShowConsoleMessage(">>> No messages to display.", "#FF0000");
             }
 
             availableLogs.Remove(logEntry);
@@ -526,17 +655,32 @@ public class CameraToMonitor : MonoBehaviour
             yield return new WaitForSeconds(logEntry.delayAfterPrevious);
         }
 
-        ShowConsoleMessage(">>> Help - lista aktualnych komend.", "#00E700");
+        // Wyœwietl komunikaty koñcowe w odpowiednim jêzyku
+        switch (LanguageManager.Instance.currentLanguage)
+        {
+            case LanguageManager.Language.Polski:
+                ShowConsoleMessage(">>> Pomoc - lista dostêpnych komend.", "#00E700");
+                yield return new WaitForSeconds(1f);
+                ShowConsoleMessage(">>> Terminal gotowy.", "#FFD200");
+                break;
 
-        yield return new WaitForSeconds(1f);
+            case LanguageManager.Language.Deutsch:
+                ShowConsoleMessage(">>> Hilfe - verfügbare Befehle.", "#00E700");
+                yield return new WaitForSeconds(1f);
+                ShowConsoleMessage(">>> Terminal bereit.", "#FFD200");
+                break;
 
-        ShowConsoleMessage(">>> Terminal gotowy.", "#FFD200");
+            default:
+                ShowConsoleMessage(">>> Help - list of available commands.", "#00E700");
+                yield return new WaitForSeconds(1f);
+                ShowConsoleMessage(">>> Terminal ready.", "#FFD200");
+                break;
+        }
 
         yield return new WaitForSeconds(1f);
 
         canInteract = true;
 
-        // Aktywuj pole tekstowe do wpisywania komend
         if (inputField != null)
         {
             inputField.gameObject.SetActive(true);
