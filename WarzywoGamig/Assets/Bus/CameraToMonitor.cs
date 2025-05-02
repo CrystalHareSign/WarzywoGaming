@@ -36,6 +36,8 @@ public class CameraToMonitor : MonoBehaviour
     public float cursorBlinkInterval = 0.5f;
 
     public List<LogEntry> logEntries;
+    public static List<LogEntry> sharedHelpLogs = new List<LogEntry>();
+
     // S³ownik komend do metod
     private Dictionary<string, CommandData> commandDictionary;
 
@@ -67,6 +69,8 @@ public class CameraToMonitor : MonoBehaviour
         {
             { "main", new CommandData(() => ExitTerminalAndChangeScene("Main", 3f), true) },
             { "home", new CommandData(() => ExitTerminalAndChangeScene("Home", 3f), true) },
+            { "help", new CommandData(DisplayHelpLogs, false) },
+
         };
 
         // Jeœli trzeba, przypisz referencjê do obiektu ButtonMethods (jeœli jeszcze nie zosta³o przypisane)
@@ -129,6 +133,47 @@ public class CameraToMonitor : MonoBehaviour
         EnablePlayerMovementAndMouseLook();
         CanUseMenu = true;
     }
+
+    private void DisplayHelpLogs()
+    {
+        if (logSequenceCoroutine != null)
+        {
+            StopCoroutine(logSequenceCoroutine);
+        }
+
+        if (sharedHelpLogs.Count == 0)
+        {
+
+            ShowConsoleMessage(">>> Home - Dom", "#00E700");
+            ShowConsoleMessage(">>> Main - Podró¿", "#00E700");
+
+            return;
+        }
+
+        // Skopiuj, ¿eby oryginalna lista by³a bezpieczna
+        List<LogEntry> copiedLogs = new List<LogEntry>(sharedHelpLogs);
+
+        logSequenceCoroutine = StartCoroutine(DisplayLogsSequence(copiedLogs));
+    }
+
+    public static void AddHelpLog(string[] messages, float delayAfterPrevious = 0.5f)
+    {
+        sharedHelpLogs.Add(new LogEntry
+        {
+            messages = messages,
+            probability = 100f,
+            delayAfterPrevious = delayAfterPrevious
+        });
+    }
+
+    //void Start()              D O D A W A N I E
+    //{
+    //    CameraToMonitor.AddHelpLog(new string[]
+    //    {
+    //    ">>> Komenda 'refine' – rozpocznij rafinacjê skarbów.",
+    //    ">>> Komenda 'status' – sprawdŸ stan rafinacji."
+    //    });
+    //}
 
 
     void Update()
@@ -218,7 +263,7 @@ public class CameraToMonitor : MonoBehaviour
         //Cursor.lockState = CursorLockMode.None;
         //Cursor.visible = true;
 
-        ShowConsoleMessage(">>>Uruchamianie terminalu...", "#00E700");
+        ShowConsoleMessage(">>> Uruchamianie terminalu...", "#00E700");
 
         yield return new WaitForSeconds(1f);
 
@@ -480,6 +525,10 @@ public class CameraToMonitor : MonoBehaviour
 
             yield return new WaitForSeconds(logEntry.delayAfterPrevious);
         }
+
+        ShowConsoleMessage(">>> Help - lista aktualnych komend.", "#00E700");
+
+        yield return new WaitForSeconds(1f);
 
         ShowConsoleMessage(">>> Terminal gotowy.", "#FFD200");
 
