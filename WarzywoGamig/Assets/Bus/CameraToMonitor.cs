@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 
@@ -50,6 +51,9 @@ public class CameraToMonitor : MonoBehaviour
     private string pendingCommand = null;
     private bool isTerminalInterrupted = false;
 
+    public bool securedMonitor = false;
+    public string generatedPassword; // Wygenerowane has³o
+
     private void Start()
     {
         if (monitorCanvas != null)
@@ -75,6 +79,11 @@ public class CameraToMonitor : MonoBehaviour
             sceneChanger = UnityEngine.Object.FindAnyObjectByType<SceneChanger>();
         }
 
+        if (securedMonitor)
+        {
+            GeneratePassword(); // Generuj has³o przy starcie terminala
+        }
+
         // Subskrybuj zdarzenie zmiany jêzyka
         LanguageManager.Instance.OnLanguageChanged += HandleLanguageChanged;
 
@@ -83,11 +92,23 @@ public class CameraToMonitor : MonoBehaviour
 
         UpdateLogEntriesLanguage(); // Ustaw pocz¹tkowy jêzyk
     }
+    private void GeneratePassword()
+    {
+        const string digits = "0123456789";
+        generatedPassword = new string(Enumerable.Range(0, 4).Select(_ => digits[UnityEngine.Random.Range(0, digits.Length)]).ToArray());
+    }
 
     private void InitializeLocalizedCommands()
     {
         // Tworzymy pusty s³ownik komend
         commandDictionary = new Dictionary<string, CommandData>();
+
+        // Jeœli terminal jest zabezpieczony, nie dodajemy komend
+        if (securedMonitor)
+        {
+            Debug.Log("Terminal jest zabezpieczony. Komendy s¹ zablokowane.");
+            return;
+        }
 
         // Ustawienie komend zale¿nie od jêzyka
         string localizedHome = LanguageManager.Instance.currentLanguage switch
@@ -253,28 +274,6 @@ public class CameraToMonitor : MonoBehaviour
 
     void Update()
     {
-        //float distanceToInteraction = Vector3.Distance(player.position, finalCameraRotation.position);
-
-        //if (distanceToInteraction <= interactionRange)
-        //{
-        //    if (Input.GetKeyDown(KeyCode.E) && !isInteracting && !isCameraMoving)
-        //    {
-        //        originalCameraPosition = Camera.main.transform.position;
-        //        originalCameraRotation = Camera.main.transform.rotation;
-        //        StartCoroutine(MoveCameraToPosition());
-        //        ClearMonitorConsole();
-        //    }
-        //    else if ((Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.Escape)) && isInteracting && !isCameraMoving)
-        //    {
-        //        StartCoroutine(MoveCameraBackToOriginalPosition());
-        //    }
-        //}
-        //else if (isInteracting && !isCameraMoving)
-        //{
-        //    StartCoroutine(MoveCameraBackToOriginalPosition());
-        //}
-
-
         if ((Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.Escape)) && isInteracting && !isCameraMoving)
         {
             StartCoroutine(MoveCameraBackToOriginalPosition());
@@ -538,31 +537,46 @@ public class CameraToMonitor : MonoBehaviour
     }
     private void HandleCommandInput(string command)
     {
+        // Jeœli terminal jest zabezpieczony, sprawdŸ has³o
+        if (securedMonitor)
+        {
+            if (command == generatedPassword) // Sprawdzenie poprawnoœci has³a
+            {
+                ShowConsoleMessage(">>> Password correct. Terminal unlocked.", "#00E700");
+                securedMonitor = false; // Odblokowanie terminala
+                ClearMonitorConsole(); // Wyczyœæ logi
+                StartLogSequence(); // Rozpocznij sekwencjê od nowa
+            }
+            else
+            {
+                ShowConsoleMessage(">>> Incorrect password. Try again.", "#FF0000");
+            }
+
+            inputField.text = ""; // Wyczyœæ pole tekstowe
+            inputField.ActivateInputField(); // Ponownie aktywuj pole tekstowe
+            return; // Zakoñcz dalsze przetwarzanie
+        }
+
+        // Reszta funkcji HandleCommandInput pozostaje bez zmian
         command = command.ToLower().Trim();
 
         //Debug.Log($"[HandleCommandInput] Otrzymana komenda: {command}");
 
-        // Sprawdzamy, czy gracz jest ju¿ w tej samej scenie
         string currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.ToLower();
 
         if (command == currentScene)
         {
-            // Gracz jest ju¿ w tej samej scenie, wyœwietlamy komunikat, ale nie wykonujemy komendy
             ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("alreadyInScene"), "#FFD200");
             inputField.text = "";
             inputField.ActivateInputField();
-            return; // Koñczymy funkcjê, bez dalszego przetwarzania
+            return;
         }
 
-        // Jeœli mamy oczekuj¹ce polecenie (potwierdzenie), sprawdzamy odpowiedŸ
         if (!string.IsNullOrEmpty(pendingCommand))
         {
-            //Debug.Log($"[HandleCommandInput] Oczekuj¹ce polecenie: {pendingCommand}");
-
             string confirmYesKey = LanguageManager.Instance.GetLocalizedMessage("confirmYesKey").ToLower();
             string confirmNoKey = LanguageManager.Instance.GetLocalizedMessage("confirmNoKey").ToLower();
 
-            // Sprawdzamy odpowiedŸ
             if (command == confirmYesKey)
             {
                 ShowConsoleMessage(string.Format(LanguageManager.Instance.GetLocalizedMessage("executingCommand"), pendingCommand), "#00E700");
@@ -577,7 +591,6 @@ public class CameraToMonitor : MonoBehaviour
                 ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("invalidResponse"), "#FF0000");
             }
 
-            // Resetowanie oczekuj¹cej komendy
             pendingCommand = null;
             inputField.text = "";
             inputField.ActivateInputField();
@@ -586,7 +599,6 @@ public class CameraToMonitor : MonoBehaviour
 
         if (!string.IsNullOrEmpty(command))
         {
-            //Debug.Log($"[HandleCommandInput] Sprawdzanie komendy: {command}");
             ShowConsoleMessage($">>> {command}", "#FFFFFF");
 
             if (commandDictionary.ContainsKey(command))
@@ -595,28 +607,23 @@ public class CameraToMonitor : MonoBehaviour
 
                 if (data.requiresConfirmation)
                 {
-                    // Sprawdzamy, czy gracz próbuje przenieœæ siê do tej samej sceny
                     if (command == currentScene)
                     {
-                        // Jeœli gracz ju¿ jest w tej scenie, pomijamy potwierdzenie i nie wykonujemy komendy
                         ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("alreadyInScene"), "#FFD200");
                     }
                     else
                     {
-                        // Wyœwietlamy potwierdzenie, jeœli komenda wymaga potwierdzenia
                         ShowConsoleMessage($"{LanguageManager.Instance.GetLocalizedMessage("confirmCommand")} [{LanguageManager.Instance.GetLocalizedMessage("confirmYesKey")}/{LanguageManager.Instance.GetLocalizedMessage("confirmNoKey")}]", "#FFD200");
                         pendingCommand = command;
                     }
                 }
                 else
                 {
-                    // Wykonujemy komendê, jeœli nie wymaga potwierdzenia
                     data.command.Invoke();
                 }
             }
             else
             {
-                //Debug.Log($"[HandleCommandInput] Nieznana komenda: {command}");
                 ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("unknownCommand"), "#FF0000");
             }
 
@@ -665,19 +672,40 @@ public class CameraToMonitor : MonoBehaviour
             case LanguageManager.Language.Polski:
                 ShowConsoleMessage(">>> Pomoc - lista dostêpnych komend.", "#00E700");
                 yield return new WaitForSeconds(1f);
-                ShowConsoleMessage(">>> Terminal gotowy.", "#FFD200");
+                if (securedMonitor)
+                {
+                    ShowConsoleMessage(">>> Terminal gotowy. WprowadŸ swoje has³o.", "#FFD200");
+                }
+                else
+                {
+                    ShowConsoleMessage(">>> Terminal gotowy.", "#FFD200");
+                }
                 break;
 
             case LanguageManager.Language.Deutsch:
                 ShowConsoleMessage(">>> Hilfe - verfügbare Befehle.", "#00E700");
                 yield return new WaitForSeconds(1f);
-                ShowConsoleMessage(">>> Terminal bereit.", "#FFD200");
+                if (securedMonitor)
+                {
+                    ShowConsoleMessage(">>> Terminal bereit. Geben Sie Ihr Passwort ein.", "#FFD200");
+                }
+                else
+                {
+                    ShowConsoleMessage(">>> Terminal bereit.", "#FFD200");
+                }
                 break;
 
             default:
                 ShowConsoleMessage(">>> Help - list of available commands.", "#00E700");
                 yield return new WaitForSeconds(1f);
-                ShowConsoleMessage(">>> Terminal ready.", "#FFD200");
+                if (securedMonitor)
+                {
+                    ShowConsoleMessage(">>> Terminal ready. Enter your password.", "#FFD200");
+                }
+                else
+                {
+                    ShowConsoleMessage(">>> Terminal ready.", "#FFD200");
+                }
                 break;
         }
 
