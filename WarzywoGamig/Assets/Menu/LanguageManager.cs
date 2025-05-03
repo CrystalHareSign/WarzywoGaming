@@ -68,6 +68,9 @@ public class TerminalTranslations
     public string startText;
     public string correctPassword;
     public string incorrectPassword;
+    public string info;
+    public string infoHelp;
+    public string infoText;
 }
 
 public class LanguageManager : MonoBehaviour
@@ -115,7 +118,9 @@ public class LanguageManager : MonoBehaviour
             var monitors = FindObjectsByType<CameraToMonitor>(FindObjectsSortMode.None);
             foreach (var monitor in monitors)
             {
+                monitor.UpdateInfoText();
                 monitor.UpdateLocalizedText();
+  
             }
         }
         else
