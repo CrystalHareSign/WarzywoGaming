@@ -31,13 +31,18 @@ public class CameraToMonitor : MonoBehaviour
     private bool isCameraMoving = false;
     public static bool CanUseMenu = true; // Flaga, która kontroluje, czy menu jest dostêpne
 
-    [Header("Programming")]
+    [Header("Main monitor")]
 
     public bool mainMonitor = false;
-    public bool riddleMonitor = false;
 
+    [Header("Riddle monitor")]
+    public bool riddleMonitor = false;
     private bool securedMonitor = false;
     public string generatedPassword; // Wygenerowane has³o
+    public string monitorFunctionText_EN;
+    public string monitorFunctionText_PL;
+    public string monitorFunctionText_DE;
+    public string localizedFunctionText;
 
     [Header("UI – Konsola monitora")]
     public TextMeshProUGUI consoleTextDisplay;
@@ -149,6 +154,48 @@ public class CameraToMonitor : MonoBehaviour
         generatedPassword = new string(Enumerable.Range(0, 4).Select(_ => digits[UnityEngine.Random.Range(0, digits.Length)]).ToArray());
     }
 
+    void Awake()
+    {
+        UpdateLocalizedText(); // ustawia tekst zanim pojawi siê terminal
+    }
+
+    void OnEnable()
+    {
+        // Subskrybujemy zmianê jêzyka
+        if (LanguageManager.Instance != null)
+        {
+            LanguageManager.Instance.OnLanguageChanged += UpdateLocalizedText;
+        }
+    }
+
+    void OnDisable()
+    {
+        if (LanguageManager.Instance != null)
+        {
+            LanguageManager.Instance.OnLanguageChanged -= UpdateLocalizedText;
+        }
+    }
+
+    public void UpdateLocalizedText()
+    {
+        if (LanguageManager.Instance == null) return;
+
+        switch (LanguageManager.Instance.currentLanguage)
+        {
+            case LanguageManager.Language.Polski:
+                localizedFunctionText = monitorFunctionText_PL;
+                break;
+            case LanguageManager.Language.Deutsch:
+                localizedFunctionText = monitorFunctionText_DE;
+                break;
+            default:
+                localizedFunctionText = monitorFunctionText_EN;
+                break;
+        }
+
+        Debug.Log($"[{gameObject.name}] StartText: {localizedFunctionText}");
+    }
+
     private void InitializeLocalizedCommands()
     {
         // Tworzymy pusty s³ownik komend
@@ -200,7 +247,7 @@ public class CameraToMonitor : MonoBehaviour
             {
                 StartFunction();
                 ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("start")}", "#FFD200");
-                ShowConsoleMessage($"{LanguageManager.Instance.GetLocalizedMessage("startText")}", "#FFD200");
+                ShowConsoleMessage($"{LanguageManager.Instance.GetLocalizedMessage(localizedFunctionText)}", "#FFD200");
             }
 
             if (mainMonitor)
@@ -252,6 +299,8 @@ public class CameraToMonitor : MonoBehaviour
     {
         // Ponowna inicjalizacja komend po zmianie jêzyka
         InitializeLocalizedCommands();
+
+        UpdateLocalizedText();
     }
 
     private void OnDestroy()

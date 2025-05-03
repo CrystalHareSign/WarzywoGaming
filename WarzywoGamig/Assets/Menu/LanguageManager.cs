@@ -110,6 +110,13 @@ public class LanguageManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+
+            //  Rêcznie uruchom aktualizacjê dla wszystkich monitorów
+            var monitors = FindObjectsByType<CameraToMonitor>(FindObjectsSortMode.None);
+            foreach (var monitor in monitors)
+            {
+                monitor.UpdateLocalizedText();
+            }
         }
         else
         {
@@ -122,10 +129,10 @@ public class LanguageManager : MonoBehaviour
         currentLanguage = lang;
         PlayerPrefs.SetInt("GameLanguage", (int)lang);
         PlayerPrefs.Save();
-        OnLanguageChanged?.Invoke();
 
-        // Aktualizacja HoverMessages w scenie
-        foreach (var hover in UnityEngine.Object.FindObjectsByType<HoverMessage>(FindObjectsSortMode.None))
+        OnLanguageChanged?.Invoke(); //  KA¯DY monitor reaguje tutaj
+
+        foreach (var hover in FindObjectsByType<HoverMessage>(FindObjectsSortMode.None))
         {
             hover.UpdateLocalizedMessage();
         }
