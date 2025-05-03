@@ -49,11 +49,11 @@ public class PlayerInteraction : MonoBehaviour
             Debug.LogError("Brak obiektu TurretController w scenie.");
         }
 
-        cameraToMonitor = Object.FindFirstObjectByType<CameraToMonitor>();
-        if (cameraToMonitor == null)
-        {
-            Debug.LogError("Brak obiektu CameraToMonitor w scenie.");
-        }
+        //cameraToMonitor = Object.FindFirstObjectByType<CameraToMonitor>();
+        //if (cameraToMonitor == null)
+        //{
+        //    Debug.LogError("Brak obiektu CameraToMonitor w scenie.");
+        //}
 
         if (progressCircle != null)
         {
@@ -223,10 +223,13 @@ public class PlayerInteraction : MonoBehaviour
 
     private void UseMonitor(InteractableItem interactableItem)
     {
-        if (cameraToMonitor != null)
+        if (currentInteractableItem.isMonitor)
         {
-            //Debug.Log($"{interactableItem.itemName} jest teraz w trybie wie¿yczki!");
-            cameraToMonitor.UseMonitor(); // U¿ywamy metody z TurretController do aktywacji wie¿yczki
+            CameraToMonitor specificMonitor = currentInteractableItem.GetComponent<CameraToMonitor>();
+            if (specificMonitor != null)
+            {
+                specificMonitor.UseMonitor();
+            }
         }
     }
 

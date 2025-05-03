@@ -77,6 +77,9 @@ public class CameraToMonitor : MonoBehaviour
     private string pendingCommand = null;
     private bool isTerminalInterrupted = false;
 
+    // zielony  "#00E700"
+    // z³oty    "#FFD200"
+    // czerwony "#FF0000"
     private void Start()
     {
         if (riddleMonitor)
@@ -181,6 +184,32 @@ public class CameraToMonitor : MonoBehaviour
             return;
         }
 
+        // Dodanie komendy Start w zale¿noœci od jêzyka
+        string localizedStart = LanguageManager.Instance.currentLanguage switch
+        {
+            LanguageManager.Language.Polski => "start", // Polski
+            LanguageManager.Language.Deutsch => "start", // Niemiecki
+            _ => "start" // Angielski
+        };
+
+
+        // Komenda Start dzia³a ró¿nie w zale¿noœci od blokady terminala
+        commandDictionary[localizedStart] = new CommandData(() =>
+        {
+            if (riddleMonitor)
+            {
+                StartFunction();
+                ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("start")}", "#FFD200");
+                ShowConsoleMessage($"{LanguageManager.Instance.GetLocalizedMessage("startText")}", "#FFD200");
+            }
+
+            if (mainMonitor)
+            {
+                ShowConsoleMessage($"{LanguageManager.Instance.GetLocalizedMessage("commandMissing")}", "#FF0000");
+            }
+
+        }, false);
+
         if (!riddleMonitor)
         {
             // Ustawienie komend zale¿nie od jêzyka
@@ -212,6 +241,11 @@ public class CameraToMonitor : MonoBehaviour
         };
 
         commandDictionary[localizedHelp] = new CommandData(() => StartCoroutine(DisplayHelpLogs()), false);
+    }
+
+    public void StartFunction()
+    {
+        Debug.Log("wywo³ano akcje z terminala");
     }
 
     public void HandleLanguageChanged()
@@ -317,6 +351,8 @@ public class CameraToMonitor : MonoBehaviour
             // Pauza przed wyœwietleniem wiadomoœci
             yield return new WaitForSeconds(0.2f);
             ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("terminalExit")}", "#00E700");
+            yield return new WaitForSeconds(0.2f);
+            ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("startHelp")}", "#00E700");
             yield return new WaitForSeconds(0.2f);
 
             if (mainMonitor)
@@ -638,9 +674,9 @@ public class CameraToMonitor : MonoBehaviour
 
             if (command == generatedPassword) // Sprawdzenie poprawnoœci has³a
             {
-                ShowConsoleMessage(">>> Password correct. Terminal unlocked.", "#00E700");
                 securedMonitor = false; // Odblokowanie terminala
                 ClearMonitorConsole(); // Wyczyœæ logi
+                ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("correctPassword")}", "#FFD200");
                 InitializeLocalizedCommands(); // Inicjalizacja komend po odblokowaniu
                 StartLogSequence(); // Rozpocznij sekwencjê od nowa
 
@@ -665,7 +701,7 @@ public class CameraToMonitor : MonoBehaviour
             }
             else
             {
-                ShowConsoleMessage(">>> Incorrect password. Try again.", "#FF0000");
+                ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("incorrectPassword"), "#FF0000");
             }
 
             inputField.text = ""; // Wyczyœæ pole tekstowe
@@ -693,7 +729,7 @@ public class CameraToMonitor : MonoBehaviour
 
             if (command == confirmYesKey)
             {
-                ShowConsoleMessage(string.Format(LanguageManager.Instance.GetLocalizedMessage("executingCommand"), pendingCommand), "#00E700");
+                ShowConsoleMessage($">>> {string.Format(LanguageManager.Instance.GetLocalizedMessage("executingCommand"), pendingCommand)}", "#00E700");
                 commandDictionary[pendingCommand].command.Invoke();
             }
             else if (command == confirmNoKey)
@@ -727,7 +763,7 @@ public class CameraToMonitor : MonoBehaviour
                     }
                     else
                     {
-                        ShowConsoleMessage($"{LanguageManager.Instance.GetLocalizedMessage("confirmCommand")} [{LanguageManager.Instance.GetLocalizedMessage("confirmYesKey")}/{LanguageManager.Instance.GetLocalizedMessage("confirmNoKey")}]", "#FFD200");
+                        ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("confirmCommand")} [{LanguageManager.Instance.GetLocalizedMessage("confirmYesKey")}/{LanguageManager.Instance.GetLocalizedMessage("confirmNoKey")}]", "#FFD200");
                         pendingCommand = command;
                     }
                 }
@@ -828,6 +864,8 @@ public class CameraToMonitor : MonoBehaviour
             modelText.text = "******+^!./_%_"+ generatedPassword+"";
                            //"Siegdu v2.7_4_1998";
         }
+        ClearMonitorConsole();
+        StartLogSequence();
     }
 
     private void StartLogSequence()

@@ -50,6 +50,7 @@ public class TerminalTranslations
     public string terminalReady;
     public string commandCancelled;
     public string unknownCommand;
+    public string commandMissing;
     public string confirmCommand;
     public string confirmYesKey;
     public string confirmNoKey;
@@ -62,6 +63,11 @@ public class TerminalTranslations
     public string terminalExit;
     public string locations;
     public string hack;
+    public string start;
+    public string startHelp;
+    public string startText;
+    public string correctPassword;
+    public string incorrectPassword;
 }
 
 public class LanguageManager : MonoBehaviour
