@@ -599,7 +599,6 @@ public class CameraToMonitor : MonoBehaviour
         // Jeœli terminal jest zabezpieczony, sprawdŸ has³o
         if (securedMonitor)
         {
-
             // Obs³uga komendy wyjœcia
             if (commandDictionary.ContainsKey(command))
             {
@@ -621,7 +620,20 @@ public class CameraToMonitor : MonoBehaviour
                 if (modelText != null)
                 {
                     modelText.text = "Siegdu v2.7_4_1998";
+                }
 
+                // Usuñ komendê "hack" lub jej odpowiednik z listy komend
+                string localizedHackCommand = LanguageManager.Instance.currentLanguage switch
+                {
+                    LanguageManager.Language.Polski => "hakuj", // Polski
+                    LanguageManager.Language.Deutsch => "hacken", // Niemiecki
+                    _ => "hack" // Angielski
+                };
+
+                if (commandDictionary.ContainsKey(localizedHackCommand))
+                {
+                    commandDictionary.Remove(localizedHackCommand);
+                    ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("unknownCommand"), "#FF0000");
                 }
             }
             else
@@ -636,8 +648,6 @@ public class CameraToMonitor : MonoBehaviour
 
         // Reszta funkcji HandleCommandInput pozostaje bez zmian
         command = command.ToLower().Trim();
-
-        //Debug.Log($"[HandleCommandInput] Otrzymana komenda: {command}");
 
         string currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.ToLower();
 
