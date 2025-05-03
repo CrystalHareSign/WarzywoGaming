@@ -105,7 +105,7 @@ public class CameraToMonitor : MonoBehaviour
 
         if (modelText != null)
         {
-            modelText.text = "Siegdu v2.7_4_1998";
+            modelText.text = "Siegdu & Babi v2.7_4_1998";
         }
 
         if (randomPanel != null)
@@ -791,7 +791,7 @@ public class CameraToMonitor : MonoBehaviour
 
                 if (modelText != null)
                 {
-                    modelText.text = "Siegdu v2.7_4_1998";
+                    modelText.text = "Siegdu & Babi v2.7_4_1998";
                 }
 
                 // Usuñ komendê "hack" lub jej odpowiednik z listy komend
@@ -970,9 +970,51 @@ public class CameraToMonitor : MonoBehaviour
     {
         if (modelText != null)
         {
-            modelText.text = "******+^!./_%_"+ generatedPassword+"";
-                           //"Siegdu v2.7_4_1998";
+            //                    "Siegdu & Babi v2.7_4_1998";
+            string baseTemplate = "******-&-****-*/.^_%_!##$";
+            int templateLength = baseTemplate.Length;
+            int passwordLength = generatedPassword.Length;
+
+            // Wybierz losowe unikalne indeksy w bazowym tekœcie do wstawienia cyfr
+            List<int> insertionIndices = Enumerable.Range(0, templateLength)
+                .OrderBy(_ => UnityEngine.Random.value)
+                .Take(passwordLength)
+                .OrderBy(i => i) // Wa¿ne: zachowaj kolejnoœæ od lewej do prawej
+                .ToList();
+
+            // Zamieñ znaki w bazowym ci¹gu na cyfry z has³a z kolorem
+            char[] result = baseTemplate.ToCharArray();
+            for (int i = 0; i < passwordLength; i++)
+            {
+                string coloredDigit = $"<color=#FFD200>{generatedPassword[i]}</color>";
+                int index = insertionIndices[i];
+
+                // Zamieñ znak na znacznik koloru + cyfra
+                // Uwaga: trzeba bêdzie u¿yæ StringBuilder zamiast char[] jeœli liczysz na renderowanie tagów
+                result[index] = '\0'; // tymczasowo znak pusty, póŸniej zast¹pimy
+
+                // Wstaw kolorowany znak do odpowiedniego miejsca w stringu
+            }
+
+            // Finalna budowa stringa z tagami <color>
+            StringBuilder finalString = new StringBuilder();
+            int passwordIndex = 0;
+            for (int i = 0; i < templateLength; i++)
+            {
+                if (insertionIndices.Contains(i))
+                {
+                    finalString.Append($"<color=#FFD200>{generatedPassword[passwordIndex]}</color>");
+                    passwordIndex++;
+                }
+                else
+                {
+                    finalString.Append(baseTemplate[i]);
+                }
+            }
+
+            modelText.text = finalString.ToString();
         }
+
         ClearMonitorConsole();
         StartLogSequence();
     }
