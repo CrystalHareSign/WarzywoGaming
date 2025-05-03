@@ -31,6 +31,14 @@ public class CameraToMonitor : MonoBehaviour
     private bool isCameraMoving = false;
     public static bool CanUseMenu = true; // Flaga, która kontroluje, czy menu jest dostêpne
 
+    [Header("Programming")]
+
+    public bool mainMonitor = false;
+    public bool riddleMonitor = false;
+
+    private bool securedMonitor = false;
+    public string generatedPassword; // Wygenerowane has³o
+
     [Header("UI – Konsola monitora")]
     public TextMeshProUGUI consoleTextDisplay;
     public TMP_InputField inputField; // Pole tekstowe dla wpisywania komend
@@ -59,7 +67,7 @@ public class CameraToMonitor : MonoBehaviour
     public List<LogEntry> logEntriesPolish = new List<LogEntry>();
     public List<LogEntry> logEntriesGerman = new List<LogEntry>();
 
-    public List<LogEntry> logEntries;
+    private List<LogEntry> logEntries;
     public static List<LogEntry> sharedHelpLogs = new List<LogEntry>();
 
     // S³ownik komend do metod
@@ -69,11 +77,18 @@ public class CameraToMonitor : MonoBehaviour
     private string pendingCommand = null;
     private bool isTerminalInterrupted = false;
 
-    public bool securedMonitor = false;
-    public string generatedPassword; // Wygenerowane has³o
-
     private void Start()
     {
+        if (riddleMonitor)
+        {
+            securedMonitor = true;
+        }
+
+        if (mainMonitor)
+        {
+            securedMonitor = false;
+        }
+
         if (modelText != null)
         {
             modelText.text = "Siegdu v2.7_4_1998";
@@ -136,15 +151,18 @@ public class CameraToMonitor : MonoBehaviour
         // Tworzymy pusty s³ownik komend
         commandDictionary = new Dictionary<string, CommandData>();
 
-        // Dodajemy komendê Hack/hakuj w zale¿noœci od jêzyka
-        string localizedHack = LanguageManager.Instance.currentLanguage switch
+        if (riddleMonitor)
         {
-            LanguageManager.Language.Polski => "hakuj", // Polski
-            LanguageManager.Language.Deutsch => "hacken", // Niemiecki
-            _ => "hack" // Angielski
-        };
+            // Dodajemy komendê Hack/hakuj w zale¿noœci od jêzyka
+            string localizedHack = LanguageManager.Instance.currentLanguage switch
+            {
+                LanguageManager.Language.Polski => "hakuj", // Polski
+                LanguageManager.Language.Deutsch => "hacken", // Niemiecki
+                _ => "hack" // Angielski
+            };
 
-        commandDictionary[localizedHack] = new CommandData(() => DisplayRandomPanels(), false);
+            commandDictionary[localizedHack] = new CommandData(() => DisplayRandomPanels(), false);
+        }
 
         // Dodanie komendy wyjœcia zale¿nej od jêzyka
         string localizedExit = LanguageManager.Instance.currentLanguage switch
@@ -163,20 +181,28 @@ public class CameraToMonitor : MonoBehaviour
             return;
         }
 
-        // Ustawienie komend zale¿nie od jêzyka
-        string localizedHome = LanguageManager.Instance.currentLanguage switch
+        if (!riddleMonitor)
         {
-            LanguageManager.Language.Polski => "dom", // Polski
-            LanguageManager.Language.Deutsch => "haus", // Niemiecki
-            _ => "home" // Angielski
-        };
+            // Ustawienie komend zale¿nie od jêzyka
+            string localizedHome = LanguageManager.Instance.currentLanguage switch
+            {
+                LanguageManager.Language.Polski => "dom", // Polski
+                LanguageManager.Language.Deutsch => "haus", // Niemiecki
+                _ => "home" // Angielski
+            };
 
-        string localizedMain = LanguageManager.Instance.currentLanguage switch
-        {
-            LanguageManager.Language.Polski => "trasa", // Polski
-            LanguageManager.Language.Deutsch => "route", // Niemiecki
-            _ => "route" // Angielski
-        };
+            string localizedMain = LanguageManager.Instance.currentLanguage switch
+            {
+                LanguageManager.Language.Polski => "trasa", // Polski
+                LanguageManager.Language.Deutsch => "route", // Niemiecki
+                _ => "route" // Angielski
+            };
+
+            // Dodanie komend do s³ownika
+            commandDictionary[localizedHome] = new CommandData(() => ExitTerminalAndChangeScene("Home", 3f), true);
+            commandDictionary[localizedMain] = new CommandData(() => ExitTerminalAndChangeScene("Main", 3f), true);
+
+        }
 
         string localizedHelp = LanguageManager.Instance.currentLanguage switch
         {
@@ -185,9 +211,6 @@ public class CameraToMonitor : MonoBehaviour
             _ => "help" // Angielski
         };
 
-        // Dodanie komend do s³ownika
-        commandDictionary[localizedHome] = new CommandData(() => ExitTerminalAndChangeScene("Home", 3f), true);
-        commandDictionary[localizedMain] = new CommandData(() => ExitTerminalAndChangeScene("Main", 3f), true);
         commandDictionary[localizedHelp] = new CommandData(() => StartCoroutine(DisplayHelpLogs()), false);
     }
 
@@ -295,12 +318,16 @@ public class CameraToMonitor : MonoBehaviour
             yield return new WaitForSeconds(0.2f);
             ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("terminalExit")}", "#00E700");
             yield return new WaitForSeconds(0.2f);
-            ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("hack")}", "#00E700");
-            yield return new WaitForSeconds(0.2f);
-            ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("locations")}", "#00E700");
-            yield return new WaitForSeconds(0.2f);
-            ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("command_home_desc")}", "#00E700");
-            ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("command_main_desc")}", "#00E700");
+
+            if (mainMonitor)
+            {
+                ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("hack")}", "#00E700");
+                yield return new WaitForSeconds(0.2f);
+                ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("locations")}", "#00E700");
+                yield return new WaitForSeconds(0.2f);
+                ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("command_home_desc")}", "#00E700");
+                ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("command_main_desc")}", "#00E700");
+            }
 
             yield break;
         }
@@ -651,7 +678,7 @@ public class CameraToMonitor : MonoBehaviour
 
         string currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.ToLower();
 
-        if (command == currentScene)
+        if (command == currentScene && mainMonitor)
         {
             ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("alreadyInScene"), "#FFD200");
             inputField.text = "";
@@ -924,11 +951,21 @@ public class CameraToMonitor : MonoBehaviour
     }
 
     [System.Serializable]
+    public class LogEntry
+    {
+        public string[] messages;
+        [Range(0f, 100f)]
+        public float probability;
+        public float delayAfterPrevious = 1f;
+    }
+
+    [System.Serializable]
     public class ConsoleMessage
     {
         public string message;
         public float timeAdded;
         public Color color;
+        public bool canDisplay;
 
         public ConsoleMessage(string message, float timeAdded, Color color)
         {
@@ -936,15 +973,6 @@ public class CameraToMonitor : MonoBehaviour
             this.timeAdded = timeAdded;
             this.color = color;
         }
-    }
-
-    [System.Serializable]
-    public class LogEntry
-    {
-        public string[] messages;
-        [Range(0f, 100f)]
-        public float probability;
-        public float delayAfterPrevious = 1f;
     }
 
     [System.Serializable]
