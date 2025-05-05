@@ -50,6 +50,13 @@ public class CameraToMonitor : MonoBehaviour
     public string monitorFunctionText_DE;
     public string localizedFunctionText;
 
+    // Mini-Game Fields
+    private int gridSize = 10;
+    private string[,] grid; // The 2D grid for the mini-game
+    private Vector2Int targetCoordinate; // The hidden target
+    private int remainingAttempts = 10; // Player's remaining attempts
+    private bool isMiniGameActive = false; // Tracks if the mini-game is active
+
     [Header("UI – Konsola monitora")]
     public TextMeshProUGUI consoleTextDisplay;
     public TMP_InputField inputField; // Pole tekstowe dla wpisywania komend
@@ -768,6 +775,15 @@ public class CameraToMonitor : MonoBehaviour
     }
     private void HandleCommandInput(string command)
     {
+
+        if (isMiniGameActive)
+        {
+            HandleMiniGameInput(command);
+            inputField.text = "";
+            inputField.ActivateInputField();
+            return;
+        }
+
         // Jeœli terminal jest zabezpieczony, sprawdŸ has³o
         if (securedMonitor)
         {
@@ -893,13 +909,14 @@ public class CameraToMonitor : MonoBehaviour
 
     private void DisplayRandomPanels()
     {
-        // Ukryj consoleTextDisplay
-        if (consoleTextDisplay != null)
-        {
-            consoleTextDisplay.gameObject.SetActive(false);
-        }
+        // Zresetuj stan terminala
+        ResetTerminalState();
 
-        // Aktywuj pierwszy panel
+        // Ukryj consoleTextDisplay
+        consoleTextDisplay?.gameObject.SetActive(false);
+
+        // Wyczyœæ i aktywuj pierwszy panel
+        randomPanelText.text = "";
         randomPanel.SetActive(true);
         StartCoroutine(TypeRandomCharacters(randomPanelText, numberOfRandomCharactersPanel1));
 
@@ -907,44 +924,27 @@ public class CameraToMonitor : MonoBehaviour
         StartCoroutine(ShowSecondPanelAfterDelay());
     }
 
-    private IEnumerator ShowSecondPanelAfterDelay()
+    private void ResetTerminalState()
     {
-        yield return new WaitForSeconds(panelDelay);
-
-        // Aktywuj drugi panel
-        randomPanel2.SetActive(true);
-
-        // Wyœwietlaj losowe znaki na drugim panelu
-        StartCoroutine(TypeRandomCharacters(randomPanel2Text, numberOfRandomCharactersPanel2));
-
-        ModelNameRandomSymbols();
-
-        // Po zakoñczeniu animacji drugiego panelu, odlicz czas trwania obu paneli
-        yield return new WaitForSeconds(randomPanelDuration);
-
-        // Ukryj oba panele
+        // Wy³¹cz panele i wyczyœæ ich tekst
         randomPanel.SetActive(false);
         randomPanel2.SetActive(false);
+        randomPanelText.text = "";
+        randomPanel2Text.text = "";
 
-        // Aktywuj pole tekstowe po zamkniêciu paneli
-        if (inputField != null)
-        {
-            inputField.ActivateInputField();
-        }
-
-        // Przywróæ consoleTextDisplay
-        if (consoleTextDisplay != null)
-        {
-            consoleTextDisplay.gameObject.SetActive(true);
-        }
+        // Przywróæ widocznoœæ consoleTextDisplay, jeœli by³o ukryte
+        consoleTextDisplay?.gameObject.SetActive(true);
     }
 
+    // Wyœwietlanie losowych znaków
     private IEnumerator TypeRandomCharacters(TextMeshProUGUI textComponent, int numberOfCharacters)
     {
-        // Generuj losowe znaki
-        string randomText = GenerateRandomText(numberOfCharacters);
+        textComponent.text = ""; // Wyczyœæ tekst na pocz¹tku
 
-        // Wyœwietlaj znaki jeden po drugim
+        // Generowanie losowego tekstu
+        string randomText = GenerateRandomText(numberOfCharacters); // Przekazujemy liczbê znaków
+
+        // Wyœwietlanie znaków jeden po drugim
         foreach (char c in randomText)
         {
             textComponent.text += c;
@@ -952,18 +952,203 @@ public class CameraToMonitor : MonoBehaviour
         }
     }
 
+    // Obs³uga drugiego panelu z opóŸnieniem
+    private IEnumerator ShowSecondPanelAfterDelay()
+    {
+        yield return new WaitForSeconds(panelDelay);
+
+        // Wyczyœæ i aktywuj drugi panel
+        randomPanel2Text.text = "";
+        randomPanel2.SetActive(true);
+        StartCoroutine(TypeRandomCharacters(randomPanel2Text, numberOfRandomCharactersPanel2));
+
+        yield return new WaitForSeconds(randomPanelDuration);
+
+        // Dezaktywuj oba panele
+        randomPanel.SetActive(false);
+        randomPanel2.SetActive(false);
+
+        // Przywróæ consoleTextDisplay
+        consoleTextDisplay?.gameObject.SetActive(true);
+
+        // Aktywuj pole tekstowe
+        inputField?.ActivateInputField();
+
+        StartMiniGame(); // Rozpocznij mini-grê
+    }
+
     private string GenerateRandomText(int length)
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder(length); // Initialize with expected capacity for efficiency
 
         for (int i = 0; i < length; i++)
         {
+            // Use Random.Range to pick a random character from the available pool
             char randomChar = chars[UnityEngine.Random.Range(0, chars.Length)];
             sb.Append(randomChar);
         }
 
         return sb.ToString();
+    }
+
+    // Method to start the mini-game
+    private void StartMiniGame()
+    {
+        // Inicjalizujemy tablicê
+        grid = new string[gridSize, gridSize];
+        for (int i = 0; i < gridSize; i++)
+        {
+            for (int j = 0; j < gridSize; j++)
+            {
+                grid[i, j] = "X"; // Ka¿de pole pocz¹tkowo ma wartoœæ "X"
+            }
+        }
+
+        // Losujemy wspó³rzêdne celu
+        targetCoordinate = new Vector2Int(UnityEngine.Random.Range(0, gridSize), UnityEngine.Random.Range(0, gridSize));
+        remainingAttempts = 10; // Resetujemy liczbê prób
+        isMiniGameActive = true; // Aktywujemy mini-grê
+
+        // Wyœwietlamy pocz¹tkow¹ tablicê
+        UpdateGridDisplay("Gra rozpoczêta! Wpisz wspó³rzêdne (np. A3).");
+    }
+
+    private void UpdateGridDisplay(string additionalMessage)
+    {
+        if (consoleTextDisplay == null) return;
+
+        StringBuilder gridBuilder = new StringBuilder();
+
+        // Generujemy siatkê
+        for (int i = 0; i < gridSize; i++)
+        {
+            for (int j = 0; j < gridSize; j++)
+            {
+                // Pobierz wartoœæ z siatki
+                string cellValue = grid[i, j];
+
+                // Jeœli wartoœæ to strza³ gracza (trafienie/pud³o), wyœwietl w ¿ó³tym kolorze
+                if (cellValue != "X")
+                {
+                    gridBuilder.Append($" (<color=#FFD200>{cellValue}</color>) ");
+                }
+                else
+                {
+                    // Jeœli pole nie zosta³o odkryte, wyœwietl puste nawiasy
+                    gridBuilder.Append(" (  ) ");
+                }
+            }
+
+            // Nowa linia po ka¿dym wierszu
+            gridBuilder.AppendLine();
+        }
+
+        // Dodaj opcjonalny komunikat poni¿ej tablicy
+        if (!string.IsNullOrEmpty(additionalMessage))
+        {
+            gridBuilder.AppendLine();
+            gridBuilder.AppendLine(additionalMessage);
+        }
+
+        // Aktualizuj tekst w konsoli
+        consoleTextDisplay.text = gridBuilder.ToString();
+    }
+
+    // Updates to HandleMiniGameInput for handling A1, B3, etc.
+
+    private void HandleMiniGameInput(string command)
+    {
+        // Sprawdzamy format (np. A3, B10)
+        if (command.Length < 2 || command.Length > 3)
+        {
+            UpdateGridDisplay("Nieprawid³owy format! U¿yj formatu A1-J10.");
+            return;
+        }
+
+        // Parsujemy literê (np. 'A' -> indeks wiersza)
+        char rowChar = char.ToUpper(command[0]);
+        if (rowChar < 'A' || rowChar > 'J')
+        {
+            UpdateGridDisplay("Nieprawid³owy wiersz! U¿yj liter od A do J.");
+            return;
+        }
+
+        int row = rowChar - 'A'; // Konwertujemy 'A'-'J' na indeks 0-9
+
+        // Parsujemy cyfrê (np. '3' -> indeks kolumny)
+        string columnString = command.Substring(1);
+        if (!int.TryParse(columnString, out int column) || column < 1 || column > 10)
+        {
+            UpdateGridDisplay("Nieprawid³owa kolumna! U¿yj liczb od 1 do 10.");
+            return;
+        }
+
+        int col = column - 1; // Konwertujemy 1-10 na indeks 0-9
+
+        // Sprawdzamy, czy gracz ju¿ strzela³ w to pole
+        if (grid[row, col] != "X")
+        {
+            UpdateGridDisplay("Ju¿ strzela³eœ w to miejsce! Wybierz inne pole.");
+            return;
+        }
+
+        // Sprawdzamy, czy gracz trafi³ w cel
+        Vector2Int guess = new Vector2Int(row, col);
+        if (guess == targetCoordinate)
+        {
+            grid[row, col] = "0"; // Oznaczamy trafienie
+            UpdateGridDisplay("Gratulacje! Trafi³eœ w cel!");
+            EndMiniGame(true); // Wygrana
+            return;
+        }
+
+        // Obliczamy odleg³oœæ od celu
+        int distance = Mathf.Abs(targetCoordinate.x - row) + Mathf.Abs(targetCoordinate.y - col);
+        grid[row, col] = distance.ToString(); // Aktualizujemy tablicê
+        remainingAttempts--;
+
+        // Aktualizujemy wyœwietlenie tablicy
+        if (remainingAttempts > 0)
+        {
+            UpdateGridDisplay($"Pud³o! Odleg³oœæ: {distance}. Pozosta³e próby: {remainingAttempts}.");
+        }
+        else
+        {
+            UpdateGridDisplay("Koniec gry! Wykorzysta³eœ wszystkie próby.");
+            EndMiniGame(false); // Przegrana
+        }
+    }
+
+    private void EndMiniGame(bool isWin)
+    {
+        isMiniGameActive = false; // Wy³¹czamy mini-grê
+
+        if (isWin)
+        {
+            // Wygrana gra
+            ClearMonitorConsole();
+            UpdateGridDisplay("Gratulacje! Trafi³eœ w cel! Sekwencja startowa rozpocznie siê za chwilê...");
+            ModelNameRandomSymbols();
+            StartCoroutine(StartSequenceAfterDelay(5f));
+        }
+        else
+        {
+            // Przegrana gra - ujawniamy cel
+            grid[targetCoordinate.x, targetCoordinate.y] = "$"; // T oznacza cel
+            ClearMonitorConsole();
+            UpdateGridDisplay("Koniec gry! Ujawniono cel ('$'). Sekwencja startowa rozpocznie siê za 3 sekundy...");
+            StartCoroutine(StartSequenceAfterDelay(5f));
+        }
+    }
+
+    // Dodana metoda uruchamiaj¹ca sekwencjê startow¹ po opóŸnieniu
+    private IEnumerator StartSequenceAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        // W tym miejscu mo¿esz wywo³aæ dowoln¹ metodê lub akcjê, która odpowiada za sekwencjê startow¹
+        StartLogSequence();
     }
 
     private void ModelNameRandomSymbols()
@@ -1015,8 +1200,8 @@ public class CameraToMonitor : MonoBehaviour
             modelText.text = finalString.ToString();
         }
 
-        ClearMonitorConsole();
-        StartLogSequence();
+        //ClearMonitorConsole();
+        //StartLogSequence();
     }
 
     private void StartLogSequence()
