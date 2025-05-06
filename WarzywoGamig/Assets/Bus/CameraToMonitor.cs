@@ -59,6 +59,7 @@ public class CameraToMonitor : MonoBehaviour
     public GameObject cursor; // Obiekt kursora (podœwietlenie)
     private Vector2Int cursorPosition = new Vector2Int(0, 0); // Pozycja kursora
     private bool hasWonGame = false;
+    private List<string> logHistory = new List<string>(); // Lista do przechowywania logów
 
     [Header("UI – Konsola monitora")]
     public TextMeshProUGUI consoleTextDisplay;
@@ -822,13 +823,12 @@ public class CameraToMonitor : MonoBehaviour
             {
                 // Komenda "exit" koñczy mini-grê
                 EndMiniGame(false);
-                UpdateGridDisplay("Mini-gra zosta³a zakoñczona przez gracza.");
             }
-            else
-            {
-                // Nieznana komenda w mini-grze
-                UpdateGridDisplay($"Nieznana komenda: {command}");
-            }
+
+            //if (command == "cheat")
+            //{
+
+            //}
 
             ClearInputField();
 
@@ -1049,7 +1049,6 @@ public class CameraToMonitor : MonoBehaviour
     // Method to start the mini-game
     private void StartMiniGame()
     {
-        // Inicjalizujemy tablicê
         grid = new string[gridSize, gridSize];
         for (int i = 0; i < gridSize; i++)
         {
@@ -1059,23 +1058,22 @@ public class CameraToMonitor : MonoBehaviour
             }
         }
 
-        // Losujemy wspó³rzêdne celu
         targetCoordinate = new Vector2Int(UnityEngine.Random.Range(0, gridSize), UnityEngine.Random.Range(0, gridSize));
-        remainingAttempts = 10; // Resetujemy liczbê prób
-        isMiniGameActive = true; // Aktywujemy mini-grê
+        remainingAttempts = 10;
+        isMiniGameActive = true;
 
-        // Wyœwietlamy pocz¹tkow¹ tablicê
-        UpdateGridDisplay("Gra rozpoczêta! U¿yj strza³ek, aby poruszaæ siê po siatce. Naciœnij Enter, aby wybraæ pole.");
+        // Wyœwietlamy zlokalizowan¹ wiadomoœæ o rozpoczêciu gry
+        UpdateGridDisplay($">>> {LanguageManager.Instance.GetLocalizedMessage("miniGameStart")}", "#FFD200");
         UpdateCursorPosition();
     }
 
-
-    private void UpdateGridDisplay(string additionalMessage)
+    private void UpdateGridDisplay(string additionalMessage, string hexColor = "#FFFFFF")
     {
         if (consoleTextDisplay == null) return;
 
         StringBuilder gridBuilder = new StringBuilder();
 
+        // Budowanie siatki
         for (int i = 0; i < gridSize; i++)
         {
             for (int j = 0; j < gridSize; j++)
@@ -1084,27 +1082,41 @@ public class CameraToMonitor : MonoBehaviour
 
                 if (i == cursorPosition.x && j == cursorPosition.y)
                 {
-                    gridBuilder.Append($" [<color=#FFFF00>{cellValue}</color>] "); // ¯ó³ty kolor
+                    gridBuilder.Append($" [<color=#FFFF00>{cellValue}</color>] "); // ¯ó³ty kolor dla kursora
                 }
                 else if (cellValue != "X")
                 {
-                    gridBuilder.Append($" (<color=#FFFFFF>{cellValue}</color>) ");
+                    gridBuilder.Append($" (<color=#FFFFFF>{cellValue}</color>) "); // Bia³y kolor dla wartoœci komórek
                 }
                 else
                 {
-                    gridBuilder.Append(" (  ) ");
+                    gridBuilder.Append(" (  ) "); // Domyœlne puste komórki
                 }
             }
-
             gridBuilder.AppendLine();
         }
 
+        // Obs³uga logów
         if (!string.IsNullOrEmpty(additionalMessage))
         {
-            gridBuilder.AppendLine();
-            gridBuilder.AppendLine(additionalMessage);
+            // Dodanie nowego logu do historii
+            string formattedMessage = $"<color={hexColor}> {additionalMessage}</color>";
+            logHistory.Add(formattedMessage);
+
+            // Usuwanie najstarszych logów, jeœli lista przekracza 3 elementy
+            if (logHistory.Count > 3)
+            {
+                logHistory.RemoveAt(0);
+            }
         }
 
+        // Dodanie logów do konsoli
+        foreach (string log in logHistory)
+        {
+            gridBuilder.AppendLine(log);
+        }
+
+        // Aktualizacja tekstu konsoli
         consoleTextDisplay.text = gridBuilder.ToString();
     }
 
@@ -1167,37 +1179,32 @@ public class CameraToMonitor : MonoBehaviour
         int row = cursorPosition.x;
         int col = cursorPosition.y;
 
-        // Sprawdzamy, czy gracz ju¿ strzela³ w to pole
         if (grid[row, col] != "X")
         {
-            UpdateGridDisplay("Ju¿ strzela³eœ w to miejsce! Wybierz inne pole.");
+            UpdateGridDisplay($">>> {LanguageManager.Instance.GetLocalizedMessage("miniGameAlreadyRevealed")}", "#FFD200");
             return;
         }
 
-        // Sprawdzamy, czy gracz trafi³
         Vector2Int guess = new Vector2Int(row, col);
         if (guess == targetCoordinate)
         {
-            grid[row, col] = "0"; // Oznaczamy trafienie
-            UpdateGridDisplay("Gratulacje! Trafi³eœ w cel!");
-            EndMiniGame(true); // Wygrana
+            grid[row, col] = "0"; // Trafienie
+            EndMiniGame(true);
             return;
         }
 
-        // Aktualizujemy odleg³oœæ od celu
         int distance = Mathf.Abs(targetCoordinate.x - row) + Mathf.Abs(targetCoordinate.y - col);
-        grid[row, col] = distance.ToString(); // Aktualizujemy siatkê
+        grid[row, col] = distance.ToString();
         remainingAttempts--;
 
-        // Wyœwietlamy zaktualizowan¹ siatkê
         if (remainingAttempts > 0)
         {
-            UpdateGridDisplay($"Pud³o! Odleg³oœæ: {distance}. Pozosta³e próby: {remainingAttempts}.");
+            UpdateGridDisplay($">>> {LanguageManager.Instance.GetLocalizedMessage("miniGameMissedTarget", distance, remainingAttempts)}", "#FFD200");
         }
         else
         {
-            UpdateGridDisplay("Koniec gry! Wykorzysta³eœ wszystkie próby.");
-            EndMiniGame(false); // Przegrana
+            UpdateGridDisplay($">>> {LanguageManager.Instance.GetLocalizedMessage("miniGameMissedTarget", distance, remainingAttempts)}", "#FFD200");
+            EndMiniGame(false);
         }
     }
     private void EndMiniGame(bool isWin)
@@ -1211,7 +1218,7 @@ public class CameraToMonitor : MonoBehaviour
             // Wygrana gra - cel miga przez 5 sekund
             ModelNameRandomSymbols();
             StartCoroutine(BlinkTargetCell(targetCoordinate, 5f));
-            UpdateGridDisplay("Gratulacje! Trafi³eœ w cel!"); // Wyœwietlamy wiadomoœæ
+            UpdateGridDisplay(LanguageManager.Instance.GetLocalizedMessage("miniGameWin"), "#FFD200");
 
             string localizedHackCommand = LanguageManager.Instance.currentLanguage switch
             {
@@ -1230,6 +1237,7 @@ public class CameraToMonitor : MonoBehaviour
             // Przegrana gra - ujawniamy cel graczowi
             grid[targetCoordinate.x, targetCoordinate.y] = "0"; // Oznaczamy cel jako `0`
             StartCoroutine(BlinkTargetCell(targetCoordinate, 5f)); // Miganie celu przez 5 sekund
+            UpdateGridDisplay(LanguageManager.Instance.GetLocalizedMessage("miniGameOver"), "#FFD200");
         }
 
         // Rozpoczynamy sekwencjê startow¹ po czasie migania
@@ -1243,8 +1251,8 @@ public class CameraToMonitor : MonoBehaviour
 
         while (elapsedTime < duration)
         {
-            // Miganie: Na zmianê pokazuj/ukrywaj cel
-            grid[target.x, target.y] = isVisible ? "0" : " "; // Migaj¹cy cel
+            // Miganie: Na zmianê pokazuj/ukrywaj cel za pomoc¹ przezroczystoœci
+            grid[target.x, target.y] = isVisible ? "<color=#FFFFFF>0</color>" : "<color=#00000000>0</color>";
             UpdateGridDisplay(null); // Aktualizacja siatki z migaj¹cym celem
 
             isVisible = !isVisible; // Zmieñ stan widocznoœci
@@ -1253,7 +1261,7 @@ public class CameraToMonitor : MonoBehaviour
         }
 
         // Po zakoñczeniu migania upewnij siê, ¿e cel pozostaje widoczny
-        grid[target.x, target.y] = "0";
+        grid[target.x, target.y] = "<color=#FFFFFF>0</color>";
         UpdateGridDisplay(null); // Finalna aktualizacja siatki
     }
 

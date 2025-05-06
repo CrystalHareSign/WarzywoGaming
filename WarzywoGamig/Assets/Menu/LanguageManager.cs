@@ -71,6 +71,12 @@ public class TerminalTranslations
     public string info;
     public string infoHelp;
     public string infoText;
+
+    public string miniGameStart;
+    public string miniGameWin;
+    public string miniGameAlreadyRevealed;
+    public string miniGameMissedTarget;
+    public string miniGameOver;
 }
 
 public class LanguageManager : MonoBehaviour
@@ -143,19 +149,16 @@ public class LanguageManager : MonoBehaviour
         }
     }
 
-    public string GetLocalizedMessage(string key)
+    public string GetLocalizedMessage(string key, params object[] args)
     {
         var terminal = CurrentTerminalTexts;
 
-        // U¿ycie refleksji do dynamicznego mapowania kluczy na pola
         var field = typeof(TerminalTranslations).GetField(key, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
         if (field != null)
         {
-            return field.GetValue(terminal)?.ToString() ?? $"[[UNKNOWN KEY: {key}]]";
+            return string.Format(field.GetValue(terminal)?.ToString() ?? $"[[UNKNOWN KEY: {key}]]", args);
         }
 
-        // Loguj brakuj¹cy klucz (pomocne w debugowaniu)
-        //Debug.LogWarning($"[GetLocalizedMessage] Key '{key}' not found in TerminalTranslations.");
         return $"{key}";
     }
 }
