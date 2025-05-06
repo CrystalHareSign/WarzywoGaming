@@ -58,6 +58,7 @@ public class CameraToMonitor : MonoBehaviour
     private bool isMiniGameActive;
     public GameObject cursor; // Obiekt kursora (podœwietlenie)
     private Vector2Int cursorPosition = new Vector2Int(0, 0); // Pozycja kursora
+    private bool hasWonGame = false;
 
     [Header("UI – Konsola monitora")]
     public TextMeshProUGUI consoleTextDisplay;
@@ -519,20 +520,27 @@ public class CameraToMonitor : MonoBehaviour
             StartCoroutine(MoveCameraBackToOriginalPosition());
         }
 
-        // Obs³uga komend, jeœli coœ jest wpisane w pole tekstowe
-        if (inputField != null && !string.IsNullOrEmpty(inputField.text))
+        // Blokujemy interakcjê, jeœli canInteract jest false
+        if (!canInteract)
         {
-            if (Input.GetKeyDown(KeyCode.Return))
-            {
-                HandleCommandInput(inputField.text); // Obs³ugujemy wpisan¹ komendê
-                return; // Zapobiegamy dalszemu przetwarzaniu (np. strza³om w mini-grze)
-            }
+            return; // Ignorujemy wszystkie akcje gracza
         }
 
-        // Obs³uga klawiatury w mini-grze tylko wtedy, gdy pole tekstowe jest puste
-        if (isMiniGameActive)
+        if (inputField != null)
         {
-            HandleKeyboardInput();
+            // Jeœli w polu tekstowym coœ jest wpisane
+            if (!string.IsNullOrEmpty(inputField.text))
+            {
+                if (Input.GetKeyDown(KeyCode.Return))
+                {
+                    HandleCommandInput(inputField.text); // Obs³ugujemy wpisan¹ komendê
+                }
+            }
+            else if (isMiniGameActive)
+            {
+                // Jeœli pole tekstowe jest puste i mini-gra jest aktywna
+                HandleKeyboardInput();
+            }
         }
     }
 
@@ -793,6 +801,20 @@ public class CameraToMonitor : MonoBehaviour
     }
     private void HandleCommandInput(string command)
     {
+        // Ignorujemy komendy, jeœli interakcja jest wy³¹czona
+        if (!canInteract)
+        {
+            return;
+        }
+
+        // Jeœli gra zakoñczy³a siê wygran¹, blokujemy "hack"
+        if (!isMiniGameActive && command == "hack" && hasWonGame)
+        {
+            ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("unknownCommand"), "#FF0000");
+            ClearInputField();
+            return;
+        }
+
         // Obs³uga wpisów w trakcie mini-gry
         if (isMiniGameActive)
         {
@@ -808,8 +830,7 @@ public class CameraToMonitor : MonoBehaviour
                 UpdateGridDisplay($"Nieznana komenda: {command}");
             }
 
-            inputField.text = "";
-            inputField.ActivateInputField();
+            ClearInputField();
 
             return;
         }
@@ -822,8 +843,7 @@ public class CameraToMonitor : MonoBehaviour
                 // Jeœli komenda istnieje w s³owniku, wywo³aj j¹
                 var data = commandDictionary[command];
                 data.command.Invoke();
-                inputField.text = "";
-                inputField.ActivateInputField();
+                ClearInputField();
                 return;
             }
 
@@ -861,8 +881,7 @@ public class CameraToMonitor : MonoBehaviour
                 ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("incorrectPassword"), "#FF0000");
             }
 
-            inputField.text = ""; // Wyczyœæ pole tekstowe
-            inputField.ActivateInputField(); // Ponownie aktywuj pole tekstowe
+            ClearInputField();
             return;
         }
 
@@ -874,8 +893,7 @@ public class CameraToMonitor : MonoBehaviour
         if (command == currentScene && mainMonitor)
         {
             ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("alreadyInScene"), "#FFD200");
-            inputField.text = "";
-            inputField.ActivateInputField();
+            ClearInputField();
             return;
         }
 
@@ -899,8 +917,7 @@ public class CameraToMonitor : MonoBehaviour
             }
 
             pendingCommand = null;
-            inputField.text = "";
-            inputField.ActivateInputField();
+            ClearInputField();
             return;
         }
 
@@ -934,9 +951,14 @@ public class CameraToMonitor : MonoBehaviour
                 ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("unknownCommand"), "#FF0000");
             }
 
-            inputField.text = "";
-            inputField.ActivateInputField();
+            ClearInputField();
         }
+    }
+
+    private void ClearInputField()
+    {
+        inputField.text = "";
+        inputField.ActivateInputField();
     }
 
     private void DisplayRandomPanels()
@@ -1181,15 +1203,27 @@ public class CameraToMonitor : MonoBehaviour
     private void EndMiniGame(bool isWin)
     {
         isMiniGameActive = false; // Wy³¹czamy mini-grê
+        canInteract = false; // Blokujemy interakcjê
 
         if (isWin)
         {
+            hasWonGame = true; // Oznaczamy, ¿e gra zakoñczy³a siê wygran¹
             // Wygrana gra - cel miga przez 5 sekund
             ModelNameRandomSymbols();
             StartCoroutine(BlinkTargetCell(targetCoordinate, 5f));
             UpdateGridDisplay("Gratulacje! Trafi³eœ w cel!"); // Wyœwietlamy wiadomoœæ
 
-            securedMonitor = false;
+            string localizedHackCommand = LanguageManager.Instance.currentLanguage switch
+            {
+                LanguageManager.Language.Polski => "hakuj",
+                LanguageManager.Language.Deutsch => "hacken",
+                _ => "hack"
+            };
+
+            if (commandDictionary.ContainsKey(localizedHackCommand))
+            {
+                commandDictionary.Remove(localizedHackCommand); // Usuwamy komendê z listy
+            }
         }
         else
         {
