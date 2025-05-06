@@ -50,12 +50,14 @@ public class CameraToMonitor : MonoBehaviour
     public string monitorFunctionText_DE;
     public string localizedFunctionText;
 
-    // Mini-Game Fields
-    private int gridSize = 10;
-    private string[,] grid; // The 2D grid for the mini-game
-    private Vector2Int targetCoordinate; // The hidden target
-    private int remainingAttempts = 10; // Player's remaining attempts
-    private bool isMiniGameActive = false; // Tracks if the mini-game is active
+    [Header("Mini-Game Settings")]
+    public int gridSize = 10; // Rozmiar siatki (np. 10x10)
+    private string[,] grid; // Tablica reprezentuj¹ca siatkê
+    private Vector2Int targetCoordinate; // Cel w grze
+    private int remainingAttempts;
+    private bool isMiniGameActive;
+    public GameObject cursor; // Obiekt kursora (podœwietlenie)
+    private Vector2Int cursorPosition = new Vector2Int(0, 0); // Pozycja kursora
 
     [Header("UI – Konsola monitora")]
     public TextMeshProUGUI consoleTextDisplay;
@@ -516,6 +518,22 @@ public class CameraToMonitor : MonoBehaviour
         {
             StartCoroutine(MoveCameraBackToOriginalPosition());
         }
+
+        // Obs³uga komend, jeœli coœ jest wpisane w pole tekstowe
+        if (inputField != null && !string.IsNullOrEmpty(inputField.text))
+        {
+            if (Input.GetKeyDown(KeyCode.Return))
+            {
+                HandleCommandInput(inputField.text); // Obs³ugujemy wpisan¹ komendê
+                return; // Zapobiegamy dalszemu przetwarzaniu (np. strza³om w mini-grze)
+            }
+        }
+
+        // Obs³uga klawiatury w mini-grze tylko wtedy, gdy pole tekstowe jest puste
+        if (isMiniGameActive)
+        {
+            HandleKeyboardInput();
+        }
     }
 
     public void UseMonitor()
@@ -775,47 +793,60 @@ public class CameraToMonitor : MonoBehaviour
     }
     private void HandleCommandInput(string command)
     {
-
+        // Obs³uga wpisów w trakcie mini-gry
         if (isMiniGameActive)
         {
-            HandleMiniGameInput(command);
+            if (command == "exit")
+            {
+                // Komenda "exit" koñczy mini-grê
+                EndMiniGame(false);
+                UpdateGridDisplay("Mini-gra zosta³a zakoñczona przez gracza.");
+            }
+            else
+            {
+                // Nieznana komenda w mini-grze
+                UpdateGridDisplay($"Nieznana komenda: {command}");
+            }
+
             inputField.text = "";
             inputField.ActivateInputField();
+
             return;
         }
 
-        // Jeœli terminal jest zabezpieczony, sprawdŸ has³o
+        // Jeœli terminal jest zabezpieczony, sprawdŸ has³o lub obs³u¿ komendy
         if (securedMonitor)
         {
-            // Obs³uga komendy wyjœcia
             if (commandDictionary.ContainsKey(command))
             {
+                // Jeœli komenda istnieje w s³owniku, wywo³aj j¹
                 var data = commandDictionary[command];
-                data.command.Invoke(); // Wywo³anie komendy wyjœcia
-                inputField.text = "";  // Wyczyœæ pole tekstowe
-                inputField.ActivateInputField(); // Ponownie aktywuj pole tekstowe
-                return; // Zakoñcz dalsze przetwarzanie
+                data.command.Invoke();
+                inputField.text = "";
+                inputField.ActivateInputField();
+                return;
             }
 
-            if (command == generatedPassword) // Sprawdzenie poprawnoœci has³a
+            if (command == generatedPassword)
             {
-                securedMonitor = false; // Odblokowanie terminala
-                ClearMonitorConsole(); // Wyczyœæ logi
+                // Jeœli podano poprawne has³o
+                securedMonitor = false; // Zdejmij zabezpieczenie
+                ClearMonitorConsole(); // Wyczyœæ konsolê
                 ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("correctPassword")}", "#FFD200");
-                InitializeLocalizedCommands(); // Inicjalizacja komend po odblokowaniu
-                StartLogSequence(); // Rozpocznij sekwencjê od nowa
+                InitializeLocalizedCommands(); // Zainicjuj komendy po odblokowaniu
+                StartLogSequence(); // Rozpocznij sekwencjê logów
 
                 if (modelText != null)
                 {
                     modelText.text = "Siegdu & Babi v2.7_4_1998";
                 }
 
-                // Usuñ komendê "hack" lub jej odpowiednik z listy komend
+                // Usuñ komendê "hack" (lub jej odpowiednik w innym jêzyku)
                 string localizedHackCommand = LanguageManager.Instance.currentLanguage switch
                 {
-                    LanguageManager.Language.Polski => "hakuj", // Polski
-                    LanguageManager.Language.Deutsch => "hacken", // Niemiecki
-                    _ => "hack" // Angielski
+                    LanguageManager.Language.Polski => "hakuj",
+                    LanguageManager.Language.Deutsch => "hacken",
+                    _ => "hack"
                 };
 
                 if (commandDictionary.ContainsKey(localizedHackCommand))
@@ -826,12 +857,13 @@ public class CameraToMonitor : MonoBehaviour
             }
             else
             {
+                // Jeœli has³o jest nieprawid³owe
                 ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("incorrectPassword"), "#FF0000");
             }
 
             inputField.text = ""; // Wyczyœæ pole tekstowe
             inputField.ActivateInputField(); // Ponownie aktywuj pole tekstowe
-            return; // Zakoñcz dalsze przetwarzanie
+            return;
         }
 
         // Reszta funkcji HandleCommandInput pozostaje bez zmian
@@ -1011,8 +1043,10 @@ public class CameraToMonitor : MonoBehaviour
         isMiniGameActive = true; // Aktywujemy mini-grê
 
         // Wyœwietlamy pocz¹tkow¹ tablicê
-        UpdateGridDisplay("Gra rozpoczêta! Wpisz wspó³rzêdne (np. A3).");
+        UpdateGridDisplay("Gra rozpoczêta! U¿yj strza³ek, aby poruszaæ siê po siatce. Naciœnij Enter, aby wybraæ pole.");
+        UpdateCursorPosition();
     }
+
 
     private void UpdateGridDisplay(string additionalMessage)
     {
@@ -1020,71 +1054,96 @@ public class CameraToMonitor : MonoBehaviour
 
         StringBuilder gridBuilder = new StringBuilder();
 
-        // Generujemy siatkê
         for (int i = 0; i < gridSize; i++)
         {
             for (int j = 0; j < gridSize; j++)
             {
-                // Pobierz wartoœæ z siatki
                 string cellValue = grid[i, j];
 
-                // Jeœli wartoœæ to strza³ gracza (trafienie/pud³o), wyœwietl w ¿ó³tym kolorze
-                if (cellValue != "X")
+                if (i == cursorPosition.x && j == cursorPosition.y)
                 {
-                    gridBuilder.Append($" (<color=#FFD200>{cellValue}</color>) ");
+                    gridBuilder.Append($" [<color=#FFFF00>{cellValue}</color>] "); // ¯ó³ty kolor
+                }
+                else if (cellValue != "X")
+                {
+                    gridBuilder.Append($" (<color=#FFFFFF>{cellValue}</color>) ");
                 }
                 else
                 {
-                    // Jeœli pole nie zosta³o odkryte, wyœwietl puste nawiasy
                     gridBuilder.Append(" (  ) ");
                 }
             }
 
-            // Nowa linia po ka¿dym wierszu
             gridBuilder.AppendLine();
         }
 
-        // Dodaj opcjonalny komunikat poni¿ej tablicy
         if (!string.IsNullOrEmpty(additionalMessage))
         {
             gridBuilder.AppendLine();
             gridBuilder.AppendLine(additionalMessage);
         }
 
-        // Aktualizuj tekst w konsoli
         consoleTextDisplay.text = gridBuilder.ToString();
     }
 
-    // Updates to HandleMiniGameInput for handling A1, B3, etc.
-
-    private void HandleMiniGameInput(string command)
+    private void HandleKeyboardInput()
     {
-        // Sprawdzamy format (np. A3, B10)
-        if (command.Length < 2 || command.Length > 3)
+        // Obs³uga strza³ek do poruszania kursorem
+        if (Input.GetKeyDown(KeyCode.UpArrow))
         {
-            UpdateGridDisplay("Nieprawid³owy format! U¿yj formatu A1-J10.");
-            return;
+            MoveCursor(-1, 0);
         }
-
-        // Parsujemy literê (np. 'A' -> indeks wiersza)
-        char rowChar = char.ToUpper(command[0]);
-        if (rowChar < 'A' || rowChar > 'J')
+        else if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            UpdateGridDisplay("Nieprawid³owy wiersz! U¿yj liter od A do J.");
-            return;
+            MoveCursor(1, 0);
         }
-
-        int row = rowChar - 'A'; // Konwertujemy 'A'-'J' na indeks 0-9
-
-        // Parsujemy cyfrê (np. '3' -> indeks kolumny)
-        string columnString = command.Substring(1);
-        if (!int.TryParse(columnString, out int column) || column < 1 || column > 10)
+        else if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
-            UpdateGridDisplay("Nieprawid³owa kolumna! U¿yj liczb od 1 do 10.");
-            return;
+            MoveCursor(0, -1);
         }
+        else if (Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            MoveCursor(0, 1);
+        }
+        else if (Input.GetKeyDown(KeyCode.Return)) // Klawisz Enter do strzelania
+        {
+            if (string.IsNullOrEmpty(inputField.text)) // Sprawdzamy, czy pole tekstowe jest puste
+            {
+                HandleCursorSelection();
+            }
+        }
+    }
 
-        int col = column - 1; // Konwertujemy 1-10 na indeks 0-9
+    private void MoveCursor(int rowDelta, int colDelta)
+    {
+        int newRow = Mathf.Clamp(cursorPosition.x + rowDelta, 0, gridSize - 1);
+        int newCol = Mathf.Clamp(cursorPosition.y + colDelta, 0, gridSize - 1);
+
+        cursorPosition = new Vector2Int(newRow, newCol);
+
+        UpdateGridDisplay(null); // Aktualizacja siatki
+    }
+
+    private void UpdateCursorPosition()
+    {
+        if (cursor != null)
+        {
+            // Przesuñ obiekt kursora na aktualn¹ komórkê
+            cursor.transform.position = GetCellPosition(cursorPosition.x, cursorPosition.y);
+        }
+    }
+
+    private Vector3 GetCellPosition(int row, int col)
+    {
+        // Zak³adamy, ¿e komórki s¹ rozmieszczone w siatce 2D w przestrzeni
+        // Zwraca pozycjê w przestrzeni w oparciu o siatkê
+        return new Vector3(col * 1.1f, -row * 1.1f, 0); // Przyk³adowe rozmieszczenie
+    }
+
+    private void HandleCursorSelection()
+    {
+        int row = cursorPosition.x;
+        int col = cursorPosition.y;
 
         // Sprawdzamy, czy gracz ju¿ strzela³ w to pole
         if (grid[row, col] != "X")
@@ -1093,7 +1152,7 @@ public class CameraToMonitor : MonoBehaviour
             return;
         }
 
-        // Sprawdzamy, czy gracz trafi³ w cel
+        // Sprawdzamy, czy gracz trafi³
         Vector2Int guess = new Vector2Int(row, col);
         if (guess == targetCoordinate)
         {
@@ -1103,12 +1162,12 @@ public class CameraToMonitor : MonoBehaviour
             return;
         }
 
-        // Obliczamy odleg³oœæ od celu
+        // Aktualizujemy odleg³oœæ od celu
         int distance = Mathf.Abs(targetCoordinate.x - row) + Mathf.Abs(targetCoordinate.y - col);
-        grid[row, col] = distance.ToString(); // Aktualizujemy tablicê
+        grid[row, col] = distance.ToString(); // Aktualizujemy siatkê
         remainingAttempts--;
 
-        // Aktualizujemy wyœwietlenie tablicy
+        // Wyœwietlamy zaktualizowan¹ siatkê
         if (remainingAttempts > 0)
         {
             UpdateGridDisplay($"Pud³o! Odleg³oœæ: {distance}. Pozosta³e próby: {remainingAttempts}.");
@@ -1119,27 +1178,49 @@ public class CameraToMonitor : MonoBehaviour
             EndMiniGame(false); // Przegrana
         }
     }
-
     private void EndMiniGame(bool isWin)
     {
         isMiniGameActive = false; // Wy³¹czamy mini-grê
 
         if (isWin)
         {
-            // Wygrana gra
-            ClearMonitorConsole();
-            UpdateGridDisplay("Gratulacje! Trafi³eœ w cel! Sekwencja startowa rozpocznie siê za chwilê...");
+            // Wygrana gra - cel miga przez 5 sekund
             ModelNameRandomSymbols();
-            StartCoroutine(StartSequenceAfterDelay(5f));
+            StartCoroutine(BlinkTargetCell(targetCoordinate, 5f));
+            UpdateGridDisplay("Gratulacje! Trafi³eœ w cel!"); // Wyœwietlamy wiadomoœæ
+
+            securedMonitor = false;
         }
         else
         {
-            // Przegrana gra - ujawniamy cel
-            grid[targetCoordinate.x, targetCoordinate.y] = "$"; // T oznacza cel
-            ClearMonitorConsole();
-            UpdateGridDisplay("Koniec gry! Ujawniono cel ('$'). Sekwencja startowa rozpocznie siê za 3 sekundy...");
-            StartCoroutine(StartSequenceAfterDelay(5f));
+            // Przegrana gra - ujawniamy cel graczowi
+            grid[targetCoordinate.x, targetCoordinate.y] = "0"; // Oznaczamy cel jako `0`
+            StartCoroutine(BlinkTargetCell(targetCoordinate, 5f)); // Miganie celu przez 5 sekund
         }
+
+        // Rozpoczynamy sekwencjê startow¹ po czasie migania
+        StartCoroutine(StartSequenceAfterDelay(5f));
+    }
+
+    private IEnumerator BlinkTargetCell(Vector2Int target, float duration)
+    {
+        float elapsedTime = 0f;
+        bool isVisible = true; // Czy cel jest widoczny w danej chwili
+
+        while (elapsedTime < duration)
+        {
+            // Miganie: Na zmianê pokazuj/ukrywaj cel
+            grid[target.x, target.y] = isVisible ? "0" : " "; // Migaj¹cy cel
+            UpdateGridDisplay(null); // Aktualizacja siatki z migaj¹cym celem
+
+            isVisible = !isVisible; // Zmieñ stan widocznoœci
+            elapsedTime += 0.5f; // Odczekaj 0.5 sekundy
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        // Po zakoñczeniu migania upewnij siê, ¿e cel pozostaje widoczny
+        grid[target.x, target.y] = "0";
+        UpdateGridDisplay(null); // Finalna aktualizacja siatki
     }
 
     // Dodana metoda uruchamiaj¹ca sekwencjê startow¹ po opóŸnieniu
@@ -1147,7 +1228,10 @@ public class CameraToMonitor : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
 
-        // W tym miejscu mo¿esz wywo³aæ dowoln¹ metodê lub akcjê, która odpowiada za sekwencjê startow¹
+        // Czyœcimy wyœwietlacz konsoli tu¿ przed rozpoczêciem sekwencji
+        ClearMonitorConsole();
+
+        // Rozpoczynamy sekwencjê startow¹
         StartLogSequence();
     }
 
