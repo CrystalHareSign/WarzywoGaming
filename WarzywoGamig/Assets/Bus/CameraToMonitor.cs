@@ -6,6 +6,7 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 
+
 public class CameraToMonitor : MonoBehaviour
 {
     public PlayerMovement playerMovementScript;
@@ -51,21 +52,27 @@ public class CameraToMonitor : MonoBehaviour
     public string localizedFunctionText;
 
     [Header("Mini-Game Settings")]
-    public int gridSize = 10; // Rozmiar siatki (np. 10x10)
+    public int gridSize = 15; // Rozmiar siatki (np. 10x10)
     private string[,] grid; // Tablica reprezentuj¹ca siatkê
     private Vector2Int targetCoordinate; // Cel w grze
     private int remainingAttempts;
     private bool isMiniGameActive;
-    public GameObject cursor; // Obiekt kursora (podœwietlenie)
+    private GameObject cursor; // Obiekt kursora (podœwietlenie)
     private Vector2Int cursorPosition = new Vector2Int(0, 0); // Pozycja kursora
     private bool hasWonGame = false;
     private List<string> logHistory = new List<string>(); // Lista do przechowywania logów
+    public bool isTimerEnabled = true;
+    public float gameTime = 30f; // Czas gry w sekundach (np. 30s)
+    private float timeRemaining;
+    private Coroutine timerCoroutine;
 
     [Header("UI – Konsola monitora")]
     public TextMeshProUGUI consoleTextDisplay;
     public TMP_InputField inputField; // Pole tekstowe dla wpisywania komend
     public TextMeshProUGUI modelText; // Dodatkowy tekst, który ma zmieniæ treœæ na losowe znaki
     private Queue<ConsoleMessage> messageQueue = new Queue<ConsoleMessage>();
+    private Queue<(string messageKey, Color color)> messageProcessingQueue = new();
+    private bool isProcessingMessage = false;
     public int maxMessages = 5;
 
     public float letterDisplayDelay = 0.05f; // OpóŸnienie miêdzy literami w sekundach
@@ -98,6 +105,10 @@ public class CameraToMonitor : MonoBehaviour
     private Coroutine logSequenceCoroutine = null;
     private string pendingCommand = null;
     private bool isTerminalInterrupted = false;
+
+    private float errorVolume = 0.2f;
+    // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
+    private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
     // zielony  "#00E700"
     // z³oty    "#FFD200"
@@ -164,6 +175,10 @@ public class CameraToMonitor : MonoBehaviour
         InitializeLocalizedCommands();
 
         UpdateLogEntriesLanguage(); // Ustaw pocz¹tkowy jêzyk
+
+        // ZnajdŸ wszystkie obiekty posiadaj¹ce PlaySoundOnObject i dodaj do listy
+       playSoundObjects.AddRange(UnityEngine.Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
+
     }
     private void GeneratePassword()
     {
@@ -292,6 +307,12 @@ public class CameraToMonitor : MonoBehaviour
             if (mainMonitor)
             {
                 ShowConsoleMessage($"{LanguageManager.Instance.GetLocalizedMessage("commandMissing")}", "#FF0000");
+
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+                    playSoundOnObject.PlaySound("TerminalError", errorVolume, false);
+                }
             }
 
         }, false);
@@ -315,6 +336,12 @@ public class CameraToMonitor : MonoBehaviour
             else
             {
                 ShowConsoleMessage($"{LanguageManager.Instance.GetLocalizedMessage("commandMissing")}", "#FF0000");
+
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+                    playSoundOnObject.PlaySound("TerminalError", errorVolume, false);
+                }
             }
 
         }, false);
@@ -399,6 +426,13 @@ public class CameraToMonitor : MonoBehaviour
         if (currentScene == targetSceneName)
         {
             ShowConsoleMessage(string.Format(LanguageManager.Instance.GetLocalizedMessage("alreadyInScene"), targetSceneName), "#FF0000");
+
+            foreach (var playSoundOnObject in playSoundObjects)
+            {
+                if (playSoundOnObject == null) continue;
+                playSoundOnObject.PlaySound("TerminalError", errorVolume, false);
+            }
+
             return; // Przerywamy – nie wychodzimy z terminala ani nie zmieniamy sceny
         }
 
@@ -415,6 +449,13 @@ public class CameraToMonitor : MonoBehaviour
         {
             Debug.Log("Rafinacja w toku. Nie mo¿na zmieniæ sceny.");
             ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("refiningBlocked"), "#FF0000");
+
+            foreach (var playSoundOnObject in playSoundObjects)
+            {
+                if (playSoundOnObject == null) continue;
+                playSoundOnObject.PlaySound("TerminalError", errorVolume, false);
+            }
+
             yield break; // Zatrzymaj korutynê, jeœli rafinacja w toku
         }
 
@@ -559,6 +600,12 @@ public class CameraToMonitor : MonoBehaviour
 
     IEnumerator MoveCameraToPosition()
     {
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+            playSoundOnObject.PlaySound("TerminalOpen", 0.7f, false);
+        }
+
         isTerminalInterrupted = false;
         CanUseMenu = false;
         isInteracting = true;
@@ -613,6 +660,17 @@ public class CameraToMonitor : MonoBehaviour
 
     IEnumerator MoveCameraBackToOriginalPosition()
     {
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+            playSoundOnObject.FadeOutSound("TerminalMusic", 0.5f);
+        }
+
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+            playSoundOnObject.PlaySound("TerminalExit", 0.4f, false);
+        }
         isInteracting = false;
         isTerminalInterrupted = true;
 
@@ -712,12 +770,21 @@ public class CameraToMonitor : MonoBehaviour
             color = parsedColor;
         }
 
-        // Wyœwietl wiadomoœæ
-        StartCoroutine(TypeMessageCoroutine(translatedMessage, color));
+        // Dodajemy do kolejki i odpalamy tylko jeœli nic nie przetwarza
+        messageProcessingQueue.Enqueue((key, color));
+
+        if (!isProcessingMessage)
+        {
+            var next = messageProcessingQueue.Dequeue();
+            StartCoroutine(TypeMessageCoroutine(next.messageKey, next.color));
+        }
     }
+
 
     private IEnumerator TypeMessageCoroutine(string messageKey, Color color)
     {
+        isProcessingMessage = true;
+
         // Pobranie wiadomoœci z LanguageManager na podstawie messageKey
         string fullMessage = LanguageManager.Instance.GetLocalizedMessage(messageKey);
 
@@ -728,10 +795,22 @@ public class CameraToMonitor : MonoBehaviour
         {
             // Sprawdzamy, czy terminal zosta³ przerwany
             if (isTerminalInterrupted)
+            {
+                isProcessingMessage = false;
                 yield break; // Przerwij wyœwietlanie, je¿eli terminal zosta³ przerwany
+            }
 
             currentLine += fullMessage[i]; // Dodajemy nowy znak do linii
             UpdateConsolePreview(currentLine, color); // Aktualizujemy podgl¹d konsoli
+
+            if (i % 2 == 0)
+            {
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+                    playSoundOnObject.PlaySound("TerminalLetter", 0.3f, false);
+                }
+            }
 
             // OpóŸnienie pomiêdzy literami
             yield return new WaitForSeconds(letterDisplayDelay);
@@ -739,7 +818,10 @@ public class CameraToMonitor : MonoBehaviour
 
         // Je¿eli terminal zosta³ przerwany, przerywamy dalsze dzia³anie
         if (isTerminalInterrupted)
+        {
+            isProcessingMessage = false;
             yield break;
+        }
 
         // Tworzymy obiekt finalnej wiadomoœci
         var finalMessage = new ConsoleMessage(fullMessage, Time.time, color);
@@ -751,8 +833,24 @@ public class CameraToMonitor : MonoBehaviour
         while (messageQueue.Count > maxMessages)
             messageQueue.Dequeue();
 
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+            playSoundOnObject.PlaySound("TerminalLog", 0.4f, false);
+        }
+
         // Aktualizujemy tekst na konsoli
         UpdateConsoleText();
+
+        // Zakoñczono przetwarzanie
+        isProcessingMessage = false;
+
+        // Jeœli s¹ kolejne wiadomoœci w kolejce, przetwórz nastêpn¹
+        if (messageProcessingQueue.Count > 0)
+        {
+            var next = messageProcessingQueue.Dequeue();
+            StartCoroutine(TypeMessageCoroutine(next.messageKey, next.color));
+        }
     }
 
     private void UpdateConsolePreview(string typingLine, Color color)
@@ -812,6 +910,13 @@ public class CameraToMonitor : MonoBehaviour
         if (!isMiniGameActive && command == "hack" && hasWonGame)
         {
             ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("unknownCommand"), "#FF0000");
+
+            foreach (var playSoundOnObject in playSoundObjects)
+            {
+                if (playSoundOnObject == null) continue;
+                playSoundOnObject.PlaySound("TerminalError", errorVolume, false);
+            }
+
             ClearInputField();
             return;
         }
@@ -823,6 +928,12 @@ public class CameraToMonitor : MonoBehaviour
             {
                 // Komenda "exit" koñczy mini-grê
                 EndMiniGame(false);
+
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+                    playSoundOnObject.PlaySound("TerminalExit", 0.4f, false);
+                }
             }
 
             //if (command == "cheat")
@@ -844,6 +955,13 @@ public class CameraToMonitor : MonoBehaviour
                 var data = commandDictionary[command];
                 data.command.Invoke();
                 ClearInputField();
+
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+                    playSoundOnObject.PlaySound("TerminalAccept", 0.3f, false);
+                }
+
                 return;
             }
 
@@ -853,6 +971,14 @@ public class CameraToMonitor : MonoBehaviour
                 securedMonitor = false; // Zdejmij zabezpieczenie
                 ClearMonitorConsole(); // Wyczyœæ konsolê
                 ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("correctPassword")}", "#FFD200");
+
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+
+                    playSoundOnObject.PlaySound("TerminalCorrectPassword", 0.5f);
+                }
+
                 InitializeLocalizedCommands(); // Zainicjuj komendy po odblokowaniu
                 StartLogSequence(); // Rozpocznij sekwencjê logów
 
@@ -873,12 +999,24 @@ public class CameraToMonitor : MonoBehaviour
                 {
                     commandDictionary.Remove(localizedHackCommand);
                     ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("unknownCommand"), "#FF0000");
+
+                    foreach (var playSoundOnObject in playSoundObjects)
+                    {
+                        if (playSoundOnObject == null) continue;
+                        playSoundOnObject.PlaySound("TerminalError", errorVolume, false);
+                    }
                 }
             }
             else
             {
                 // Jeœli has³o jest nieprawid³owe
                 ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("incorrectPassword"), "#FF0000");
+
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+                    playSoundOnObject.PlaySound("TerminalError", errorVolume, false);
+                }
             }
 
             ClearInputField();
@@ -893,6 +1031,12 @@ public class CameraToMonitor : MonoBehaviour
         if (command == currentScene && mainMonitor)
         {
             ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("alreadyInScene"), "#FFD200");
+
+            foreach (var playSoundOnObject in playSoundObjects)
+            {
+                if (playSoundOnObject == null) continue;
+                playSoundOnObject.PlaySound("TerminalError", errorVolume, false);
+            }
             ClearInputField();
             return;
         }
@@ -905,15 +1049,34 @@ public class CameraToMonitor : MonoBehaviour
             if (command == confirmYesKey)
             {
                 ShowConsoleMessage($">>> {string.Format(LanguageManager.Instance.GetLocalizedMessage("executingCommand"), pendingCommand)}", "#00E700");
+
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+                    playSoundOnObject.PlaySound("TerminalAccept", 0.3f, false);
+                }
+
                 commandDictionary[pendingCommand].command.Invoke();
             }
             else if (command == confirmNoKey)
             {
                 ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("commandCancelled"), "#FF0000");
+
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+                    playSoundOnObject.PlaySound("TerminalError", errorVolume, false);
+                }
             }
             else
             {
                 ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("invalidResponse"), "#FF0000");
+
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+                    playSoundOnObject.PlaySound("TerminalError", errorVolume, false);
+                }
             }
 
             pendingCommand = null;
@@ -934,6 +1097,12 @@ public class CameraToMonitor : MonoBehaviour
                     if (command == currentScene)
                     {
                         ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("alreadyInScene"), "#FFD200");
+
+                        foreach (var playSoundOnObject in playSoundObjects)
+                        {
+                            if (playSoundOnObject == null) continue;
+                            playSoundOnObject.PlaySound("TerminalError", errorVolume, false);
+                        }
                     }
                     else
                     {
@@ -944,11 +1113,23 @@ public class CameraToMonitor : MonoBehaviour
                 else
                 {
                     data.command.Invoke();
+
+                    foreach (var playSoundOnObject in playSoundObjects)
+                    {
+                        if (playSoundOnObject == null) continue;
+                        playSoundOnObject.PlaySound("TerminalAccept", 0.2f, false);
+                    }
                 }
             }
             else
             {
                 ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("unknownCommand"), "#FF0000");
+
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+                    playSoundOnObject.PlaySound("TerminalError", errorVolume, false);
+                }
             }
 
             ClearInputField();
@@ -963,6 +1144,12 @@ public class CameraToMonitor : MonoBehaviour
 
     private void DisplayRandomPanels()
     {
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+            playSoundOnObject.PlaySound("TerminalMusic", 0.2f, false);
+        }
+
         // Zresetuj stan terminala
         ResetTerminalState();
 
@@ -1065,6 +1252,16 @@ public class CameraToMonitor : MonoBehaviour
         // Wyœwietlamy zlokalizowan¹ wiadomoœæ o rozpoczêciu gry
         UpdateGridDisplay($">>> {LanguageManager.Instance.GetLocalizedMessage("miniGameStart")}", "#FFD200");
         UpdateCursorPosition();
+
+        if (isTimerEnabled)
+        {
+            timeRemaining = gameTime;
+
+            if (timerCoroutine != null)
+                StopCoroutine(timerCoroutine);
+
+            timerCoroutine = StartCoroutine(CountdownTimer());
+        }
     }
 
     private void UpdateGridDisplay(string additionalMessage, string hexColor = "#FFFFFF")
@@ -1096,6 +1293,33 @@ public class CameraToMonitor : MonoBehaviour
             gridBuilder.AppendLine();
         }
 
+        // Dodanie pustej linii miêdzy tabel¹ a logami
+        gridBuilder.AppendLine();
+
+
+        if (isMiniGameActive && isTimerEnabled)
+        {
+            TimeSpan timeSpan = TimeSpan.FromSeconds(timeRemaining);
+            string formattedTime = string.Format("{0}:{1:D2}:{2:D3}",
+                timeSpan.Minutes,
+                timeSpan.Seconds,
+                timeSpan.Milliseconds);
+
+            // Dobieramy kolor w zale¿noœci od czasu
+            string timerColor;
+            if (timeRemaining <= 10f)
+                timerColor = "#FF0000"; // czerwony
+            else if (timeRemaining <= 20f)
+                timerColor = "#FFD200"; // z³oty
+            else
+                timerColor = "#00E700"; // zielony
+
+            gridBuilder.AppendLine($"<color={timerColor}>>>> Time Left: {formattedTime}</color>");
+        }
+
+        // Dodanie pustej linii miêdzy tabel¹ a logami
+        gridBuilder.AppendLine();
+
         // Obs³uga logów
         if (!string.IsNullOrEmpty(additionalMessage))
         {
@@ -1122,31 +1346,47 @@ public class CameraToMonitor : MonoBehaviour
 
     private void HandleKeyboardInput()
     {
-        // Obs³uga strza³ek do poruszania kursorem
+        bool moved = false;
+
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
             MoveCursor(-1, 0);
+            moved = true;
         }
         else if (Input.GetKeyDown(KeyCode.DownArrow))
         {
             MoveCursor(1, 0);
+            moved = true;
         }
         else if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
             MoveCursor(0, -1);
+            moved = true;
         }
         else if (Input.GetKeyDown(KeyCode.RightArrow))
         {
             MoveCursor(0, 1);
+            moved = true;
         }
-        else if (Input.GetKeyDown(KeyCode.Return)) // Klawisz Enter do strzelania
+        else if (Input.GetKeyDown(KeyCode.Return))
         {
-            if (string.IsNullOrEmpty(inputField.text)) // Sprawdzamy, czy pole tekstowe jest puste
+            if (string.IsNullOrEmpty(inputField.text))
             {
                 HandleCursorSelection();
             }
         }
+
+        // Odtwórz dŸwiêk tylko jeœli by³ ruch
+        if (moved)
+        {
+            foreach (var playSoundOnObject in playSoundObjects)
+            {
+                if (playSoundOnObject == null) continue;
+                playSoundOnObject.PlaySound("TerminalMove", 0.3f, false);
+            }
+        }
     }
+
 
     private void MoveCursor(int rowDelta, int colDelta)
     {
@@ -1182,6 +1422,11 @@ public class CameraToMonitor : MonoBehaviour
         if (grid[row, col] != "X")
         {
             UpdateGridDisplay($">>> {LanguageManager.Instance.GetLocalizedMessage("miniGameAlreadyRevealed")}", "#FFD200");
+            foreach (var playSoundOnObject in playSoundObjects)
+            {
+                if (playSoundOnObject == null) continue;
+                playSoundOnObject.PlaySound("TerminalError", errorVolume, false);
+            }
             return;
         }
 
@@ -1200,6 +1445,13 @@ public class CameraToMonitor : MonoBehaviour
         if (remainingAttempts > 0)
         {
             UpdateGridDisplay($">>> {LanguageManager.Instance.GetLocalizedMessage("miniGameMissedTarget", distance, remainingAttempts)}", "#FFD200");
+
+            foreach (var playSoundOnObject in playSoundObjects)
+            {
+                if (playSoundOnObject == null) continue;
+                playSoundOnObject.PlaySound("TerminalShoot", 0.3F, false);
+            }
+            return;
         }
         else
         {
@@ -1207,13 +1459,52 @@ public class CameraToMonitor : MonoBehaviour
             EndMiniGame(false);
         }
     }
+
+    private IEnumerator CountdownTimer()
+    {
+        while (timeRemaining > 0f)
+        {
+            timeRemaining -= Time.deltaTime;
+
+            if (timeRemaining < 0f)
+                timeRemaining = 0f;
+
+            UpdateGridDisplay(null); // Aktualizacja siatki z nowym czasem
+            yield return null; // Czekaj jedn¹ klatkê
+        }
+
+        if (isMiniGameActive)
+        {
+            EndMiniGame(false); // Jeœli czas siê skoñczy³ i gra trwa — przegrana
+        }
+    }
+
     private void EndMiniGame(bool isWin)
     {
+        foreach (var playSoundOnObject in playSoundObjects)
+        {
+            if (playSoundOnObject == null) continue;
+            playSoundOnObject.FadeOutSound("TerminalMusic", 5.0f);
+        }
+
+        if (timerCoroutine != null)
+        {
+            StopCoroutine(timerCoroutine);
+            timerCoroutine = null;
+        }
+
         isMiniGameActive = false; // Wy³¹czamy mini-grê
         canInteract = false; // Blokujemy interakcjê
 
         if (isWin)
         {
+
+            foreach (var playSoundOnObject in playSoundObjects)
+            {
+                if (playSoundOnObject == null) continue;
+                playSoundOnObject.PlaySound("TerminalWin", 0.3F, false);
+            }
+
             hasWonGame = true; // Oznaczamy, ¿e gra zakoñczy³a siê wygran¹
             // Wygrana gra - cel miga przez 5 sekund
             ModelNameRandomSymbols();
@@ -1234,6 +1525,13 @@ public class CameraToMonitor : MonoBehaviour
         }
         else
         {
+
+            foreach (var playSoundOnObject in playSoundObjects)
+            {
+                if (playSoundOnObject == null) continue;
+                playSoundOnObject.PlaySound("TerminalLose", 0.3F, false);
+            }
+
             // Przegrana gra - ujawniamy cel graczowi
             grid[targetCoordinate.x, targetCoordinate.y] = "0"; // Oznaczamy cel jako `0`
             StartCoroutine(BlinkTargetCell(targetCoordinate, 5f)); // Miganie celu przez 5 sekund

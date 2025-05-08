@@ -85,3 +85,6 @@ MonoBehaviour:
   - name: Step5
     clip: {fileID: 8300000, guid: 9485f97f9cf9db246ba59ac2c8b7e069, type: 3}
     volume: 1
+  - name: TerminalMusic
+    clip: {fileID: 8300000, guid: c3f571a28085e91429954a4bbf33058f, type: 3}
+    volume: 1
