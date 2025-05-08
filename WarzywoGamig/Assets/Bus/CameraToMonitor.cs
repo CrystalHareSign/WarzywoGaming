@@ -921,12 +921,11 @@ public class CameraToMonitor : MonoBehaviour
             return;
         }
 
-        // Obs³uga wpisów w trakcie mini-gry
         if (isMiniGameActive)
         {
             if (command == "exit")
             {
-                // Komenda "exit" koñczy mini-grê
+                // Komenda "exit" koñczy mini-grê jako przegran¹
                 EndMiniGame(false);
 
                 foreach (var playSoundOnObject in playSoundObjects)
@@ -934,15 +933,11 @@ public class CameraToMonitor : MonoBehaviour
                     if (playSoundOnObject == null) continue;
                     playSoundOnObject.PlaySound("TerminalExit", 0.4f, false);
                 }
+
+                ResetTerminalState(); // Reset terminala do stanu pocz¹tkowego
             }
 
-            //if (command == "cheat")
-            //{
-
-            //}
-
             ClearInputField();
-
             return;
         }
 
@@ -1236,6 +1231,8 @@ public class CameraToMonitor : MonoBehaviour
     // Method to start the mini-game
     private void StartMiniGame()
     {
+        Debug.Log("Starting mini-game...");
+
         grid = new string[gridSize, gridSize];
         for (int i = 0; i < gridSize; i++)
         {
@@ -1249,18 +1246,32 @@ public class CameraToMonitor : MonoBehaviour
         remainingAttempts = 10;
         isMiniGameActive = true;
 
-        // Wyœwietlamy zlokalizowan¹ wiadomoœæ o rozpoczêciu gry
         UpdateGridDisplay($">>> {LanguageManager.Instance.GetLocalizedMessage("miniGameStart")}", "#FFD200");
         UpdateCursorPosition();
+
+        Debug.Log($"Timer enabled: {isTimerEnabled}");
 
         if (isTimerEnabled)
         {
             timeRemaining = gameTime;
 
             if (timerCoroutine != null)
+            {
+                Debug.Log("Stopping existing timer coroutine before starting a new one.");
                 StopCoroutine(timerCoroutine);
+            }
 
+            Debug.Log("Starting timer coroutine.");
             timerCoroutine = StartCoroutine(CountdownTimer());
+        }
+        else
+        {
+            Debug.Log("Timer is disabled, skipping timer setup.");
+            if (timerCoroutine != null)
+            {
+                StopCoroutine(timerCoroutine);
+                timerCoroutine = null;
+            }
         }
     }
 
@@ -1375,6 +1386,15 @@ public class CameraToMonitor : MonoBehaviour
                 HandleCursorSelection();
             }
         }
+        else if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (isMiniGameActive)
+            {
+                // Wciœniêcie Esc podczas mini-gry koñczy j¹ jako przegran¹
+                EndMiniGame(false);
+                ResetTerminalState(); // Reset terminala do stanu pocz¹tkowego
+            }
+        }
 
         // Odtwórz dŸwiêk tylko jeœli by³ ruch
         if (moved)
@@ -1386,7 +1406,6 @@ public class CameraToMonitor : MonoBehaviour
             }
         }
     }
-
 
     private void MoveCursor(int rowDelta, int colDelta)
     {
@@ -1462,10 +1481,17 @@ public class CameraToMonitor : MonoBehaviour
 
     private IEnumerator CountdownTimer()
     {
+        Debug.Log("Timer coroutine started.");
+
         while (timeRemaining > 0f)
         {
-            timeRemaining -= Time.deltaTime;
+            if (!isTimerEnabled)
+            {
+                Debug.Log("Timer coroutine stopped because timer is disabled.");
+                yield break; // Zakoñcz korutynê
+            }
 
+            timeRemaining -= Time.deltaTime;
             if (timeRemaining < 0f)
                 timeRemaining = 0f;
 
@@ -1473,8 +1499,11 @@ public class CameraToMonitor : MonoBehaviour
             yield return null; // Czekaj jedn¹ klatkê
         }
 
+        Debug.Log("Timer has reached zero.");
+
         if (isMiniGameActive)
         {
+            Debug.Log("Ending mini-game because time is up.");
             EndMiniGame(false); // Jeœli czas siê skoñczy³ i gra trwa — przegrana
         }
     }
@@ -1529,7 +1558,7 @@ public class CameraToMonitor : MonoBehaviour
             foreach (var playSoundOnObject in playSoundObjects)
             {
                 if (playSoundOnObject == null) continue;
-                playSoundOnObject.PlaySound("TerminalLose", 0.3F, false);
+                playSoundOnObject.PlaySound("TerminalLose", 0.5F, false);
             }
 
             // Przegrana gra - ujawniamy cel graczowi
