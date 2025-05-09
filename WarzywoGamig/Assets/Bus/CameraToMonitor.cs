@@ -559,15 +559,15 @@ public class CameraToMonitor : MonoBehaviour
 
     void Update()
     {
-        if ((Input.GetKeyDown(KeyCode.Escape) && isInteracting && !isCameraMoving))
-        {
-            StartCoroutine(MoveCameraBackToOriginalPosition());
-        }
-
         // Blokujemy interakcjê, jeœli canInteract jest false
         if (!canInteract)
         {
             return; // Ignorujemy wszystkie akcje gracza
+        }
+
+        if ((Input.GetKeyDown(KeyCode.Escape) && isInteracting && !isCameraMoving))
+        {
+            StartCoroutine(MoveCameraBackToOriginalPosition());
         }
 
         if (inputField != null)
@@ -1145,6 +1145,8 @@ public class CameraToMonitor : MonoBehaviour
 
     private void DisplayRandomPanels()
     {
+        canInteract = false;
+
         foreach (var playSoundOnObject in playSoundObjects)
         {
             if (playSoundOnObject == null) continue;
@@ -1217,6 +1219,7 @@ public class CameraToMonitor : MonoBehaviour
         inputField?.ActivateInputField();
 
         StartMiniGame(); // Rozpocznij mini-grê
+        canInteract = true;
     }
 
     private string GenerateRandomText(int length)
@@ -1582,7 +1585,7 @@ public class CameraToMonitor : MonoBehaviour
             foreach (var playSoundOnObject in playSoundObjects)
             {
                 if (playSoundOnObject == null) continue;
-                playSoundOnObject.PlaySound("TerminalWin", 0.3F, false);
+                playSoundOnObject.PlaySound("TerminalWin", 0.7F, false);
             }
 
             hasWonGame = true; // Oznaczamy, ¿e gra zakoñczy³a siê wygran¹
@@ -1609,7 +1612,7 @@ public class CameraToMonitor : MonoBehaviour
             foreach (var playSoundOnObject in playSoundObjects)
             {
                 if (playSoundOnObject == null) continue;
-                playSoundOnObject.PlaySound("TerminalLose", 0.5F, false);
+                playSoundOnObject.PlaySound("TerminalLose", 0.7F, false);
             }
 
             // Przegrana gra - ujawniamy cel graczowi
@@ -1617,10 +1620,6 @@ public class CameraToMonitor : MonoBehaviour
             StartCoroutine(BlinkTargetCell(targetCoordinate, 5f)); // Miganie celu przez 5 sekund
             UpdateGridDisplay(LanguageManager.Instance.GetLocalizedMessage("miniGameOver"), "#FFD200");
         }
-
-        // Czyszczenie monitora i resetowanie logów
-        ClearMonitorConsole();
-        logHistory.Clear();
 
         // Rozpoczynamy sekwencjê startow¹ po czasie migania tylko, jeœli gra nie zosta³a wymuszenie zakoñczona
         if (!isGameForceEnded)
@@ -1674,7 +1673,9 @@ public class CameraToMonitor : MonoBehaviour
         yield return new WaitForSeconds(delay);
 
         // Czyœcimy wyœwietlacz konsoli tu¿ przed rozpoczêciem sekwencji
+        // Czyszczenie monitora i resetowanie logów
         ClearMonitorConsole();
+        logHistory.Clear();
 
         // Rozpoczynamy sekwencjê startow¹
         StartLogSequence();
