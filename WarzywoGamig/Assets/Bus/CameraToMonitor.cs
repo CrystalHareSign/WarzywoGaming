@@ -63,8 +63,10 @@ public class CameraToMonitor : MonoBehaviour
     private List<string> logHistory = new List<string>(); // Lista do przechowywania logów
     public bool isTimerEnabled = true;
     public float gameTime = 30f; // Czas gry w sekundach (np. 30s)
+    private bool isGameForceEnded = false; // Zresetuj flagê na pocz¹tku nowej gry
     private float timeRemaining;
     private Coroutine timerCoroutine;
+    private Coroutine blinkCoroutine; // Przechowuje referencjê do korutyny BlinkTargetCell
 
     [Header("UI – Konsola monitora")]
     public TextMeshProUGUI consoleTextDisplay;
@@ -897,7 +899,11 @@ public class CameraToMonitor : MonoBehaviour
         {
             consoleTextDisplay.text = "";
         }
+
+        // Wyczyszczenie monitora bez wywo³ywania dodatkowych metod
+        logHistory.Clear(); // Reset logów
     }
+
     private void HandleCommandInput(string command)
     {
         // Ignorujemy komendy, jeœli interakcja jest wy³¹czona
@@ -1231,7 +1237,13 @@ public class CameraToMonitor : MonoBehaviour
     // Method to start the mini-game
     private void StartMiniGame()
     {
-        Debug.Log("Starting mini-game...");
+        if (isMiniGameActive) return; // Zapobiegaj ponownemu uruchomieniu mini-gry
+
+        // Czyszczenie monitora i resetowanie logów
+        ClearMonitorConsole();
+        logHistory.Clear();
+
+        isGameForceEnded = false; // Zresetuj flagê na pocz¹tku nowej gry
 
         grid = new string[gridSize, gridSize];
         for (int i = 0; i < gridSize; i++)
@@ -1242,14 +1254,25 @@ public class CameraToMonitor : MonoBehaviour
             }
         }
 
+        // Obliczanie pocz¹tkowej pozycji kursora
+        int centerX = gridSize / 2;
+        int centerY = gridSize / 2;
+
+        // Jeœli rozmiar siatki jest parzysty, przesuwamy kursor o jedno pole w lewo i do góry
+        if (gridSize % 2 == 0)
+        {
+            centerX -= 1;
+            centerY -= 1;
+        }
+
+        cursorPosition = new Vector2Int(centerX, centerY);
+
         targetCoordinate = new Vector2Int(UnityEngine.Random.Range(0, gridSize), UnityEngine.Random.Range(0, gridSize));
         remainingAttempts = 10;
         isMiniGameActive = true;
 
         UpdateGridDisplay($">>> {LanguageManager.Instance.GetLocalizedMessage("miniGameStart")}", "#FFD200");
         UpdateCursorPosition();
-
-        Debug.Log($"Timer enabled: {isTimerEnabled}");
 
         if (isTimerEnabled)
         {
@@ -1277,7 +1300,29 @@ public class CameraToMonitor : MonoBehaviour
 
     private void UpdateGridDisplay(string additionalMessage, string hexColor = "#FFFFFF")
     {
+        // Sprawdzenie consoleTextDisplay
         if (consoleTextDisplay == null) return;
+
+        // Sprawdzenie czy grid zosta³ zainicjalizowany
+        if (grid == null)
+        {
+            Debug.LogError("Grid is null. Ensure it is initialized before calling UpdateGridDisplay.");
+            return;
+        }
+
+        // Sprawdzenie czy cursorPosition mieœci siê w zakresie grid
+        if (cursorPosition.x < 0 || cursorPosition.x >= gridSize ||
+            cursorPosition.y < 0 || cursorPosition.y >= gridSize)
+        {
+            Debug.LogError("Cursor position is out of bounds. Ensure cursorPosition is within grid limits.");
+            return;
+        }
+
+        // Sprawdzenie czy logHistory zosta³a zainicjalizowana
+        if (logHistory == null)
+        {
+            logHistory = new List<string>();
+        }
 
         StringBuilder gridBuilder = new StringBuilder();
 
@@ -1307,7 +1352,7 @@ public class CameraToMonitor : MonoBehaviour
         // Dodanie pustej linii miêdzy tabel¹ a logami
         gridBuilder.AppendLine();
 
-
+        // Wyœwietlanie czasu
         if (isMiniGameActive && isTimerEnabled)
         {
             TimeSpan timeSpan = TimeSpan.FromSeconds(timeRemaining);
@@ -1316,7 +1361,6 @@ public class CameraToMonitor : MonoBehaviour
                 timeSpan.Seconds,
                 timeSpan.Milliseconds);
 
-            // Dobieramy kolor w zale¿noœci od czasu
             string timerColor;
             if (timeRemaining <= 10f)
                 timerColor = "#FF0000"; // czerwony
@@ -1334,18 +1378,15 @@ public class CameraToMonitor : MonoBehaviour
         // Obs³uga logów
         if (!string.IsNullOrEmpty(additionalMessage))
         {
-            // Dodanie nowego logu do historii
             string formattedMessage = $"<color={hexColor}> {additionalMessage}</color>";
             logHistory.Add(formattedMessage);
 
-            // Usuwanie najstarszych logów, jeœli lista przekracza 3 elementy
             if (logHistory.Count > 3)
             {
                 logHistory.RemoveAt(0);
             }
         }
 
-        // Dodanie logów do konsoli
         foreach (string log in logHistory)
         {
             gridBuilder.AppendLine(log);
@@ -1388,11 +1429,21 @@ public class CameraToMonitor : MonoBehaviour
         }
         else if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (isMiniGameActive)
+            // Zatrzymaj korutynê BlinkTargetCell, jeœli dzia³a
+            if (blinkCoroutine != null)
             {
-                // Wciœniêcie Esc podczas mini-gry koñczy j¹ jako przegran¹
-                EndMiniGame(false);
-                ResetTerminalState(); // Reset terminala do stanu pocz¹tkowego
+                StopCoroutine(blinkCoroutine);
+                blinkCoroutine = null; // Resetuj referencjê
+                ResetTargetCellVisibility(); // Przywróæ widocznoœæ celu
+            }
+
+            else if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (isMiniGameActive)
+                {
+                    isGameForceEnded = true; // Ustaw flagê na true
+                    EndMiniGame(false); // Zakoñcz grê jako przegran¹
+                }
             }
         }
 
@@ -1567,10 +1618,18 @@ public class CameraToMonitor : MonoBehaviour
             UpdateGridDisplay(LanguageManager.Instance.GetLocalizedMessage("miniGameOver"), "#FFD200");
         }
 
-        // Rozpoczynamy sekwencjê startow¹ po czasie migania
-        StartCoroutine(StartSequenceAfterDelay(5f));
+        // Czyszczenie monitora i resetowanie logów
+        ClearMonitorConsole();
+        logHistory.Clear();
+
+        // Rozpoczynamy sekwencjê startow¹ po czasie migania tylko, jeœli gra nie zosta³a wymuszenie zakoñczona
+        if (!isGameForceEnded)
+        {
+            StartCoroutine(StartSequenceAfterDelay(5f));
+        }
     }
 
+    // Zmieniona metoda BlinkTargetCell
     private IEnumerator BlinkTargetCell(Vector2Int target, float duration)
     {
         float elapsedTime = 0f;
@@ -1585,11 +1644,28 @@ public class CameraToMonitor : MonoBehaviour
             isVisible = !isVisible; // Zmieñ stan widocznoœci
             elapsedTime += 0.5f; // Odczekaj 0.5 sekundy
             yield return new WaitForSeconds(0.5f);
+
+            // SprawdŸ, czy korutyna zosta³a przerwana przez gracza
+            if (blinkCoroutine == null)
+            {
+                yield break; // Natychmiast zakoñcz korutynê
+            }
         }
 
         // Po zakoñczeniu migania upewnij siê, ¿e cel pozostaje widoczny
         grid[target.x, target.y] = "<color=#FFFFFF>0</color>";
         UpdateGridDisplay(null); // Finalna aktualizacja siatki
+        blinkCoroutine = null; // Resetuj referencjê po zakoñczeniu
+    }
+
+    // Dodaj pomocnicz¹ metodê do resetowania widocznoœci celu
+    private void ResetTargetCellVisibility()
+    {
+        if (targetCoordinate != null)
+        {
+            grid[targetCoordinate.x, targetCoordinate.y] = "<color=#FFFFFF>0</color>";
+            UpdateGridDisplay(null); // Finalna aktualizacja siatki z widocznym celem
+        }
     }
 
     // Dodana metoda uruchamiaj¹ca sekwencjê startow¹ po opóŸnieniu
@@ -1602,6 +1678,7 @@ public class CameraToMonitor : MonoBehaviour
 
         // Rozpoczynamy sekwencjê startow¹
         StartLogSequence();
+        isGameForceEnded = false; // Zresetuj flagê na pocz¹tku nowej gry
     }
 
     private void ModelNameRandomSymbols()
