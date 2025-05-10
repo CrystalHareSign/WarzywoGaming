@@ -785,6 +785,7 @@ public class CameraToMonitor : MonoBehaviour
 
     private IEnumerator TypeMessageCoroutine(string messageKey, Color color)
     {
+
         isProcessingMessage = true;
 
         // Pobranie wiadomoœci z LanguageManager na podstawie messageKey
@@ -1372,7 +1373,8 @@ public class CameraToMonitor : MonoBehaviour
             else
                 timerColor = "#00E700"; // zielony
 
-            gridBuilder.AppendLine($"<color={timerColor}>>>> Time Left: {formattedTime}</color>");
+            string localizedTimeLeft = LanguageManager.Instance.GetLocalizedMessage("miniGameTimer");
+            gridBuilder.AppendLine($"<color={timerColor}> >>> {localizedTimeLeft}: {formattedTime}</color>");
         }
 
         // Dodanie pustej linii miêdzy tabel¹ a logami

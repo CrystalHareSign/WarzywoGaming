@@ -77,6 +77,7 @@ public class TerminalTranslations
     public string miniGameAlreadyRevealed;
     public string miniGameMissedTarget;
     public string miniGameOver;
+    public string miniGameTimer;
 }
 
 public class LanguageManager : MonoBehaviour
