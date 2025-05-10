@@ -73,6 +73,9 @@ public class LootShop : MonoBehaviour
             }
         }
 
+        // Inicjalizacja wartoœci waluty gracza z GameManager
+        playerCurrencyText.text = GameManager.Instance.playerCurrency.ToString("0.##");
+
     }
 
     private void Update()
@@ -120,30 +123,11 @@ public class LootShop : MonoBehaviour
         // Debug: wypisz ca³kowit¹ wartoœæ po obliczeniach
         Debug.Log($"Total value after summing up categories: {totalValue}");
 
-        // Pobierz obecny stan waluty gracza
-        float currentCurrency = 0f;
+        // Dodajemy totalValue do obecnej waluty gracza w GameManager
+        GameManager.Instance.AddCurrency(totalValue);
 
-        // Usuwamy niepotrzebne znaki (np. spacje, inne znaki) i upewniamy siê, ¿e mamy poprawny format
-        string currencyText = playerCurrencyText.text.Trim();
-
-        // Zamieniamy przecinek na kropkê (jeœli separator dziesiêtny to przecinek)
-        currencyText = currencyText.Replace(',', '.');
-
-        // Sprawdzenie, czy tekst waluty jest liczb¹
-        if (float.TryParse(currencyText, out currentCurrency))
-        {
-            // Dodajemy totalValue do obecnej waluty gracza
-            currentCurrency += totalValue;
-            Debug.Log($"Player's currency after sale: {currentCurrency}");
-
-            // Wyœwietlamy zaktualizowan¹ walutê gracza
-            playerCurrencyText.text = currentCurrency.ToString("0.##");
-        }
-        else
-        {
-            // Jeœli waluta nie jest poprawna, logujemy b³¹d
-            Debug.LogError($"Player currency text '{currencyText}' is not a valid number.");
-        }
+        // Wyœwietlamy zaktualizowan¹ walutê gracza
+        playerCurrencyText.text = GameManager.Instance.playerCurrency.ToString("0.##");
 
         // Resetowanie iloœci i wartoœci w UI
         for (int i = 0; i < categories.Count; i++)
