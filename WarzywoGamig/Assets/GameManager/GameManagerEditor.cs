@@ -15,7 +15,19 @@ public class GameManagerEditor : Editor
         // Dodajemy przycisk do resetowania danych
         if (GUILayout.Button("Resetuj dane gracza"))
         {
-            gameManager.ResetPlayerData();
+            gameManager.ResetCurrency();
+        }
+
+        // Dodajemy przycisk do resetowania danych
+        if (GUILayout.Button("Resetuj pozycjê gracza"))
+        {
+            gameManager.ResetPositionAndRotation();
+        }
+
+        // Dodajemy przycisk do resetowania danych
+        if (GUILayout.Button("Resetuj zapis"))
+        {
+            gameManager.ResetSaveFile();
         }
     }
 }

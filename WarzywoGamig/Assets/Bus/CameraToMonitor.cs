@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
+using static UnityEditor.Lightmapping;
 
 
 public class CameraToMonitor : MonoBehaviour
@@ -16,8 +18,6 @@ public class CameraToMonitor : MonoBehaviour
     public TreasureRefiner treasureRefiner;
     public GameObject crossHair;
     public GameObject monitorCanvas;
-    public GameObject monitorMainPanel;
-    public GameObject monitorRiddlePanel;
 
     public Transform player;
     public Transform finalCameraRotation;
@@ -41,6 +41,17 @@ public class CameraToMonitor : MonoBehaviour
 
     [Header("Main monitor")]
     public bool mainMonitor = false;
+
+    // UnityEvents pozwalaj¹ na przypisanie funkcji w Inspectorze
+    [Header("Custom Actions")]
+    public UnityEvent onStartFunction;
+    public UnityEvent onSaveFunction;
+
+    [Header("Start")]
+    public bool hasStartFunction = false;
+
+    [Header("Save monitor")]
+    public bool saveMonitor = false;
 
     [Header("Riddle monitor")]
     public bool riddleMonitor = false;
@@ -258,7 +269,7 @@ public class CameraToMonitor : MonoBehaviour
         // Tworzymy pusty s³ownik komend
         commandDictionary = new Dictionary<string, CommandData>();
 
-        if (riddleMonitor && securedMonitor)
+        if (riddleMonitor && securedMonitor && !mainMonitor && !saveMonitor)
         {
             // Dodajemy komendê Hack/hakuj w zale¿noœci od jêzyka
             string localizedHack = LanguageManager.Instance.currentLanguage switch
@@ -299,14 +310,13 @@ public class CameraToMonitor : MonoBehaviour
         // Komenda Start dzia³a ró¿nie w zale¿noœci od blokady terminala
         commandDictionary[localizedStart] = new CommandData(() =>
         {
-            if (riddleMonitor)
+            if (hasStartFunction)
             {
                 StartFunction();
                 ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("start")}", "#FFD200");
                 ShowConsoleMessage($"{LanguageManager.Instance.GetLocalizedMessage(localizedFunctionText)}", "#FFD200");
             }
-
-            if (mainMonitor)
+            else
             {
                 ShowConsoleMessage($"{LanguageManager.Instance.GetLocalizedMessage("commandMissing")}", "#FF0000");
 
@@ -318,7 +328,6 @@ public class CameraToMonitor : MonoBehaviour
             }
 
         }, false);
-
 
         // Dodanie komendy Start w zale¿noœci od jêzyka
         string localizedInfo = LanguageManager.Instance.currentLanguage switch
@@ -347,6 +356,22 @@ public class CameraToMonitor : MonoBehaviour
             }
 
         }, false);
+
+        if (saveMonitor)
+        {
+            string localizedSave = LanguageManager.Instance.currentLanguage switch
+            {
+                LanguageManager.Language.Polski => "zapisz", // Polski
+                LanguageManager.Language.Deutsch => "speichern", // Niemiecki
+                _ => "save" // Angielski
+            };
+
+            commandDictionary[localizedSave] = new CommandData(() =>
+            {
+                SaveFunction();
+                ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("saveMonitor")}", "#FFD200");
+            }, false);
+        }
 
         if (mainMonitor)
         {
@@ -381,10 +406,16 @@ public class CameraToMonitor : MonoBehaviour
         commandDictionary[localizedHelp] = new CommandData(() => StartCoroutine(DisplayHelpLogs()), false);
 
     }
-
     public void StartFunction()
     {
-        Debug.Log("wywo³ano akcje z terminala");
+        Debug.Log("wywo³ano akcje");
+        onStartFunction?.Invoke(); // Wywo³anie przypisanych funkcji
+    }
+
+    public void SaveFunction()
+    {
+        Debug.Log("zapisywanie gry");
+        onSaveFunction?.Invoke(); // Wywo³anie przypisanych funkcji
     }
 
     public void HandleLanguageChanged()
@@ -507,17 +538,25 @@ public class CameraToMonitor : MonoBehaviour
             yield return new WaitForSeconds(0.2f);
             ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("terminalExit")}", "#00E700");
             yield return new WaitForSeconds(0.2f);
-            ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("startHelp")}", "#00E700");
-            yield return new WaitForSeconds(0.2f);
 
-            if (!mainMonitor)
+            if (riddleMonitor)
             {
                 ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("hack")}", "#00E700");
+                yield return new WaitForSeconds(0.2f);
+            }
+            if (hasStartFunction)
+            {
+                ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("startHelp")}", "#00E700");
                 yield return new WaitForSeconds(0.2f);
             }
             if (hasInfo)
             {
                 ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("infoHelp")}" + " " + randomKB + " KB" , "#00E700");
+                yield return new WaitForSeconds(0.2f);
+            }
+            if (saveMonitor)
+            {
+                ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("saveMonitorHelp")}", "#00E700");
                 yield return new WaitForSeconds(0.2f);
             }
             if (mainMonitor)

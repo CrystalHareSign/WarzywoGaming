@@ -78,6 +78,8 @@ public class TerminalTranslations
     public string miniGameMissedTarget;
     public string miniGameOver;
     public string miniGameTimer;
+    public string saveMonitor;
+    public string saveMonitorHelp;
 }
 
 public class LanguageManager : MonoBehaviour
