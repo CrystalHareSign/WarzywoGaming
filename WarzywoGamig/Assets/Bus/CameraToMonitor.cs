@@ -52,18 +52,6 @@ public class CameraToMonitor : MonoBehaviour
 
     [Header("Save monitor")]
     public bool saveMonitor = false;
-    private bool isSaveMode = false; // Flaga wskazuj¹ca, czy tryb zapisywania jest aktywny
-    private int selectedSlotIndex = 0; // Aktualnie wybrany slot
-    private List<string> saveLogs = new List<string>(); // Logi wyœwietlane w trybie zapisywania
-    private List<string> saveSlots = new List<string>
-    {
-        "[ empty file 00.00.00 00:00:00 ]",
-        "[ empty file 00.00.00 00:00:00 ]",
-        "[ empty file 00.00.00 00:00:00 ]",
-        "[ empty file 00.00.00 00:00:00 ]",
-        "[ empty file 00.00.00 00:00:00 ]"
-    };
-
 
     [Header("Riddle monitor")]
     public bool riddleMonitor = false;
@@ -178,13 +166,7 @@ public class CameraToMonitor : MonoBehaviour
         if (inputField != null)
         {
             inputField.gameObject.SetActive(false); // Ukryj pole edycji na starcie
-            inputField.onEndEdit.AddListener((value) =>
-            {
-                if (!Input.GetKey(KeyCode.Return)) // Ignoruj klawisz Enter
-                {
-                    HandleCommandInput(value);
-                }
-            });
+            inputField.onEndEdit.AddListener(HandleCommandInput); // Dodaj obs³ugê zakoñczenia edycji
             inputField.characterLimit = 30;//Ogranicz liczbê znaków do 20 (zmieñ na wartoœæ, któr¹ chcesz)
         }
 
@@ -375,7 +357,6 @@ public class CameraToMonitor : MonoBehaviour
 
         }, false);
 
-        // Dodanie komendy save, jeœli saveMonitor jest aktywny
         if (saveMonitor)
         {
             string localizedSave = LanguageManager.Instance.currentLanguage switch
@@ -387,7 +368,8 @@ public class CameraToMonitor : MonoBehaviour
 
             commandDictionary[localizedSave] = new CommandData(() =>
             {
-                StartSaveMode(); // Rozpocznij tryb zapisywania
+                SaveFunction();
+                ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("saveMonitor")}", "#FFD200");
             }, false);
         }
 
@@ -622,32 +604,25 @@ public class CameraToMonitor : MonoBehaviour
             return; // Ignorujemy wszystkie akcje gracza
         }
 
-        // Obs³uga klawisza Escape
-        if (Input.GetKeyDown(KeyCode.Escape) && isInteracting && !isCameraMoving)
+        if ((Input.GetKeyDown(KeyCode.Escape) && isInteracting && !isCameraMoving))
         {
             StartCoroutine(MoveCameraBackToOriginalPosition());
         }
 
-        // Obs³uga pola tekstowego
         if (inputField != null)
         {
+            // Jeœli w polu tekstowym coœ jest wpisane
             if (!string.IsNullOrEmpty(inputField.text))
             {
-                // Obs³uga wpisanej komendy
                 if (Input.GetKeyDown(KeyCode.Return))
                 {
-                    HandleCommandInput(inputField.text);
+                    HandleCommandInput(inputField.text); // Obs³ugujemy wpisan¹ komendê
                 }
             }
             else if (isMiniGameActive)
             {
-                // Obs³uga mini-gry
-                HandleGameKeyboardInput();
-            }
-            else if (isSaveMode)
-            {
-                // Obs³uga trybu zapisu
-                HandleSaveKeyboardInput();
+                // Jeœli pole tekstowe jest puste i mini-gra jest aktywna
+                HandleKeyboardInput();
             }
         }
     }
@@ -977,20 +952,6 @@ public class CameraToMonitor : MonoBehaviour
             return;
         }
 
-        // Obs³uga komendy "save"
-        if (command == "save" && saveMonitor)
-        {
-            foreach (var playSoundOnObject in playSoundObjects)
-            {
-                if (playSoundOnObject == null) continue;
-                playSoundOnObject.PlaySound("TerminalAccept", 0.2f, false);
-            }
-
-            StartSaveMode(); // Rozpocznij tryb zapisywania
-            ClearInputField(); // Wyczyœæ pole tekstowe
-            return; // Przerwij dalsze przetwarzanie
-        }
-
         // Jeœli gra zakoñczy³a siê wygran¹, blokujemy "hack"
         if (!isMiniGameActive && command == "hack" && hasWonGame)
         {
@@ -1006,7 +967,6 @@ public class CameraToMonitor : MonoBehaviour
             return;
         }
 
-        // Obs³uga mini-gry
         if (isMiniGameActive)
         {
             if (command == "exit")
@@ -1022,39 +982,9 @@ public class CameraToMonitor : MonoBehaviour
 
                 ResetTerminalState(); // Reset terminala do stanu pocz¹tkowego
             }
-            else
-            {
-                // Obs³uga strza³u w mini-grze
-                HandleCursorSelection();
-            }
 
-            ClearInputField(); // Wyczyœæ pole tekstowe
-            return; // Zatrzymaj dalsze przetwarzanie
-        }
-
-        // Obs³uga trybu zapisywania
-        if (isSaveMode)
-        {
-            if (command == "exit")
-            {
-                EndSaveMode(); // Zakoñcz tryb zapisywania
-
-                foreach (var playSoundOnObject in playSoundObjects)
-                {
-                    if (playSoundOnObject == null) continue;
-                    playSoundOnObject.PlaySound("TerminalExit", 0.4f, false);
-                }
-
-                ResetTerminalState(); // Reset terminala do stanu pocz¹tkowego
-            }
-            else
-            {
-                // Mo¿esz dodaæ inne komendy specyficzne dla trybu zapisywania
-                SaveToSlot(selectedSlotIndex); // Przyk³ad: zapis do wybranego slotu
-            }
-
-            ClearInputField(); // Wyczyœæ pole tekstowe
-            return; // Zatrzymaj dalsze przetwarzanie
+            ClearInputField();
+            return;
         }
 
         // Jeœli terminal jest zabezpieczony, sprawdŸ has³o lub obs³u¿ komendy
@@ -1510,7 +1440,7 @@ public class CameraToMonitor : MonoBehaviour
         consoleTextDisplay.text = gridBuilder.ToString();
     }
 
-    private void HandleGameKeyboardInput()
+    private void HandleKeyboardInput()
     {
         bool moved = false;
 
@@ -1543,16 +1473,21 @@ public class CameraToMonitor : MonoBehaviour
         }
         else if (Input.GetKeyDown(KeyCode.Escape))
         {
+            // Zatrzymaj korutynê BlinkTargetCell, jeœli dzia³a
             if (blinkCoroutine != null)
             {
                 StopCoroutine(blinkCoroutine);
                 blinkCoroutine = null; // Resetuj referencjê
                 ResetTargetCellVisibility(); // Przywróæ widocznoœæ celu
             }
-            else if (isMiniGameActive)
+
+            else if (Input.GetKeyDown(KeyCode.Escape))
             {
-                isGameForceEnded = true; // Ustaw flagê na true
-                EndMiniGame(false); // Zakoñcz grê jako przegran¹
+                if (isMiniGameActive)
+                {
+                    isGameForceEnded = true; // Ustaw flagê na true
+                    EndMiniGame(false); // Zakoñcz grê jako przegran¹
+                }
             }
         }
 
@@ -1839,139 +1774,6 @@ public class CameraToMonitor : MonoBehaviour
 
         //ClearMonitorConsole();
         //StartLogSequence();
-    }
-
-    // Rozpoczêcie trybu zapisywania
-    private void StartSaveMode()
-    {
-        isSaveMode = true;
-        selectedSlotIndex = 0;
-        ClearMonitorConsole();
-        UpdateSaveModeDisplay();
-    }
-
-
-    // Zakoñczenie trybu zapisywania
-    private void EndSaveMode()
-    {
-        isSaveMode = false;
-        ClearInputField();
-        UpdateConsoleText(); // Przywróæ standardowy widok terminala
-        StartCoroutine(StartSequenceAfterDelay(0f));
-    }
-
-    // Metoda aktualizuj¹ca widok listy slotów i logów
-    private void UpdateSaveModeDisplay()
-    {
-        if (!isSaveMode) return; // WyjdŸ, jeœli tryb zapisywania nie jest aktywny
-
-        StringBuilder displayBuilder = new StringBuilder();
-
-        // Wyœwietlanie slotów
-        for (int i = 0; i < saveSlots.Count; i++)
-        {
-            if (i == selectedSlotIndex)
-            {
-                displayBuilder.AppendLine($">> <color=#FFD200>{saveSlots[i]}</color>"); // Podœwietlenie wybranego slotu
-            }
-            else
-            {
-                displayBuilder.AppendLine($"   {saveSlots[i]}");
-            }
-        }
-
-        displayBuilder.AppendLine(); // Pusta linia miêdzy slotami a logami
-
-        // Wyœwietlenie logów
-        foreach (var log in saveLogs)
-        {
-            displayBuilder.AppendLine(log);
-        }
-
-        consoleTextDisplay.text = displayBuilder.ToString(); // Aktualizacja tekstu terminala
-    }
-
-    // Obs³uga klawiatury w trybie zapisywania
-    private void HandleSaveKeyboardInput()
-    {
-        bool moved = false;
-
-        if (isSaveMode)
-        {
-            if (Input.GetKeyDown(KeyCode.UpArrow))
-            {
-                selectedSlotIndex = Mathf.Max(0, selectedSlotIndex - 1);
-                UpdateSaveModeDisplay();
-                moved = true;
-            }
-            else if (Input.GetKeyDown(KeyCode.DownArrow))
-            {
-                selectedSlotIndex = Mathf.Min(saveSlots.Count - 1, selectedSlotIndex + 1);
-                UpdateSaveModeDisplay();
-                moved = true;
-            }
-            else if (Input.GetKeyDown(KeyCode.Return))
-            {
-                SaveToSlot(selectedSlotIndex);
-            }
-            else if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                EndSaveMode();
-            }
-        }
-        else
-        {
-            HandleDefaultInput();
-        }
-
-        // Odtwórz dŸwiêk tylko jeœli by³ ruch
-        if (moved)
-        {
-            foreach (var playSoundOnObject in playSoundObjects)
-            {
-                if (playSoundOnObject == null) continue;
-                playSoundOnObject.PlaySound("TerminalMove", 0.3f, false);
-            }
-        }
-    }
-
-
-    private void HandleDefaultInput()
-    {
-        if (Input.GetKeyDown(KeyCode.Escape) && isInteracting && !isCameraMoving)
-        {
-            StartCoroutine(MoveCameraBackToOriginalPosition());
-        }
-    }
-
-    // Zapis do wybranego slotu
-    private void SaveToSlot(int slotIndex)
-    {
-        if (!isSaveMode) return; // Zabezpieczenie przed zapisaniem poza trybem zapisu
-
-        foreach (var playSoundOnObject in playSoundObjects)
-        {
-            if (playSoundOnObject == null) continue;
-            playSoundOnObject.PlaySound("TerminalAccept", 0.2f, false);
-        }
-
-        // Pobranie aktualnej daty i czasu
-        string currentDateTime = DateTime.Now.ToString("dd.MM.yy HH:mm:ss");
-
-        // Aktualizacja wybranego slotu z dat¹ i czasem
-        saveSlots[slotIndex] = $"[ save file {currentDateTime} ]";
-
-        // Dodanie logu o zapisaniu
-        string logMessage = $">>> Zapisano w slocie {slotIndex + 1}";
-        saveLogs.Add(logMessage);
-
-        // Ograniczenie liczby logów do 5
-        if (saveLogs.Count > 5)
-        {
-            saveLogs.RemoveAt(0);
-        }
-
-        UpdateSaveModeDisplay(); // Aktualizacja widoku po zapisie
     }
 
     private void StartLogSequence()
