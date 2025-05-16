@@ -4,6 +4,11 @@ using System;
 [System.Serializable]
 public class UITranslations
 {
+    [Header("StartMenu")]
+    public string newGame;
+    public string continueGame;
+    public string loadGame;
+
     [Header("PauseMenu")]
     public string resume;
     public string options;

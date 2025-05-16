@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-
+using UnityEngine.SceneManagement;
 public class OptionsMenu : MonoBehaviour
 {
     public GameObject optionsMenuUI;
@@ -9,6 +9,7 @@ public class OptionsMenu : MonoBehaviour
     public GameObject generalOptionsPanel;
     public GameObject soundOptionsPanel;
     public GameObject visualOptionsPanel;
+    public GameObject startMenuUI;
 
     [Header("Teksty przycisków")]
     public TMP_Text generalSettingsText;
@@ -72,7 +73,23 @@ public class OptionsMenu : MonoBehaviour
     public void BackToPauseMenu()
     {
         optionsMenuUI.SetActive(false); // Ukryj menu opcji
-        pauseMenuUI.SetActive(true); // Poka¿ menu pauzy
+
+        string currentScene = SceneManager.GetActiveScene().name;
+
+        if (currentScene == "Main") // lub "GameScene", jeœli tak nazywa siê Twoja scena z gr¹
+        {
+            if (pauseMenuUI != null)
+            {
+                pauseMenuUI.SetActive(true); // Poka¿ menu pauzy
+            }
+        }
+        else if (currentScene == "StartMenu")
+        {
+            if (startMenuUI != null)
+            {
+                startMenuUI.SetActive(true); // Poka¿ menu pauzy
+            }
+        }
     }
 
     public void UpdateButtonTexts()

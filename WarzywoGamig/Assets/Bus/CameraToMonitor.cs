@@ -414,8 +414,8 @@ public class CameraToMonitor : MonoBehaviour
 
     public void SaveFunction()
     {
-        Debug.Log("zapisywanie gry");
-        onSaveFunction?.Invoke(); // Wywo³anie przypisanych funkcji
+        // Wywo³anie zapisu gry na aktualnym slocie
+        SaveManager.Instance.SavePlayerData();
     }
 
     public void HandleLanguageChanged()

@@ -1,23 +1,25 @@
 using System;
+using System.Collections;
 using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class GameManager : MonoBehaviour
+public class SaveManager : MonoBehaviour
 {
-    public static GameManager Instance; // Singleton
+    public static SaveManager Instance; // Singleton
 
     public float playerCurrency = 0f; // Waluta gracza
     public DateTime lastSaveTime; // Data i godzina ostatniego zapisu
 
-    private string dataPath; // Œcie¿ka do pliku z danymi
+    private int currentSlotIndex = -1; // Bie¿¹cy slot zapisu
+    public int debugSlotIndex = 0;
 
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // Nie niszcz obiektu przy zmianie sceny
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -25,27 +27,45 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        dataPath = Application.persistentDataPath + "/playerData.json";
+        // Jeœli slot nie zosta³ ustawiony, przypisujemy domyœlny slot (np. slot 1)
+        if (currentSlotIndex == -1)
+        {
+            currentSlotIndex = 1;  // Domyœlnie slot 1, mo¿na zmieniæ w zale¿noœci od potrzeb
+        }
     }
 
-    // Metoda automatycznego zapisu danych gracza
+    private string GetSlotFilePath(int slotIndex)
+    {
+        return Application.persistentDataPath + $"/playerData_slot{slotIndex}.json";
+    }
+
+    public void SetCurrentSlot(int slotIndex)
+    {
+        currentSlotIndex = slotIndex;
+    }
+
     public void SavePlayerData()
     {
+        if (currentSlotIndex == -1)
+        {
+            Debug.LogWarning("Nie ustawiono slotu zapisu!");
+            return;
+        }
+
+        string path = GetSlotFilePath(currentSlotIndex);
+
         try
         {
-            // ZnajdŸ gracza w scenie po tagu "Player"
             GameObject player = GameObject.FindGameObjectWithTag("Player");
             if (player == null)
             {
-                Debug.LogWarning("Nie znaleziono obiektu gracza z tagiem 'Player'. Zapis przerwany.");
+                Debug.LogWarning("Nie znaleziono gracza.");
                 return;
             }
 
-            // Pobierz dane gracza
             Vector3 playerPosition = player.transform.position;
             Quaternion playerRotation = player.transform.rotation;
 
-            // Tworzymy obiekt danych do zapisania
             PlayerData data = new PlayerData
             {
                 playerCurrency = this.playerCurrency,
@@ -55,71 +75,58 @@ public class GameManager : MonoBehaviour
                 lastSaveTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
             };
 
-            // Serializujemy dane do formatu JSON
             string json = JsonUtility.ToJson(data, true);
-
-            // Zapisujemy dane do pliku
-            File.WriteAllText(dataPath, json);
-
-            // Aktualizujemy datê ostatniego zapisu
+            File.WriteAllText(path, json);
             lastSaveTime = DateTime.Now;
 
-            Debug.Log($"Dane gracza zapisane w {dataPath}.");
+            Debug.Log($"Zapisano dane w slocie {currentSlotIndex}: {path}");
         }
         catch (Exception ex)
         {
-            Debug.LogError($"B³¹d podczas zapisywania danych: {ex.Message}");
+            Debug.LogError($"B³¹d zapisu: {ex.Message}");
         }
     }
 
-    // Metoda automatycznego wczytywania danych gracza
-    public void LoadPlayerData()
+    public void LoadPlayerData(int slotIndex)
     {
-        if (!File.Exists(dataPath))
+        string path = GetSlotFilePath(slotIndex);
+        if (!File.Exists(path))
         {
-            Debug.LogWarning("Brak pliku zapisu gry. Wczytywanie przerwane.");
+            Debug.LogWarning($"Brak pliku dla slotu {slotIndex}: {path}");
             return;
         }
 
         try
         {
-            // Odczytaj dane z pliku
-            string json = File.ReadAllText(dataPath);
+            currentSlotIndex = slotIndex; // Ustawienie aktywnego slotu
 
-            // Deserializuj dane z formatu JSON
+            string json = File.ReadAllText(path);
             PlayerData data = JsonUtility.FromJson<PlayerData>(json);
-
-            // Wczytaj scenê
             SceneManager.LoadScene(data.sceneName);
-
-            // Po za³adowaniu sceny ustaw dane gracza
             StartCoroutine(SetPlayerDataAfterSceneLoad(data));
         }
         catch (Exception ex)
         {
-            Debug.LogError($"B³¹d podczas wczytywania danych: {ex.Message}");
+            Debug.LogError($"B³¹d odczytu: {ex.Message}");
         }
     }
 
-    private System.Collections.IEnumerator SetPlayerDataAfterSceneLoad(PlayerData data)
+    private IEnumerator SetPlayerDataAfterSceneLoad(PlayerData data)
     {
-        // Czekaj na za³adowanie sceny
         yield return new WaitForEndOfFrame();
 
-        // ZnajdŸ gracza w scenie po tagu "Player"
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player == null)
         {
-            Debug.LogWarning("Nie znaleziono obiektu gracza z tagiem 'Player'. Wczytywanie przerwane.");
+            Debug.LogWarning("Nie znaleziono gracza po za³adowaniu sceny.");
             yield break;
         }
 
-        // Ustaw dane gracza
         player.transform.position = data.playerPosition;
         player.transform.rotation = data.playerRotation;
         this.playerCurrency = data.playerCurrency;
 
-        Debug.Log($"Dane gracza zosta³y wczytane. Pozycja: {data.playerPosition}, Waluta: {data.playerCurrency}");
+        Debug.Log($"Wczytano dane z slotu {currentSlotIndex}.");
     }
 
     // Metoda dodaj¹ca walutê gracza
@@ -159,18 +166,40 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Metoda usuwaj¹ca plik zapisu
-    public void ResetSaveFile()
+    public void ResetSaveSlot(int slotIndex)
     {
-        if (File.Exists(dataPath))
+        try
         {
-            File.Delete(dataPath);
-            Debug.Log("Plik zapisu zosta³ usuniêty.");
+            string path = GetSlotFilePath(slotIndex);
+
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+                Debug.Log($"Usuniêto zapis slotu {slotIndex}: {path}");
+            }
+            else
+            {
+                Debug.LogWarning($"Nie znaleziono zapisu dla slotu {slotIndex}: {path}");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Debug.LogWarning("Brak pliku zapisu do usuniêcia.");
+            Debug.LogError($"B³¹d podczas usuwania zapisu slotu {slotIndex}: {ex.Message}");
         }
+    }
+
+    public bool DoesSlotExist(int slotIndex)
+    {
+        return File.Exists(GetSlotFilePath(slotIndex));
+    }
+
+    public PlayerData LoadDataWithoutApplying(int slotIndex)
+    {
+        string path = GetSlotFilePath(slotIndex);
+        if (!File.Exists(path)) return null;
+
+        string json = File.ReadAllText(path);
+        return JsonUtility.FromJson<PlayerData>(json);
     }
 }
 

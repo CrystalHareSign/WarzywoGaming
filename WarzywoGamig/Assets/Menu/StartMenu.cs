@@ -3,56 +3,39 @@ using TMPro;
 using TMPro.Examples;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
-public class PauseMenu : MonoBehaviour
+public class StartMenu : MonoBehaviour
 {
-    public static bool GameIsPaused = false;
-
-    public GameObject pauseMenuUI;
+    public GameObject startMenuUI;
+    public GameObject newGameMenuUI;
+    public GameObject continueMenuUI;
+    public GameObject loadGameMenuUI;
     public GameObject optionsMenuUI; // Dodaj referencjê do menu opcji
     public GameObject generalOptionsMenuUI;
     public GameObject visualOptionsMenuUI;
     public GameObject soundOptionsMenuUI;
-    public MouseLook mouseLook;
 
     [Header("Teksty przycisków")]
-    public TMP_Text resumeButtonText;
+    public TMP_Text newGameButtonText;
+    public TMP_Text continueButtonText;
+    public TMP_Text loadGameButtonText;
     public TMP_Text optionsButtonText;
     public TMP_Text quitButtonText;
-
-
-    public static PauseMenu instance;
 
     // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
-    private void Awake()
-    {
-        if (instance == null)
-        {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
     void Start()
     {
-        Time.timeScale = 1f;
-        pauseMenuUI.SetActive(false); // Upewnij siê, ¿e menu pauzy jest niewidoczne na starcie
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-
-        if (mouseLook == null)
+        // Sprawdzenie, czy startMenuUI jest aktywne na pocz¹tku
+        if (startMenuUI != null && !startMenuUI.activeSelf)
         {
-            mouseLook = Object.FindFirstObjectByType<MouseLook>();
-            if (mouseLook == null)
-            {
-                Debug.LogWarning("Nie znaleziono MouseLook w scenie!");
-            }
+            startMenuUI.SetActive(true); // Upewnij siê, ¿e menu startowe jest aktywne
         }
+
+        Cursor.lockState = CursorLockMode.None; // Zmieniamy tryb kursora, by by³ widoczny
+        Cursor.visible = true;
 
         // Subskrybuj zmiany jêzyka
         if (LanguageManager.Instance != null)
@@ -69,12 +52,8 @@ public class PauseMenu : MonoBehaviour
 
     void Update()
     {
-        // Dodanie warunku, który sprawdza, czy menu jest dostêpne
-        if (!CameraToMonitor.CanUseMenu) return; // Jeœli flaga jest ustawiona na false, zablokuj dostêp do menu
-
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            // Jeœli jesteœ w jednym z podmenu opcji – wracaj do optionsMenuUI
             if ((generalOptionsMenuUI != null && generalOptionsMenuUI.activeSelf) || (visualOptionsMenuUI != null && visualOptionsMenuUI.activeSelf) || (soundOptionsMenuUI != null && soundOptionsMenuUI.activeSelf))
             {
                 generalOptionsMenuUI.SetActive(false);
@@ -94,7 +73,7 @@ public class PauseMenu : MonoBehaviour
             else if (optionsMenuUI.activeSelf)
             {
                 optionsMenuUI.SetActive(false);
-                pauseMenuUI.SetActive(true);
+                startMenuUI.SetActive(true);
 
                 foreach (var playSoundOnObject in playSoundObjects)
                 {
@@ -103,80 +82,49 @@ public class PauseMenu : MonoBehaviour
                     playSoundOnObject.PlaySound("MenuExit", 0.4f, false);
                 }
             }
-            // Jeœli jesteœ w menu pauzy – wznow grê
-            else if (pauseMenuUI.activeSelf)
-            {
-                Resume();
-
-                foreach (var playSoundOnObject in playSoundObjects)
-                {
-                    if (playSoundOnObject == null) continue;
-
-                    playSoundOnObject.PlaySound("MenuExit", 0.4f, false);
-                }
-            }
-            // W innym wypadku – zapauzuj grê
-            else
-            {
-                Pause();
-
-                foreach (var playSoundOnObject in playSoundObjects)
-                {
-                    if (playSoundOnObject == null) continue;
-
-                    playSoundOnObject.PlaySound("MenuEnter", 0.4f, false);
-                }
-            }
         }
     }
 
-
-    public void Resume()
+    // Metoda dla "Nowa Gra" - przejœcie do menu nowej gry
+    public void OnNewGameButton()
     {
-        pauseMenuUI.SetActive(false);
-        optionsMenuUI.SetActive(false); // Ukryj menu opcji na wypadek, gdyby by³o otwarte
-        Time.timeScale = 1f;
-        GameIsPaused = false;
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-        mouseLook.enabled = true; // w³¹cz kamerê
-
-        foreach (var playSoundOnObject in playSoundObjects)
-        {
-            if (playSoundOnObject == null) continue;
-
-            playSoundOnObject.FadeOutSound("PauseMenuMusic", 1f);
-        }
+        Debug.Log("Klikniêto Now¹ Grê");  // Dodaj debugowanie
+        startMenuUI.SetActive(false); // Ukryj startowe menu
+        newGameMenuUI.SetActive(true); // Poka¿ menu nowej gry
     }
 
-    void Pause()
+    // Metoda dla "Wczytaj grê" - przejœcie do menu wczytywania
+    public void OnLoadGameButton()
     {
-        pauseMenuUI.SetActive(true);
-        optionsMenuUI.SetActive(false); // Ukryj menu opcji na wypadek, gdyby by³o otwarte
-        Time.timeScale = 0f;
-        GameIsPaused = true;
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-        mouseLook.enabled = false; // wy³¹cz kamerê
-
-        foreach (var playSoundOnObject in playSoundObjects)
-        {
-            if (playSoundOnObject == null) continue;
-
-            playSoundOnObject.PlaySound("PauseMenuMusic", 1.0f, true);
-        }
+        startMenuUI.SetActive(false); // Ukryj startowe menu
+        loadGameMenuUI.SetActive(true); // Poka¿ menu wczytywania gry
     }
 
-    public void LoadOptionsMenu()
+    // Metoda dla "Opcje" - przejœcie do menu opcji
+    public void OnOptionsButton()
     {
-        pauseMenuUI.SetActive(false); // Ukryj menu pauzy
+        startMenuUI.SetActive(false); // Ukryj startowe menu
         optionsMenuUI.SetActive(true); // Poka¿ menu opcji
-        Time.timeScale = 0.01f;
     }
 
-    public void QuitGame()
+    // Metoda dla "Kontynuuj grê" - wznowienie gry (jeœli zapisano)
+    //public void OnContinueGameButton()
+    //{
+    //    if (GameManager.Instance.IsSaveAvailable())
+    //    {
+    //        // Wczytaj zapis
+    //        GameManager.Instance.LoadGameData();
+    //        SceneManager.LoadScene("GameScene"); // Zmieñ na swoj¹ scenê gry
+    //    }
+    //    else
+    //    {
+    //        Debug.LogWarning("Brak dostêpnego zapisu gry!");
+    //    }
+    //}
+
+    // Metoda dla "Wyjœcie" - zakoñczenie gry
+    public void OnQuitButton()
     {
-        Debug.Log("Quit game");
         Application.Quit();
     }
 
@@ -186,10 +134,13 @@ public class PauseMenu : MonoBehaviour
 
         var uiTexts = LanguageManager.Instance.CurrentUITexts;
 
-        if (resumeButtonText != null) resumeButtonText.text = uiTexts.resume;
+        if (newGameButtonText != null) newGameButtonText.text = uiTexts.newGame;
+        if (loadGameButtonText != null) loadGameButtonText.text = uiTexts.loadGame;
+        if (continueButtonText != null) continueButtonText.text = uiTexts.continueGame;
         if (optionsButtonText != null) optionsButtonText.text = uiTexts.options;
         if (quitButtonText != null) quitButtonText.text = uiTexts.quit;
     }
+
     public void EnterButtonSound()
     {
         foreach (var playSoundOnObject in playSoundObjects)

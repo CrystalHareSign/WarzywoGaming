@@ -74,7 +74,7 @@ public class LootShop : MonoBehaviour
         }
 
         // Inicjalizacja wartoœci waluty gracza z GameManager
-        playerCurrencyText.text = GameManager.Instance.playerCurrency.ToString("0.##");
+        playerCurrencyText.text = SaveManager.Instance.playerCurrency.ToString("0.##");
 
     }
 
@@ -124,10 +124,10 @@ public class LootShop : MonoBehaviour
         Debug.Log($"Total value after summing up categories: {totalValue}");
 
         // Dodajemy totalValue do obecnej waluty gracza w GameManager
-        GameManager.Instance.AddCurrency(totalValue);
+        SaveManager.Instance.AddCurrency(totalValue);
 
         // Wyœwietlamy zaktualizowan¹ walutê gracza
-        playerCurrencyText.text = GameManager.Instance.playerCurrency.ToString("0.##");
+        playerCurrencyText.text = SaveManager.Instance.playerCurrency.ToString("0.##");
 
         // Resetowanie iloœci i wartoœci w UI
         for (int i = 0; i < categories.Count; i++)
