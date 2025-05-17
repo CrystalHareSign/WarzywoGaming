@@ -145,7 +145,8 @@ public class PauseMenu : MonoBehaviour
         GameIsPaused = true;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        mouseLook.enabled = false; // wy³¹cz kamerê
+        if (mouseLook != null) // <-- DODAJ TO!
+            mouseLook.enabled = false; // w³¹cz kamerê
 
         foreach (var playSoundOnObject in playSoundObjects)
         {

@@ -67,7 +67,6 @@ public class LoadGameMenu : MonoBehaviour
 
         SaveManager.Instance.LoadPlayerData(selectedSlotIndex);
         startMenuUI.SetActive(false);
-        SceneManager.LoadScene("Main"); // <-- Zamieñ na nazwê sceny gry
     }
 
     public void OnBackToStartMenu()

@@ -10,24 +10,31 @@ public class CleanupDontDestroyOnLoad : MonoBehaviour
 
     void Start()
     {
+        // Dodaj SaveManagera do listy, jeœli jeszcze go nie ma
+        if (SaveManager.Instance != null && !allowedDDOLObjects.Contains(SaveManager.Instance.gameObject))
+            allowedDDOLObjects.Add(SaveManager.Instance.gameObject);
+
+        // Dodaj AudioManagera, jeœli istnieje singleton
+        if (AudioManager.Instance != null && !allowedDDOLObjects.Contains(AudioManager.Instance.gameObject))
+            allowedDDOLObjects.Add(AudioManager.Instance.gameObject);
+
+        // Dodaj LanguageManagera, jeœli istnieje singleton
+        if (LanguageManager.Instance != null && !allowedDDOLObjects.Contains(LanguageManager.Instance.gameObject))
+            allowedDDOLObjects.Add(LanguageManager.Instance.gameObject);
+
         GameObject[] all = Resources.FindObjectsOfTypeAll<GameObject>();
 
         foreach (GameObject go in all)
         {
-            // Sprawdzamy czy to rootowy obiekt z DDOL
             if (go.hideFlags == HideFlags.None &&
                 go.transform.parent == null &&
                 go.scene.name == "DontDestroyOnLoad")
             {
-                // jeœli nie jest na liœcie allowedDDOLObjects – zniszcz!
                 if (!allowedDDOLObjects.Contains(go))
                 {
                     Destroy(go);
                 }
             }
         }
-
-        // (Opcjonalnie: jeœli chcesz, mo¿esz tu dodaæ logikê dla allowedSceneObjects,
-        // ale one i tak nie s¹ w DDOL, wiêc nie bêd¹ niszczone przez powy¿szy kod)
     }
 }
