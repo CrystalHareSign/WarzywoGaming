@@ -1,8 +1,10 @@
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using TMPro.Examples;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 public class PauseMenu : MonoBehaviour
 {
@@ -18,26 +20,12 @@ public class PauseMenu : MonoBehaviour
     [Header("Teksty przycisków")]
     public TMP_Text resumeButtonText;
     public TMP_Text optionsButtonText;
+    public TMP_Text mainMenuButtonText;
     public TMP_Text quitButtonText;
-
-
-    public static PauseMenu instance;
 
     // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
-    private void Awake()
-    {
-        if (instance == null)
-        {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
     void Start()
     {
         Time.timeScale = 1f;
@@ -167,6 +155,36 @@ public class PauseMenu : MonoBehaviour
         }
     }
 
+    public void ReturnToMainMenu()
+    {
+        StartCoroutine(ReturnAndClean());
+    }
+
+    private IEnumerator ReturnAndClean()
+    {
+        // Zbieramy wszystkie obiekty w scenie, ³¹cznie z obiektami, które s¹ ustawione na Don't Destroy On Load.
+        var allObjects = Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+
+        // Przechodzimy przez wszystkie obiekty i usuwamy je
+        foreach (var obj in allObjects)
+        {
+            if (obj != null)
+            {
+                // Jeœli obiekt jest oznaczony jako DontDestroyOnLoad (czyli ma pust¹ nazwê sceny)
+                if (string.IsNullOrEmpty(obj.scene.name))
+                {
+                    Destroy(obj); // Usuwamy obiekt
+                }
+            }
+        }
+
+        // Poczekaj na zakoñczenie usuwania obiektów (1 klatka)
+        yield return null;
+
+        // £adujemy now¹ scenê
+        SceneManager.LoadScene("StartMenu");
+    }
+
     public void LoadOptionsMenu()
     {
         pauseMenuUI.SetActive(false); // Ukryj menu pauzy
@@ -188,6 +206,7 @@ public class PauseMenu : MonoBehaviour
 
         if (resumeButtonText != null) resumeButtonText.text = uiTexts.resume;
         if (optionsButtonText != null) optionsButtonText.text = uiTexts.options;
+        if (mainMenuButtonText != null) mainMenuButtonText.text = uiTexts.mainMenu;
         if (quitButtonText != null) quitButtonText.text = uiTexts.quit;
     }
     public void EnterButtonSound()

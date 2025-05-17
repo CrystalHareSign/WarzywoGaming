@@ -33,23 +33,9 @@ public class SoundOptionsMenu : MonoBehaviour
     public TMP_Text sfxText;
     public TMP_Text ambientText;
 
-    public static SoundOptionsMenu instance;
-
     // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
-    private void Awake()
-    {
-        if (instance == null)
-        {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
 
     private void Start()
     {

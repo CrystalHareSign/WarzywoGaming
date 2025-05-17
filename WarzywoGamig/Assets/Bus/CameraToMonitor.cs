@@ -241,7 +241,7 @@ public class CameraToMonitor : MonoBehaviour
                 break;
         }
 
-        Debug.Log($"[{gameObject.name}] StartText: {localizedFunctionText}");
+        //Debug.Log($"[{gameObject.name}] StartText: {localizedFunctionText}");
     }
 
     public void UpdateInfoText()
@@ -261,7 +261,7 @@ public class CameraToMonitor : MonoBehaviour
                 break;
         }
 
-        Debug.Log($"[{gameObject.name}] StartText: {localizedInfoText}");
+        //Debug.Log($"[{gameObject.name}] StartText: {localizedInfoText}");
     }
 
     private void InitializeLocalizedCommands()

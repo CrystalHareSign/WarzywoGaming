@@ -17,23 +17,9 @@ public class OptionsMenu : MonoBehaviour
     public TMP_Text visualSettingsText;
     public TMP_Text backButtonText;
 
-    public static OptionsMenu instance;
-
     // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
-    private void Awake()
-    {
-        if (instance == null)
-        {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
     void Start()
     {
         optionsMenuUI.SetActive(false); // Upewnij siê, ¿e menu opcji jest niewidoczne na starcie

@@ -12,6 +12,7 @@ public class UITranslations
     [Header("PauseMenu")]
     public string resume;
     public string options;
+    public string mainMenu;
     public string quit;
 
     [Header("OptionsMenu")]

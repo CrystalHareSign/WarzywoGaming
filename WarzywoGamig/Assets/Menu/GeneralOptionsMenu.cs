@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class GeneralOptionsMenu : MonoBehaviour
 {
+    [SerializeField] private PauseMenu pauseMenu;
     public GameObject generalOptionsMenuUI;
     public GameObject optionsMenuUI;
 
@@ -11,8 +12,6 @@ public class GeneralOptionsMenu : MonoBehaviour
 
     [Header("Domyœlny jêzyk")]
     public LanguageManager.Language defaultLanguage = LanguageManager.Language.English;
-
-    public static GeneralOptionsMenu instance;
 
     private LanguageManager.Language tempSelectedLanguage;
 
@@ -26,18 +25,6 @@ public class GeneralOptionsMenu : MonoBehaviour
     // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
-    private void Awake()
-    {
-        if (instance == null)
-        {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
 
     void Start()
     {
@@ -91,7 +78,10 @@ public class GeneralOptionsMenu : MonoBehaviour
         PlayerPrefs.Save();
         Debug.Log("Zastosowano jêzyk: " + tempSelectedLanguage);
 
-        PauseMenu.instance?.UpdateButtonTexts();
+        if (pauseMenu != null)
+        {
+            pauseMenu.UpdateButtonTexts();
+        }
     }
 
     public void CancelChanges()
