@@ -46,6 +46,11 @@ public class StartMenu : MonoBehaviour
         // Zaktualizuj teksty przycisków
         UpdateButtonTexts();
 
+        if (continueButtonText != null && SaveManager.Instance.GetLastUsedSlotIndex() == -1)
+        {
+            continueButtonText.transform.parent.gameObject.SetActive(false);
+        }
+
         // ZnajdŸ wszystkie obiekty posiadaj¹ce PlaySoundOnObject i dodaj do listy
         playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
     }
@@ -107,20 +112,23 @@ public class StartMenu : MonoBehaviour
         optionsMenuUI.SetActive(true); // Poka¿ menu opcji
     }
 
-    // Metoda dla "Kontynuuj grê" - wznowienie gry (jeœli zapisano)
-    //public void OnContinueGameButton()
-    //{
-    //    if (GameManager.Instance.IsSaveAvailable())
-    //    {
-    //        // Wczytaj zapis
-    //        GameManager.Instance.LoadGameData();
-    //        SceneManager.LoadScene("GameScene"); // Zmieñ na swoj¹ scenê gry
-    //    }
-    //    else
-    //    {
-    //        Debug.LogWarning("Brak dostêpnego zapisu gry!");
-    //    }
-    //}
+    public void OnContinueButton()
+    {
+        int lastSlot = SaveManager.Instance.GetLastUsedSlotIndex();
+        if (lastSlot == -1)
+        {
+            Debug.LogWarning("Brak dostêpnego zapisu do kontynuacji!");
+            // Mo¿esz tu wyœwietliæ komunikat lub zablokowaæ przycisk
+            return;
+        }
+
+        Debug.Log($"Wczytywanie ostatniego zapisu z slotu {lastSlot}");
+        // Ukryj menu
+        startMenuUI.SetActive(false);
+
+        // Wczytaj grê z ostatniego slotu
+        SaveManager.Instance.LoadPlayerData(lastSlot);
+    }
 
     // Metoda dla "Wyjœcie" - zakoñczenie gry
     public void OnQuitButton()
@@ -139,6 +147,22 @@ public class StartMenu : MonoBehaviour
         if (continueButtonText != null) continueButtonText.text = uiTexts.continueGame;
         if (optionsButtonText != null) optionsButtonText.text = uiTexts.options;
         if (quitButtonText != null) quitButtonText.text = uiTexts.quit;
+    }
+
+    private void OnEnable()
+    {
+
+        if (SaveManager.Instance == null)
+            Debug.LogError("SaveManager.Instance is NULL!");
+        else
+            Debug.Log("SaveManager.Instance found. LastUsedSlot: " + SaveManager.Instance.GetLastUsedSlotIndex());
+
+        // Sprawdzenie widocznoœci przycisku "Continue" zawsze przy aktywacji menu
+        int lastSlot = SaveManager.Instance.GetLastUsedSlotIndex();
+        Debug.Log("Last used slot in OnEnable: " + lastSlot);
+
+        if (continueButtonText != null)
+            continueButtonText.transform.parent.gameObject.SetActive(lastSlot != -1);
     }
 
     public void EnterButtonSound()

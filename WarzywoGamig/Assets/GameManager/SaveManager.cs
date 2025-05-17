@@ -98,13 +98,13 @@ public class SaveManager : MonoBehaviour
 
         try
         {
-            currentSlotIndex = slotIndex; // Ustawienie aktywnego slotu
+            currentSlotIndex = slotIndex;
 
             string json = File.ReadAllText(path);
             PlayerData data = JsonUtility.FromJson<PlayerData>(json);
 
-            // Start coroutine, która ³aduje scenê i dopiero po jej za³adowaniu ustawia dane gracza
-            StartCoroutine(LoadSceneAndApplyPlayerData(data));
+            // Zapamiêtaj dane docelowej sceny i parametry gracza
+            StartCoroutine(LoadMainThenTargetScene(data));
         }
         catch (Exception ex)
         {
@@ -112,19 +112,29 @@ public class SaveManager : MonoBehaviour
         }
     }
 
-    private IEnumerator LoadSceneAndApplyPlayerData(PlayerData data)
+    private IEnumerator LoadMainThenTargetScene(PlayerData data)
     {
-        // Rozpocznij asynchroniczne ³adowanie sceny
-        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(data.sceneName);
+        // 1. £aduj najpierw "Main", jeœli nie jesteœmy ju¿ w niej
+        if (SceneManager.GetActiveScene().name != "Main")
+        {
+            AsyncOperation mainLoad = SceneManager.LoadSceneAsync("Main");
+            while (!mainLoad.isDone)
+                yield return null;
+        }
 
-        // Czekaj a¿ scena siê za³aduje
-        while (!asyncLoad.isDone)
-            yield return null;
-
-        // Poczekaj dodatkowo do koñca klatki — wa¿ne jeœli gracz jest spawnowany w Start/Awake
+        // 2. Poczekaj do koñca klatki na wszelki wypadek
         yield return null;
 
-        // Czekaj a¿ gracz pojawi siê w scenie (max 2 sekundy)
+        // 3. Teraz ³aduj scenê docelow¹ z save
+        if (SceneManager.GetActiveScene().name != data.sceneName)
+        {
+            AsyncOperation targetLoad = SceneManager.LoadSceneAsync(data.sceneName);
+            while (!targetLoad.isDone)
+                yield return null;
+        }
+
+        // 4. Poczekaj a¿ gracz pojawi siê w scenie docelowej (max 2 sekundy)
+        yield return null;
         float waitTime = 0f;
         GameObject player = null;
         while (player == null && waitTime < 2f)
@@ -139,21 +149,19 @@ public class SaveManager : MonoBehaviour
 
         if (player == null)
         {
-            Debug.LogWarning("Nie znaleziono gracza po za³adowaniu sceny.");
+            Debug.LogWarning("Nie znaleziono gracza po za³adowaniu sceny docelowej.");
             yield break;
         }
 
-        // Ustaw pozycjê i rotacjê gracza wed³ug zapisu
+        // 5. Ustaw dane gracza z save
         player.transform.position = data.playerPosition;
         player.transform.rotation = data.playerRotation;
         this.playerCurrency = data.playerCurrency;
 
-        // Je¿eli masz UI lub inne systemy do aktualizacji, zrób to tutaj
+        // Zaktualizuj UI lub inne systemy jeœli trzeba
         LootShop lootShop = FindFirstObjectByType<LootShop>();
         if (lootShop != null)
-        {
             lootShop.UpdatePlayerCurrencyUI();
-        }
 
         Debug.Log($"Wczytano gracza na pozycjê {player.transform.position}, rotacja {player.transform.rotation}, scena {data.sceneName}");
     }
@@ -229,6 +237,33 @@ public class SaveManager : MonoBehaviour
 
         string json = File.ReadAllText(path);
         return JsonUtility.FromJson<PlayerData>(json);
+    }
+
+
+    public int GetLastUsedSlotIndex()
+    {
+        int lastSlot = -1;
+        System.DateTime lastTime = System.DateTime.MinValue;
+
+        // Zak³adamy 3 sloty (1,2,3) – zmieñ jeœli masz ich wiêcej!
+        for (int i = 1; i <= 3; i++)
+        {
+            string path = GetSlotFilePath(i);
+            if (File.Exists(path))
+            {
+                string json = File.ReadAllText(path);
+                PlayerData data = JsonUtility.FromJson<PlayerData>(json);
+                if (System.DateTime.TryParse(data.lastSaveTime, out System.DateTime slotTime))
+                {
+                    if (slotTime > lastTime)
+                    {
+                        lastTime = slotTime;
+                        lastSlot = i;
+                    }
+                }
+            }
+        }
+        return lastSlot;
     }
 }
 

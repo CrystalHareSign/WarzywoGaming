@@ -73,15 +73,17 @@ public class GeneralOptionsMenu : MonoBehaviour
 
     public void ApplyChanges()
     {
-        LanguageManager.Instance.SetLanguage(tempSelectedLanguage);
+        LanguageManager.Instance.SetLanguage(tempSelectedLanguage); // ustawia currentLanguage, zapisuje do PlayerPrefs, wywo³uje event
         PlayerPrefs.SetInt("GameLanguage", (int)tempSelectedLanguage);
         PlayerPrefs.Save();
+
+        // Dodatkowo zapisujemy do JSON, by na starcie gry wczytaæ ostatni wybór
+        LanguageManager.Instance.SaveLanguageToJson(tempSelectedLanguage);
+
         Debug.Log("Zastosowano jêzyk: " + tempSelectedLanguage);
 
         if (pauseMenu != null)
-        {
             pauseMenu.UpdateButtonTexts();
-        }
     }
 
     public void CancelChanges()
@@ -123,6 +125,23 @@ public class GeneralOptionsMenu : MonoBehaviour
         if (back1ButtonText != null) back1ButtonText.text = uiTexts.back1;
         if (reset1ButtonText != null) reset1ButtonText.text = uiTexts.reset1;
         if (languageText != null) languageText.text = uiTexts.language;
+    }
+
+    void OnEnable()
+    {
+        if (LanguageManager.Instance != null)
+        {
+            LanguageManager.Instance.OnLanguageChanged += UpdateButtonTexts;
+            UpdateButtonTexts();
+        }
+    }
+
+    void OnDisable()
+    {
+        if (LanguageManager.Instance != null)
+        {
+            LanguageManager.Instance.OnLanguageChanged -= UpdateButtonTexts;
+        }
     }
 
     public void EnterButtonSound()

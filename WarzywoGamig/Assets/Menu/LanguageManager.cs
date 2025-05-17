@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.IO;
 
 [System.Serializable]
 public class UITranslations
@@ -105,6 +106,8 @@ public class LanguageManager : MonoBehaviour
     public TerminalTranslations polishTerminal;
     public TerminalTranslations germanTerminal;
 
+    private static string settingsPath => Path.Combine(Application.persistentDataPath, "languageSettings.json");
+
     public UITranslations CurrentUITexts => currentLanguage switch
     {
         Language.Polski => polishTexts,
@@ -124,18 +127,38 @@ public class LanguageManager : MonoBehaviour
 
     private void Awake()
     {
+        // Poprawny singleton
         if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
-            //  Rêcznie uruchom aktualizacjê dla wszystkich monitorów
+            // 1. Najpierw PlayerPrefs
+            if (PlayerPrefs.HasKey("GameLanguage"))
+            {
+                currentLanguage = (Language)PlayerPrefs.GetInt("GameLanguage");
+            }
+            // 2. Potem plik JSON
+            else
+            {
+                int? jsonLanguage = LoadLanguageFromJson();
+                if (jsonLanguage.HasValue)
+                {
+                    currentLanguage = (Language)jsonLanguage.Value;
+                    PlayerPrefs.SetInt("GameLanguage", jsonLanguage.Value); // Synchronizuj PlayerPrefs z JSON
+                }
+                else
+                {
+                    currentLanguage = Language.English; // lub Twój domyœlny
+                }
+            }
+
+            // Rêcznie uruchom aktualizacjê dla wszystkich monitorów
             var monitors = FindObjectsByType<CameraToMonitor>(FindObjectsSortMode.None);
             foreach (var monitor in monitors)
             {
                 monitor.UpdateInfoText();
                 monitor.UpdateLocalizedText();
-  
             }
         }
         else
@@ -170,4 +193,25 @@ public class LanguageManager : MonoBehaviour
 
         return $"{key}";
     }
+    public void SaveLanguageToJson(LanguageManager.Language language)
+    {
+        LanguageSettings settings = new LanguageSettings { languageIndex = (int)language };
+        string json = JsonUtility.ToJson(settings, true);
+        File.WriteAllText(settingsPath, json);
+    }
+
+    public int? LoadLanguageFromJson()
+    {
+        if (!File.Exists(settingsPath))
+            return null;
+
+        string json = File.ReadAllText(settingsPath);
+        LanguageSettings settings = JsonUtility.FromJson<LanguageSettings>(json);
+        return settings.languageIndex;
+    }
+}
+[System.Serializable]
+public class LanguageSettings
+{
+    public int languageIndex;
 }
