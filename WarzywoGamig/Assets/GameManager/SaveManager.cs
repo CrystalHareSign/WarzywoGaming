@@ -245,8 +245,8 @@ public class SaveManager : MonoBehaviour
         int lastSlot = -1;
         System.DateTime lastTime = System.DateTime.MinValue;
 
-        // Zak³adamy 3 sloty (1,2,3) – zmieñ jeœli masz ich wiêcej!
-        for (int i = 1; i <= 3; i++)
+        // Zak³adamy 3 sloty: 0, 1, 2
+        for (int i = 0; i <= 2; i++)
         {
             string path = GetSlotFilePath(i);
             if (File.Exists(path))
