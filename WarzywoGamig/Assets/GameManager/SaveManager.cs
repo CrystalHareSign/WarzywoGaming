@@ -155,23 +155,12 @@ public class SaveManager : MonoBehaviour
 
     private IEnumerator LoadMainThenTargetScene(PlayerData data)
     {
-        if (SceneManager.GetActiveScene().name != "Main")
-        {
-            AsyncOperation mainLoad = SceneManager.LoadSceneAsync("Main");
-            while (!mainLoad.isDone)
-                yield return null;
-        }
-
+        // ZAWSZE prze³aduj scenê docelow¹, nawet jeœli ju¿ w niej jesteœ
+        AsyncOperation targetLoad = SceneManager.LoadSceneAsync(data.sceneName);
+        while (!targetLoad.isDone)
+            yield return null;
         yield return null;
 
-        if (SceneManager.GetActiveScene().name != data.sceneName)
-        {
-            AsyncOperation targetLoad = SceneManager.LoadSceneAsync(data.sceneName);
-            while (!targetLoad.isDone)
-                yield return null;
-        }
-
-        yield return null;
         float waitTime = 0f;
         GameObject player = null;
         while (player == null && waitTime < 2f)
