@@ -4,7 +4,8 @@ using UnityEditor;
 
 public class Inventory : MonoBehaviour
 {
-    public List<GameObject> weapons = new List<GameObject>(); // Lista broni
+    // Lista broni: teraz tylko nazwy broni!
+    public List<string> weapons = new List<string>(); // Lista broni (nazwy)
     public List<GameObject> items = new List<GameObject>(); // Lista innych przedmiotów
     public List<GameObject> loot = new List<GameObject>(); // Lista lootów
     public int maxWeapons = 3; // Maksymalna liczba broni, które gracz może nosić
@@ -18,11 +19,7 @@ public class Inventory : MonoBehaviour
     public Transform lootParent; // Transform, do którego będą przypisane lootowe przedmioty
     public bool isLootBeingDropped = false; // Flaga kontrolująca proces upuszczania lootu
 
-    public List<WeaponPrefabEntry> weaponPrefabsList = new List<WeaponPrefabEntry>();
     public Dictionary<string, GameObject> weaponPrefabs = new Dictionary<string, GameObject>();
-
-    // Lista ekwipunku gracza (TUTAJ TYLKO NAZWY BRONI)
-    public List<string> weaponNames = new List<string>();
 
     // NOWOŚĆ: prefaby itemów
     public List<ItemPrefabEntry> itemPrefabsList = new List<ItemPrefabEntry>();
@@ -32,9 +29,10 @@ public class Inventory : MonoBehaviour
     public List<LootPrefabEntry> lootPrefabsList = new List<LootPrefabEntry>();
     public Dictionary<string, GameObject> lootPrefabs = new Dictionary<string, GameObject>();
 
+    public GameObject currentWeaponPrefab; // Przechowuje aktualnie wyposażoną broń (instancja w ręce gracza)
+    public string currentWeaponName = null; // Nowość: nazwa aktualnie wyposażonej broni
 
-    public GameObject currentWeaponPrefab; // Przechowuje aktualnie wyposażoną broń
-    private GameObject currentWeaponItem; // Przechowuje obiekt aktualnej broni w ekwipunku
+    private GameObject currentWeaponItem; // Pozostawiam, jeśli jest wykorzystywane gdzieś dalej
 
     public Vector3 weaponPositionOffset = new Vector3(0.5f, -0.3f, 1.0f);
     public Vector3 weaponRotationOffset = new Vector3(0, 90, 0);
@@ -48,14 +46,33 @@ public class Inventory : MonoBehaviour
     // Lista wszystkich obiektów, które posiadają PlaySoundOnObject
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
+    public WeaponDatabase weaponDatabase;
+
+    public static Inventory Instance { get; private set; }
+
+    void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning("Inventory: Instance already exists, destroying duplicate. (Awake)");
+            Destroy(this.gameObject);
+            return;
+        }
+        Instance = this;
+        DontDestroyOnLoad(this.gameObject);
+
+        Debug.Log("Inventory Awake: " + this.GetInstanceID());
+    }
+
+
     void Start()
     {
-        // Wypełnij słownik prefabów na podstawie listy z Inspectora
+        Debug.Log("Inventory Start() - Initializing prefabs and playSoundObjects.");
+
         weaponPrefabs.Clear();
-        foreach (var entry in weaponPrefabsList)
+        foreach (var entry in weaponDatabase.weaponPrefabsList)
         {
-            if (!weaponPrefabs.ContainsKey(entry.weaponName) && entry.weaponPrefab != null)
-                weaponPrefabs.Add(entry.weaponName, entry.weaponPrefab);
+            weaponPrefabs[entry.weaponName] = entry.weaponPrefab;
         }
 
         itemPrefabs.Clear();
@@ -66,20 +83,10 @@ public class Inventory : MonoBehaviour
         foreach (var entry in lootPrefabsList)
             lootPrefabs[entry.lootName] = entry.lootPrefab;
 
-        // Znajdź wszystkie obiekty posiadające PlaySoundOnObject i dodaj do listy
         playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
 
-        weapons.Clear();
-        items.Clear();
-        loot.Clear();
-
-        weaponPrefabs.Clear();
-        foreach (WeaponPrefabEntry entry in weaponPrefabsList)
-        {
-            weaponPrefabs[entry.weaponName] = entry.weaponPrefab;
-        }
-
         UpdateInventoryUI();
+        Debug.Log("Inventory Start: " + this.GetInstanceID() + " - weapons count: " + weapons.Count);
     }
 
     void Update()
@@ -112,14 +119,12 @@ public class Inventory : MonoBehaviour
             // ❌ Jeśli gracz trzyma loot, nie może podnosić broni
             if (lootParent != null && lootParent.childCount > 0 && interactableItem.isWeapon)
             {
-                //Debug.Log("Nie możesz podnieść broni, gdy trzymasz loot.");
                 return;
             }
 
             // ❌ Jeśli gracz trzyma loot, nie może podnosić innych przedmiotów (poza bronią, ale to już blokujemy powyżej)
             if (lootParent != null && lootParent.childCount > 0 && !interactableItem.isWeapon)
             {
-                //Debug.Log("Nie możesz podnieść przedmiotu, ponieważ trzymasz loot.");
                 return;
             }
 
@@ -133,9 +138,12 @@ public class Inventory : MonoBehaviour
                     }
                     else
                     {
-                        weapons.Add(hit.collider.gameObject);
+                        // Dodajemy nazwę broni do ekwipunku!
+                        if (!weapons.Contains(interactableItem.itemName))
+                            weapons.Add(interactableItem.itemName);
+
                         hit.collider.gameObject.SetActive(false);
-                        EquipWeapon(interactableItem, hit.collider.gameObject);
+                        EquipWeapon(interactableItem.itemName); // Zmieniamy na przekazanie nazwy
                     }
                 }
                 else if (interactableItem.isLoot)
@@ -146,7 +154,6 @@ public class Inventory : MonoBehaviour
                         loot.Add(hit.collider.gameObject);
                         EquipLoot(hit.collider.gameObject);
 
-                        // ✅ Ukrywamy broń, jeśli gracz podnosi loot
                         if (currentWeaponPrefab != null)
                         {
                             currentWeaponPrefab.SetActive(false);
@@ -178,7 +185,6 @@ public class Inventory : MonoBehaviour
                         {
                             turretCollector.ResetSlotForItem(hit.collider.gameObject);
                         }
-                        // Odświeżenie listy, aby utrzymać kolejność chronologiczną
                         RefreshItemListChronologically();
 
                         foreach (var playSoundOnObject in playSoundObjects)
@@ -205,126 +211,131 @@ public class Inventory : MonoBehaviour
     }
     public void RefreshItemListChronologically()
     {
-        // Numerujemy przedmioty w sposób chronologiczny
         for (int i = 0; i < items.Count; i++)
         {
-            // Możesz dodać dowolną logikę, jeśli przedmioty mają być numerowane w jakiś specjalny sposób
             items[i].name = "Item_" + (i + 1);
         }
     }
 
     void ReplaceCurrentWeapon(InteractableItem newWeapon, GameObject newWeaponItem)
     {
+        Debug.Log("ReplaceCurrentWeapon: Replacing weapon with " + newWeapon.itemName);
         if (currentWeaponPrefab != null)
         {
             Destroy(currentWeaponPrefab);
         }
-        if (currentWeaponItem != null)
+        // Usuwamy aktualną nazwę broni z listy
+        if (currentWeaponName != null && weapons.Contains(currentWeaponName))
         {
-            weapons.Remove(currentWeaponItem);
+            weapons.Remove(currentWeaponName);
         }
-        weapons.Add(newWeaponItem);
+        // Dodajemy nową nazwę broni do listy
+        if (!weapons.Contains(newWeapon.itemName))
+            weapons.Add(newWeapon.itemName);
+
         newWeaponItem.SetActive(false);
-        EquipWeapon(newWeapon, newWeaponItem);
+        EquipWeapon(newWeapon.itemName);
     }
 
-    public void EquipWeapon(InteractableItem interactableItem, GameObject weaponItem)
+    // Wyekwipowanie broni na podstawie NAZWY
+    public void EquipWeapon(string weaponName)
     {
-        if (weaponPrefabs.ContainsKey(interactableItem.itemName))
+        Debug.Log($"EquipWeapon: Trying to equip weapon '{weaponName}'");
+
+        if (currentWeaponPrefab != null)
         {
-            if (currentWeaponPrefab != null)
-            {
-                // Bezpieczne niszczenie poprzedniej broni
-                if (currentWeaponPrefab != null && currentWeaponPrefab.gameObject != null)
-                {
-                    Destroy(currentWeaponPrefab);
-                }
-            }
+            Debug.LogWarning("EquipWeapon: Destroying currentWeaponPrefab: " + currentWeaponPrefab.name + " (before new instantiation!)");
+            Destroy(currentWeaponPrefab);
+        }
 
-            // ZAWSZE instancjonuj z PREFABU, nie z obiektu w ekwipunku!
-            var prefab = weaponPrefabs[interactableItem.itemName];
-            if (prefab == null)
-            {
-                Debug.LogError($"Prefab dla broni '{interactableItem.itemName}' jest null! Sprawdź Inventory w Inspectorze.");
-                return;
-            }
+        var prefab = weaponPrefabs[weaponName];
+        if (prefab == null)
+        {
+            Debug.LogError($"EquipWeapon: Prefab for weapon '{weaponName}' is null! Check your WeaponDatabase in Inspector.");
+            return;
+        }
 
-            // Poprawne tworzenie nowej broni w ręce
-            currentWeaponPrefab = Instantiate(prefab, weaponParent);
-            currentWeaponPrefab.transform.localPosition = weaponPositionOffset;
-            currentWeaponPrefab.transform.localRotation = Quaternion.Euler(weaponRotationOffset);
-            currentWeaponPrefab.SetActive(true);
+        Debug.Log("EquipWeapon: Instantiating prefab for " + weaponName + " to parent " + (weaponParent ? weaponParent.name : "NULL"));
+        currentWeaponPrefab = Instantiate(prefab, weaponParent);
+        Debug.Log("EquipWeapon: Instantiated prefab: " + currentWeaponPrefab.name);
 
-            // (Opcjonalnie) NIE rób DontDestroyOnLoad na broni — zostawiam, bo nie chcesz usuwać logiki
-            GameObject rootWeapon = currentWeaponPrefab.transform.root.gameObject;
-            DontDestroyOnLoad(rootWeapon);
+        currentWeaponPrefab.transform.localPosition = weaponPositionOffset;
+        currentWeaponPrefab.transform.localRotation = Quaternion.Euler(weaponRotationOffset);
+        currentWeaponPrefab.SetActive(true);
 
-            // Aktywacja skryptu Gun
-            Gun gunScript = currentWeaponPrefab.GetComponent<Gun>();
-            if (gunScript != null)
-            {
-                gunScript.enabled = true;
-                gunScript.EquipWeapon();
-            }
-            else
-            {
-                Debug.LogWarning("Gun nie znaleziony na prefabie broni!");
-            }
+        GameObject rootWeapon = currentWeaponPrefab.transform.root.gameObject;
+        DontDestroyOnLoad(rootWeapon);
 
-            currentWeaponItem = weaponItem;
-
-            // Dodatkowy log debugujący:
-            Debug.Log($"Wyekwipowano broń: {interactableItem.itemName}, parent: {currentWeaponPrefab.transform.parent?.name ?? "brak parenta"}");
+        Gun gunScript = currentWeaponPrefab.GetComponent<Gun>();
+        if (gunScript != null)
+        {
+            Debug.Log("EquipWeapon: Gun component found, enabling and equipping.");
+            gunScript.enabled = true;
+            gunScript.EquipWeapon();
         }
         else
         {
-            Debug.LogWarning($"Brak prefabu dla broni: {interactableItem.itemName}");
+            Debug.LogWarning("EquipWeapon: Gun component NOT found on prefab!");
         }
+
+        currentWeaponName = weaponName;
+
+        Debug.Log($"EquipWeapon: Equipped '{weaponName}', prefab: {currentWeaponPrefab?.name}, parent: {currentWeaponPrefab?.transform.parent?.name ?? "brak parenta"}");
+
+        // TEST: opóźniony log sprawdzający, czy prefab nadal istnieje po 1 sekundzie
+        StartCoroutine(CheckWeaponAfterDelay());
+    }
+
+    private System.Collections.IEnumerator CheckWeaponAfterDelay()
+    {
+        yield return new WaitForSeconds(1f);
+        Debug.LogWarning("CheckWeaponAfterDelay: currentWeaponPrefab = " + (currentWeaponPrefab ? currentWeaponPrefab.name : "NULL") +
+            ", parent: " + (currentWeaponPrefab && currentWeaponPrefab.transform.parent ? currentWeaponPrefab.transform.parent.name : "NULL"));
+    }
+
+    void OnDestroy()
+    {
+        Debug.LogWarning("Inventory.OnDestroy wywołany na: " + gameObject.name, gameObject);
+    }
+
+    // Zachowuję wersję dla kompatybilności, ale przekierowuję na wersję stringową
+    public void EquipWeapon(InteractableItem interactableItem, GameObject weaponItem)
+    {
+        EquipWeapon(interactableItem.itemName);
     }
 
     void EquipLoot(GameObject lootItem)
     {
         if (lootItem != null)
         {
-            // Sprawdź, czy przedmiot jest lootem
             if (loot.Contains(lootItem))
             {
-                // Określenie, czy przedmiot jest 1x1, 2x2, czy inny
-                Vector3 lootPosition = lootPositionOffset_1x1; // Domyślny offset dla 1x1
-                Vector3 lootRotation = lootRotationOffset_1x1; // Domyślny rotation dla 1x1
+                Vector3 lootPosition = lootPositionOffset_1x1;
+                Vector3 lootRotation = lootRotationOffset_1x1;
 
-                // Sprawdzamy wielkość przedmiotu (tutaj zakłada się, że lootItem ma collider)
                 Collider lootCollider = lootItem.GetComponent<Collider>();
                 if (lootCollider != null)
                 {
-                    // Załóżmy, że przedmioty 2x2 mają większy rozmiar (możesz to dostosować w zależności od własnych kryteriów)
                     if (lootCollider.bounds.size.x > 1f && lootCollider.bounds.size.z > 1f)
                     {
-                        lootPosition = lootPositionOffset_2x2; // Przypisujemy offset dla 2x2
-                        lootRotation = lootRotationOffset_2x2; // Przypisujemy rotację dla 2x2
+                        lootPosition = lootPositionOffset_2x2;
+                        lootRotation = lootRotationOffset_2x2;
                     }
                 }
 
-                // Ustaw przedmiot jako dziecko odpowiedniego obiektu (lootParent lub gracza)
                 Transform parentTransform = lootParent != null ? lootParent : transform;
 
-                // Ustaw przedmiot w odpowiedniej pozycji
                 lootItem.transform.SetParent(parentTransform);
-
-                // Ustaw ręczną pozycję i rotację z Inspektora
                 lootItem.transform.localPosition = lootPosition;
                 lootItem.transform.localRotation = Quaternion.Euler(lootRotation);
 
-                // Aktywuj przedmiot, jeśli jest wyłączony
                 lootItem.SetActive(true);
 
-                // **Ponowne ustawienie `isTrigger = true` dla poprawnego działania kolizji**
                 if (lootCollider != null)
                 {
                     lootCollider.isTrigger = true;
                 }
 
-                // Usuń przedmiot z listy dostępnych lootów, aby nie można go było ponownie podnieść
                 loot.Remove(lootItem);
             }
         }
@@ -332,18 +343,17 @@ public class Inventory : MonoBehaviour
 
     void DropItemFromInventory()
     {
-        // Jeśli loot jest w trakcie upuszczania, nie rób nic
         if (isLootBeingDropped) return;
 
-        if (loot.Count > 0) // Jeśli mamy loot do upuszczenia
+        if (loot.Count > 0)
         {
             //DropLoot();
         }
-        else if (currentWeaponItem != null) // Jeśli mamy broń do upuszczenia
+        else if (currentWeaponName != null) // Zmiana: sprawdzamy po nazwie
         {
             DropWeapon();
         }
-        else if (items.Count > 0) // Jeśli mamy przedmioty do upuszczenia
+        else if (items.Count > 0)
         {
             DropItem();
         }
@@ -354,21 +364,19 @@ public class Inventory : MonoBehaviour
         if (items.Count == 0) return;
 
         GameObject item = items[0];
-        InteractableItem interactableItem = item.GetComponent<InteractableItem>(); // Pobieramy komponent InteractableItem
+        InteractableItem interactableItem = item.GetComponent<InteractableItem>();
 
-        // Sprawdzamy, czy przedmiot może być upuszczony
         if (interactableItem != null && interactableItem.canBeDropped)
         {
             items.RemoveAt(0);
 
             item.transform.SetParent(null);
 
-            // Wyznaczamy pozycję upuszczenia przy zadanej wysokości
-            Vector3 dropPosition = transform.position; // Pozycja gracza (można dostosować do innego obiektu)
-            dropPosition.y = dropHeight; // Ustawiamy wysokość upuszczenia na wartość dropHeight
+            Vector3 dropPosition = transform.position;
+            dropPosition.y = dropHeight;
 
-            item.transform.position = dropPosition; // Ustawiamy pozycję przedmiotu
-            item.transform.rotation = Quaternion.identity; // Reset rotacji
+            item.transform.position = dropPosition;
+            item.transform.rotation = Quaternion.identity;
 
             item.SetActive(true);
 
@@ -382,86 +390,31 @@ public class Inventory : MonoBehaviour
 
     void DropWeapon()
     {
-        if (currentWeaponItem != null) // Jeśli to broń
+        if (currentWeaponName != null)
         {
-            InteractableItem interactableItem = currentWeaponItem.GetComponent<InteractableItem>(); // Pobieramy komponent InteractableItem
+            // Usuwamy nazwę broni z listy
+            weapons.Remove(currentWeaponName);
 
-            // Sprawdzamy, czy broń może być upuszczona
-            if (interactableItem != null && interactableItem.canBeDropped)
+            if (currentWeaponPrefab != null)
             {
-                weapons.Remove(currentWeaponItem);
-                currentWeaponItem.transform.SetParent(null);
+                currentWeaponPrefab.transform.SetParent(null);
 
-                // Wyznaczamy pozycję upuszczenia przy zadanej wysokości
-                Vector3 dropPosition = transform.position; // Pozycja gracza (można dostosować do innego obiektu)
-                dropPosition.y = dropHeight; // Ustawiamy wysokość upuszczenia na wartość dropHeight
+                Vector3 dropPosition = transform.position;
+                dropPosition.y = dropHeight;
 
-                currentWeaponItem.transform.position = dropPosition; // Ustawiamy pozycję broni
-                currentWeaponItem.transform.rotation = Quaternion.identity; // Reset rotacji
+                currentWeaponPrefab.transform.position = dropPosition;
+                currentWeaponPrefab.transform.rotation = Quaternion.identity;
 
-                currentWeaponItem.SetActive(true);
+                currentWeaponPrefab.SetActive(true);
                 Destroy(currentWeaponPrefab);
 
                 currentWeaponPrefab = null;
-                currentWeaponItem = null;
+            }
+            currentWeaponName = null;
 
-                UpdateInventoryUI();
-            }
-            else
-            {
-                Debug.LogWarning("Nie możesz upuścić tej broni, ponieważ 'canBeDropped' jest ustawione na false.");
-            }
+            UpdateInventoryUI();
         }
     }
-
-    //void DropLoot()
-    //{
-    //    if (loot.Count == 0) return;
-
-    //    GameObject lootItem = loot[0];
-    //    InteractableItem interactableItem = lootItem.GetComponent<InteractableItem>(); // Pobieramy komponent InteractableItem
-
-    //    // Sprawdzamy, czy loot może być upuszczony
-    //    if (interactableItem != null && interactableItem.canBeDropped)
-    //    {
-    //        loot.RemoveAt(0);
-
-    //        lootItem.transform.SetParent(null);
-
-    //        Vector3 dropPosition = transform.position;
-    //        dropPosition.y = dropHeight;
-
-    //        Vector3 previousPosition = lootItem.transform.position;
-
-    //        lootItem.transform.position = dropPosition;
-    //        lootItem.transform.rotation = Quaternion.identity;
-
-    //        lootItem.SetActive(true);
-
-    //        if (GridManager.Instance != null)
-    //        {
-    //            GridManager.Instance.isBuildingMode = false;
-    //            GridManager.Instance.RemoveFromBuildingPrefabs(lootItem);
-
-    //            PrefabSize prefabSize = lootItem.GetComponent<PrefabSize>();
-    //            GridManager.Instance.UnmarkTilesAsOccupied(previousPosition, prefabSize);
-    //        }
-
-    //        RemoveObjectFromLootParent(lootItem);
-
-    //        // Jeśli gracz miał broń ukrytą, przywracamy ją
-    //        if (currentWeaponPrefab != null)
-    //        {
-    //            currentWeaponPrefab.SetActive(true);
-    //        }
-
-    //        UpdateInventoryUI();
-    //    }
-    //    else
-    //    {
-    //        Debug.LogWarning("Nie możesz upuścić tego lootu, ponieważ 'canBeDropped' jest ustawione na false.");
-    //    }
-    //}
 
     public void RemoveItem(GameObject item)
     {
@@ -483,9 +436,6 @@ public class Inventory : MonoBehaviour
             return;
         }
 
-        //Debug.Log($"LootParent: {lootParent.name}");
-        //Debug.Log($"Obiekt do usunięcia: {objectToRemove.name} (ID: {objectToRemove.GetInstanceID()})");
-
         string objectToRemoveName = objectToRemove.name.Replace("(Clone)", "").Replace("(Clone)(Clone)", "").Trim();
 
         Transform foundObject = null;
@@ -493,8 +443,6 @@ public class Inventory : MonoBehaviour
         foreach (Transform child in lootParent)
         {
             string childName = child.gameObject.name.Replace("(Clone)", "").Replace("(Clone)(Clone)", "").Trim();
-
-            //Debug.Log($"Porównuję: {childName} z {objectToRemoveName}");
 
             if (childName == objectToRemoveName)
             {
@@ -505,7 +453,6 @@ public class Inventory : MonoBehaviour
 
         if (foundObject != null)
         {
-            //Debug.Log($"Usuwam obiekt z LootParent: {foundObject.name}");
             Destroy(foundObject.gameObject);
         }
         else
@@ -523,18 +470,17 @@ public class Inventory : MonoBehaviour
     }
     public void ClearInventory()
     {
-        // Usuwamy inne przedmioty
         foreach (GameObject item in items)
         {
             Destroy(item);
         }
         items.Clear();
 
-        // Zaktualizuj UI
         UpdateInventoryUI();
     }
 }
 
+// Klasy pomocnicze zostają bez zmian
 [System.Serializable]
 public class ItemPrefabEntry
 {

@@ -9,10 +9,10 @@ public class SaveManager : MonoBehaviour
 {
     public static SaveManager Instance; // Singleton
 
-    public float playerCurrency = 0f; // Waluta gracza
-    public DateTime lastSaveTime; // Data i godzina ostatniego zapisu
+    public float playerCurrency = 0f;
+    public DateTime lastSaveTime;
 
-    private int currentSlotIndex = -1; // Bie¿¹cy slot zapisu
+    private int currentSlotIndex = -1;
     public int debugSlotIndex = 0;
 
     private void Awake()
@@ -28,10 +28,9 @@ public class SaveManager : MonoBehaviour
             return;
         }
 
-        // Jeœli slot nie zosta³ ustawiony, przypisujemy domyœlny slot (np. slot 1)
         if (currentSlotIndex == -1)
         {
-            currentSlotIndex = 1;  // Domyœlnie slot 1, mo¿na zmieniæ w zale¿noœci od potrzeb
+            currentSlotIndex = 1;
         }
     }
 
@@ -74,19 +73,37 @@ public class SaveManager : MonoBehaviour
                 playerRotation = playerRotation,
                 sceneName = SceneManager.GetActiveScene().name,
                 lastSaveTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                weaponNames = new List<string>(),
+                weapons = new List<string>(),
                 itemNames = new List<string>(),
-                lootNames = new List<string>()
+                lootNames = new List<string>(),
+                weaponSaveDatas = new List<WeaponSaveData>()
             };
 
-            // ZAPISZ ZAWARTOŒÆ EKWIPUNKU
             Inventory inventory = UnityEngine.Object.FindFirstObjectByType<Inventory>();
             if (inventory != null)
             {
-                // PATCH: ZAPISUJ TYLKO NAZWY BRONI
-                foreach (var weapon in inventory.weapons)
-                    if (weapon != null)
-                        data.weaponNames.Add(weapon.name.Replace("(Clone)", "").Trim());
+                Debug.Log("Save: weapons in inventory = " + string.Join(",", inventory.weapons));
+                foreach (var weaponName in inventory.weapons)
+                {
+                    if (!string.IsNullOrEmpty(weaponName))
+                    {
+                        data.weapons.Add(weaponName);
+                        // Zapisz amunicjê tylko dla aktualnie wyposa¿onej broni
+                        if (inventory.currentWeaponPrefab != null && inventory.currentWeaponName == weaponName)
+                        {
+                            Gun gun = inventory.currentWeaponPrefab.GetComponent<Gun>();
+                            if (gun != null)
+                            {
+                                data.weaponSaveDatas.Add(new WeaponSaveData
+                                {
+                                    weaponName = weaponName,
+                                    currentAmmo = gun.currentAmmo,
+                                    totalAmmo = gun.totalAmmo
+                                });
+                            }
+                        }
+                    }
+                }
 
                 foreach (var item in inventory.items)
                     if (item != null)
@@ -102,6 +119,7 @@ public class SaveManager : MonoBehaviour
             lastSaveTime = DateTime.Now;
 
             Debug.Log($"Zapisano dane w slocie {currentSlotIndex}: {path}");
+            Debug.Log("Save: weapons saved = " + string.Join(",", data.weapons));
         }
         catch (Exception ex)
         {
@@ -125,7 +143,8 @@ public class SaveManager : MonoBehaviour
             string json = File.ReadAllText(path);
             PlayerData data = JsonUtility.FromJson<PlayerData>(json);
 
-            // Zapamiêtaj dane docelowej sceny i parametry gracza
+            Debug.Log("Load: weapons loaded from file = " + string.Join(",", data.weapons));
+
             StartCoroutine(LoadMainThenTargetScene(data));
         }
         catch (Exception ex)
@@ -171,7 +190,6 @@ public class SaveManager : MonoBehaviour
             yield break;
         }
 
-        // ODTWÓRZ DANE GRACZA Z SAVE
         player.transform.position = data.playerPosition;
         player.transform.rotation = data.playerRotation;
         this.playerCurrency = data.playerCurrency;
@@ -181,49 +199,67 @@ public class SaveManager : MonoBehaviour
 
         if (inventory != null)
         {
-            // 1. Wyczyœæ stare dane
             inventory.weapons.Clear();
-            inventory.weaponNames.Clear();
 
-            // 2. Odtwórz bronie na podstawie save
-            inventory.weapons.Clear();
-            inventory.weaponNames.Clear();
-
-            foreach (string weaponName in data.weaponNames)
+            Debug.Log("Load: weapons in PlayerData (before equip) = " + string.Join(",", data.weapons));
+            foreach (string weaponName in data.weapons)
             {
                 if (inventory.weaponPrefabs.TryGetValue(weaponName, out var prefab) && prefab != null)
                 {
-                    inventory.weaponNames.Add(weaponName);
-                    // NIE twórz rêcznie GameObjectów!
+                    inventory.weapons.Add(weaponName);
                 }
                 else
                 {
                     Debug.LogWarning("Brak prefabu dla: " + weaponName);
                 }
             }
+            Debug.Log("Load: weapons in inventory (after assign) = " + string.Join(",", inventory.weapons));
 
-            // 3. Wyekwipuj pierwsz¹ broñ (jeœli jest)
-            if (inventory.weaponNames.Count > 0)
+            if (inventory.weapons.Count > 0)
             {
-                string weaponName = inventory.weaponNames[0];
-                if (inventory.weaponPrefabs.TryGetValue(weaponName, out var prefab) && prefab != null)
+                string weaponName = inventory.weapons[0];
+                Debug.Log("Load: Wywo³ujê EquipWeapon dla: " + weaponName);
+                inventory.EquipWeapon(weaponName);
+
+                // Log po EquipWeapon
+                Debug.Log("Load: Po EquipWeapon: currentWeaponPrefab = " +
+                    (inventory.currentWeaponPrefab ? inventory.currentWeaponPrefab.name : "NULL") +
+                    ", parent = " +
+                    (inventory.currentWeaponPrefab && inventory.currentWeaponPrefab.transform.parent ? inventory.currentWeaponPrefab.transform.parent.name : "NULL")
+                );
+
+                if (inventory.currentWeaponPrefab != null)
                 {
-                    var dummy = prefab.GetComponent<InteractableItem>();
-                    inventory.EquipWeapon(dummy, null); // Twój EquipWeapon powinien zrobiæ Instantiate(prefab) i ustawiæ wszystko poprawnie
+                    Gun gun = inventory.currentWeaponPrefab.GetComponent<Gun>();
+                    if (gun != null)
+                    {
+                        // Szukamy zapisanych danych dla tej broni
+                        var saved = data.weaponSaveDatas.Find(w => w.weaponName == weaponName);
+                        if (saved != null)
+                        {
+                            gun.currentAmmo = saved.currentAmmo;
+                            gun.totalAmmo = saved.totalAmmo;
+                            Debug.Log("Load: Odtworzono amunicjê: currentAmmo=" + gun.currentAmmo + ", totalAmmo=" + gun.totalAmmo);
+                        }
+                        else
+                        {
+                            Debug.LogWarning("Load: Brak informacji o amunicji dla " + weaponName);
+                        }
+                        inventoryUI.UpdateWeaponUI(gun);
+                    }
+                    inventoryUI.SetWeaponUI(inventory.currentWeaponPrefab);
+                }
+                else
+                {
+                    Debug.LogWarning("Load: currentWeaponPrefab == null po EquipWeapon");
                 }
             }
-
-            // 4. Odœwie¿ UI
-            if (inventory.currentWeaponPrefab != null)
+            else
             {
-                Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
-                if (gunScript != null)
-                    inventoryUI.UpdateWeaponUI(gunScript);
-                    inventoryUI.SetWeaponUI(inventory.currentWeaponPrefab);
+                Debug.Log("Load: inventory.weapons.Count == 0, nie wywo³ujê EquipWeapon");
             }
         }
 
-        // Zaktualizuj UI lub inne systemy jeœli trzeba
         LootShop lootShop = FindFirstObjectByType<LootShop>();
         if (lootShop != null)
             lootShop.UpdatePlayerCurrencyUI();
@@ -231,17 +267,15 @@ public class SaveManager : MonoBehaviour
         Debug.Log($"Wczytano gracza na pozycjê {player.transform.position}, rotacja {player.transform.rotation}, scena {data.sceneName}");
     }
 
-    // Metoda dodaj¹ca walutê gracza
     public void AddCurrency(float amount)
     {
-        playerCurrency += amount; // Dodaje podan¹ iloœæ do waluty gracza
+        playerCurrency += amount;
         Debug.Log($"Dodano {amount} waluty. Obecny stan: {playerCurrency}");
     }
 
-    // Metoda odejmuj¹ca walutê gracza
     public void SubtractCurrency(float amount)
     {
-        playerCurrency = Mathf.Max(playerCurrency - amount, 0); // Upewnia siê, ¿e waluta nie spadnie poni¿ej 0
+        playerCurrency = Mathf.Max(playerCurrency - amount, 0);
         Debug.Log($"Odjêto {amount} waluty. Obecny stan: {playerCurrency}");
     }
 
@@ -251,15 +285,13 @@ public class SaveManager : MonoBehaviour
         Debug.Log("Waluta gracza zosta³a zresetowana.");
     }
 
-    // Metoda resetuj¹ca pozycjê i rotacjê gracza
     public void ResetPositionAndRotation()
     {
-        // ZnajdŸ obiekt gracza w scenie
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
-            player.transform.position = Vector3.zero; // Ustaw domyœln¹ pozycjê
-            player.transform.rotation = Quaternion.identity; // Ustaw domyœln¹ rotacjê
+            player.transform.position = Vector3.zero;
+            player.transform.rotation = Quaternion.identity;
             Debug.Log("Pozycja i rotacja gracza zosta³y zresetowane.");
         }
         else
@@ -304,13 +336,11 @@ public class SaveManager : MonoBehaviour
         return JsonUtility.FromJson<PlayerData>(json);
     }
 
-
     public int GetLastUsedSlotIndex()
     {
         int lastSlot = -1;
         System.DateTime lastTime = System.DateTime.MinValue;
 
-        // Zak³adamy 3 sloty: 0, 1, 2
         for (int i = 0; i <= 2; i++)
         {
             string path = GetSlotFilePath(i);
@@ -332,17 +362,24 @@ public class SaveManager : MonoBehaviour
     }
 }
 
-// Klasa pomocnicza przechowuj¹ca dane gracza
 [Serializable]
 public class PlayerData
 {
-    public float playerCurrency; // Waluta gracza
-    public Vector3 playerPosition; // Pozycja gracza
-    public Quaternion playerRotation; // Rotacja gracza
-    public string sceneName; // Nazwa sceny
-    public string lastSaveTime; // Data ostatniego zapisu
+    public float playerCurrency;
+    public Vector3 playerPosition;
+    public Quaternion playerRotation;
+    public string sceneName;
+    public string lastSaveTime;
 
-    public List<string> weaponNames = new List<string>();
+    public List<string> weapons = new List<string>();
     public List<string> itemNames = new List<string>();
     public List<string> lootNames = new List<string>();
+    public List<WeaponSaveData> weaponSaveDatas = new List<WeaponSaveData>();
+}
+[Serializable]
+public class WeaponSaveData
+{
+    public string weaponName;
+    public int currentAmmo;
+    public int totalAmmo;
 }

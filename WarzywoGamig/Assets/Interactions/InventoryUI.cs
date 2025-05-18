@@ -10,7 +10,6 @@ public class InventoryUI : MonoBehaviour
     public TextMeshProUGUI[] itemTexts = new TextMeshProUGUI[4]; // Tablica tekstów dla ilości przedmiotów
     public TextMeshProUGUI[] itemCategoryTexts = new TextMeshProUGUI[4]; // Tablica tekstów dla kategorii zasobów
 
-
     public Sprite defaultWeaponSprite; // Domyślny obrazek broni
     public Sprite defaultItemSprite; // Domyślny obrazek przedmiotu
 
@@ -26,6 +25,8 @@ public class InventoryUI : MonoBehaviour
 
     private Gun currentWeapon; // Aktualnie trzymana broń
 
+    public WeaponDatabase weaponDatabase;
+
     public static InventoryUI Instance;
 
     private void Awake()
@@ -34,30 +35,19 @@ public class InventoryUI : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            //Debug.Log("InventoryUI initialized.");
         }
         else
         {
-            //Debug.LogWarning("Another instance of InventoryUI found. Destroying this instance.");
             Destroy(gameObject);
         }
     }
     private void Start()
     {
-        //Debug.Log("Inventory UI Start");
-
-        // Sprawdź, czy broń jest przypisana po załadowaniu sceny
         if (currentWeapon != null)
         {
-            //Debug.Log("Current weapon exists: " + currentWeapon.name);
             UpdateWeaponUI(currentWeapon); // Zaktualizuj UI broni
         }
-        else
-        {
-            //Debug.LogWarning("No current weapon assigned after scene change.");
-        }
 
-        // Inicjalizacja UI
         foreach (var img in itemImages)
         {
             img.enabled = false;
@@ -74,54 +64,51 @@ public class InventoryUI : MonoBehaviour
         slashText.gameObject.SetActive(false);
     }
 
-    public void UpdateInventoryUI(List<GameObject> weapons, List<GameObject> items)
+    // Zmieniono nazwę parametru z weaponNames na weapons dla spójności
+    public void UpdateInventoryUI(List<string> weapons, List<GameObject> items)
     {
-        //Debug.Log("Weapons count: " + weapons.Count);
-
         bool weaponEquipped = false;
 
-        // Sprawdzamy, czy gracz trzyma broń
-        foreach (var weaponObj in weapons)
+        foreach (var weaponName in weapons)
         {
-            if (weaponObj == null) continue;
+            if (string.IsNullOrEmpty(weaponName)) continue;
 
-            // Sprawdź, czy 'weaponObj' ma komponent InteractableItem
-            InteractableItem weapon = weaponObj.GetComponent<InteractableItem>();
+            // Pobierz prefab/dane broni z WeaponDatabase (przypisz w Inspectorze!)
+            WeaponPrefabEntry found = weaponDatabase.weaponPrefabsList.Find(w => w.weaponName == weaponName);
 
-            if (weapon != null)
+            if (found != null && found.weaponPrefab != null)
             {
-                Debug.Log("Weapon found: " + weapon.itemName); // Logujemy nazwę broni
+                Debug.Log("Weapon found: " + weaponName);
 
-                weaponImage.sprite = weaponIcons.ContainsKey(weapon.itemName) ? weaponIcons[weapon.itemName] : defaultWeaponSprite;
+                // Ikona
+                weaponImage.sprite = weaponIcons.ContainsKey(weaponName) ? weaponIcons[weaponName] : defaultWeaponSprite;
                 weaponImage.enabled = true;
                 weaponEquipped = true;
 
-                // Aktualizacja nazwy broni
-                weaponNameText.text = weapon.itemName;
+                // Nazwa broni
+                weaponNameText.text = weaponName;
                 weaponNameText.gameObject.SetActive(true);
 
-                // Sprawdzamy, czy broń ma komponent Gun
-                Gun gun = weaponObj.GetComponent<Gun>();
+                Gun gun = found.weaponPrefab.GetComponent<Gun>();
                 if (gun != null)
                 {
-                    Debug.Log("Updating weapon UI for: " + gun.name); // Logujemy nazwę broni
+                    Debug.Log("Updating weapon UI for: " + gun.name);
                     currentWeapon = gun;
                     UpdateWeaponUI(gun);
                 }
                 else
                 {
-                    Debug.LogWarning("Gun component not found on: " + weaponObj.name);
+                    Debug.LogWarning("Gun component not found on prefab for: " + weaponName);
                 }
             }
             else
             {
-                Debug.LogWarning("InteractableItem component not found on: " + weaponObj.name);
+                Debug.LogWarning("WeaponPrefabEntry or prefab not found for: " + weaponName);
             }
         }
 
         if (!weaponEquipped)
         {
-            //Debug.Log("No weapon equipped, hiding weapon UI.");
             weaponImage.enabled = false;
             weaponNameText.gameObject.SetActive(false);
 
@@ -135,38 +122,34 @@ public class InventoryUI : MonoBehaviour
         UpdateItemUI(items);
     }
 
-    // Aktualizacja UI przedmiotów
     private void UpdateItemUI(List<GameObject> items)
     {
-        // Ukrywamy wszystkie ikony, teksty ilości oraz kategorie przedmiotów
+        // Ukryj wszystkie ikony, teksty ilości oraz kategorie przedmiotów
         for (int i = 0; i < itemImages.Length; i++)
         {
             itemImages[i].enabled = false;
             itemTexts[i].gameObject.SetActive(false);
-            itemCategoryTexts[i].gameObject.SetActive(false);  // Ukryj tekst kategorii
+            itemCategoryTexts[i].gameObject.SetActive(false);
         }
 
-        // Aktualizujemy ikony, teksty ilości oraz kategorie dla podniesionych przedmiotów
+        // Aktualizuj ikony, teksty ilości oraz kategorie dla podniesionych przedmiotów
         for (int i = 0; i < items.Count && i < 4; i++)
         {
-            if (items[i] == null) continue; // Pomija usunięte obiekty
+            if (items[i] == null) continue;
 
             InteractableItem item = items[i].GetComponent<InteractableItem>();
             TreasureResources treasureResources = items[i].GetComponent<TreasureResources>();
 
             if (item != null && treasureResources != null)
             {
-                // Wyświetlanie ikony przedmiotu
                 itemImages[i].sprite = itemIcons.ContainsKey(item.itemName) ? itemIcons[item.itemName] : defaultItemSprite;
                 itemImages[i].enabled = true;
 
-                // Wyświetlanie ilości zasobów
                 itemTexts[i].text = treasureResources.resourceCategories[0].resourceCount.ToString();
                 itemTexts[i].gameObject.SetActive(true);
 
-                // Wyświetlanie kategorii zasobów
                 string categoryName = treasureResources.resourceCategories[0].name;
-                itemCategoryTexts[i].text = categoryName; // Użycie name z ResourceCategory
+                itemCategoryTexts[i].text = categoryName;
                 itemCategoryTexts[i].gameObject.SetActive(true);
             }
         }
@@ -176,19 +159,14 @@ public class InventoryUI : MonoBehaviour
     {
         if (gun == null)
         {
-            //Debug.LogWarning("Gun is null, skipping UI update.");
             return;
         }
 
-        //Debug.Log("Updating Weapon UI for: " + gun.name); // Logujemy nazwę broni
-
-        // Pokazanie UI amunicji
         ammoText.gameObject.SetActive(true);
         totalAmmoText.gameObject.SetActive(true);
         slashText.gameObject.SetActive(true);
         reloadingText.gameObject.SetActive(gun.IsReloading());
 
-        // Aktualizacja wartości amunicji
         ammoText.text = gun.currentAmmo.ToString();
         totalAmmoText.text = gun.unlimitedAmmo ? "∞" : gun.totalAmmo.ToString();
     }
