@@ -140,16 +140,6 @@ public class TurretController : MonoBehaviour
                 playerMovement.enabled = false;
             }
 
-            if (inventory != null && inventory.currentWeaponPrefab != null)
-            {
-                inventory.currentWeaponPrefab.SetActive(false);
-            }
-
-            if (inventory != null)
-            {
-                inventory.enabled = false;
-            }
-
             StartCoroutine(RaiseTurret());
 
             ActivateWeapon();

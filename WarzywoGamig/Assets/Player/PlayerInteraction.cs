@@ -17,10 +17,10 @@ public class PlayerInteraction : MonoBehaviour
     private float interactionTimer = 0f;
     private InteractableItem currentInteractableItem = null;
     private float requiredHoldTime = 5f;
-    private TurretController turretController; // Dodajemy referencjê do TurretController
+    private TurretController turretController;
     private TreasureRefiner treasureRefiner;
     private CameraToMonitor cameraToMonitor;
-    private bool hasRefinerBeenUsed = false; // Flaga kontroluj¹ca, czy refiner ju¿ zosta³ u¿yty
+    private bool hasRefinerBeenUsed = false;
 
     void Awake()
     {
@@ -35,25 +35,23 @@ public class PlayerInteraction : MonoBehaviour
 
     void Start()
     {
-
-        // Znajdujemy TurretController w scenie
         turretController = Object.FindFirstObjectByType<TurretController>();
         if (turretController == null)
         {
             Debug.LogError("Brak obiektu TurretController w scenie.");
         }
-        // Znajdujemy TreasureRefiner w scenie
+
         treasureRefiner = Object.FindFirstObjectByType<TreasureRefiner>();
         if (treasureRefiner == null)
         {
-            Debug.LogError("Brak obiektu TurretController w scenie.");
+            Debug.LogError("Brak obiektu TreasureRefiner w scenie.");
         }
 
-        //cameraToMonitor = Object.FindFirstObjectByType<CameraToMonitor>();
-        //if (cameraToMonitor == null)
-        //{
-        //    Debug.LogError("Brak obiektu CameraToMonitor w scenie.");
-        //}
+        cameraToMonitor = Object.FindFirstObjectByType<CameraToMonitor>();
+        if (cameraToMonitor == null)
+        {
+            Debug.LogError("Brak obiektu CameraToMonitor w scenie.");
+        }
 
         if (progressCircle != null)
         {
@@ -80,12 +78,11 @@ public class PlayerInteraction : MonoBehaviour
             return;
         }
 
-        // Sprawdzamy, czy gracz trzyma loot
         Inventory playerInventory = Object.FindFirstObjectByType<Inventory>();
         if (playerInventory != null && playerInventory.lootParent != null && playerInventory.lootParent.childCount > 0)
         {
             HideUI();
-            return; // Zatrzymujemy dalsze przetwarzanie, gdy gracz trzyma loot
+            return;
         }
 
         RaycastHit hit;
@@ -126,33 +123,45 @@ public class PlayerInteraction : MonoBehaviour
 
                         if (interactionTimer >= requiredHoldTime)
                         {
-                            if (currentInteractableItem.isTurret) // Sprawdzamy, czy obiekt to wie¿yczka
+                            if (currentInteractableItem.isTurret)
                             {
-                                UseTurret(interactableItem); // Uruchamiamy tryb wie¿yczki
+                                UseTurret(interactableItem);
+
+                                // DEAKTYWUJ BROÑ przy wie¿yczce
+                                if (inventory != null && inventory.currentWeaponPrefab != null)
+                                {
+                                    inventory.currentWeaponPrefab.SetActive(false);
+                                    inventory.enabled = false;
+                                    inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+                                }
                             }
 
-                            if (currentInteractableItem.isMonitor) // Sprawdzamy, czy obiekt to monitor
+                            if (currentInteractableItem.isMonitor)
                             {
-                                UseMonitor(interactableItem); // Uruchamiamy tryb wie¿yczki
+                                UseMonitor(interactableItem);
+
+                                // DEZAKTYWUJ BROÑ:
+                                if (inventory != null && inventory.currentWeaponPrefab != null)
+                                {
+                                    inventory.currentWeaponPrefab.SetActive(false);
+                                    inventory.enabled = false;
+                                    inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+                                }
                             }
 
-                            if (currentInteractableItem.isRefiner && !hasRefinerBeenUsed) // Sprawdzamy, czy to refiner i czy nie by³ ju¿ u¿yty
+                            if (currentInteractableItem.isRefiner && !hasRefinerBeenUsed)
                             {
-                                RemoveOldestItemFromInventory(interactableItem); // Uruchamiamy Refiner
-                                inventory.RefreshItemListChronologically(); // Aktualizujemy listê przedmiotów
-                                hasRefinerBeenUsed = true; // Ustawiamy flagê, aby unikn¹æ ponownego u¿ycia podczas trzymania E
+                                RemoveOldestItemFromInventory(interactableItem);
+                                inventory.RefreshItemListChronologically();
+                                hasRefinerBeenUsed = true;
                             }
-                            else
+                            else if (!currentInteractableItem.isTurret && !currentInteractableItem.isMonitor && !currentInteractableItem.isRefiner)
                             {
                                 InteractWithObject(currentInteractableItem);
                             }
+
                             interactionTimer = 0f;
                             HideUI();
-                        }
-                        if (inventory != null && inventory.currentWeaponPrefab != null)
-                        {
-                            inventory.currentWeaponPrefab.SetActive(false);
-                            inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
                         }
                     }
                     else
@@ -167,7 +176,7 @@ public class PlayerInteraction : MonoBehaviour
                 }
                 else
                 {
-                    hasRefinerBeenUsed = false; // Resetujemy flagê, gdy E jest puszczone
+                    hasRefinerBeenUsed = false;
                     interactionTimer = 0f;
                     if (progressCircle != null)
                     {
@@ -188,7 +197,6 @@ public class PlayerInteraction : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // Spróbuj ponownie znaleŸæ UI po za³adowaniu nowej sceny
         progressCircle = GameObject.Find("ProgressCircle")?.GetComponent<Image>();
         messageText = GameObject.Find("MessageText")?.GetComponent<TMP_Text>();
 
@@ -216,20 +224,16 @@ public class PlayerInteraction : MonoBehaviour
     {
         if (turretController != null)
         {
-            //Debug.Log($"{interactableItem.itemName} jest teraz w trybie wie¿yczki!");
-            turretController.UseTurret(); // U¿ywamy metody z TurretController do aktywacji wie¿yczki
+            turretController.UseTurret();
         }
     }
 
     private void UseMonitor(InteractableItem interactableItem)
     {
-        if (currentInteractableItem.isMonitor)
+        CameraToMonitor specificMonitor = interactableItem.GetComponent<CameraToMonitor>();
+        if (specificMonitor != null)
         {
-            CameraToMonitor specificMonitor = currentInteractableItem.GetComponent<CameraToMonitor>();
-            if (specificMonitor != null)
-            {
-                specificMonitor.UseMonitor();
-            }
+            specificMonitor.UseMonitor();
         }
     }
 
@@ -237,7 +241,7 @@ public class PlayerInteraction : MonoBehaviour
     {
         if (treasureRefiner != null)
         {
-            treasureRefiner.RemoveOldestItemFromInventory(); // Przekazujemy nazwê przedmiotu
+            treasureRefiner.RemoveOldestItemFromInventory();
         }
     }
 
@@ -280,12 +284,25 @@ public class PlayerInteraction : MonoBehaviour
 
         currentInteractableItem = null;
 
-        // Sprawdzamy, czy gracz nie jest w trybie wie¿yczki przed aktywowaniem broni
-        if (turretController != null && !turretController.isUsingTurret && inventory != null && inventory.currentWeaponPrefab != null)
+        // SprawdŸ czy którykolwiek monitor jest aktywny
+        bool isAnyMonitorActive = false;
+        var allMonitors = Object.FindObjectsByType<CameraToMonitor>(FindObjectsSortMode.None);
+        foreach (var monitor in allMonitors)
+        {
+            if (monitor.isUsingMonitor)
+            {
+                isAnyMonitorActive = true;
+                break;
+            }
+        }
+
+        if (turretController != null && !turretController.isUsingTurret &&
+            inventory != null && inventory.currentWeaponPrefab != null &&
+            !isAnyMonitorActive)
         {
             inventory.currentWeaponPrefab.SetActive(true);
+            inventory.enabled = true;
             inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
         }
     }
-
 }

@@ -12,6 +12,7 @@ using static UnityEditor.Lightmapping;
 public class CameraToMonitor : MonoBehaviour
 {
     public PlayerMovement playerMovementScript;
+    public PlayerInteraction playerInteraction;
     public MouseLook mouseLookScript;
     public SceneChanger sceneChanger;
     public HoverMessage monitorHoverMessage;
@@ -30,6 +31,7 @@ public class CameraToMonitor : MonoBehaviour
     private bool isInteracting = false;
     private bool isCameraMoving = false;
     public static bool CanUseMenu = true; // Flaga, która kontroluje, czy menu jest dostêpne
+    public bool isUsingMonitor = false;
 
     [Header("Info")]
     public bool hasInfo = false;
@@ -631,6 +633,8 @@ public class CameraToMonitor : MonoBehaviour
     {
         if (!isInteracting && !isCameraMoving)
         {
+            isUsingMonitor = true;
+
             originalCameraPosition = Camera.main.transform.position;
             originalCameraRotation = Camera.main.transform.rotation;
             StartCoroutine(MoveCameraToPosition());
@@ -762,6 +766,7 @@ public class CameraToMonitor : MonoBehaviour
 
         ClearMonitorConsole();
         CanUseMenu = true;
+        isUsingMonitor = false;
     }
 
     private void DisablePlayerMovementAndMouseLook()
