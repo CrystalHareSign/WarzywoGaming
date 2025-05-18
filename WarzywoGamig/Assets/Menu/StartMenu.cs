@@ -118,16 +118,17 @@ public class StartMenu : MonoBehaviour
         if (lastSlot == -1)
         {
             Debug.LogWarning("Brak dostêpnego zapisu do kontynuacji!");
-            // Mo¿esz tu wyœwietliæ komunikat lub zablokowaæ przycisk
             return;
         }
 
-        Debug.Log($"Wczytywanie ostatniego zapisu z slotu {lastSlot}");
-        // Ukryj menu
-        startMenuUI.SetActive(false);
+        // Ustaw slot jako wybrany
+        SaveManager.Instance.SetCurrentSlot(lastSlot);
 
-        // Wczytaj grê z ostatniego slotu
-        SaveManager.Instance.LoadPlayerData(lastSlot);
+        // Wczytaj dane gracza (DOK£ADNIE jak przy rêcznym wyborze slotu w LoadGameMenu)
+        SaveManager.Instance.LoadPlayerData(lastSlot); // <-- To musi ³adowaæ WSZYSTKO: walutê, pozycjê, rotacjê, ekwipunek, itd.
+
+        startMenuUI.SetActive(false);
+        // Opcjonalnie: jeœli masz scenê do za³adowania, tu wywo³aj SceneManager.LoadScene(...)
     }
 
     // Metoda dla "Wyjœcie" - zakoñczenie gry

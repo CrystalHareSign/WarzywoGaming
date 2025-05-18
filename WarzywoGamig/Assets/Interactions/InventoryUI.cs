@@ -193,4 +193,42 @@ public class InventoryUI : MonoBehaviour
         totalAmmoText.text = gun.unlimitedAmmo ? "∞" : gun.totalAmmo.ToString();
     }
 
+    public void SetWeaponUI(GameObject weaponPrefab)
+    {
+        if (weaponPrefab == null)
+        {
+            weaponImage.sprite = defaultWeaponSprite;
+            weaponImage.enabled = false;
+            weaponNameText.text = "";
+            weaponNameText.gameObject.SetActive(false);
+            ammoText.gameObject.SetActive(false);
+            totalAmmoText.gameObject.SetActive(false);
+            slashText.gameObject.SetActive(false);
+            reloadingText.gameObject.SetActive(false);
+            return;
+        }
+
+        InteractableItem weapon = weaponPrefab.GetComponent<InteractableItem>();
+        Gun gun = weaponPrefab.GetComponent<Gun>();
+
+        if (weapon != null)
+        {
+            weaponImage.sprite = weaponIcons.ContainsKey(weapon.itemName) ? weaponIcons[weapon.itemName] : defaultWeaponSprite;
+            weaponImage.enabled = true;
+            weaponNameText.text = weapon.itemName;
+            weaponNameText.gameObject.SetActive(true);
+        }
+
+        if (gun != null)
+        {
+            UpdateWeaponUI(gun);
+        }
+        else
+        {
+            ammoText.gameObject.SetActive(false);
+            totalAmmoText.gameObject.SetActive(false);
+            slashText.gameObject.SetActive(false);
+            reloadingText.gameObject.SetActive(false);
+        }
+    }
 }

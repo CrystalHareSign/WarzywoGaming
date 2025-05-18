@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -72,8 +73,29 @@ public class SaveManager : MonoBehaviour
                 playerPosition = playerPosition,
                 playerRotation = playerRotation,
                 sceneName = SceneManager.GetActiveScene().name,
-                lastSaveTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                lastSaveTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                weaponNames = new List<string>(),
+                itemNames = new List<string>(),
+                lootNames = new List<string>()
             };
+
+            // ZAPISZ ZAWARTOŒÆ EKWIPUNKU
+            Inventory inventory = UnityEngine.Object.FindFirstObjectByType<Inventory>();
+            if (inventory != null)
+            {
+                // PATCH: ZAPISUJ TYLKO NAZWY BRONI
+                foreach (var weapon in inventory.weapons)
+                    if (weapon != null)
+                        data.weaponNames.Add(weapon.name.Replace("(Clone)", "").Trim());
+
+                foreach (var item in inventory.items)
+                    if (item != null)
+                        data.itemNames.Add(item.name.Replace("(Clone)", "").Trim());
+
+                foreach (var loot in inventory.loot)
+                    if (loot != null)
+                        data.lootNames.Add(loot.name.Replace("(Clone)", "").Trim());
+            }
 
             string json = JsonUtility.ToJson(data, true);
             File.WriteAllText(path, json);
@@ -114,7 +136,6 @@ public class SaveManager : MonoBehaviour
 
     private IEnumerator LoadMainThenTargetScene(PlayerData data)
     {
-        // 1. £aduj najpierw "Main", jeœli nie jesteœmy ju¿ w niej
         if (SceneManager.GetActiveScene().name != "Main")
         {
             AsyncOperation mainLoad = SceneManager.LoadSceneAsync("Main");
@@ -122,10 +143,8 @@ public class SaveManager : MonoBehaviour
                 yield return null;
         }
 
-        // 2. Poczekaj do koñca klatki na wszelki wypadek
         yield return null;
 
-        // 3. Teraz ³aduj scenê docelow¹ z save
         if (SceneManager.GetActiveScene().name != data.sceneName)
         {
             AsyncOperation targetLoad = SceneManager.LoadSceneAsync(data.sceneName);
@@ -133,7 +152,6 @@ public class SaveManager : MonoBehaviour
                 yield return null;
         }
 
-        // 4. Poczekaj a¿ gracz pojawi siê w scenie docelowej (max 2 sekundy)
         yield return null;
         float waitTime = 0f;
         GameObject player = null;
@@ -153,10 +171,57 @@ public class SaveManager : MonoBehaviour
             yield break;
         }
 
-        // 5. Ustaw dane gracza z save
+        // ODTWÓRZ DANE GRACZA Z SAVE
         player.transform.position = data.playerPosition;
         player.transform.rotation = data.playerRotation;
         this.playerCurrency = data.playerCurrency;
+
+        Inventory inventory = UnityEngine.Object.FindFirstObjectByType<Inventory>();
+        InventoryUI inventoryUI = UnityEngine.Object.FindFirstObjectByType<InventoryUI>();
+
+        if (inventory != null)
+        {
+            // 1. Wyczyœæ stare dane
+            inventory.weapons.Clear();
+            inventory.weaponNames.Clear();
+
+            // 2. Odtwórz bronie na podstawie save
+            inventory.weapons.Clear();
+            inventory.weaponNames.Clear();
+
+            foreach (string weaponName in data.weaponNames)
+            {
+                if (inventory.weaponPrefabs.TryGetValue(weaponName, out var prefab) && prefab != null)
+                {
+                    inventory.weaponNames.Add(weaponName);
+                    // NIE twórz rêcznie GameObjectów!
+                }
+                else
+                {
+                    Debug.LogWarning("Brak prefabu dla: " + weaponName);
+                }
+            }
+
+            // 3. Wyekwipuj pierwsz¹ broñ (jeœli jest)
+            if (inventory.weaponNames.Count > 0)
+            {
+                string weaponName = inventory.weaponNames[0];
+                if (inventory.weaponPrefabs.TryGetValue(weaponName, out var prefab) && prefab != null)
+                {
+                    var dummy = prefab.GetComponent<InteractableItem>();
+                    inventory.EquipWeapon(dummy, null); // Twój EquipWeapon powinien zrobiæ Instantiate(prefab) i ustawiæ wszystko poprawnie
+                }
+            }
+
+            // 4. Odœwie¿ UI
+            if (inventory.currentWeaponPrefab != null)
+            {
+                Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
+                if (gunScript != null)
+                    inventoryUI.UpdateWeaponUI(gunScript);
+                    inventoryUI.SetWeaponUI(inventory.currentWeaponPrefab);
+            }
+        }
 
         // Zaktualizuj UI lub inne systemy jeœli trzeba
         LootShop lootShop = FindFirstObjectByType<LootShop>();
@@ -276,4 +341,8 @@ public class PlayerData
     public Quaternion playerRotation; // Rotacja gracza
     public string sceneName; // Nazwa sceny
     public string lastSaveTime; // Data ostatniego zapisu
+
+    public List<string> weaponNames = new List<string>();
+    public List<string> itemNames = new List<string>();
+    public List<string> lootNames = new List<string>();
 }

@@ -6,7 +6,7 @@ public class Inventory : MonoBehaviour
 {
     public List<GameObject> weapons = new List<GameObject>(); // Lista broni
     public List<GameObject> items = new List<GameObject>(); // Lista innych przedmiotów
-    private List<GameObject> loot = new List<GameObject>(); // Lista lootów
+    public List<GameObject> loot = new List<GameObject>(); // Lista lootów
     public int maxWeapons = 3; // Maksymalna liczba broni, które gracz może nosić
     public int maxItems = 5; // Maksymalna liczba innych przedmiotów
     public int maxLoot = 5; // Maksymalna liczba przedmiotów loot
@@ -18,15 +18,20 @@ public class Inventory : MonoBehaviour
     public Transform lootParent; // Transform, do którego będą przypisane lootowe przedmioty
     public bool isLootBeingDropped = false; // Flaga kontrolująca proces upuszczania lootu
 
-    [System.Serializable]
-    public class WeaponPrefabEntry
-    {
-        public string weaponName; // Nazwa broni
-        public GameObject weaponPrefab; // Prefab broni
-    }
-
     public List<WeaponPrefabEntry> weaponPrefabsList = new List<WeaponPrefabEntry>();
-    private Dictionary<string, GameObject> weaponPrefabs = new Dictionary<string, GameObject>();
+    public Dictionary<string, GameObject> weaponPrefabs = new Dictionary<string, GameObject>();
+
+    // Lista ekwipunku gracza (TUTAJ TYLKO NAZWY BRONI)
+    public List<string> weaponNames = new List<string>();
+
+    // NOWOŚĆ: prefaby itemów
+    public List<ItemPrefabEntry> itemPrefabsList = new List<ItemPrefabEntry>();
+    public Dictionary<string, GameObject> itemPrefabs = new Dictionary<string, GameObject>();
+
+    // NOWOŚĆ: prefaby lootów
+    public List<LootPrefabEntry> lootPrefabsList = new List<LootPrefabEntry>();
+    public Dictionary<string, GameObject> lootPrefabs = new Dictionary<string, GameObject>();
+
 
     public GameObject currentWeaponPrefab; // Przechowuje aktualnie wyposażoną broń
     private GameObject currentWeaponItem; // Przechowuje obiekt aktualnej broni w ekwipunku
@@ -45,6 +50,22 @@ public class Inventory : MonoBehaviour
 
     void Start()
     {
+        // Wypełnij słownik prefabów na podstawie listy z Inspectora
+        weaponPrefabs.Clear();
+        foreach (var entry in weaponPrefabsList)
+        {
+            if (!weaponPrefabs.ContainsKey(entry.weaponName) && entry.weaponPrefab != null)
+                weaponPrefabs.Add(entry.weaponName, entry.weaponPrefab);
+        }
+
+        itemPrefabs.Clear();
+        foreach (var entry in itemPrefabsList)
+            itemPrefabs[entry.itemName] = entry.itemPrefab;
+
+        lootPrefabs.Clear();
+        foreach (var entry in lootPrefabsList)
+            lootPrefabs[entry.lootName] = entry.lootPrefab;
+
         // Znajdź wszystkie obiekty posiadające PlaySoundOnObject i dodaj do listy
         playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
 
@@ -207,36 +228,57 @@ public class Inventory : MonoBehaviour
         EquipWeapon(newWeapon, newWeaponItem);
     }
 
-    void EquipWeapon(InteractableItem interactableItem, GameObject weaponItem)
+    public void EquipWeapon(InteractableItem interactableItem, GameObject weaponItem)
     {
         if (weaponPrefabs.ContainsKey(interactableItem.itemName))
         {
             if (currentWeaponPrefab != null)
             {
-                // Sprawdzenie, czy obiekt jest zniszczony lub null, zanim go usuniemy
+                // Bezpieczne niszczenie poprzedniej broni
                 if (currentWeaponPrefab != null && currentWeaponPrefab.gameObject != null)
                 {
                     Destroy(currentWeaponPrefab);
                 }
             }
 
-            currentWeaponPrefab = Instantiate(weaponPrefabs[interactableItem.itemName], weaponParent);
+            // ZAWSZE instancjonuj z PREFABU, nie z obiektu w ekwipunku!
+            var prefab = weaponPrefabs[interactableItem.itemName];
+            if (prefab == null)
+            {
+                Debug.LogError($"Prefab dla broni '{interactableItem.itemName}' jest null! Sprawdź Inventory w Inspectorze.");
+                return;
+            }
+
+            // Poprawne tworzenie nowej broni w ręce
+            currentWeaponPrefab = Instantiate(prefab, weaponParent);
             currentWeaponPrefab.transform.localPosition = weaponPositionOffset;
             currentWeaponPrefab.transform.localRotation = Quaternion.Euler(weaponRotationOffset);
             currentWeaponPrefab.SetActive(true);
 
-            // Zapobiegamy usuwaniu broni między scenami przez przeniesienie na root
+            // (Opcjonalnie) NIE rób DontDestroyOnLoad na broni — zostawiam, bo nie chcesz usuwać logiki
             GameObject rootWeapon = currentWeaponPrefab.transform.root.gameObject;
             DontDestroyOnLoad(rootWeapon);
 
+            // Aktywacja skryptu Gun
             Gun gunScript = currentWeaponPrefab.GetComponent<Gun>();
             if (gunScript != null)
             {
                 gunScript.enabled = true;
                 gunScript.EquipWeapon();
             }
+            else
+            {
+                Debug.LogWarning("Gun nie znaleziony na prefabie broni!");
+            }
 
             currentWeaponItem = weaponItem;
+
+            // Dodatkowy log debugujący:
+            Debug.Log($"Wyekwipowano broń: {interactableItem.itemName}, parent: {currentWeaponPrefab.transform.parent?.name ?? "brak parenta"}");
+        }
+        else
+        {
+            Debug.LogWarning($"Brak prefabu dla broni: {interactableItem.itemName}");
         }
     }
 
@@ -472,7 +514,7 @@ public class Inventory : MonoBehaviour
         }
     }
 
-    private void UpdateInventoryUI()
+    public void UpdateInventoryUI()
     {
         if (inventoryUI != null)
         {
@@ -491,5 +533,25 @@ public class Inventory : MonoBehaviour
         // Zaktualizuj UI
         UpdateInventoryUI();
     }
+}
 
+[System.Serializable]
+public class ItemPrefabEntry
+{
+    public string itemName;
+    public GameObject itemPrefab;
+}
+
+[System.Serializable]
+public class LootPrefabEntry
+{
+    public string lootName;
+    public GameObject lootPrefab;
+}
+
+[System.Serializable]
+public class WeaponPrefabEntry
+{
+    public string weaponName; // Nazwa broni
+    public GameObject weaponPrefab; // Prefab broni
 }
