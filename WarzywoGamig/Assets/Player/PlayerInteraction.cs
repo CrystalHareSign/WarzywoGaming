@@ -133,6 +133,7 @@ public class PlayerInteraction : MonoBehaviour
                                     inventory.currentWeaponPrefab.SetActive(false);
                                     inventory.enabled = false;
                                     inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+                                    inventoryUI.HideWeaponUI();
                                 }
                             }
 
@@ -146,6 +147,7 @@ public class PlayerInteraction : MonoBehaviour
                                     inventory.currentWeaponPrefab.SetActive(false);
                                     inventory.enabled = false;
                                     inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+                                    inventoryUI.HideWeaponUI();
                                 }
                             }
 
@@ -303,6 +305,7 @@ public class PlayerInteraction : MonoBehaviour
             inventory.currentWeaponPrefab.SetActive(true);
             inventory.enabled = true;
             inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+            inventoryUI.ShowWeaponUI();
         }
     }
 }

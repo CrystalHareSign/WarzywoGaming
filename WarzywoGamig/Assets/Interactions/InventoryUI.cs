@@ -209,4 +209,20 @@ public class InventoryUI : MonoBehaviour
             reloadingText.gameObject.SetActive(false);
         }
     }
+    public void HideWeaponUI()
+    {
+        weaponNameText.gameObject.SetActive(false);
+        ammoText.gameObject.SetActive(false);
+        totalAmmoText.gameObject.SetActive(false);
+        slashText.gameObject.SetActive(false);
+        weaponImage.gameObject.SetActive(false);
+    }
+    public void ShowWeaponUI()
+    {
+        weaponNameText.gameObject.SetActive(true);
+        ammoText.gameObject.SetActive(true);
+        totalAmmoText.gameObject.SetActive(true);
+        slashText.gameObject.SetActive(true);
+        weaponImage.gameObject.SetActive(true);
+    }
 }
