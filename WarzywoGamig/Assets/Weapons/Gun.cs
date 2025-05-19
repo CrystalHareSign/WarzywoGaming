@@ -16,27 +16,26 @@ public class Gun : MonoBehaviour
     public Transform shootingPoint;
 
     private bool isReloading = false;
+    private Coroutine reloadCoroutine = null; // <--- referencja do coroutine przeładowania
 
     [Header("Ammo Settings")]
-    public bool unlimitedAmmo = false;  // ✅ Teraz możesz włączać/wyłączać w `Inspectorze`
+    public bool unlimitedAmmo = false;
 
-    // Nowa flaga do sprawdzania, czy broń jest aktywna
     private bool isWeaponEquipped = false;
-
-    private InventoryUI inventoryUI; // Odwołanie do InventoryUI
+    private InventoryUI inventoryUI;
 
     [Header("Full Auto Settings")]
-    public bool isFullAuto = false; // Dodanie zmiennej, która kontroluje tryb full auto
-    public float fireRate = 0.1f; // Czas między kolejnymi strzałami w trybie full auto
+    public bool isFullAuto = false;
+    public float fireRate = 0.1f;
 
-    private float nextFireTime = 0f; // Zmienna do kontrolowania tempa strzelania w trybie full auto
+    private float nextFireTime = 0f;
 
     void Start()
     {
         if (currentAmmo == 0)
             currentAmmo = maxAmmo;
 
-        inventoryUI = Object.FindFirstObjectByType<InventoryUI>(); // Pobranie referencji do InventoryUI
+        inventoryUI = Object.FindFirstObjectByType<InventoryUI>();
     }
 
     void Update()
@@ -45,36 +44,32 @@ public class Gun : MonoBehaviour
 
         if (isFullAuto)
         {
-            // Strzelanie w trybie full auto
             if (Input.GetButton("Fire1") && (currentAmmo > 0 || unlimitedAmmo) && Time.time >= nextFireTime)
             {
-                nextFireTime = Time.time + fireRate; // Opóźnienie między strzałami
+                nextFireTime = Time.time + fireRate;
                 Shoot();
             }
         }
         else
         {
-            // Strzelanie w trybie semi-auto (kliknięcie raz)
             if (Input.GetButtonDown("Fire1") && (currentAmmo > 0 || unlimitedAmmo))
             {
                 Shoot();
             }
         }
 
-        // Obsługa przeładowania
         if (Input.GetKeyDown(KeyCode.R) && !unlimitedAmmo && currentAmmo < maxAmmo && totalAmmo > 0)
         {
-            StartCoroutine(Reload());
+            StartReload();
         }
-        else if (currentAmmo <= 0 && !unlimitedAmmo)  // Sprawdzenie, czy trzeba rozpocząć przeładowanie
+        else if (currentAmmo <= 0 && !unlimitedAmmo)
         {
-            StartCoroutine(Reload());
+            StartReload();
         }
     }
 
     public void EquipWeapon()
     {
-        // Po wywołaniu tej metody broń staje się aktywna
         isWeaponEquipped = true;
     }
 
@@ -86,27 +81,33 @@ public class Gun : MonoBehaviour
         }
 
         Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
-        //Debug.Log("Ammo: " + currentAmmo);
 
         if (inventoryUI != null)
         {
-            inventoryUI.UpdateWeaponUI(this); // Powiadomienie UI o zmianie stanu broni
+            inventoryUI.UpdateWeaponUI(this);
         }
 
         if (currentAmmo <= 0 && !unlimitedAmmo)
         {
-            StartCoroutine(Reload());
+            StartReload();
         }
+    }
+
+    public void StartReload()
+    {
+        if (isReloading) return;
+
+        // Jeśli coroutine już działa, nie uruchamiaj kolejnej
+        reloadCoroutine = StartCoroutine(Reload());
     }
 
     IEnumerator Reload()
     {
         isReloading = true;
 
-        // Uaktualnienie UI w momencie rozpoczęcia przeładowania
         if (inventoryUI != null)
         {
-            inventoryUI.UpdateWeaponUI(this); // Odświeżenie UI przy rozpoczęciu przeładowania
+            inventoryUI.UpdateWeaponUI(this);
         }
 
         yield return new WaitForSeconds(reloadTime);
@@ -117,16 +118,37 @@ public class Gun : MonoBehaviour
 
         isReloading = false;
 
-        // Uaktualnienie UI po zakończeniu przeładowania
         if (inventoryUI != null)
         {
-            inventoryUI.UpdateWeaponUI(this); // Odświeżenie UI po zakończeniu przeładowania
+            inventoryUI.UpdateWeaponUI(this);
         }
 
+        reloadCoroutine = null;
         Debug.Log("Reloaded!");
     }
 
-    // Nowa metoda do sprawdzania, czy broń jest w trakcie przeładowania
+    // Anulowanie przeładowania (np. przy chowaniu broni)
+    public void CancelReload()
+    {
+        if (reloadCoroutine != null)
+        {
+            StopCoroutine(reloadCoroutine);
+            reloadCoroutine = null;
+        }
+        isReloading = false;
+
+        if (inventoryUI != null) // schowaj info o przeładowaniu
+        {
+            inventoryUI.UpdateWeaponUI(this);
+        }
+    }
+
+    void OnDisable()
+    {
+        CancelReload(); // automatycznie kasuje przeładowanie przy Deactivate
+        isWeaponEquipped = false;
+    }
+
     public bool IsReloading()
     {
         return isReloading;

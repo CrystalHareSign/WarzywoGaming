@@ -130,6 +130,9 @@ public class PlayerInteraction : MonoBehaviour
                                 // DEAKTYWUJ BROÑ przy wie¿yczce
                                 if (inventory != null && inventory.currentWeaponPrefab != null)
                                 {
+                                    Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
+                                    if (gunScript != null)
+                                        gunScript.CancelReload();
                                     inventory.currentWeaponPrefab.SetActive(false);
                                     inventory.enabled = false;
                                     inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
@@ -144,6 +147,9 @@ public class PlayerInteraction : MonoBehaviour
                                 // DEZAKTYWUJ BROÑ:
                                 if (inventory != null && inventory.currentWeaponPrefab != null)
                                 {
+                                    Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
+                                    if (gunScript != null)
+                                        gunScript.CancelReload();
                                     inventory.currentWeaponPrefab.SetActive(false);
                                     inventory.enabled = false;
                                     inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
@@ -306,6 +312,10 @@ public class PlayerInteraction : MonoBehaviour
             inventory.enabled = true;
             inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
             inventoryUI.ShowWeaponUI();
+
+            Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
+            if (gunScript != null)
+                gunScript.EquipWeapon();
         }
     }
 }

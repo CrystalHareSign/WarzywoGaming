@@ -22,6 +22,7 @@ public class PlayerMovement : MonoBehaviour
     private Transform platform = null;
     private Vector3 lastPlatformPosition;
     private bool isJumping = false;
+    private bool sprintingWhileAirborne = false;
 
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
     private float lastSoundTime = 0f;
@@ -64,13 +65,25 @@ public class PlayerMovement : MonoBehaviour
         {
             velocity.y = -2f;
             isJumping = false;
+            sprintingWhileAirborne = false; // Zresetuj po lądowaniu
         }
 
         float moveX = Input.GetAxis("Horizontal");
         float moveZ = Input.GetAxis("Vertical");
         Vector3 move = transform.right * moveX + transform.forward * moveZ;
 
-        bool isSprinting = Input.GetKey(sprintKey) && move.magnitude > 0.1f && isGrounded;
+        // Ustal, czy sprint został aktywowany
+        bool isSprintKeyPressed = Input.GetKey(sprintKey);
+        bool isTryingToMove = move.magnitude > 0.1f;
+
+        if (isGrounded)
+        {
+            sprintingWhileAirborne = isSprintKeyPressed && isTryingToMove;
+        }
+
+        bool isSprinting = (isGrounded && isSprintKeyPressed && isTryingToMove) ||
+                           (!isGrounded && sprintingWhileAirborne);
+
         float currentSpeed = isSprinting ? sprintSpeed : moveSpeed;
         float currentSoundDelay = isSprinting ? sprintSoundDelay : walkSoundDelay;
 
@@ -92,6 +105,7 @@ public class PlayerMovement : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
     }
+
 
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
