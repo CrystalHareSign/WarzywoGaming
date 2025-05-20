@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public class TurretCollector : MonoBehaviour
 {
@@ -201,4 +202,89 @@ public class TurretCollector : MonoBehaviour
         }
     }
 
+    // ZAPIS
+    public List<CollectorSlotSaveData> GetSlotsSaveData()
+    {
+        var list = new List<CollectorSlotSaveData>();
+        foreach (var slot in resourceSlots)
+        {
+            CollectorSlotSaveData data = new CollectorSlotSaveData();
+            data.resourceCategory = slot.resourceCategory;
+            data.resourceCount = slot.resourceCount;
+            data.resourcePrefabName = slot.resourceVisual != null ? slot.resourceVisual.name.Replace("(Clone)", "") : "";
+            list.Add(data);
+        }
+        return list;
+    }
+
+    public void LoadSlotsFromSave(List<CollectorSlotSaveData> saveData, Dictionary<string, GameObject> resourcePrefabs)
+    {
+        for (int i = 0; i < resourceSlots.Count && i < saveData.Count; i++)
+        {
+            var slot = resourceSlots[i];
+            var data = saveData[i];
+
+            slot.resourceCategory = data.resourceCategory;
+            slot.resourceCount = data.resourceCount;
+
+            if (slot.resourceVisual != null)
+            {
+                Destroy(slot.resourceVisual);
+                slot.resourceVisual = null;
+            }
+
+            if (!string.IsNullOrEmpty(data.resourcePrefabName) && resourcePrefabs.ContainsKey(data.resourcePrefabName))
+            {
+                slot.resourceVisual = Instantiate(resourcePrefabs[data.resourcePrefabName], slot.slotTransform.position, slot.slotTransform.rotation, slot.slotTransform);
+                slot.resourceVisual.transform.localPosition = Vector3.zero;
+                slot.resourceVisual.transform.localScale = Vector3.one;
+                slot.resourceVisual.SetActive(true);
+
+                // Ustawienia fizyki
+                var rb = slot.resourceVisual.GetComponent<Rigidbody>();
+                if (rb != null)
+                    rb.isKinematic = true;
+
+                // Aktywuj wymagane skrypty:
+                var interactable = slot.resourceVisual.GetComponent<InteractableItem>();
+                if (interactable != null)
+                    interactable.enabled = true;
+
+                var hover = slot.resourceVisual.GetComponent<HoverMessage>();
+                if (hover != null)
+                    hover.enabled = true;
+
+                // USUÑ TreasureDefiner przed nadpisaniem zasobów!
+                var definer = slot.resourceVisual.GetComponent<TreasureDefiner>();
+                if (definer != null)
+                    Destroy(definer);
+
+                if (slot.resourceVisual.TryGetComponent(out TreasureResources treasure))
+                {
+                    Debug.Log($"[Przed] {slot.resourceCategory} count: {treasure.resourceCategories.FirstOrDefault()?.resourceCount}");
+
+                    treasure.resourceCategories.Clear();
+                    treasure.resourceCategories.Add(new ResourceCategory
+                    {
+                        name = slot.resourceCategory,
+                        resourceCount = slot.resourceCount
+                    });
+
+                    Debug.Log($"[Po] {slot.resourceCategory} count: {treasure.resourceCategories.FirstOrDefault()?.resourceCount}");
+                }
+            }
+            else
+            {
+                slot.resourceVisual = null;
+            }
+        }
+    }
+}
+
+[System.Serializable]
+public class CollectorSlotSaveData
+{
+    public string resourceCategory;
+    public int resourceCount;
+    public string resourcePrefabName; // Nowa nazwa prefab resourceVisual
 }

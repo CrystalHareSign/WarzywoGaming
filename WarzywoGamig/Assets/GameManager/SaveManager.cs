@@ -77,7 +77,8 @@ public class SaveManager : MonoBehaviour
                 itemNames = new List<string>(),
                 lootNames = new List<string>(),
                 weaponSaveDatas = new List<WeaponSaveData>(),
-                itemSaveDatas = new List<ItemSaveData>()
+                itemSaveDatas = new List<ItemSaveData>(),
+                collectors = new List<TurretCollectorSaveData>() // <- DODANE!
             };
 
             Inventory inventory = UnityEngine.Object.FindFirstObjectByType<Inventory>();
@@ -88,7 +89,6 @@ public class SaveManager : MonoBehaviour
                     if (!string.IsNullOrEmpty(weaponName))
                     {
                         data.weapons.Add(weaponName);
-                        // Zapisz amunicjê tylko dla aktualnie wyposa¿onej broni
                         if (inventory.currentWeaponPrefab != null && inventory.currentWeaponName == weaponName)
                         {
                             Gun gun = inventory.currentWeaponPrefab.GetComponent<Gun>();
@@ -131,32 +131,20 @@ public class SaveManager : MonoBehaviour
                     }
                 }
 
-                // Item debug logi
-                List<string> itemDebugNames = new List<string>();
-                List<string> itemDebugCats = new List<string>();
-                List<string> itemDebugQuant = new List<string>();
-                foreach (var item in data.itemSaveDatas)
-                {
-                    itemDebugNames.Add(item.itemName);
-                    if (item.resourceCategoriesData.Count > 0)
-                    {
-                        itemDebugCats.Add(item.resourceCategoriesData[0].name);
-                        itemDebugQuant.Add(item.resourceCategoriesData[0].resourceCount.ToString());
-                    }
-                    else
-                    {
-                        itemDebugCats.Add("");
-                        itemDebugQuant.Add("0");
-                    }
-                }
-                Debug.Log("Save: items saved = " + string.Join(",", itemDebugNames));
-                Debug.Log("Save: items categories = " + string.Join(",", itemDebugCats));
-                Debug.Log("Save: items quantities = " + string.Join(",", itemDebugQuant));
-
                 foreach (var loot in inventory.loot)
                     if (loot != null)
                         data.lootNames.Add(loot.name.Replace("(Clone)", "").Trim());
             }
+
+            // --- ZAPIS KOLEKTORÓW ---
+            var allCollectors = UnityEngine.Object.FindObjectsOfType<TurretCollector>();
+            foreach (var collector in allCollectors)
+            {
+                TurretCollectorSaveData save = new TurretCollectorSaveData();
+                save.slotSaveDatas = collector.GetSlotsSaveData();
+                data.collectors.Add(save);
+            }
+            // --- KONIEC ZAPISU KOLEKTORÓW ---
 
             string json = JsonUtility.ToJson(data, true);
             File.WriteAllText(path, json);
@@ -337,6 +325,20 @@ public class SaveManager : MonoBehaviour
                 inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items);
         }
 
+        // --- WCZYTANIE KOLEKTORÓW (TurretCollector) ---
+        Dictionary<string, GameObject> resourcePrefabs = new Dictionary<string, GameObject>();
+        foreach (var prefab in Resources.LoadAll<GameObject>("TreasurePrefabs")) // Zmieñ œcie¿kê jeœli inna!
+            resourcePrefabs[prefab.name] = prefab;
+
+        var allCollectors = UnityEngine.Object.FindObjectsOfType<TurretCollector>();
+        if (data.collectors != null)
+        {
+            for (int i = 0; i < allCollectors.Length && i < data.collectors.Count; i++)
+            {
+                allCollectors[i].LoadSlotsFromSave(data.collectors[i].slotSaveDatas, resourcePrefabs);
+            }
+        }
+
         LootShop lootShop = FindFirstObjectByType<LootShop>();
         if (lootShop != null)
             lootShop.UpdatePlayerCurrencyUI();
@@ -453,6 +455,8 @@ public class PlayerData
     public List<string> lootNames = new List<string>();
     public List<WeaponSaveData> weaponSaveDatas = new List<WeaponSaveData>();
     public List<ItemSaveData> itemSaveDatas = new List<ItemSaveData>();
+
+    public List<TurretCollectorSaveData> collectors = new List<TurretCollectorSaveData>();
 }
 
 [Serializable]
@@ -461,6 +465,12 @@ public class WeaponSaveData
     public string weaponName;
     public int currentAmmo;
     public int totalAmmo;
+}
+
+[System.Serializable]
+public class TurretCollectorSaveData
+{
+    public List<CollectorSlotSaveData> slotSaveDatas = new List<CollectorSlotSaveData>();
 }
 
 [System.Serializable]

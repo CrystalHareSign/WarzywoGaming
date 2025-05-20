@@ -347,6 +347,19 @@ public class HarpoonController : MonoBehaviour
             }
         }
     }
+
+    //public void RefreshResourceUI()
+    //{
+    //    if (turretCollector != null)
+    //    {
+    //        UpdateResourceUI(turretCollector.resourceSlots);
+    //    }
+    //    else
+    //    {
+    //        Debug.LogWarning("Brak referencji do TurretCollector!");
+    //    }
+    //}
+
     void UpdateMaxResourceTexts()
     {
         if (turretCollector == null)
