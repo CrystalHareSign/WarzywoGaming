@@ -21,8 +21,6 @@ public class Inventory : MonoBehaviour
 
     public Dictionary<string, GameObject> weaponPrefabs = new Dictionary<string, GameObject>();
 
-    // NOWOŚĆ: prefaby itemów
-    public List<ItemPrefabEntry> itemPrefabsList = new List<ItemPrefabEntry>();
     public Dictionary<string, GameObject> itemPrefabs = new Dictionary<string, GameObject>();
 
     // NOWOŚĆ: prefaby lootów
@@ -47,6 +45,7 @@ public class Inventory : MonoBehaviour
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
     public WeaponDatabase weaponDatabase;
+    public ItemDatabase itemDatabase;
 
     public static Inventory Instance { get; private set; }
 
@@ -76,8 +75,11 @@ public class Inventory : MonoBehaviour
         }
 
         itemPrefabs.Clear();
-        foreach (var entry in itemPrefabsList)
-            itemPrefabs[entry.itemName] = entry.itemPrefab;
+        if (itemDatabase != null)
+        {
+            foreach (var entry in itemDatabase.itemPrefabsList)
+                itemPrefabs[entry.itemName] = entry.itemPrefab;
+        }
 
         lootPrefabs.Clear();
         foreach (var entry in lootPrefabsList)

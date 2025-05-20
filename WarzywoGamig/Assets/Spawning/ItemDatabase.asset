@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7eafdef2416912741bfcba670da6db08, type: 3}
+  m_Name: ItemDatabase
+  m_EditorClassIdentifier: 
+  itemPrefabsList:
+  - itemName: TreasureCoal
+    itemPrefab: {fileID: 6855805616902805182, guid: b71f75011abd8d14fbe89e1a8c86a599, type: 3}
+  - itemName: TreasureCopper
+    itemPrefab: {fileID: 5478168576074083467, guid: fa72879b2a57b144fb87f1d762eab3a5, type: 3}
+  - itemName: TreasureDiamond
+    itemPrefab: {fileID: 4685485837431555883, guid: 517845dd6897f344e8eef245196c8ce8, type: 3}
+  - itemName: TreasureGold
+    itemPrefab: {fileID: 1591325824849679810, guid: b545e7e9cb910ee409a3cdee4069334a, type: 3}
+  - itemName: TreasureSilver
+    itemPrefab: {fileID: 1591325824849679810, guid: f86aca3f024ccbe43903eaf1edcad46c, type: 3}

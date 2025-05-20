@@ -76,13 +76,13 @@ public class SaveManager : MonoBehaviour
                 weapons = new List<string>(),
                 itemNames = new List<string>(),
                 lootNames = new List<string>(),
-                weaponSaveDatas = new List<WeaponSaveData>()
+                weaponSaveDatas = new List<WeaponSaveData>(),
+                itemSaveDatas = new List<ItemSaveData>()
             };
 
             Inventory inventory = UnityEngine.Object.FindFirstObjectByType<Inventory>();
             if (inventory != null)
             {
-                Debug.Log("Save: weapons in inventory = " + string.Join(",", inventory.weapons));
                 foreach (var weaponName in inventory.weapons)
                 {
                     if (!string.IsNullOrEmpty(weaponName))
@@ -105,9 +105,53 @@ public class SaveManager : MonoBehaviour
                     }
                 }
 
-                foreach (var item in inventory.items)
-                    if (item != null)
-                        data.itemNames.Add(item.name.Replace("(Clone)", "").Trim());
+                foreach (var itemObj in inventory.items)
+                {
+                    if (itemObj != null)
+                    {
+                        var interactable = itemObj.GetComponent<InteractableItem>();
+                        var treasure = itemObj.GetComponent<TreasureResources>();
+                        if (interactable != null && treasure != null)
+                        {
+                            ItemSaveData itemSave = new ItemSaveData
+                            {
+                                itemName = interactable.itemName,
+                                resourceCategoriesData = new List<ResourceCategoryData>()
+                            };
+                            foreach (var cat in treasure.resourceCategories)
+                            {
+                                itemSave.resourceCategoriesData.Add(new ResourceCategoryData
+                                {
+                                    name = cat.name,
+                                    resourceCount = cat.resourceCount
+                                });
+                            }
+                            data.itemSaveDatas.Add(itemSave);
+                        }
+                    }
+                }
+
+                // Item debug logi
+                List<string> itemDebugNames = new List<string>();
+                List<string> itemDebugCats = new List<string>();
+                List<string> itemDebugQuant = new List<string>();
+                foreach (var item in data.itemSaveDatas)
+                {
+                    itemDebugNames.Add(item.itemName);
+                    if (item.resourceCategoriesData.Count > 0)
+                    {
+                        itemDebugCats.Add(item.resourceCategoriesData[0].name);
+                        itemDebugQuant.Add(item.resourceCategoriesData[0].resourceCount.ToString());
+                    }
+                    else
+                    {
+                        itemDebugCats.Add("");
+                        itemDebugQuant.Add("0");
+                    }
+                }
+                Debug.Log("Save: items saved = " + string.Join(",", itemDebugNames));
+                Debug.Log("Save: items categories = " + string.Join(",", itemDebugCats));
+                Debug.Log("Save: items quantities = " + string.Join(",", itemDebugQuant));
 
                 foreach (var loot in inventory.loot)
                     if (loot != null)
@@ -119,7 +163,6 @@ public class SaveManager : MonoBehaviour
             lastSaveTime = DateTime.Now;
 
             Debug.Log($"Zapisano dane w slocie {currentSlotIndex}: {path}");
-            Debug.Log("Save: weapons saved = " + string.Join(",", data.weapons));
         }
         catch (Exception ex)
         {
@@ -143,8 +186,6 @@ public class SaveManager : MonoBehaviour
             string json = File.ReadAllText(path);
             PlayerData data = JsonUtility.FromJson<PlayerData>(json);
 
-            Debug.Log("Load: weapons loaded from file = " + string.Join(",", data.weapons));
-
             StartCoroutine(LoadMainThenTargetScene(data));
         }
         catch (Exception ex)
@@ -155,7 +196,6 @@ public class SaveManager : MonoBehaviour
 
     private IEnumerator LoadMainThenTargetScene(PlayerData data)
     {
-        // ZAWSZE prze³aduj scenê docelow¹, nawet jeœli ju¿ w niej jesteœ
         AsyncOperation targetLoad = SceneManager.LoadSceneAsync(data.sceneName);
         while (!targetLoad.isDone)
             yield return null;
@@ -189,8 +229,6 @@ public class SaveManager : MonoBehaviour
         if (inventory != null)
         {
             inventory.weapons.Clear();
-
-            Debug.Log("Load: weapons in PlayerData (before equip) = " + string.Join(",", data.weapons));
             foreach (string weaponName in data.weapons)
             {
                 if (inventory.weaponPrefabs.TryGetValue(weaponName, out var prefab) && prefab != null)
@@ -202,33 +240,22 @@ public class SaveManager : MonoBehaviour
                     Debug.LogWarning("Brak prefabu dla: " + weaponName);
                 }
             }
-            Debug.Log("Load: weapons in inventory (after assign) = " + string.Join(",", inventory.weapons));
 
             if (inventory.weapons.Count > 0)
             {
                 string weaponName = inventory.weapons[0];
-                Debug.Log("Load: Wywo³ujê EquipWeapon dla: " + weaponName);
                 inventory.EquipWeapon(weaponName);
-
-                // Log po EquipWeapon
-                Debug.Log("Load: Po EquipWeapon: currentWeaponPrefab = " +
-                    (inventory.currentWeaponPrefab ? inventory.currentWeaponPrefab.name : "NULL") +
-                    ", parent = " +
-                    (inventory.currentWeaponPrefab && inventory.currentWeaponPrefab.transform.parent ? inventory.currentWeaponPrefab.transform.parent.name : "NULL")
-                );
 
                 if (inventory.currentWeaponPrefab != null)
                 {
                     Gun gun = inventory.currentWeaponPrefab.GetComponent<Gun>();
                     if (gun != null)
                     {
-                        // Szukamy zapisanych danych dla tej broni
                         var saved = data.weaponSaveDatas.Find(w => w.weaponName == weaponName);
                         if (saved != null)
                         {
                             gun.currentAmmo = saved.currentAmmo;
                             gun.totalAmmo = saved.totalAmmo;
-                            Debug.Log("Load: Odtworzono amunicjê: currentAmmo=" + gun.currentAmmo + ", totalAmmo=" + gun.totalAmmo);
                         }
                         else
                         {
@@ -243,10 +270,71 @@ public class SaveManager : MonoBehaviour
                     Debug.LogWarning("Load: currentWeaponPrefab == null po EquipWeapon");
                 }
             }
-            else
+
+            // Najpierw wyczyœæ stare itemy
+            inventory.items.Clear();
+
+            List<string> loadedItemNames = new List<string>();
+            List<string> loadedItemCats = new List<string>();
+            List<string> loadedItemQuant = new List<string>();
+
+            foreach (var itemSave in data.itemSaveDatas)
             {
-                Debug.Log("Load: inventory.weapons.Count == 0, nie wywo³ujê EquipWeapon");
+                if (inventory.itemPrefabs.TryGetValue(itemSave.itemName, out var prefab) && prefab != null)
+                {
+                    GameObject itemObj = UnityEngine.Object.Instantiate(prefab);
+
+                    // USUÑ TreasureDefiner, ¿eby nie losowa³ nowych danych
+                    var definer = itemObj.GetComponent<TreasureDefiner>();
+                    if (definer != null)
+                        GameObject.Destroy(definer);
+
+                    // ODTWÓRZ stan zasobów na podstawie save
+                    var treasure = itemObj.GetComponent<TreasureResources>();
+                    if (treasure != null && itemSave.resourceCategoriesData != null && itemSave.resourceCategoriesData.Count > 0)
+                    {
+                        treasure.resourceCategories.Clear();
+                        foreach (var cat in itemSave.resourceCategoriesData)
+                        {
+                            var rc = new ResourceCategory();
+                            rc.name = cat.name;
+                            rc.resourceCount = cat.resourceCount;
+                            treasure.resourceCategories.Add(rc);
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Brak TreasureResources lub pusty save zasobów dla: " + itemSave.itemName);
+                    }
+
+                    inventory.items.Add(itemObj);
+                    itemObj.SetActive(false); // Bo itemy s¹ w ekwipunku
+
+                    loadedItemNames.Add(itemSave.itemName);
+                    // Kategorie i iloœci – z pierwszego zasobu jeœli istnieje
+                    if (treasure != null && treasure.resourceCategories.Count > 0)
+                    {
+                        loadedItemCats.Add(treasure.resourceCategories[0].name);
+                        loadedItemQuant.Add(treasure.resourceCategories[0].resourceCount.ToString());
+                    }
+                    else
+                    {
+                        loadedItemCats.Add("");
+                        loadedItemQuant.Add("0");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"Brak prefabu dla itemu: {itemSave.itemName}");
+                }
             }
+
+            Debug.Log("Load: items loaded = " + string.Join(",", loadedItemNames));
+            Debug.Log("Load: items categories = " + string.Join(",", loadedItemCats));
+            Debug.Log("Load: items quantities = " + string.Join(",", loadedItemQuant));
+
+            if (inventoryUI != null)
+                inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items);
         }
 
         LootShop lootShop = FindFirstObjectByType<LootShop>();
@@ -364,11 +452,27 @@ public class PlayerData
     public List<string> itemNames = new List<string>();
     public List<string> lootNames = new List<string>();
     public List<WeaponSaveData> weaponSaveDatas = new List<WeaponSaveData>();
+    public List<ItemSaveData> itemSaveDatas = new List<ItemSaveData>();
 }
+
 [Serializable]
 public class WeaponSaveData
 {
     public string weaponName;
     public int currentAmmo;
     public int totalAmmo;
+}
+
+[System.Serializable]
+public class ResourceCategoryData
+{
+    public string name;
+    public int resourceCount;
+}
+
+[System.Serializable]
+public class ItemSaveData
+{
+    public string itemName;
+    public List<ResourceCategoryData> resourceCategoriesData = new List<ResourceCategoryData>();
 }

@@ -211,7 +211,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hoverMessage: {fileID: 0}
-  itemName: Treasure
+  itemName: TreasureSilver
+  category: 
+  quantity: 0
   startAsNonInteractive: 0
   canBePickedUp: 1
   canBeDropped: 0
@@ -219,6 +221,7 @@ MonoBehaviour:
   isLoot: 0
   isTurret: 0
   isRefiner: 0
+  isMonitor: 0
   alwaysInteractive: 0
   hasCooldown: 0
   usesHealthSystem: 0

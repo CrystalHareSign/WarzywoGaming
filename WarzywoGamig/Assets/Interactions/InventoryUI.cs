@@ -132,15 +132,17 @@ public class InventoryUI : MonoBehaviour
             itemCategoryTexts[i].gameObject.SetActive(false);
         }
 
-        // Aktualizuj ikony, teksty ilości oraz kategorie dla podniesionych przedmiotów
-        for (int i = 0; i < items.Count && i < 4; i++)
+        int maxSlots = Mathf.Min(items.Count, itemImages.Length, itemTexts.Length, itemCategoryTexts.Length);
+
+        for (int i = 0; i < maxSlots; i++)
         {
-            if (items[i] == null) continue;
+            if (items[i] == null)
+                continue;
 
             InteractableItem item = items[i].GetComponent<InteractableItem>();
             TreasureResources treasureResources = items[i].GetComponent<TreasureResources>();
 
-            if (item != null && treasureResources != null)
+            if (item != null && treasureResources != null && treasureResources.resourceCategories != null && treasureResources.resourceCategories.Count > 0)
             {
                 itemImages[i].sprite = itemIcons.ContainsKey(item.itemName) ? itemIcons[item.itemName] : defaultItemSprite;
                 itemImages[i].enabled = true;
@@ -151,6 +153,13 @@ public class InventoryUI : MonoBehaviour
                 string categoryName = treasureResources.resourceCategories[0].name;
                 itemCategoryTexts[i].text = categoryName;
                 itemCategoryTexts[i].gameObject.SetActive(true);
+            }
+            else
+            {
+                // Ukryj slot jeśli brak danych
+                itemImages[i].enabled = false;
+                itemTexts[i].gameObject.SetActive(false);
+                itemCategoryTexts[i].gameObject.SetActive(false);
             }
         }
     }

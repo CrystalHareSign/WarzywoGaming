@@ -10,6 +10,12 @@ public class InteractableItem : MonoBehaviour, IInteractable
     [Header("Nazwa | Opony MUSZ¥ siê tak nazywaæ")]
     public string itemName; // Nazwa przedmiotu
 
+    [Header("Kategoria przedmiotu")]
+    public string category; // <-- DODAJ TO POLE
+
+    [Header("Iloœæ przedmiotu")]
+    public int quantity = 0; // <-- DODAJ TO POLE
+
     [Header("Zaczyna grê jako Naprawione/Zepsute")]
     public bool startAsNonInteractive = false;
 
