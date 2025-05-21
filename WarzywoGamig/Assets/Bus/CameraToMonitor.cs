@@ -6,7 +6,6 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
-using static UnityEditor.Lightmapping;
 
 
 public class CameraToMonitor : MonoBehaviour

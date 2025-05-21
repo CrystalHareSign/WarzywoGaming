@@ -9,13 +9,14 @@ public class VisualOptionsMenu : MonoBehaviour
     public GameObject optionsMenuUI;
 
     public TMP_Dropdown resolutionDropdown;
-    public Toggle fullscreenToggle;
+    public TMP_Dropdown screenModeDropdown; // NOWY dropdown dla trybu ekranu
 
     private Resolution[] availableResolutions;
+    private List<Resolution> filteredResolutions = new List<Resolution>();
     private int currentResolutionIndex;
 
     private int tempResolutionIndex;
-    private bool tempFullscreen;
+    private int tempScreenModeIndex; // 0 = Windowed, 1 = Fullscreen, 2 = Borderless
 
     [Header("Teksty przycisków")]
     public TMP_Text apply3ButtonText;
@@ -23,7 +24,7 @@ public class VisualOptionsMenu : MonoBehaviour
     public TMP_Text back3ButtonText;
     public TMP_Text reset3ButtonText;
     public TMP_Text resolutionText;
-    public TMP_Text fullscreenText;
+    public TMP_Text screenModeText; // Zamiast fullscreenText
 
     // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
@@ -32,26 +33,26 @@ public class VisualOptionsMenu : MonoBehaviour
     {
         InitializeResolutions();
 
-        // Wczytaj ustawienia z PlayerPrefs
-        LoadSettings();
+        InitializeScreenModes();
 
-        // Update tekstów UI
         UpdateButtonTexts();
 
-        // Subskrybuj zmiany jêzyka
         if (LanguageManager.Instance != null)
         {
             LanguageManager.Instance.OnLanguageChanged += UpdateButtonTexts;
         }
 
-        // ZnajdŸ wszystkie obiekty posiadaj¹ce PlaySoundOnObject i dodaj do listy
         playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
+
+        resolutionDropdown.onValueChanged.AddListener(OnResolutionChanged);
+        screenModeDropdown.onValueChanged.AddListener(OnScreenModeChanged);
     }
 
     void InitializeResolutions()
     {
         availableResolutions = Screen.resolutions;
         resolutionDropdown.ClearOptions();
+        filteredResolutions.Clear();
 
         List<string> options = new List<string>();
         currentResolutionIndex = 0;
@@ -62,52 +63,66 @@ public class VisualOptionsMenu : MonoBehaviour
             if (!options.Contains(option))
             {
                 options.Add(option);
+                filteredResolutions.Add(availableResolutions[i]);
             }
-
             if (availableResolutions[i].width == Screen.currentResolution.width &&
                 availableResolutions[i].height == Screen.currentResolution.height)
             {
-                currentResolutionIndex = i;
+                currentResolutionIndex = filteredResolutions.Count - 1;
             }
         }
 
         resolutionDropdown.AddOptions(options);
-        resolutionDropdown.onValueChanged.AddListener(delegate { OnResolutionChanged(resolutionDropdown.value); });
+    }
+
+    void InitializeScreenModes()
+    {
+        screenModeDropdown.ClearOptions();
+        List<string> modeOptions = new List<string> { "Windowed", "Fullscreen", "Borderless" };
+        screenModeDropdown.AddOptions(modeOptions);
     }
 
     void OnResolutionChanged(int index)
     {
         tempResolutionIndex = index;
-        Debug.Log("Tymczasowo wybrano rozdzielczoœæ: " + availableResolutions[index].ToString());
+        Debug.Log("Tymczasowo wybrano rozdzielczoœæ: " + filteredResolutions[index].ToString());
     }
 
-    public void OnFullscreenToggle(bool isFullscreen)
+    void OnScreenModeChanged(int modeIndex)
     {
-        tempFullscreen = isFullscreen;
-        Debug.Log("Tymczasowo ustawiono fullscreen: " + tempFullscreen);
+        tempScreenModeIndex = modeIndex;
+        Debug.Log("Tymczasowo wybrano tryb ekranu: " + screenModeDropdown.options[modeIndex].text);
     }
 
     public void ApplyChanges()
     {
-        Resolution res = availableResolutions[tempResolutionIndex];
-        Screen.SetResolution(res.width, res.height, tempFullscreen);
+        Resolution res = filteredResolutions[tempResolutionIndex];
+        FullScreenMode mode = GetFullScreenModeFromIndex(tempScreenModeIndex);
+
+        Screen.SetResolution(res.width, res.height, mode);
 
         PlayerPrefs.SetInt("ResolutionIndex", tempResolutionIndex);
-        PlayerPrefs.SetInt("Fullscreen", tempFullscreen ? 1 : 0);
+        PlayerPrefs.SetInt("ScreenMode", tempScreenModeIndex);
         PlayerPrefs.Save();
 
-        Debug.Log("Zastosowano ustawienia graficzne.");
+        Debug.Log("Zastosowano ustawienia graficzne: " + res.width + "x" + res.height + " " + mode.ToString());
     }
 
     public void CancelChanges()
     {
-        resolutionDropdown.value = PlayerPrefs.GetInt("ResolutionIndex", currentResolutionIndex);
-        tempResolutionIndex = resolutionDropdown.value;
+        int savedResIndex = PlayerPrefs.GetInt("ResolutionIndex", currentResolutionIndex);
+        int savedModeIndex = PlayerPrefs.GetInt("ScreenMode", 0);
 
-        fullscreenToggle.isOn = PlayerPrefs.GetInt("Fullscreen", Screen.fullScreen ? 1 : 0) == 1;
-        tempFullscreen = fullscreenToggle.isOn;
+        resolutionDropdown.value = savedResIndex;
+        tempResolutionIndex = savedResIndex;
+
+        screenModeDropdown.value = savedModeIndex;
+        tempScreenModeIndex = savedModeIndex;
+
+        ApplyScreenSettings(tempResolutionIndex, tempScreenModeIndex);
 
         resolutionDropdown.RefreshShownValue();
+        screenModeDropdown.RefreshShownValue();
         Debug.Log("Anulowano zmiany graficzne.");
     }
 
@@ -116,10 +131,13 @@ public class VisualOptionsMenu : MonoBehaviour
         resolutionDropdown.value = currentResolutionIndex;
         tempResolutionIndex = currentResolutionIndex;
 
-        fullscreenToggle.isOn = true;
-        tempFullscreen = true;
+        screenModeDropdown.value = 1; // Fullscreen jako domyœlny
+        tempScreenModeIndex = 1;
+
+        ApplyScreenSettings(tempResolutionIndex, tempScreenModeIndex);
 
         resolutionDropdown.RefreshShownValue();
+        screenModeDropdown.RefreshShownValue();
         Debug.Log("Zresetowano ustawienia graficzne do domyœlnych.");
     }
 
@@ -140,18 +158,40 @@ public class VisualOptionsMenu : MonoBehaviour
         if (back3ButtonText != null) back3ButtonText.text = uiTexts.back1;
         if (reset3ButtonText != null) reset3ButtonText.text = uiTexts.reset1;
         if (resolutionText != null) resolutionText.text = uiTexts.resolution;
-        if (fullscreenText != null) fullscreenText.text = uiTexts.fullscreen;
+        if (screenModeText != null) screenModeText.text = "Screen mode"; // Lub z uiTexts, jeœli jest
     }
 
     void LoadSettings()
     {
         tempResolutionIndex = PlayerPrefs.GetInt("ResolutionIndex", currentResolutionIndex);
-        tempFullscreen = PlayerPrefs.GetInt("Fullscreen", Screen.fullScreen ? 1 : 0) == 1;
+        tempScreenModeIndex = PlayerPrefs.GetInt("ScreenMode", 1); // Fullscreen jako domyœlny
 
         resolutionDropdown.value = tempResolutionIndex;
-        fullscreenToggle.isOn = tempFullscreen;
+        screenModeDropdown.value = tempScreenModeIndex;
+
+        ApplyScreenSettings(tempResolutionIndex, tempScreenModeIndex);
 
         resolutionDropdown.RefreshShownValue();
+        screenModeDropdown.RefreshShownValue();
+    }
+
+    void ApplyScreenSettings(int resIndex, int modeIndex)
+    {
+        Resolution res = filteredResolutions[resIndex];
+        FullScreenMode mode = GetFullScreenModeFromIndex(modeIndex);
+
+        Screen.SetResolution(res.width, res.height, mode);
+    }
+
+    FullScreenMode GetFullScreenModeFromIndex(int idx)
+    {
+        switch (idx)
+        {
+            case 0: return FullScreenMode.Windowed;
+            case 1: return FullScreenMode.ExclusiveFullScreen;
+            case 2: return FullScreenMode.FullScreenWindow;
+            default: return FullScreenMode.Windowed;
+        }
     }
 
     public void EnterButtonSound()

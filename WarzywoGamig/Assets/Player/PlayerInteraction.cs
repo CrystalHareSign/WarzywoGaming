@@ -116,6 +116,23 @@ public class PlayerInteraction : MonoBehaviour
                     {
                         requiredHoldTime = currentInteractableItem.requiredHoldTime;
                         interactionTimer += Time.deltaTime;
+
+                        // Dezaktywacja broni tylko przy interakcjach wymagaj¹cych przytrzymania
+                        if (requiredHoldTime > 0f && interactionTimer == Time.deltaTime)
+                        {
+                            if (inventory != null && inventory.currentWeaponPrefab != null)
+                            {
+                                Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
+                                if (gunScript != null)
+                                    gunScript.CancelReload();
+
+                                inventory.currentWeaponPrefab.SetActive(false);
+                                inventory.enabled = false;
+                                inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+                                inventoryUI.HideWeaponUI();
+                            }
+                        }
+
                         if (progressCircle != null)
                         {
                             progressCircle.fillAmount = interactionTimer / requiredHoldTime;
@@ -179,17 +196,6 @@ public class PlayerInteraction : MonoBehaviour
                         if (progressCircle != null)
                         {
                             progressCircle.fillAmount = 0f;
-                        }
-
-                        if (inventory != null && inventory.currentWeaponPrefab != null)
-                        {
-                            Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
-                            if (gunScript != null)
-                                gunScript.CancelReload();
-                            inventory.currentWeaponPrefab.SetActive(false);
-                            inventory.enabled = false;
-                            inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
-                            inventoryUI.HideWeaponUI();
                         }
                     }
                 }

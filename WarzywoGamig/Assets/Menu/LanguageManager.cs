@@ -45,6 +45,7 @@ public class UITranslations
     public string reset3;
     public string resolution;
     public string fullscreen;
+    public string windowed;
 }
 
 [System.Serializable]
