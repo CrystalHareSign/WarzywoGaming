@@ -192,6 +192,12 @@ public class InteractableItem : MonoBehaviour, IInteractable
         }
     }
 
+    public void SetCurrentHealth(int value)
+    {
+        currentHealth = Mathf.Clamp(value, 0, maxHealth);
+        UpdateUI();
+    }
+
     private void RepairItem()
     {
         if (usesHealthSystem && currentHealth < maxHealth)
@@ -210,7 +216,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
         }
     }
 
-    private void UpdateUI()
+    public void UpdateUI()
     {
         if (wheelHealthUI != null)
         {
@@ -227,5 +233,22 @@ public class InteractableItem : MonoBehaviour, IInteractable
         isCooldownActive = true;
         yield return new WaitForSeconds(cooldownTime);
         isCooldownActive = false;
+    }
+
+    public void RefreshInteractivity()
+    {
+        if (usesHealthSystem)
+        {
+            if (currentHealth < maxHealth)
+            {
+                InteractivityManager.Instance.UpdateInteractivityStatus(gameObject, true);
+                if (hoverMessage != null) hoverMessage.isInteracted = false;
+            }
+            else
+            {
+                InteractivityManager.Instance.UpdateInteractivityStatus(gameObject, false);
+                if (hoverMessage != null) hoverMessage.isInteracted = true;
+            }
+        }
     }
 }

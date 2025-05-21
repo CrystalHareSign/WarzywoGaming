@@ -180,6 +180,17 @@ public class PlayerInteraction : MonoBehaviour
                         {
                             progressCircle.fillAmount = 0f;
                         }
+
+                        if (inventory != null && inventory.currentWeaponPrefab != null)
+                        {
+                            Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
+                            if (gunScript != null)
+                                gunScript.CancelReload();
+                            inventory.currentWeaponPrefab.SetActive(false);
+                            inventory.enabled = false;
+                            inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+                            inventoryUI.HideWeaponUI();
+                        }
                     }
                 }
                 else

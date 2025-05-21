@@ -154,6 +154,20 @@ public class SaveManager : MonoBehaviour
             else
                 data.treasureRefiner = null;
 
+            // --- ZAPIS ZDROWIA OPON ---
+            data.wheelHealths.Clear();
+            foreach (var tyre in UnityEngine.Object.FindObjectsByType<InteractableItem>(FindObjectsSortMode.None))
+            {
+                if (tyre.itemName.StartsWith("Opona")) // lub inna logika rozpoznawania opon
+                {
+                    // U¿yj refleksji lub property aby dostaæ siê do currentHealth (jeœli jest private, zrób property publiczne)
+                    var health = typeof(InteractableItem)
+                        .GetField("currentHealth", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                        .GetValue(tyre);
+                    data.wheelHealths.Add((int)health);
+                }
+            }
+
             string json = JsonUtility.ToJson(data, true);
             File.WriteAllText(path, json);
             lastSaveTime = DateTime.Now;
@@ -196,7 +210,7 @@ public class SaveManager : MonoBehaviour
         AsyncOperation mainLoad = SceneManager.LoadSceneAsync("Main");
         while (!mainLoad.isDone)
             yield return null;
-        yield return null; // Daj czas na inicjalizacjê
+        yield return null; // Daj czas na inicjalizacjê singletonów i loadingu
 
         // 2. Nastêpnie ³aduj scenê docelow¹ z save
         AsyncOperation targetLoad = SceneManager.LoadSceneAsync(data.sceneName);
@@ -204,8 +218,9 @@ public class SaveManager : MonoBehaviour
             yield return null;
         yield return null; // Daj czas na inicjalizacjê
 
-        float waitTime = 0f;
+        // 3. Poczekaj a¿ gracz siê pojawi
         GameObject player = null;
+        float waitTime = 0f;
         while (player == null && waitTime < 2f)
         {
             player = GameObject.FindGameObjectWithTag("Player");
@@ -222,6 +237,7 @@ public class SaveManager : MonoBehaviour
             yield break;
         }
 
+        // 4. Ustaw pozycjê i rotacjê gracza z zapisu
         player.transform.position = data.playerPosition;
         player.transform.rotation = data.playerRotation;
         this.playerCurrency = data.playerCurrency;
@@ -359,6 +375,20 @@ public class SaveManager : MonoBehaviour
         if (refiner != null && data.treasureRefiner != null)
             refiner.LoadFromSaveData(data.treasureRefiner);
 
+        // --- ODCZYT ZDROWIA OPON ---
+        var allTyres = UnityEngine.Object.FindObjectsByType<InteractableItem>(FindObjectsSortMode.None);
+        int idx = 0;
+        foreach (var tyre in allTyres)
+        {
+            if (tyre.itemName.StartsWith("Opona") && idx < data.wheelHealths.Count)
+            {
+                tyre.SetCurrentHealth(data.wheelHealths[idx]);
+                idx++;
+                tyre.RefreshInteractivity();
+            }
+        }
+
+        // --- ODCZYT WALUTY ---
         LootShop lootShop = FindFirstObjectByType<LootShop>();
         if (lootShop != null)
             lootShop.UpdatePlayerCurrencyUI();
@@ -479,6 +509,8 @@ public class PlayerData
     public List<TurretCollectorSaveData> collectors = new List<TurretCollectorSaveData>();
 
     public TreasureRefinerSaveData treasureRefiner;
+
+    public List<int> wheelHealths = new List<int>();
 }
 
 [Serializable]
