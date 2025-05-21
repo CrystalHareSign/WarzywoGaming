@@ -272,6 +272,17 @@ public class TurretCollector : MonoBehaviour
 
                     Debug.Log($"[Po] {slot.resourceCategory} count: {treasure.resourceCategories.FirstOrDefault()?.resourceCount}");
                 }
+
+                if (harpoonController == null)
+                {
+                    harpoonController = Object.FindFirstObjectByType<HarpoonController>();
+                }
+
+                // ODŒWIE¯ENIE UI PO WGRANIU SLOTÓW
+                if (harpoonController != null)
+                {
+                    harpoonController.UpdateResourceUI(resourceSlots);
+                }
             }
             else
             {

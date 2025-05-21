@@ -137,7 +137,8 @@ public class SaveManager : MonoBehaviour
             }
 
             // --- ZAPIS KOLEKTORÓW ---
-            var allCollectors = UnityEngine.Object.FindObjectsOfType<TurretCollector>();
+            var allCollectors = UnityEngine.Object.FindObjectsByType<TurretCollector>(FindObjectsSortMode.None);
+
             foreach (var collector in allCollectors)
             {
                 TurretCollectorSaveData save = new TurretCollectorSaveData();
@@ -330,7 +331,7 @@ public class SaveManager : MonoBehaviour
         foreach (var prefab in Resources.LoadAll<GameObject>("TreasurePrefabs")) // Zmieñ œcie¿kê jeœli inna!
             resourcePrefabs[prefab.name] = prefab;
 
-        var allCollectors = UnityEngine.Object.FindObjectsOfType<TurretCollector>();
+        var allCollectors = UnityEngine.Object.FindObjectsByType<TurretCollector>(FindObjectsSortMode.None);
         if (data.collectors != null)
         {
             for (int i = 0; i < allCollectors.Length && i < data.collectors.Count; i++)
