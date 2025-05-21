@@ -1238,4 +1238,74 @@ public class TreasureRefiner : MonoBehaviour
             countTexts[i].gameObject.SetActive(false);
         }
     }
+
+    public TreasureRefinerSaveData GetSaveData()
+    {
+        var saveData = new TreasureRefinerSaveData();
+
+        // Zapisz aktywne sloty (te, które maj¹ kategoriê inn¹ ni¿ "-")
+        for (int i = 0; i < categoryTexts.Length; i++)
+        {
+            if (categoryTexts[i].gameObject.activeSelf && categoryTexts[i].text != "-")
+            {
+                saveData.slots.Add(new TreasureRefinerSlotSaveData
+                {
+                    resourceCategory = categoryTexts[i].text,
+                    resourceCount = int.Parse(countTexts[i].text)
+                });
+            }
+        }
+
+        // Zapisz wybrany indeks
+        saveData.selectedCategoryIndex = selectedCategoryIndex;
+
+        // Zapisz iloœæ trash
+        saveData.trashAmount = trashAmount;
+
+        return saveData;
+    }
+
+    public void LoadFromSaveData(TreasureRefinerSaveData saveData)
+    {
+        // Resetuj UI
+        for (int i = 0; i < categoryTexts.Length; i++)
+        {
+            categoryTexts[i].text = "-";
+            countTexts[i].text = "0";
+            categoryTexts[i].gameObject.SetActive(false);
+            countTexts[i].gameObject.SetActive(false);
+        }
+
+        // Odtwórz sloty
+        for (int i = 0; i < saveData.slots.Count && i < categoryTexts.Length; i++)
+        {
+            categoryTexts[i].text = saveData.slots[i].resourceCategory;
+            countTexts[i].text = saveData.slots[i].resourceCount.ToString();
+            categoryTexts[i].gameObject.SetActive(true);
+            countTexts[i].gameObject.SetActive(true);
+        }
+
+        // Odtwórz trash
+        trashAmount = saveData.trashAmount;
+        trashCountText.text = trashAmount.ToString();
+
+        // Odtwórz wybrany slot
+        selectedCategoryIndex = saveData.selectedCategoryIndex;
+        RefreshSelectedCategoryUI();
+    }
+}
+
+[System.Serializable]
+public class TreasureRefinerSlotSaveData
+{
+    public string resourceCategory;
+    public int resourceCount;
+}
+
+[System.Serializable]
+public class TreasureRefinerSaveData
+{
+    public List<TreasureRefinerSlotSaveData> slots = new List<TreasureRefinerSlotSaveData>();
+    public int selectedCategoryIndex;
+    public float trashAmount;
 }

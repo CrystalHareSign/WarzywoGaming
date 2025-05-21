@@ -147,6 +147,13 @@ public class SaveManager : MonoBehaviour
             }
             // --- KONIEC ZAPISU KOLEKTORÓW ---
 
+            // --- ZAPIS REFINERA ---
+            TreasureRefiner refiner = UnityEngine.Object.FindFirstObjectByType<TreasureRefiner>();
+            if (refiner != null)
+                data.treasureRefiner = refiner.GetSaveData();
+            else
+                data.treasureRefiner = null;
+
             string json = JsonUtility.ToJson(data, true);
             File.WriteAllText(path, json);
             lastSaveTime = DateTime.Now;
@@ -185,10 +192,17 @@ public class SaveManager : MonoBehaviour
 
     private IEnumerator LoadMainThenTargetScene(PlayerData data)
     {
+        // 1. Najpierw ³aduj scenê Main
+        AsyncOperation mainLoad = SceneManager.LoadSceneAsync("Main");
+        while (!mainLoad.isDone)
+            yield return null;
+        yield return null; // Daj czas na inicjalizacjê
+
+        // 2. Nastêpnie ³aduj scenê docelow¹ z save
         AsyncOperation targetLoad = SceneManager.LoadSceneAsync(data.sceneName);
         while (!targetLoad.isDone)
             yield return null;
-        yield return null;
+        yield return null; // Daj czas na inicjalizacjê
 
         float waitTime = 0f;
         GameObject player = null;
@@ -340,6 +354,11 @@ public class SaveManager : MonoBehaviour
             }
         }
 
+        // --- WCZYTYWANIE REFINERA ---
+        TreasureRefiner refiner = UnityEngine.Object.FindFirstObjectByType<TreasureRefiner>();
+        if (refiner != null && data.treasureRefiner != null)
+            refiner.LoadFromSaveData(data.treasureRefiner);
+
         LootShop lootShop = FindFirstObjectByType<LootShop>();
         if (lootShop != null)
             lootShop.UpdatePlayerCurrencyUI();
@@ -458,6 +477,8 @@ public class PlayerData
     public List<ItemSaveData> itemSaveDatas = new List<ItemSaveData>();
 
     public List<TurretCollectorSaveData> collectors = new List<TurretCollectorSaveData>();
+
+    public TreasureRefinerSaveData treasureRefiner;
 }
 
 [Serializable]
