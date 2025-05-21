@@ -168,6 +168,19 @@ public class SaveManager : MonoBehaviour
                 }
             }
 
+            // --- ZAPIS ODBLOKOWANIA TERMINALA ---
+            foreach (var monitor in UnityEngine.Object.FindObjectsByType<CameraToMonitor>(FindObjectsSortMode.None))
+            {
+                if (!string.IsNullOrEmpty(monitor.monitorID) && monitor.saveUnlockState)
+                {
+                    data.monitorUnlockStates.Add(new MonitorUnlockState
+                    {
+                        monitorID = monitor.monitorID,
+                        isUnlocked = !monitor.securedMonitor
+                    });
+                }
+            }
+
             string json = JsonUtility.ToJson(data, true);
             File.WriteAllText(path, json);
             lastSaveTime = DateTime.Now;
@@ -388,6 +401,24 @@ public class SaveManager : MonoBehaviour
             }
         }
 
+        // --- ODCZYT ODBLOKOWANIA TERMINALA ---
+        foreach (var monitor in UnityEngine.Object.FindObjectsByType<CameraToMonitor>(FindObjectsSortMode.None))
+        {
+            if (!string.IsNullOrEmpty(monitor.monitorID) && monitor.saveUnlockState)
+            {
+                var entry = data.monitorUnlockStates.Find(e => e.monitorID == monitor.monitorID);
+                if (entry != null)
+                {
+                    monitor.securedMonitor = !entry.isUnlocked;
+                    if (!monitor.securedMonitor)
+                    {
+                        monitor.hasWonGame = true;
+                        monitor.InitializeLocalizedCommands();
+                    }
+                }
+            }
+        }
+
         // --- ODCZYT WALUTY ---
         LootShop lootShop = FindFirstObjectByType<LootShop>();
         if (lootShop != null)
@@ -511,6 +542,8 @@ public class PlayerData
     public TreasureRefinerSaveData treasureRefiner;
 
     public List<int> wheelHealths = new List<int>();
+
+    public List<MonitorUnlockState> monitorUnlockStates = new List<MonitorUnlockState>();
 }
 
 [Serializable]
@@ -539,4 +572,11 @@ public class ItemSaveData
 {
     public string itemName;
     public List<ResourceCategoryData> resourceCategoriesData = new List<ResourceCategoryData>();
+}
+
+[Serializable]
+public class MonitorUnlockState
+{
+    public string monitorID;
+    public bool isUnlocked;
 }

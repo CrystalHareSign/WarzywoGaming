@@ -55,9 +55,13 @@ public class CameraToMonitor : MonoBehaviour
     [Header("Save monitor")]
     public bool saveMonitor = false;
 
+    [Header("ID monitora")]
+    public string monitorID;
+    public bool saveUnlockState = true;
+
     [Header("Riddle monitor")]
     public bool riddleMonitor = false;
-    private bool securedMonitor = false;
+    public bool securedMonitor = false;
     public string generatedPassword; // Wygenerowane has³o
     public string monitorFunctionText_EN;
     public string monitorFunctionText_PL;
@@ -72,7 +76,7 @@ public class CameraToMonitor : MonoBehaviour
     private bool isMiniGameActive;
     private GameObject cursor; // Obiekt kursora (podœwietlenie)
     private Vector2Int cursorPosition = new Vector2Int(0, 0); // Pozycja kursora
-    private bool hasWonGame = false;
+    public bool hasWonGame = false;
     private List<string> logHistory = new List<string>(); // Lista do przechowywania logów
     public bool isTimerEnabled = true;
     public float gameTime = 30f; // Czas gry w sekundach (np. 30s)
@@ -266,7 +270,7 @@ public class CameraToMonitor : MonoBehaviour
         //Debug.Log($"[{gameObject.name}] StartText: {localizedInfoText}");
     }
 
-    private void InitializeLocalizedCommands()
+    public void InitializeLocalizedCommands()
     {
         // Tworzymy pusty s³ownik komend
         commandDictionary = new Dictionary<string, CommandData>();
