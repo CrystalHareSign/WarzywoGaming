@@ -41,13 +41,6 @@ public class GameManagerEditor : Editor
             gameManager.ResetCurrency();
         }
 
-        // Reset pozycji gracza
-        EditorGUILayout.HelpBox("Ustawia pozycjê i rotacjê gracza na (0,0,0), ale tylko w aktualnie za³adowanej scenie.", MessageType.None);
-        if (GUILayout.Button(new GUIContent("Resetuj pozycjê gracza", "Przesuwa gracza na œrodek œwiata (0,0,0) i zeruje rotacjê.")))
-        {
-            gameManager.ResetPositionAndRotation();
-        }
-
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("=== DODATKOWE OPERACJE ===", EditorStyles.boldLabel);
 

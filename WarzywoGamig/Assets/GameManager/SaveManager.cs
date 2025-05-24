@@ -12,6 +12,8 @@ public class SaveManager : MonoBehaviour
     public float playerCurrency = 0f;
     public DateTime lastSaveTime;
 
+    public bool isLoading = false;
+
     private int currentSlotIndex = -1;
     public int debugSlotIndex = 0;
 
@@ -195,6 +197,7 @@ public class SaveManager : MonoBehaviour
 
     public void LoadPlayerData(int slotIndex)
     {
+        isLoading = true;
         string path = GetSlotFilePath(slotIndex);
         if (!File.Exists(path))
         {
@@ -209,7 +212,8 @@ public class SaveManager : MonoBehaviour
             string json = File.ReadAllText(path);
             PlayerData data = JsonUtility.FromJson<PlayerData>(json);
 
-            StartCoroutine(LoadMainThenTargetScene(data));
+            SceneManager.LoadScene("LoadingScreen");
+            StartCoroutine(WaitAndLoadGameRoutine(data));
         }
         catch (Exception ex)
         {
@@ -217,42 +221,64 @@ public class SaveManager : MonoBehaviour
         }
     }
 
+    // Czeka a¿ LoadingScreenUI.Instance siê pojawi, potem odpala ³adowanie scen i progres:
+    private IEnumerator WaitAndLoadGameRoutine(PlayerData data)
+    {
+        // Czekaj a¿ LoadingScreenUI (ze sceny LoadingScreen) bêdzie gotowy
+        while (LoadingScreen.Instance == null)
+            yield return null;
+
+        // Mo¿esz od razu zresetowaæ pasek postêpu
+        LoadingScreen.Instance.SetProgress(0f);
+
+        // Teraz w³aœciwa logika ³adowania, czyli to co by³o w LoadMainThenTargetScene:
+        yield return StartCoroutine(LoadMainThenTargetScene(data));
+    }
+
     private IEnumerator LoadMainThenTargetScene(PlayerData data)
     {
-        // 1. Najpierw ³aduj scenê Main
-        AsyncOperation mainLoad = SceneManager.LoadSceneAsync("Main");
-        while (!mainLoad.isDone)
+        // 1. Najpierw ³aduj scenê Main additive
+        AsyncOperation mainLoad = SceneManager.LoadSceneAsync("Main", LoadSceneMode.Additive);
+        mainLoad.allowSceneActivation = false;
+
+        // Pasek postêpu od 0 do 0.5
+        while (mainLoad.progress < 0.9f)
+        {
+            LoadingScreen.Instance.SetProgress(Mathf.Lerp(0f, 0.5f, mainLoad.progress / 0.9f));
             yield return null;
+        }
+        LoadingScreen.Instance.SetProgress(0.5f);
+        mainLoad.allowSceneActivation = true;
+        yield return new WaitUntil(() => mainLoad.isDone);
         yield return null; // Daj czas na inicjalizacjê singletonów i loadingu
 
-        // 2. Nastêpnie ³aduj scenê docelow¹ z save
-        AsyncOperation targetLoad = SceneManager.LoadSceneAsync(data.sceneName);
-        while (!targetLoad.isDone)
+        // 2. Nastêpnie ³aduj scenê docelow¹ z save, te¿ additive
+        AsyncOperation targetLoad = SceneManager.LoadSceneAsync(data.sceneName, LoadSceneMode.Additive);
+        targetLoad.allowSceneActivation = false;
+
+        while (targetLoad.progress < 0.9f)
+        {
+            LoadingScreen.Instance.SetProgress(Mathf.Lerp(0.5f, 1f, targetLoad.progress / 0.9f));
             yield return null;
+        }
+        LoadingScreen.Instance.SetProgress(1f);
+        targetLoad.allowSceneActivation = true;
+        yield return new WaitUntil(() => targetLoad.isDone);
         yield return null; // Daj czas na inicjalizacjê
 
-        // 3. Poczekaj a¿ gracz siê pojawi
-        GameObject player = null;
-        float waitTime = 0f;
-        while (player == null && waitTime < 2f)
+        // 3. Ustaw aktywn¹ scenê na docelow¹
+        SceneManager.SetActiveScene(SceneManager.GetSceneByName(data.sceneName));
+
+        yield return SceneManager.UnloadSceneAsync("Main");
+
+        // 4. ZNAJD GRACZA DDOL
+
+        foreach (var p in GameObject.FindGameObjectsWithTag("Player"))
         {
-            player = GameObject.FindGameObjectWithTag("Player");
-            if (player == null)
-            {
-                yield return null;
-                waitTime += Time.deltaTime;
-            }
+            p.transform.position = data.playerPosition;
+            p.transform.rotation = data.playerRotation;
         }
 
-        if (player == null)
-        {
-            Debug.LogWarning("Nie znaleziono gracza po za³adowaniu sceny docelowej.");
-            yield break;
-        }
-
-        // 4. Ustaw pozycjê i rotacjê gracza z zapisu
-        player.transform.position = data.playerPosition;
-        player.transform.rotation = data.playerRotation;
         this.playerCurrency = data.playerCurrency;
 
         Inventory inventory = UnityEngine.Object.FindFirstObjectByType<Inventory>();
@@ -361,9 +387,9 @@ public class SaveManager : MonoBehaviour
                 }
             }
 
-            Debug.Log("Load: items loaded = " + string.Join(",", loadedItemNames));
-            Debug.Log("Load: items categories = " + string.Join(",", loadedItemCats));
-            Debug.Log("Load: items quantities = " + string.Join(",", loadedItemQuant));
+            //Debug.Log("Load: items loaded = " + string.Join(",", loadedItemNames));
+            //Debug.Log("Load: items categories = " + string.Join(",", loadedItemCats));
+            //Debug.Log("Load: items quantities = " + string.Join(",", loadedItemQuant));
 
             if (inventoryUI != null)
                 inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items);
@@ -424,7 +450,25 @@ public class SaveManager : MonoBehaviour
         if (lootShop != null)
             lootShop.UpdatePlayerCurrencyUI();
 
-        Debug.Log($"Wczytano gracza na pozycjê {player.transform.position}, rotacja {player.transform.rotation}, scena {data.sceneName}");
+        // 6. (opcjonalnie) Unload sceny LoadingScreen po zakoñczeniu
+        yield return SceneManager.UnloadSceneAsync("LoadingScreen");
+
+        StartCoroutine(FixPlayerPositionAfterLoad(data, 120));
+    }
+
+    public IEnumerator FixPlayerPositionAfterLoad(PlayerData data, int frameCount)
+    {
+        for (int i = 0; i < frameCount; i++)
+            yield return null; // czekaj jedn¹ klatkê
+
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            player.transform.position = data.playerPosition;
+            player.transform.rotation = data.playerRotation;
+        }
+
+        isLoading = false;
     }
 
     public void AddCurrency(float amount)
@@ -443,21 +487,6 @@ public class SaveManager : MonoBehaviour
     {
         playerCurrency = 0f;
         Debug.Log("Waluta gracza zosta³a zresetowana.");
-    }
-
-    public void ResetPositionAndRotation()
-    {
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-        {
-            player.transform.position = Vector3.zero;
-            player.transform.rotation = Quaternion.identity;
-            Debug.Log("Pozycja i rotacja gracza zosta³y zresetowane.");
-        }
-        else
-        {
-            Debug.LogWarning("Nie znaleziono obiektu gracza z tagiem 'Player'.");
-        }
     }
 
     public void ResetSaveSlot(int slotIndex)

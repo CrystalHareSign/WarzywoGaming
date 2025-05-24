@@ -95,7 +95,7 @@ public class LootShop : MonoBehaviour
 
     public void UpdatePlayerCurrencyUI()
     {
-        Debug.Log($"[LootShop] Odœwie¿am UI waluty: {SaveManager.Instance.playerCurrency}");
+        //Debug.Log($"[LootShop] Odœwie¿am UI waluty: {SaveManager.Instance.playerCurrency}");
         playerCurrencyText.text = SaveManager.Instance.playerCurrency.ToString("0.##");
     }
 

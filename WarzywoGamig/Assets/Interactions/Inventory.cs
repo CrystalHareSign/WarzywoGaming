@@ -294,11 +294,6 @@ public class Inventory : MonoBehaviour
             ", parent: " + (currentWeaponPrefab && currentWeaponPrefab.transform.parent ? currentWeaponPrefab.transform.parent.name : "NULL"));
     }
 
-    void OnDestroy()
-    {
-        Debug.LogWarning("Inventory.OnDestroy wywołany na: " + gameObject.name, gameObject);
-    }
-
     // Zachowuję wersję dla kompatybilności, ale przekierowuję na wersję stringową
     public void EquipWeapon(InteractableItem interactableItem, GameObject weaponItem)
     {

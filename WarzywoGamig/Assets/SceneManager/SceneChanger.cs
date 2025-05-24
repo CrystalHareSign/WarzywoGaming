@@ -188,6 +188,11 @@ public class SceneChanger : MonoBehaviour
 
     private IEnumerator SpawnPlayerWhenBusIsReady()
     {
+        if (SaveManager.Instance != null && SaveManager.Instance.isLoading)
+        {
+            yield break;
+        }
+
         yield return null;
 
         player = GameObject.FindGameObjectWithTag("Player");
