@@ -60,13 +60,12 @@ public class Inventory : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(this.gameObject);
 
-        Debug.Log("Inventory Awake: " + this.GetInstanceID());
+        //Debug.Log("Inventory Awake: " + this.GetInstanceID());
     }
 
 
     void Start()
     {
-        Debug.Log("Inventory Start() - Initializing prefabs and playSoundObjects.");
 
         weaponPrefabs.Clear();
         foreach (var entry in weaponDatabase.weaponPrefabsList)
@@ -88,7 +87,7 @@ public class Inventory : MonoBehaviour
         playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
 
         UpdateInventoryUI();
-        Debug.Log("Inventory Start: " + this.GetInstanceID() + " - weapons count: " + weapons.Count);
+        //Debug.Log("Inventory Start: " + this.GetInstanceID() + " - weapons count: " + weapons.Count);
     }
 
     void Update()

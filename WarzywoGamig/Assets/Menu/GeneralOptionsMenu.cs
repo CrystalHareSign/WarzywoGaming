@@ -102,6 +102,7 @@ public class GeneralOptionsMenu : MonoBehaviour
         languageDropdown.value = (int)defaultLanguage;
         tempSelectedLanguage = defaultLanguage;
         languageDropdown.RefreshShownValue();
+        ApplyChanges();
 
         Debug.Log("Zresetowano jêzyk do domyœlnego: " + defaultLanguage);
     }

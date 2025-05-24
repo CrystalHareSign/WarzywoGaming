@@ -93,7 +93,7 @@ public class StartMenu : MonoBehaviour
     // Metoda dla "Nowa Gra" - przejœcie do menu nowej gry
     public void OnNewGameButton()
     {
-        Debug.Log("Klikniêto Now¹ Grê");  // Dodaj debugowanie
+        //Debug.Log("Klikniêto Now¹ Grê");  // Dodaj debugowanie
         startMenuUI.SetActive(false); // Ukryj startowe menu
         newGameMenuUI.SetActive(true); // Poka¿ menu nowej gry
     }
@@ -155,12 +155,12 @@ public class StartMenu : MonoBehaviour
 
         if (SaveManager.Instance == null)
             Debug.LogError("SaveManager.Instance is NULL!");
-        else
-            Debug.Log("SaveManager.Instance found. LastUsedSlot: " + SaveManager.Instance.GetLastUsedSlotIndex());
+        //else
+        //    Debug.Log("SaveManager.Instance found. LastUsedSlot: " + SaveManager.Instance.GetLastUsedSlotIndex());
 
         // Sprawdzenie widocznoœci przycisku "Continue" zawsze przy aktywacji menu
         int lastSlot = SaveManager.Instance.GetLastUsedSlotIndex();
-        Debug.Log("Last used slot in OnEnable: " + lastSlot);
+        //Debug.Log("Last used slot in OnEnable: " + lastSlot);
 
         if (continueButtonText != null)
             continueButtonText.transform.parent.gameObject.SetActive(lastSlot != -1);

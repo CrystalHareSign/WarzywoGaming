@@ -55,22 +55,39 @@ public class VisualOptionsMenu : MonoBehaviour
         filteredResolutions.Clear();
 
         List<string> options = new List<string>();
-        currentResolutionIndex = 0;
+
+        // Zbierz unikalne rozdzielczoœci
+        List<Resolution> uniqueRes = new List<Resolution>();
+        HashSet<string> seen = new HashSet<string>();
 
         for (int i = 0; i < availableResolutions.Length; i++)
         {
             string option = availableResolutions[i].width + " x " + availableResolutions[i].height;
-            if (!options.Contains(option))
+            if (!seen.Contains(option))
             {
-                options.Add(option);
-                filteredResolutions.Add(availableResolutions[i]);
-            }
-            if (availableResolutions[i].width == Screen.currentResolution.width &&
-                availableResolutions[i].height == Screen.currentResolution.height)
-            {
-                currentResolutionIndex = filteredResolutions.Count - 1;
+                uniqueRes.Add(availableResolutions[i]);
+                seen.Add(option);
             }
         }
+
+        // Sortuj malej¹co (najwiêksza na górze)
+        uniqueRes.Sort((a, b) =>
+        {
+            int cmp = b.width.CompareTo(a.width);
+            if (cmp == 0) cmp = b.height.CompareTo(a.height);
+            return cmp;
+        });
+
+        // Dodaj do dropdowna
+        foreach (var res in uniqueRes)
+        {
+            string option = res.width + " x " + res.height;
+            filteredResolutions.Add(res);
+            options.Add(option);
+        }
+
+        // Ustaw domyœln¹ (najwiêksza, czyli pierwsza)
+        currentResolutionIndex = 0;
 
         resolutionDropdown.AddOptions(options);
     }
@@ -138,6 +155,7 @@ public class VisualOptionsMenu : MonoBehaviour
 
         resolutionDropdown.RefreshShownValue();
         screenModeDropdown.RefreshShownValue();
+        ApplyChanges();
         Debug.Log("Zresetowano ustawienia graficzne do domyœlnych.");
     }
 
@@ -187,10 +205,10 @@ public class VisualOptionsMenu : MonoBehaviour
     {
         switch (idx)
         {
-            case 0: return FullScreenMode.Windowed;
-            case 1: return FullScreenMode.ExclusiveFullScreen;
-            case 2: return FullScreenMode.FullScreenWindow;
-            default: return FullScreenMode.Windowed;
+            case 0: return FullScreenMode.FullScreenWindow;
+            case 1: return FullScreenMode.Windowed;
+            case 2: return FullScreenMode.ExclusiveFullScreen;
+            default: return FullScreenMode.FullScreenWindow;
         }
     }
 

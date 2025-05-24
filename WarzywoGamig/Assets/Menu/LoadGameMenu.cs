@@ -64,7 +64,6 @@ public class LoadGameMenu : MonoBehaviour
     public void OnLoadGameButton()
     {
         if (selectedSlotIndex < 0) return;
-
         SaveManager.Instance.LoadPlayerData(selectedSlotIndex);
         startMenuUI.SetActive(false);
     }
