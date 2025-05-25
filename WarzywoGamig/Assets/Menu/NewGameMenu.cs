@@ -59,6 +59,7 @@ public class NewGameMenu : MonoBehaviour
         SaveManager.Instance.ResetSaveSlot(selectedSlotIndex);
         SaveManager.Instance.ResetCurrency(); // opcjonalnie zresetuj walutê itp.
         startMenuUI.SetActive(false);
+        SceneChanger.lastRelativePlayerPos = SceneChanger.defaultRelativePlayerPos;
         SceneManager.LoadScene("Main"); // <-- Zmieñ na swoj¹ scenê gry
     }
 

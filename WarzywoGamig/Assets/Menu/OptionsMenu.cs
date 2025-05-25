@@ -61,19 +61,19 @@ public class OptionsMenu : MonoBehaviour
         optionsMenuUI.SetActive(false); // Ukryj menu opcji
 
         string currentScene = SceneManager.GetActiveScene().name;
-
-        if (currentScene == "Main") // lub "GameScene", jeœli tak nazywa siê Twoja scena z gr¹
-        {
-            if (pauseMenuUI != null)
-            {
-                pauseMenuUI.SetActive(true); // Poka¿ menu pauzy
-            }
-        }
-        else if (currentScene == "StartMenu")
+        
+        if (currentScene == "StartMenu")
         {
             if (startMenuUI != null)
             {
                 startMenuUI.SetActive(true); // Poka¿ menu pauzy
+            }
+        }
+        else
+        {
+            if (pauseMenuUI != null)
+            {
+                pauseMenuUI.SetActive(true); // Poka¿ menu pauzy
             }
         }
     }

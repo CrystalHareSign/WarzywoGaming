@@ -94,7 +94,7 @@ public class GeneralOptionsMenu : MonoBehaviour
         tempSelectedLanguage = (LanguageManager.Language)savedIndex;
         languageDropdown.RefreshShownValue();
 
-        Debug.Log("Anulowano zmiany jêzyka");
+        //Debug.Log("Anulowano zmiany jêzyka");
     }
 
     public void ResetToDefaults()

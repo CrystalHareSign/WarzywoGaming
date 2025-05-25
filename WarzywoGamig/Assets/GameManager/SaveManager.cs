@@ -48,155 +48,168 @@ public class SaveManager : MonoBehaviour
 
     public void SavePlayerData()
     {
-        if (currentSlotIndex == -1)
-        {
-            Debug.LogWarning("Nie ustawiono slotu zapisu!");
-            return;
-        }
-
-        string path = GetSlotFilePath(currentSlotIndex);
-
+        InputBlocker.Active = true;
         try
         {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player == null)
+            if (currentSlotIndex == -1)
             {
-                Debug.LogWarning("Nie znaleziono gracza.");
+                Debug.LogWarning("Nie ustawiono slotu zapisu!");
                 return;
             }
 
-            Vector3 playerPosition = player.transform.position;
-            Quaternion playerRotation = player.transform.rotation;
+            string path = GetSlotFilePath(currentSlotIndex);
 
-            PlayerData data = new PlayerData
+            try
             {
-                playerCurrency = this.playerCurrency,
-                playerPosition = playerPosition,
-                playerRotation = playerRotation,
-                sceneName = SceneManager.GetActiveScene().name,
-                lastSaveTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                weapons = new List<string>(),
-                itemNames = new List<string>(),
-                lootNames = new List<string>(),
-                weaponSaveDatas = new List<WeaponSaveData>(),
-                itemSaveDatas = new List<ItemSaveData>(),
-                collectors = new List<TurretCollectorSaveData>() // <- DODANE!
-            };
-
-            Inventory inventory = UnityEngine.Object.FindFirstObjectByType<Inventory>();
-            if (inventory != null)
-            {
-                foreach (var weaponName in inventory.weapons)
+                GameObject player = GameObject.FindGameObjectWithTag("Player");
+                if (player == null)
                 {
-                    if (!string.IsNullOrEmpty(weaponName))
+                    Debug.LogWarning("Nie znaleziono gracza.");
+                    return;
+                }
+
+                Vector3 playerPosition = player.transform.position;
+                Quaternion playerRotation = player.transform.rotation;
+
+                PlayerData data = new PlayerData
+                {
+                    playerCurrency = this.playerCurrency,
+                    playerPosition = playerPosition,
+                    playerRotation = playerRotation,
+                    sceneName = SceneManager.GetActiveScene().name,
+                    lastSaveTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                    weapons = new List<string>(),
+                    itemNames = new List<string>(),
+                    lootNames = new List<string>(),
+                    weaponSaveDatas = new List<WeaponSaveData>(),
+                    itemSaveDatas = new List<ItemSaveData>(),
+                    collectors = new List<TurretCollectorSaveData>() // <- DODANE!
+                };
+
+                Inventory inventory = UnityEngine.Object.FindFirstObjectByType<Inventory>();
+                if (inventory != null)
+                {
+                    foreach (var weaponName in inventory.weapons)
                     {
-                        data.weapons.Add(weaponName);
-                        if (inventory.currentWeaponPrefab != null && inventory.currentWeaponName == weaponName)
+                        if (!string.IsNullOrEmpty(weaponName))
                         {
-                            Gun gun = inventory.currentWeaponPrefab.GetComponent<Gun>();
-                            if (gun != null)
+                            data.weapons.Add(weaponName);
+                            if (inventory.currentWeaponPrefab != null && inventory.currentWeaponName == weaponName)
                             {
-                                data.weaponSaveDatas.Add(new WeaponSaveData
+                                Gun gun = inventory.currentWeaponPrefab.GetComponent<Gun>();
+                                if (gun != null)
                                 {
-                                    weaponName = weaponName,
-                                    currentAmmo = gun.currentAmmo,
-                                    totalAmmo = gun.totalAmmo
-                                });
+                                    data.weaponSaveDatas.Add(new WeaponSaveData
+                                    {
+                                        weaponName = weaponName,
+                                        currentAmmo = gun.currentAmmo,
+                                        totalAmmo = gun.totalAmmo
+                                    });
+                                }
                             }
                         }
                     }
+
+                    foreach (var itemObj in inventory.items)
+                    {
+                        if (itemObj != null)
+                        {
+                            var interactable = itemObj.GetComponent<InteractableItem>();
+                            var treasure = itemObj.GetComponent<TreasureResources>();
+                            if (interactable != null && treasure != null)
+                            {
+                                ItemSaveData itemSave = new ItemSaveData
+                                {
+                                    itemName = interactable.itemName,
+                                    resourceCategoriesData = new List<ResourceCategoryData>()
+                                };
+                                foreach (var cat in treasure.resourceCategories)
+                                {
+                                    itemSave.resourceCategoriesData.Add(new ResourceCategoryData
+                                    {
+                                        name = cat.name,
+                                        resourceCount = cat.resourceCount
+                                    });
+                                }
+                                data.itemSaveDatas.Add(itemSave);
+                            }
+                        }
+                    }
+
+                    foreach (var loot in inventory.loot)
+                        if (loot != null)
+                            data.lootNames.Add(loot.name.Replace("(Clone)", "").Trim());
                 }
 
-                foreach (var itemObj in inventory.items)
+                // --- ZAPIS KOLEKTORÓW ---
+                var allCollectors = UnityEngine.Object.FindObjectsByType<TurretCollector>(FindObjectsSortMode.None);
+
+                foreach (var collector in allCollectors)
                 {
-                    if (itemObj != null)
+                    TurretCollectorSaveData save = new TurretCollectorSaveData();
+                    save.slotSaveDatas = collector.GetSlotsSaveData();
+                    data.collectors.Add(save);
+                }
+                // --- KONIEC ZAPISU KOLEKTORÓW ---
+
+                // --- ZAPIS REFINERA ---
+                TreasureRefiner refiner = UnityEngine.Object.FindFirstObjectByType<TreasureRefiner>();
+                if (refiner != null)
+                    data.treasureRefiner = refiner.GetSaveData();
+                else
+                    data.treasureRefiner = null;
+
+                // --- ZAPIS ZDROWIA OPON ---
+                data.wheelHealths.Clear();
+                foreach (var tyre in UnityEngine.Object.FindObjectsByType<InteractableItem>(FindObjectsSortMode.None))
+                {
+                    if (tyre.itemName.StartsWith("Opona"))
                     {
-                        var interactable = itemObj.GetComponent<InteractableItem>();
-                        var treasure = itemObj.GetComponent<TreasureResources>();
-                        if (interactable != null && treasure != null)
+                        var health = typeof(InteractableItem)
+                            .GetField("currentHealth", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                            .GetValue(tyre);
+                        data.wheelHealths.Add(new TyreHealthData
                         {
-                            ItemSaveData itemSave = new ItemSaveData
-                            {
-                                itemName = interactable.itemName,
-                                resourceCategoriesData = new List<ResourceCategoryData>()
-                            };
-                            foreach (var cat in treasure.resourceCategories)
-                            {
-                                itemSave.resourceCategoriesData.Add(new ResourceCategoryData
-                                {
-                                    name = cat.name,
-                                    resourceCount = cat.resourceCount
-                                });
-                            }
-                            data.itemSaveDatas.Add(itemSave);
-                        }
+                            itemName = tyre.itemName,
+                            health = (int)health
+                        });
                     }
                 }
 
-                foreach (var loot in inventory.loot)
-                    if (loot != null)
-                        data.lootNames.Add(loot.name.Replace("(Clone)", "").Trim());
-            }
-
-            // --- ZAPIS KOLEKTORÓW ---
-            var allCollectors = UnityEngine.Object.FindObjectsByType<TurretCollector>(FindObjectsSortMode.None);
-
-            foreach (var collector in allCollectors)
-            {
-                TurretCollectorSaveData save = new TurretCollectorSaveData();
-                save.slotSaveDatas = collector.GetSlotsSaveData();
-                data.collectors.Add(save);
-            }
-            // --- KONIEC ZAPISU KOLEKTORÓW ---
-
-            // --- ZAPIS REFINERA ---
-            TreasureRefiner refiner = UnityEngine.Object.FindFirstObjectByType<TreasureRefiner>();
-            if (refiner != null)
-                data.treasureRefiner = refiner.GetSaveData();
-            else
-                data.treasureRefiner = null;
-
-            // --- ZAPIS ZDROWIA OPON ---
-            data.wheelHealths.Clear();
-            foreach (var tyre in UnityEngine.Object.FindObjectsByType<InteractableItem>(FindObjectsSortMode.None))
-            {
-                if (tyre.itemName.StartsWith("Opona")) // lub inna logika rozpoznawania opon
+                // --- ZAPIS ODBLOKOWANIA TERMINALA ---
+                foreach (var monitor in UnityEngine.Object.FindObjectsByType<CameraToMonitor>(FindObjectsSortMode.None))
                 {
-                    // U¿yj refleksji lub property aby dostaæ siê do currentHealth (jeœli jest private, zrób property publiczne)
-                    var health = typeof(InteractableItem)
-                        .GetField("currentHealth", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                        .GetValue(tyre);
-                    data.wheelHealths.Add((int)health);
-                }
-            }
-
-            // --- ZAPIS ODBLOKOWANIA TERMINALA ---
-            foreach (var monitor in UnityEngine.Object.FindObjectsByType<CameraToMonitor>(FindObjectsSortMode.None))
-            {
-                if (!string.IsNullOrEmpty(monitor.monitorID) && monitor.saveUnlockState)
-                {
-                    data.monitorUnlockStates.Add(new MonitorUnlockState
+                    if (!string.IsNullOrEmpty(monitor.monitorID) && monitor.saveUnlockState)
                     {
-                        monitorID = monitor.monitorID,
-                        isUnlocked = !monitor.securedMonitor
-                    });
+                        data.monitorUnlockStates.Add(new MonitorUnlockState
+                        {
+                            monitorID = monitor.monitorID,
+                            isUnlocked = !monitor.securedMonitor
+                        });
+                    }
                 }
+
+                string json = JsonUtility.ToJson(data, true);
+                File.WriteAllText(path, json);
+                lastSaveTime = DateTime.Now;
+
+                Debug.Log($"Zapisano dane w slocie {currentSlotIndex}: {path}");
             }
-
-            string json = JsonUtility.ToJson(data, true);
-            File.WriteAllText(path, json);
-            lastSaveTime = DateTime.Now;
-
-            Debug.Log($"Zapisano dane w slocie {currentSlotIndex}: {path}");
+            catch (Exception ex)
+            {
+                Debug.LogError($"B³¹d zapisu: {ex.Message}");
+            }
         }
-        catch (Exception ex)
+
+        finally
         {
-            Debug.LogError($"B³¹d zapisu: {ex.Message}");
+            InputBlocker.Active = false;
         }
     }
 
     public void LoadPlayerData(int slotIndex)
     {
+        InputBlocker.Active = true;
         isLoading = true;
         string path = GetSlotFilePath(slotIndex);
         if (!File.Exists(path))
@@ -413,16 +426,18 @@ public class SaveManager : MonoBehaviour
         TreasureRefiner refiner = UnityEngine.Object.FindFirstObjectByType<TreasureRefiner>();
         if (refiner != null && data.treasureRefiner != null)
             refiner.LoadFromSaveData(data.treasureRefiner);
+            refiner.UpdateButtonStates();
 
-        // --- ODCZYT ZDROWIA OPON ---
         var allTyres = UnityEngine.Object.FindObjectsByType<InteractableItem>(FindObjectsSortMode.None);
-        int idx = 0;
         foreach (var tyre in allTyres)
         {
-            if (tyre.itemName.StartsWith("Opona") && idx < data.wheelHealths.Count)
+            if (tyre.itemName.StartsWith("Opona"))
             {
-                tyre.SetCurrentHealth(data.wheelHealths[idx]);
-                idx++;
+                var saved = data.wheelHealths.Find(t => t.itemName == tyre.itemName);
+                if (saved != null)
+                {
+                    tyre.SetCurrentHealth(saved.health);
+                }
                 tyre.RefreshInteractivity();
             }
         }
@@ -459,16 +474,73 @@ public class SaveManager : MonoBehaviour
     public IEnumerator FixPlayerPositionAfterLoad(PlayerData data, int frameCount)
     {
         for (int i = 0; i < frameCount; i++)
-            yield return null; // czekaj jedn¹ klatkê
+            yield return null;
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
             player.transform.position = data.playerPosition;
             player.transform.rotation = data.playerRotation;
+
+            // Wy³¹cz PlayerInteraction na czas ³adowania
+            var interaction = player.GetComponent<PlayerInteraction>();
+            if (interaction != null)
+                interaction.enabled = false;
+
+            if (Inventory.Instance.currentWeaponPrefab != null)
+            {
+                var gunScript = Inventory.Instance.currentWeaponPrefab.GetComponent<Gun>();
+                if (gunScript != null)
+                    gunScript.enabled = false;
+            }
         }
 
+        SetPlayerMovementEnabled(false);
+
+        if (LoadingScreen.Instance != null)
+            LoadingScreen.Instance.ShowContinuePrompt(true);
+
+        yield return new WaitUntil(() => Input.anyKeyDown);
+
+        if (LoadingScreen.Instance != null)
+            LoadingScreen.Instance.Hide();
+
         isLoading = false;
+        InputBlocker.Active = false;
+
+        SetPlayerMovementEnabled(true);
+
+        // PRZERWA pó³ sekundy
+        yield return new WaitForSeconds(1f);
+
+
+        // W£¥CZ PlayerInteraction po przerwie
+        if (player != null)
+        {
+            var interaction = player.GetComponent<PlayerInteraction>();
+            if (interaction != null)
+                interaction.enabled = true;
+        }
+
+        if (Inventory.Instance.currentWeaponPrefab != null)
+        {
+            var gunScript = Inventory.Instance.currentWeaponPrefab.GetComponent<Gun>();
+            if (gunScript != null)
+                gunScript.enabled = true;
+        }
+    }
+
+    private void SetPlayerMovementEnabled(bool enabled)
+    {
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null) return;
+
+        // Szukaj wszêdzie w hierarchii gracza
+        var movement = player.GetComponentInChildren<PlayerMovement>(true);
+        if (movement != null) movement.enabled = enabled;
+
+        var look = player.GetComponentInChildren<MouseLook>(true);
+        if (look != null) look.enabled = enabled;
     }
 
     public void AddCurrency(float amount)
@@ -486,7 +558,7 @@ public class SaveManager : MonoBehaviour
     public void ResetCurrency()
     {
         playerCurrency = 0f;
-        Debug.Log("Waluta gracza zosta³a zresetowana.");
+        //Debug.Log("Waluta gracza zosta³a zresetowana.");
     }
 
     public void ResetSaveSlot(int slotIndex)
@@ -570,7 +642,7 @@ public class PlayerData
 
     public TreasureRefinerSaveData treasureRefiner;
 
-    public List<int> wheelHealths = new List<int>();
+    public List<TyreHealthData> wheelHealths = new List<TyreHealthData>();
 
     public List<MonitorUnlockState> monitorUnlockStates = new List<MonitorUnlockState>();
 }
@@ -608,4 +680,11 @@ public class MonitorUnlockState
 {
     public string monitorID;
     public bool isUnlocked;
+}
+
+[Serializable]
+public class TyreHealthData
+{
+    public string itemName;
+    public int health;
 }

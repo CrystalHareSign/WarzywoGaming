@@ -477,7 +477,7 @@ public class TreasureRefiner : MonoBehaviour
         }
     }
 
-    private void UpdateButtonStates()
+    public void UpdateButtonStates()
     {
         string currentScene = SceneManager.GetActiveScene().name;
         bool isHome = currentScene == "Home";

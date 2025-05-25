@@ -55,7 +55,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
     public bool SceneMain = false;
     public bool SceneHome = false;
 
-    private WheelHealthUI wheelHealthUI;
+    public WheelHealthUI wheelHealthUI;
     public WheelManager wheelManager;
 
     private void Start()
@@ -77,7 +77,12 @@ public class InteractableItem : MonoBehaviour, IInteractable
 
         if (usesHealthSystem)
         {
-            currentHealth = maxHealth;
+            // Ustaw currentHealth tylko, jeœli NIE trwa ³adowanie save
+            if (SaveManager.Instance == null || !SaveManager.Instance.isLoading)
+            {
+                currentHealth = maxHealth;
+            }
+
             InteractivityManager.Instance.RegisterInteractable(gameObject, alwaysInteractive);
             UpdateUI();
         }
@@ -160,7 +165,6 @@ public class InteractableItem : MonoBehaviour, IInteractable
 
         return false;
     }
-
 
     private int GetWheelIndex()
     {

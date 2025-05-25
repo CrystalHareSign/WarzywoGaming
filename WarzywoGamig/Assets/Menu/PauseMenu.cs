@@ -123,11 +123,19 @@ public class PauseMenu : MonoBehaviour
     {
         pauseMenuUI.SetActive(false);
         optionsMenuUI.SetActive(false); // Ukryj menu opcji na wypadek, gdyby by³o otwarte
+        if (generalOptionsMenuUI != null) generalOptionsMenuUI.SetActive(false);
+        if (visualOptionsMenuUI != null) visualOptionsMenuUI.SetActive(false);
+        if (soundOptionsMenuUI != null) soundOptionsMenuUI.SetActive(false);
+
         Time.timeScale = 1f;
         GameIsPaused = false;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        mouseLook.enabled = true; // w³¹cz kamerê
+
+        // <--- KLUCZ: Za ka¿dym razem szukaj aktywnego MouseLook
+        var mouseLook = Object.FindFirstObjectByType<MouseLook>();
+        if (mouseLook != null)
+            mouseLook.enabled = true;
 
         foreach (var playSoundOnObject in playSoundObjects)
         {

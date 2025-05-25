@@ -23,8 +23,13 @@ public class SceneChanger : MonoBehaviour
 
     private bool isSceneChanging = false;
     private AssignInteraction assignInteraction;
+    private InteractableItem interactableItem;
     private GameObject player;
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
+
+    // Statyczna zmienna na pozycjê wzglêdn¹ gracza wzglêdem busa
+    public static Vector3 lastRelativePlayerPos = Vector3.zero;
+    public static Vector3 defaultRelativePlayerPos = new Vector3(0f, 5f, 0f); // przyk³adowy offset obok busa
 
 
     void Start()
@@ -93,6 +98,11 @@ public class SceneChanger : MonoBehaviour
         {
             isSceneChanging = true;
 
+            // --- ZAPAMIÊTAJ POZYCJÊ GRACZA WZGLÊDEM BUSA ---
+            var playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null && bus != null)
+                lastRelativePlayerPos = playerObj.transform.position - bus.transform.position;
+
             // Dostosowanie: Wykonaj metody specyficzne dla scen
             if (currentScene == "Home" && sceneName == "Main")
             {
@@ -124,11 +134,11 @@ public class SceneChanger : MonoBehaviour
             playSound.PlaySound("Storm", 0.1f, true);
         }
 
-        var inventory = Object.FindFirstObjectByType<Inventory>();
-        if (inventory != null) inventory.ClearInventory();
+        //var inventory = Object.FindFirstObjectByType<Inventory>();
+        //if (inventory != null) inventory.ClearInventory();            czyszcenie itemow po zmienie sceny
 
-        var treasureRefiner = Object.FindFirstObjectByType<TreasureRefiner>();
-        if (treasureRefiner != null) treasureRefiner.ResetSlots();
+        //var treasureRefiner = Object.FindFirstObjectByType<TreasureRefiner>();
+        //if (treasureRefiner != null) treasureRefiner.ResetSlots();    czyszczenie refinera po zmianie sceny
 
         if (TurretBody != null)
         {
@@ -188,6 +198,7 @@ public class SceneChanger : MonoBehaviour
 
     private IEnumerator SpawnPlayerWhenBusIsReady()
     {
+        // Jeœli trwa ³adowanie z save, NIE ustawiaj pozycji gracza (SaveManager siê tym zajmie)
         if (SaveManager.Instance != null && SaveManager.Instance.isLoading)
         {
             yield break;
@@ -203,14 +214,18 @@ public class SceneChanger : MonoBehaviour
             yield break;
         }
 
-        if (player != null && playerSpawnPoint != null)
+        if (player != null && bus != null)
         {
-            player.transform.position = playerSpawnPoint.position;
-            player.transform.rotation = playerSpawnPoint.rotation;
+            Vector3 relPos = SceneChanger.lastRelativePlayerPos;
+            if (relPos == Vector3.zero)
+                relPos = SceneChanger.defaultRelativePlayerPos; // <- tu ustawiasz domyœlne miejsce na start
+
+            player.transform.position = bus.transform.position + relPos;
         }
+
         else
         {
-            Debug.LogWarning("Brak gracza lub punktu spawnu!");
+            Debug.LogWarning("Brak gracza lub busa do ustawienia pozycji!");
         }
     }
 
