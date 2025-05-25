@@ -10,6 +10,16 @@ public class UITranslations
     public string continueGame;
     public string loadGame;
 
+    [Header("New Game")]
+    public string yes;
+    public string no;
+    public string confirmNewGame;
+    public string confirmOverwrite;
+    public string emptySlot;
+    public string slotNameLabel;
+    public string unnamedSlot;
+    public string back4;
+
     [Header("PauseMenu")]
     public string resume;
     public string options;

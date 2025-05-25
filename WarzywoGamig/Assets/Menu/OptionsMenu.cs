@@ -24,6 +24,8 @@ public class OptionsMenu : MonoBehaviour
     {
         optionsMenuUI.SetActive(false); // Upewnij siê, ¿e menu opcji jest niewidoczne na starcie
 
+        UpdateButtonTexts();
+
         if (LanguageManager.Instance != null)
         {
             LanguageManager.Instance.OnLanguageChanged += UpdateButtonTexts;
@@ -33,6 +35,10 @@ public class OptionsMenu : MonoBehaviour
         playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
     }
 
+    private void OnEnable()
+    {
+        UpdateButtonTexts();
+    }
     public void ShowGeneralSettings()
     {
         generalOptionsPanel.SetActive(true);

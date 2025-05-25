@@ -78,18 +78,24 @@ public class LoadGameMenu : MonoBehaviour
 
     private void UpdateSlotTexts()
     {
+        var uiTexts = LanguageManager.Instance.CurrentUITexts; // jeœli masz system jêzykowy
+
         for (int i = 0; i < slotTexts.Length; i++)
         {
-            if (slotTexts[i] == null) continue; // <--- zapobiega b³êdowi
+            if (slotTexts[i] == null) continue;
 
             if (SaveManager.Instance != null && SaveManager.Instance.DoesSlotExist(i))
             {
                 var data = SaveManager.Instance.LoadDataWithoutApplying(i);
-                slotTexts[i].text = $"Slot {i + 1} - {data.lastSaveTime}";
+                // Wyœwietl tylko nazwê slotu (jeœli jest), w przeciwnym razie "Pusty"/"Empty" i zawsze datê
+                string displayName = !string.IsNullOrEmpty(data.slotName)
+                    ? data.slotName
+                    : uiTexts.emptySlot;
+                slotTexts[i].text = $"{displayName} - {data.lastSaveTime}";
             }
             else
             {
-                slotTexts[i].text = $"Slot {i + 1} - Pusty";
+                slotTexts[i].text = uiTexts.emptySlot;
             }
         }
     }

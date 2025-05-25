@@ -11,6 +11,7 @@ public class SaveManager : MonoBehaviour
 
     public float playerCurrency = 0f;
     public DateTime lastSaveTime;
+    private string currentSlotName = "";
 
     public bool isLoading = false;
 
@@ -41,9 +42,25 @@ public class SaveManager : MonoBehaviour
         return Application.persistentDataPath + $"/playerData_slot{slotIndex}.json";
     }
 
+    // DODATKOWA METODA: Pobierz nazwê slotu z pliku (np. do wyœwietlania w menu)
+    public string GetSlotName(int slotIndex)
+    {
+        string path = GetSlotFilePath(slotIndex);
+        if (!File.Exists(path)) return "";
+        string json = File.ReadAllText(path);
+        PlayerData data = JsonUtility.FromJson<PlayerData>(json);
+        return data.slotName;
+    }
+
     public void SetCurrentSlot(int slotIndex)
     {
         currentSlotIndex = slotIndex;
+    }
+
+    // Ustaw nazwê slotu przed zapisaniem!
+    public void SetCurrentSlotName(string slotName)
+    {
+        currentSlotName = slotName;
     }
 
     public void SavePlayerData()
@@ -73,6 +90,7 @@ public class SaveManager : MonoBehaviour
 
                 PlayerData data = new PlayerData
                 {
+                    slotName = currentSlotName,
                     playerCurrency = this.playerCurrency,
                     playerPosition = playerPosition,
                     playerRotation = playerRotation,
@@ -224,6 +242,9 @@ public class SaveManager : MonoBehaviour
 
             string json = File.ReadAllText(path);
             PlayerData data = JsonUtility.FromJson<PlayerData>(json);
+
+            // Przy wczytaniu zapisz nazwê slotu do currentSlotName (mo¿e byæ przydatne)
+            currentSlotName = data.slotName;
 
             SceneManager.LoadScene("LoadingScreen");
             StartCoroutine(WaitAndLoadGameRoutine(data));
@@ -631,6 +652,7 @@ public class PlayerData
     public Quaternion playerRotation;
     public string sceneName;
     public string lastSaveTime;
+    public string slotName;
 
     public List<string> weapons = new List<string>();
     public List<string> itemNames = new List<string>();
