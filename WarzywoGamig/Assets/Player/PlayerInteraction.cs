@@ -335,4 +335,26 @@ public class PlayerInteraction : MonoBehaviour
                 gunScript.EquipWeapon();
         }
     }
+    public void ReactivateInventoryAndUI()
+    {
+        if (inventory != null)
+        {
+            inventory.enabled = true;
+            if (inventory.currentWeaponPrefab != null)
+            {
+                inventory.currentWeaponPrefab.SetActive(true);
+                if (inventoryUI != null)
+                {
+                    inventoryUI.ShowWeaponUI();
+                    inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+                }
+            }
+            else
+            {
+                Debug.LogWarning("currentWeaponPrefab jest null w ReactivateInventoryAndUI!");
+                if (inventoryUI != null)
+                    inventoryUI.HideWeaponUI();
+            }
+        }
+    }
 }

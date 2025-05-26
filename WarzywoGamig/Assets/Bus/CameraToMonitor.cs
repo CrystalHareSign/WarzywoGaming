@@ -759,6 +759,11 @@ public class CameraToMonitor : MonoBehaviour
         Camera.main.transform.rotation = originalCameraRotation;
 
         EnablePlayerMovementAndMouseLook();
+
+        PlayerInteraction player = UnityEngine.Object.FindFirstObjectByType<PlayerInteraction>();
+        if (player != null)
+            player.ReactivateInventoryAndUI();
+
         isCameraMoving = false;
 
         if (logSequenceCoroutine != null)

@@ -26,6 +26,16 @@ public class PauseMenu : MonoBehaviour
     // Lista wszystkich obiektów, które posiadaj¹ PlaySoundOnObject
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
+    public static PauseMenu Instance;
+    void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject); // NIE zostawiaj dwóch!
+            return;
+        }
+        Instance = this;
+    }
     void Start()
     {
         Time.timeScale = 1f;
@@ -142,6 +152,7 @@ public class PauseMenu : MonoBehaviour
             if (playSoundOnObject == null) continue;
 
             playSoundOnObject.FadeOutSound("PauseMenuMusic", 1f);
+            playSoundOnObject.ResumeAllSoundsExcept(new string[]{"PauseMenuMusic"},0.5f);
         }
     }
 
@@ -161,6 +172,7 @@ public class PauseMenu : MonoBehaviour
             if (playSoundOnObject == null) continue;
 
             playSoundOnObject.PlaySound("PauseMenuMusic", 1.0f, true);
+            playSoundOnObject.PauseAllSoundsExcept(new string[] { "PauseMenuMusic" }, 0.5f);
         }
     }
 

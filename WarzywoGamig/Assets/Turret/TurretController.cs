@@ -242,15 +242,9 @@ public class TurretController : MonoBehaviour
             StartCoroutine(ResetEnterAreaRotation());
         }
 
-        if (inventory != null)
-        {
-            inventory.enabled = true;
-        }
-
-        if (inventory != null && inventory.currentWeaponPrefab != null)
-        {
-            inventory.currentWeaponPrefab.SetActive(true);
-        }
+        PlayerInteraction player = UnityEngine.Object.FindFirstObjectByType<PlayerInteraction>();
+        if (player != null)
+            player.ReactivateInventoryAndUI();
 
         if (harpoonController != null)
         {

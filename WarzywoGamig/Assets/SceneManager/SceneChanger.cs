@@ -194,6 +194,25 @@ public class SceneChanger : MonoBehaviour
             cameraToMonitor.inputField.gameObject.SetActive(true);
             cameraToMonitor.inputField.ActivateInputField(); // <- TO JEST KLUCZOWE
         }
+
+        if (InventoryUI.Instance != null)
+        {
+            InventoryUI.Instance.UpdateInventoryUI(Inventory.Instance.weapons, Inventory.Instance.items);
+        }
+
+        StartCoroutine(RefreshWheelsUIDelayed());
+    }
+
+    private IEnumerator RefreshWheelsUIDelayed()
+    {
+        // Odczekaj jedn¹ klatkê, ¿eby WheelHealthUI zd¹¿y³ siê zainicjalizowaæ!
+        yield return null;
+        var allWheels = Object.FindObjectsByType<InteractableItem>(FindObjectsSortMode.None);
+        foreach (var item in allWheels)
+        {
+            if (item.usesHealthSystem)
+                item.UpdateUI();
+        }
     }
 
     private IEnumerator SpawnPlayerWhenBusIsReady()

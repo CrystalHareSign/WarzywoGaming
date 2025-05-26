@@ -222,13 +222,11 @@ public class InteractableItem : MonoBehaviour, IInteractable
 
     public void UpdateUI()
     {
+        // Za ka¿dym razem pobierz aktualny WheelHealthUI:
+        wheelHealthUI = Object.FindFirstObjectByType<WheelHealthUI>();
         if (wheelHealthUI != null)
         {
             wheelHealthUI.UpdateWheelHealth(GetWheelIndex(), currentHealth);
-        }
-        else
-        {
-            //Debug.LogWarning($"[WARNING] WheelHealthUI nie znaleziony dla {itemName}");
         }
     }
 

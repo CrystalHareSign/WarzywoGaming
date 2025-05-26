@@ -43,8 +43,23 @@ public class LoadGameMenu : MonoBehaviour
 
     private void OnEnable()
     {
+        if (LanguageManager.Instance != null)
+        {
+            LanguageManager.Instance.OnLanguageChanged += UpdateButtonStates;
+            LanguageManager.Instance.OnLanguageChanged += UpdateSlotTexts;
+        }
+
         UpdateSlotTexts();
         UpdateButtonStates();
+    }
+
+    private void OnDestroy()
+    {
+        if (LanguageManager.Instance != null)
+        {
+            LanguageManager.Instance.OnLanguageChanged -= UpdateButtonStates;
+            LanguageManager.Instance.OnLanguageChanged -= UpdateSlotTexts;
+        }
     }
 
     public void SelectSlot(int index)

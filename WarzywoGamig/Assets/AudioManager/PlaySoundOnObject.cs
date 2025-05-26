@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -167,5 +168,102 @@ public class PlaySoundOnObject : MonoBehaviour
                 source.audioSource.Stop();
             }
         }
+    }
+
+    public void PauseSound(string soundName, float fadeOutSeconds = 0f)
+    {
+        var foundSource = GetAudioSourceByName(soundName);
+        if (foundSource == null || foundSource.audioSource == null)
+            return;
+
+        if (foundSource.audioSource.isPlaying)
+        {
+            if (fadeOutSeconds > 0f)
+                StartCoroutine(FadeOutAndPause(foundSource, fadeOutSeconds));
+            else
+                foundSource.audioSource.Pause();
+        }
+    }
+
+    public void ResumeSound(string soundName, float fadeInSeconds = 0f)
+    {
+        var foundSource = GetAudioSourceByName(soundName);
+        if (foundSource == null || foundSource.audioSource == null)
+            return;
+
+        if (!foundSource.audioSource.isPlaying && foundSource.audioSource.time > 0f)
+        {
+            foundSource.audioSource.UnPause();
+            if (fadeInSeconds > 0f)
+                StartCoroutine(FadeIn(foundSource, fadeInSeconds));
+            else
+                foundSource.audioSource.volume = foundSource.originalVolume;
+        }
+    }
+
+    public void PauseAllSoundsExcept(string[] excludedSoundNames, float fadeOutSeconds = 0f)
+    {
+        foreach (var source in audioSourcesWithNames)
+        {
+            if (source.audioSource != null &&
+                source.audioSource.isPlaying &&
+                System.Array.IndexOf(excludedSoundNames, source.soundName) < 0)
+            {
+                if (fadeOutSeconds > 0f)
+                    StartCoroutine(FadeOutAndPause(source, fadeOutSeconds));
+                else
+                    source.audioSource.Pause();
+            }
+        }
+    }
+
+    public void ResumeAllSoundsExcept(string[] excludedSoundNames, float fadeInSeconds = 0f)
+    {
+        foreach (var source in audioSourcesWithNames)
+        {
+            if (source.audioSource != null &&
+                !source.audioSource.isPlaying &&
+                source.audioSource.time > 0f &&
+                System.Array.IndexOf(excludedSoundNames, source.soundName) < 0)
+            {
+                source.audioSource.UnPause();
+                if (fadeInSeconds > 0f)
+                    StartCoroutine(FadeIn(source, fadeInSeconds));
+                else
+                    source.audioSource.volume = source.originalVolume;
+            }
+        }
+    }
+
+    // Fade out, potem pauza
+    private IEnumerator FadeOutAndPause(AudioSourceWithName source, float duration)
+    {
+        AudioSource audio = source.audioSource;
+        float startVolume = audio.volume;
+        float time = 0f;
+        while (time < duration)
+        {
+            time += Time.unscaledDeltaTime;
+            audio.volume = Mathf.Lerp(startVolume, 0f, time / duration);
+            yield return null;
+        }
+        audio.volume = 0f;
+        audio.Pause();
+    }
+
+    // Fade in po wznowieniu
+    private IEnumerator FadeIn(AudioSourceWithName source, float duration)
+    {
+        AudioSource audio = source.audioSource;
+        float targetVolume = source.originalVolume;
+        audio.volume = 0f;
+        float time = 0f;
+        while (time < duration)
+        {
+            time += Time.unscaledDeltaTime;
+            audio.volume = Mathf.Lerp(0f, targetVolume, time / duration);
+            yield return null;
+        }
+        audio.volume = targetVolume;
     }
 }

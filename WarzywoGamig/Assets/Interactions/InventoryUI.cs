@@ -47,6 +47,10 @@ public class InventoryUI : MonoBehaviour
         {
             UpdateWeaponUI(currentWeapon); // Zaktualizuj UI broni
         }
+        else
+        {
+            HideWeaponUI(); // Ukryj UI broni, jeśli nie masz broni
+        }
 
         foreach (var img in itemImages)
         {
@@ -109,13 +113,11 @@ public class InventoryUI : MonoBehaviour
 
         if (!weaponEquipped)
         {
-            weaponImage.enabled = false;
-            weaponNameText.gameObject.SetActive(false);
-
-            ammoText.gameObject.SetActive(false);
-            totalAmmoText.gameObject.SetActive(false);
-            reloadingText.gameObject.SetActive(false);
-            slashText.gameObject.SetActive(false);
+            HideWeaponUI(); // <--- dodaj to
+        }
+        else
+        {
+            ShowWeaponUI();
         }
 
         // Aktualizacja UI dla przedmiotów

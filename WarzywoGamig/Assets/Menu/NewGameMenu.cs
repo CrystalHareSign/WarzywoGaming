@@ -78,7 +78,7 @@ public class NewGameMenu : MonoBehaviour
             LanguageManager.Instance.OnLanguageChanged -= UpdateOverwritePanelTexts;
             LanguageManager.Instance.OnLanguageChanged -= UpdateButtonTexts;   // <-- NOWE
             LanguageManager.Instance.OnLanguageChanged -= UpdateSlotTexts;     // <-- (opcjonalnie)
-            LanguageManager.Instance.OnLanguageChanged += UpdateNamePanelYesNoTexts;
+            LanguageManager.Instance.OnLanguageChanged -= UpdateNamePanelYesNoTexts;
         }
     }
 
@@ -86,7 +86,23 @@ public class NewGameMenu : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+            // Jeœli aktywny jest panel nadawania nazwy, zamknij go
+            if (nameConfirmUI != null && nameConfirmUI.activeSelf)
+            {
+                nameConfirmUI.SetActive(false);
+                return;
+            }
+
+            // Jeœli aktywny jest panel potwierdzenia nadpisania, zamknij go
+            if (overwriteConfirmUI != null && overwriteConfirmUI.activeSelf)
+            {
+                overwriteConfirmUI.SetActive(false);
+                return;
+            }
+
+            // Jeœli ¿aden z tych paneli nie jest aktywny - wróæ do menu startowego
             OnBackToStartMenu();
+
             foreach (var playSoundOnObject in playSoundObjects)
             {
                 if (playSoundOnObject == null) continue;
