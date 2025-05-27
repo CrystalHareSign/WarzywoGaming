@@ -266,7 +266,7 @@ public class PlayerInteraction : MonoBehaviour
     {
         if (treasureRefiner != null)
         {
-            treasureRefiner.RemoveOldestItemFromInventory();
+            treasureRefiner.RemoveSelectedItemFromInventory(inventoryUI.selectedItemIndex);
         }
     }
 

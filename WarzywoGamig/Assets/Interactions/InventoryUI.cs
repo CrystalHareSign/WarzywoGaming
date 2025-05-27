@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEditor.Experimental.GraphView;
 
 public class InventoryUI : MonoBehaviour
 {
@@ -22,6 +23,11 @@ public class InventoryUI : MonoBehaviour
     public TextMeshProUGUI totalAmmoText;
     public TextMeshProUGUI reloadingText;
     public TextMeshProUGUI slashText;
+
+    // --- DODANE: obsługa wyboru aktywnego itemu ---
+    public int selectedItemIndex = 0;
+    public Color normalItemColor = Color.yellow;
+    public Color selectedItemColor = Color.white;
 
     private Gun currentWeapon; // Aktualnie trzymana broń
 
@@ -68,9 +74,46 @@ public class InventoryUI : MonoBehaviour
         slashText.gameObject.SetActive(false);
     }
 
-    // Zmieniono nazwę parametru z weaponNames na weapons dla spójności
+    void Update()
+    {
+        var inventory = Inventory.Instance;
+        var ui = InventoryUI.Instance;
+
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (scroll > 0f) // scroll w górę
+            ui.SelectPreviousItem(inventory.items); // w górę: poprzedni
+        else if (scroll < 0f) // scroll w dół
+            ui.SelectNextItem(inventory.items); // w dół: następny
+    }
+
+    // --- DODANE: przewijanie wyboru itemu ---
+    public void SelectNextItem(List<GameObject> items)
+    {
+        if (items == null || items.Count == 0)
+            return;
+        selectedItemIndex = (selectedItemIndex + 1) % Mathf.Min(items.Count, itemImages.Length);
+        UpdateItemUI(items);
+    }
+
+    public void SelectPreviousItem(List<GameObject> items)
+    {
+        if (items == null || items.Count == 0)
+            return;
+        selectedItemIndex = (selectedItemIndex - 1 + Mathf.Min(items.Count, itemImages.Length)) % Mathf.Min(items.Count, itemImages.Length);
+        UpdateItemUI(items);
+    }
+
     public void UpdateInventoryUI(List<string> weapons, List<GameObject> items)
     {
+        // --- Zabezpieczenie indexu, żeby NIGDY nie wybiegał poza zakres ---
+        if (selectedItemIndex >= items.Count)
+            selectedItemIndex = Mathf.Max(0, items.Count - 1);
+        if (selectedItemIndex < 0 && items.Count > 0)
+            selectedItemIndex = 0;
+        // --- Jeśli jest tylko jeden item, index zawsze 0 ---
+        if (items.Count == 1)
+            selectedItemIndex = 0;
+
         bool weaponEquipped = false;
 
         foreach (var weaponName in weapons)
@@ -126,6 +169,15 @@ public class InventoryUI : MonoBehaviour
 
     private void UpdateItemUI(List<GameObject> items)
     {
+        // --- Zabezpieczenie indexu, żeby NIGDY nie wybiegał poza zakres ---
+        if (selectedItemIndex >= items.Count)
+            selectedItemIndex = Mathf.Max(0, items.Count - 1);
+        if (selectedItemIndex < 0 && items.Count > 0)
+            selectedItemIndex = 0;
+        // --- Jeśli jest tylko jeden item, index zawsze 0 ---
+        if (items.Count == 1)
+            selectedItemIndex = 0;
+
         // Ukryj wszystkie ikony, teksty ilości oraz kategorie przedmiotów
         for (int i = 0; i < itemImages.Length; i++)
         {
@@ -155,6 +207,12 @@ public class InventoryUI : MonoBehaviour
                 string categoryName = treasureResources.resourceCategories[0].name;
                 itemCategoryTexts[i].text = categoryName;
                 itemCategoryTexts[i].gameObject.SetActive(true);
+
+                // PODŚWIETLENIE aktualnie wybranego itemu
+                if (i == selectedItemIndex)
+                    itemImages[i].color = selectedItemColor;
+                else
+                    itemImages[i].color = normalItemColor;
             }
             else
             {

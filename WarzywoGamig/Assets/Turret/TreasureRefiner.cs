@@ -978,43 +978,51 @@ public class TreasureRefiner : MonoBehaviour
         }
     }
 
-    public void RemoveOldestItemFromInventory()
+    public void RemoveSelectedItemFromInventory(int index)
     {
         if (isRefining) return;
         isRefining = true;
 
         bool resourcesAdded = false;
 
-        // Przechodzimy przez wszystkie przedmioty w kolejnoœci chronologicznej
-        for (int i = 0; i < inventory.items.Count; i++)
+        // SprawdŸ poprawnoœæ indeksu
+        if (index < 0 || index >= inventory.items.Count)
         {
-            GameObject itemToRemove = inventory.items[i];
-            InteractableItem interactableItem = itemToRemove.GetComponent<InteractableItem>();
+            isRefining = false;
+            return;
+        }
 
-            if (interactableItem != null)
+        GameObject itemToRemove = inventory.items[index];
+        InteractableItem interactableItem = itemToRemove.GetComponent<InteractableItem>();
+
+        if (interactableItem != null)
+        {
+            // Próbujemy dodaæ zasoby z tego przedmiotu
+            UpdateTreasureRefinerSlots(interactableItem, ref resourcesAdded);
+
+            if (resourcesAdded)
             {
-                // Próbujemy dodaæ zasoby z tego przedmiotu
-                UpdateTreasureRefinerSlots(interactableItem, ref resourcesAdded);
+                // Usuwamy przedmiot z inventory i niszczymy obiekt
+                inventory.items.RemoveAt(index);
+                Destroy(itemToRemove);
 
-                if (resourcesAdded)
+                // DŸwiêk
+                foreach (var playSoundOnObject in playSoundObjects)
                 {
-                    // Jeœli uda³o siê dodaæ, usuwamy przedmiot i koñczymy pêtlê
-                    inventory.items.RemoveAt(i);
-                    Destroy(itemToRemove);
+                    if (playSoundOnObject == null) continue;
+                    playSoundOnObject.PlaySound("PickUpLiquid1", 1.1f, false);
+                }
 
+                // Aktualizuj UI
+                if (inventoryUI != null)
+                {
+                    // Popraw indeks po usuniêciu
+                    if (inventory.items.Count == 0)
+                        inventoryUI.selectedItemIndex = 0;
+                    else if (inventoryUI.selectedItemIndex >= inventory.items.Count)
+                        inventoryUI.selectedItemIndex = inventory.items.Count - 1;
 
-                    foreach (var playSoundOnObject in playSoundObjects)
-                    {
-                        if (playSoundOnObject == null) continue;
-
-                        playSoundOnObject.PlaySound("PickUpLiquid1", 1.1f, false);
-                    }
-
-                    if (inventoryUI != null)
-                    {
-                        inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items);
-                    }
-                    break;
+                    inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items);
                 }
             }
         }

@@ -375,6 +375,7 @@ public class SaveManager : MonoBehaviour
                 if (inventory.itemPrefabs.TryGetValue(itemSave.itemName, out var prefab) && prefab != null)
                 {
                     GameObject itemObj = UnityEngine.Object.Instantiate(prefab);
+                    DontDestroyOnLoad(itemObj); //  KLUCZOWA LINIA
 
                     // USUÑ TreasureDefiner, ¿eby nie losowa³ nowych danych
                     var definer = itemObj.GetComponent<TreasureDefiner>();
