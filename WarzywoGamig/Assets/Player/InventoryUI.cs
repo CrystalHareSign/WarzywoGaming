@@ -294,4 +294,34 @@ public class InventoryUI : MonoBehaviour
         slashText.gameObject.SetActive(true);
         weaponImage.gameObject.SetActive(true);
     }
+
+    public void HideItemUI()
+    {
+        for (int i = 0; i < itemImages.Length; i++)
+        {
+            itemImages[i].enabled = false;
+            itemTexts[i].gameObject.SetActive(false);
+            itemCategoryTexts[i].gameObject.SetActive(false);
+        }
+    }
+
+    public void ShowItemUI(List<GameObject> items)
+    {
+        int maxSlots = Mathf.Min(items.Count, itemImages.Length, itemTexts.Length, itemCategoryTexts.Length);
+
+        for (int i = 0; i < maxSlots; i++)
+        {
+            if (items[i] == null) continue;
+
+            InteractableItem item = items[i].GetComponent<InteractableItem>();
+            TreasureResources treasureResources = items[i].GetComponent<TreasureResources>();
+
+            if (item != null && treasureResources != null && treasureResources.resourceCategories != null && treasureResources.resourceCategories.Count > 0)
+            {
+                itemImages[i].enabled = true;
+                itemTexts[i].gameObject.SetActive(true);
+                itemCategoryTexts[i].gameObject.SetActive(true);
+            }
+        }
+    }
 }

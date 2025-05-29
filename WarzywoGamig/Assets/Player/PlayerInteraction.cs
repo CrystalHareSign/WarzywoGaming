@@ -155,6 +155,9 @@ public class PlayerInteraction : MonoBehaviour
                                     inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
                                     inventoryUI.HideWeaponUI();
                                 }
+                                // SCHOWAJ UI ITEMÓW przy monitorze
+                                if (inventoryUI != null)
+                                    inventoryUI.HideItemUI();
                             }
 
                             if (currentInteractableItem.isMonitor)
@@ -172,6 +175,9 @@ public class PlayerInteraction : MonoBehaviour
                                     inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
                                     inventoryUI.HideWeaponUI();
                                 }
+                                // SCHOWAJ UI ITEMÓW przy monitorze
+                                if (inventoryUI != null)
+                                    inventoryUI.HideItemUI();
                             }
 
                             if (currentInteractableItem.isRefiner && !hasRefinerBeenUsed)
@@ -330,6 +336,10 @@ public class PlayerInteraction : MonoBehaviour
             inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
             inventoryUI.ShowWeaponUI();
 
+            // <<< TO DODAJ
+            if (inventoryUI != null && inventory != null)
+            inventoryUI.ShowItemUI(inventory.items);
+
             Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
             if (gunScript != null)
                 gunScript.EquipWeapon();
@@ -345,8 +355,9 @@ public class PlayerInteraction : MonoBehaviour
                 inventory.currentWeaponPrefab.SetActive(true);
                 if (inventoryUI != null)
                 {
-                    inventoryUI.ShowWeaponUI();
                     inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+                    inventoryUI.ShowWeaponUI();
+                    inventoryUI.ShowItemUI(inventory.items); // DODAJ TÊ LINIJKÊ
                 }
             }
             else
