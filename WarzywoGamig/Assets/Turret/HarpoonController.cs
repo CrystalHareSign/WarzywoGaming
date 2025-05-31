@@ -10,6 +10,7 @@ public class HarpoonController : MonoBehaviour
     public GameObject harpoonPrefab;
     public Transform firePoint;
     public Transform treasureMountPoint;
+    public Light harpoonLight;
     [Header("HARPUN PARAMETRY")]
     public float shootSpeed = 20f;
     public float returnSpeed = 10f;
@@ -170,6 +171,12 @@ public class HarpoonController : MonoBehaviour
         }
 
         ResetReloadUI();
+    }
+
+    public void SetHarpoonLight(bool state)
+    {
+        if (harpoonLight != null)
+            harpoonLight.enabled = state;
     }
 
     void Update()

@@ -18,6 +18,7 @@ public class Inventory : MonoBehaviour
     public Transform weaponParent; // Transform, do którego będą przypisywane bronie jako dzieci
     public Transform lootParent; // Transform, do którego będą przypisane lootowe przedmioty
     public bool isLootBeingDropped = false; // Flaga kontrolująca proces upuszczania lootu
+    public Light flashlight; // Przeciągnij latarkę z Hierarchii do tego pola w Inspectorze
 
     public Dictionary<string, GameObject> weaponPrefabs = new Dictionary<string, GameObject>();
 
@@ -101,6 +102,40 @@ public class Inventory : MonoBehaviour
             if (isLootBeingDropped) return;
             DropItemFromInventory();
         }
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            // Sprawdź WSZYSTKIE monitory
+            var monitors = Object.FindObjectsByType<CameraToMonitor>(FindObjectsSortMode.None);
+            foreach (var monitor in monitors)
+            {
+                if (monitor.isUsingMonitor)
+                    return; // Jeśli którykolwiek monitor jest aktywny, blokujemy latarkę
+            }
+
+            // Zablokuj jeśli wieżyczka aktywna
+            var turrets = Object.FindObjectsByType<TurretController>(FindObjectsSortMode.None);
+            foreach (var t in turrets)
+            {
+                if (t.isUsingTurret)
+                    return;
+            }
+            if (flashlight.enabled)
+                FlashlightOff();
+            else
+                FlashlightOn();
+        }
+    }
+
+    public void FlashlightOn()
+    {
+        if (flashlight != null)
+            flashlight.enabled = true;
+    }
+
+    public void FlashlightOff()
+    {
+        if (flashlight != null)
+            flashlight.enabled = false;
     }
 
     void CollectItem()

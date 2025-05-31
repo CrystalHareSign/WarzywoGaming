@@ -21,6 +21,9 @@ public class TurretController : MonoBehaviour
     public float rotationResetSpeed = 3f; // Prędkość resetowania rotacji
     public float minBarrelAngle = -30f; // Minimalny kąt pochylenia lufy
     public float maxBarrelAngle = 30f;  // Maksymalny kąt pochylenia lufy
+    private bool isTurretLocked;
+    public float entryRotateTime = 0.7f; // czas łagodnego obrotu przy wejściu
+    public float entryMoveTime = 0.7f; // czas łagodnego przesuwu i obrotu przy wejściu
 
     private Quaternion initialEnterAreaRotation; // Początkowa rotacja enterArea
 
@@ -28,6 +31,7 @@ public class TurretController : MonoBehaviour
     public bool isLowering = false; // Flaga informująca, czy wieżyczka jest w trakcie opuszczania
     public bool isUsingTurret = false; // Flaga, która informuje, czy gracz korzysta z wieżyczki
     private bool isCooldown = false; // Flaga kontrolująca opóźnienie przy opuszczaniu
+    private bool flashlightWasOnBeforeTurret = false;
 
     public static TurretController Instance;
 
@@ -78,12 +82,15 @@ public class TurretController : MonoBehaviour
                 Debug.LogError("Nie znaleziono skryptu HarpoonController w prefabie.");
             }
         }
+
+        if (harpoonController != null)
+            harpoonController.SetHarpoonLight(false);
     }
 
 
     void Update()
     {
-        if (isUsingTurret)
+        if (isUsingTurret && !isTurretLocked)
         {
             if (Input.GetKeyDown(KeyCode.Q) && isRaised && !isCooldown && !harpoonController.isReturning && harpoonController.canShoot)
             {
@@ -126,23 +133,15 @@ public class TurretController : MonoBehaviour
     {
         if (!isUsingTurret)
         {
-            //Debug.Log("Aktywuję wieżyczkę.");
-
-            TeleportPlayer(enterArea);
-
-            if (harpoonController != null)
+            if (inventory != null && inventory.flashlight != null)
             {
-                harpoonController.ResetReloadState(); // <- Reset stanu przeładowania i UI
+                flashlightWasOnBeforeTurret = inventory.flashlight.enabled;
+                inventory.FlashlightOff();
             }
 
-            if (playerMovement != null)
-            {
-                playerMovement.enabled = false;
-            }
+            StartCoroutine(SmoothMoveAndAlignPlayerToSeatAndRaiseTurret());
 
-            StartCoroutine(RaiseTurret());
-
-            ActivateWeapon();
+            ActivateWeapon(); // Możesz zostawić tutaj lub przenieść do korutyny, jeśli broń ma się pojawić dopiero po wejściu
 
             isUsingTurret = true;
         }
@@ -150,22 +149,71 @@ public class TurretController : MonoBehaviour
 
     private void TeleportPlayer(Transform targetArea)
     {
-        if (targetArea != null)
+        if (playerMovement != null && targetArea != null)
         {
+            var controller = playerMovement.GetComponent<CharacterController>();
+            if (controller != null) controller.enabled = false;
+
             playerMovement.transform.position = targetArea.position;
+            playerMovement.transform.rotation = targetArea.rotation;
+
+            if (controller != null) controller.enabled = true;
         }
+    }
+
+    private IEnumerator SmoothMoveAndAlignPlayerToSeatAndRaiseTurret()
+    {
+        // Zablokuj sterowanie w trakcie animacji wejścia
+        isTurretLocked = true;
+
+        Vector3 startPos = playerMovement.transform.position;
+        Vector3 targetPos = enterArea.position;
+
+        Quaternion startRot = playerMovement.transform.rotation;
+        Quaternion targetRot = enterArea.rotation;
+
+        Quaternion weaponStartRot = weapon.transform.rotation;
+        Quaternion weaponTargetRot = enterArea.rotation;
+
+        float elapsed = 0f;
+        while (elapsed < entryMoveTime)
+        {
+            float t = elapsed / entryMoveTime;
+            // Możesz użyć SmoothStep zamiast liniowego Lerp dla ładniejszego efektu
+            float smoothT = Mathf.SmoothStep(0, 1, t);
+
+            playerMovement.transform.position = Vector3.Lerp(startPos, targetPos, smoothT);
+            playerMovement.transform.rotation = Quaternion.Slerp(startRot, targetRot, smoothT);
+            weapon.transform.rotation = Quaternion.Slerp(weaponStartRot, weaponTargetRot, smoothT);
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        playerMovement.transform.position = targetPos;
+        playerMovement.transform.rotation = targetRot;
+        weapon.transform.rotation = weaponTargetRot;
+
+        if (harpoonController != null)
+            harpoonController.ResetReloadState();
+
+        if (playerMovement != null)
+            playerMovement.enabled = false;
+
+        isTurretLocked = false;
+
+        yield return StartCoroutine(RaiseTurret());
     }
 
     private IEnumerator RaiseTurret()
     {
-
         foreach (var playSoundOnObject in playSoundObjects)
         {
             if (playSoundOnObject == null) continue;
-
             playSoundOnObject.PlaySound("TurretUp", 0.5f, false);
-
         }
+
+        if (harpoonController != null)
+            harpoonController.SetHarpoonLight(false);
 
         float targetHeight = turretBase.position.y + raiseHeight;
         float targetEnterAreaHeight = enterArea.position.y + raiseHeight;
@@ -177,14 +225,23 @@ public class TurretController : MonoBehaviour
         {
             turretBase.position = Vector3.MoveTowards(turretBase.position, targetTurretBasePosition, raiseSpeed * Time.deltaTime);
             enterArea.position = Vector3.MoveTowards(enterArea.position, targetEnterAreaPosition, raiseSpeed * Time.deltaTime);
-            playerMovement.transform.position = Vector3.Lerp(playerMovement.transform.position, enterArea.position, 0.9f); // Płynniejszy ruch gracza
+
+            // Synchronizuj gracza z enterArea podczas unoszenia
+            if (playerMovement != null)
+                playerMovement.transform.position = enterArea.position;
+
             yield return null;
         }
 
         turretBase.position = targetTurretBasePosition;
         enterArea.position = targetEnterAreaPosition;
+        if (playerMovement != null)
+            playerMovement.transform.position = enterArea.position;
 
         isRaised = true;
+
+        if (harpoonController != null)
+            harpoonController.SetHarpoonLight(true);
     }
 
     private void ActivateWeapon()
@@ -197,15 +254,20 @@ public class TurretController : MonoBehaviour
 
     private IEnumerator LowerTurret()
     {
+        // Przygotowanie do interpolacji rotacji
+        float elapsedTime = 0f;
+        Quaternion startRotation = enterArea.rotation;
+
         foreach (var playSoundOnObject in playSoundObjects)
         {
             if (playSoundOnObject == null) continue;
-
             playSoundOnObject.PlaySound("TurretDown", 0.5f, false);
-
         }
 
-        isLowering = true; // Rozpocznij opuszczanie
+        if (harpoonController != null)
+            harpoonController.SetHarpoonLight(false);
+
+        isLowering = true;
         isCooldown = true;
         float targetHeight = turretBase.position.y - raiseHeight;
         float targetEnterAreaHeight = enterArea.position.y - raiseHeight;
@@ -213,17 +275,33 @@ public class TurretController : MonoBehaviour
         Vector3 targetTurretBasePosition = new Vector3(turretBase.position.x, targetHeight, turretBase.position.z);
         Vector3 targetEnterAreaPosition = new Vector3(enterArea.position.x, targetEnterAreaHeight, enterArea.position.z);
 
-        // Zapisz początkową rotację pivotu
         Quaternion initialBarrelPivotRotation = barrelPivot.localRotation;
 
         while (turretBase.position.y > targetHeight)
         {
             turretBase.position = Vector3.MoveTowards(turretBase.position, targetTurretBasePosition, lowerSpeed * Time.deltaTime);
             enterArea.position = Vector3.MoveTowards(enterArea.position, targetEnterAreaPosition, lowerSpeed * Time.deltaTime);
-            playerMovement.transform.position = Vector3.Lerp(playerMovement.transform.position, enterArea.position, 0.9f); // Lepsza synchronizacja gracza z enterArea
+            playerMovement.transform.position = Vector3.Lerp(playerMovement.transform.position, enterArea.position, 0.9f);
+
+            // Płynny reset rotacji działka
+            if (elapsedTime < 1f)
+            {
+                enterArea.rotation = Quaternion.Lerp(startRotation, initialEnterAreaRotation, elapsedTime);
+                elapsedTime += Time.deltaTime * rotationResetSpeed;
+            }
+            else
+            {
+                enterArea.rotation = initialEnterAreaRotation;
+            }
+
+            // Synchronizacja rotacji gracza z kabiną
+            playerMovement.transform.rotation = enterArea.rotation;
+
             yield return null;
         }
 
+        // Upewnij się, że finalna rotacja jest dokładnie docelowa
+        enterArea.rotation = initialEnterAreaRotation;
         turretBase.position = targetTurretBasePosition;
         enterArea.position = targetEnterAreaPosition;
 
@@ -233,14 +311,7 @@ public class TurretController : MonoBehaviour
         TeleportPlayer(exitArea);
 
         if (playerMovement != null)
-        {
             playerMovement.enabled = true;
-        }
-
-        if (enterArea != null)
-        {
-            StartCoroutine(ResetEnterAreaRotation());
-        }
 
         PlayerInteraction player = UnityEngine.Object.FindFirstObjectByType<PlayerInteraction>();
         if (player != null)
@@ -248,30 +319,22 @@ public class TurretController : MonoBehaviour
 
         if (harpoonController != null)
         {
-            harpoonController.ResetReloadState(); // <- Reset stanu przeładowania i UI
+            harpoonController.ResetReloadState();
         }
 
-        // Resetowanie rotacji barrelPivot po zakończeniu
         barrelPivot.localRotation = initialBarrelPivotRotation;
 
         isRaised = false;
         isCooldown = false;
         isUsingTurret = false;
         isLowering = false;
-    }
 
-    private IEnumerator ResetEnterAreaRotation()
-    {
-        float elapsedTime = 0f;
-        Quaternion startRotation = enterArea.rotation;
-
-        while (elapsedTime < 1f)
+        if (inventory != null && inventory.flashlight != null)
         {
-            enterArea.rotation = Quaternion.Lerp(startRotation, initialEnterAreaRotation, elapsedTime);
-            elapsedTime += Time.deltaTime * rotationResetSpeed;
-            yield return null;
+            if (flashlightWasOnBeforeTurret)
+                inventory.FlashlightOn();
+            else
+                inventory.FlashlightOff();
         }
-
-        enterArea.rotation = initialEnterAreaRotation;
     }
 }
