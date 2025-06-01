@@ -1,8 +1,0 @@
-Syne Mono
-Authors: Bonjour Monde, Lucas Descroix
-Copyright © 2017 The Syne Project Authors
-License: SIL Open Font License 1.1
-License website: https://openfontlicense.org
-
-The "Syne Mono" typeface is used in this game under the SIL Open Font License. This license allows free use, modification, and distribution of the font, including in commercial projects, provided that the terms of the license are met.
-The font has not been modified.

@@ -11,6 +11,7 @@ public class HarpoonController : MonoBehaviour
     public Transform firePoint;
     public Transform treasureMountPoint;
     public Light harpoonLight;
+    public Light cabinLight;
     [Header("HARPUN PARAMETRY")]
     public float shootSpeed = 20f;
     public float returnSpeed = 10f;
@@ -177,6 +178,11 @@ public class HarpoonController : MonoBehaviour
     {
         if (harpoonLight != null)
             harpoonLight.enabled = state;
+    }
+    public void SetCabinLight(bool state)
+    {
+        if (cabinLight != null)
+            cabinLight.enabled = state;
     }
 
     void Update()

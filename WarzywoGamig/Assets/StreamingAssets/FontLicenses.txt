@@ -1,0 +1,19 @@
+Syne Mono
+Authors: Bonjour Monde, Lucas Descroix
+Copyright © 2017 The Syne Project Authors
+License: SIL Open Font License 1.1
+License website: https://openfontlicense.org
+
+The "Syne Mono" typeface is used in this game under the SIL Open Font License. This license allows free use, modification, and distribution of the font, including in commercial projects, provided that the terms of the license are met.
+The font has not been modified.
+
+==============================================
+
+Doto Typeface
+Authors: The Doto Project Authors (https://github.com/oliverlalan/Doto)
+Copyright © 2024 The Doto Project Authors
+License: SIL Open Font License 1.1
+License website: https://openfontlicense.org
+
+The "Doto" typeface is used in this game under the SIL Open Font License. This license allows free use, modification, and distribution of the font, including in commercial projects, as long as the terms of the license are followed.
+No modifications have been made to the font.

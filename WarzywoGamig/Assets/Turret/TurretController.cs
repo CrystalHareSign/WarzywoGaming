@@ -85,6 +85,8 @@ public class TurretController : MonoBehaviour
 
         if (harpoonController != null)
             harpoonController.SetHarpoonLight(false);
+        if (harpoonController != null)
+            harpoonController.SetCabinLight(false);
     }
 
 
@@ -138,6 +140,9 @@ public class TurretController : MonoBehaviour
                 flashlightWasOnBeforeTurret = inventory.flashlight.enabled;
                 inventory.FlashlightOff();
             }
+
+            if (harpoonController != null)
+                harpoonController.SetCabinLight(true);
 
             StartCoroutine(SmoothMoveAndAlignPlayerToSeatAndRaiseTurret());
 
@@ -266,6 +271,8 @@ public class TurretController : MonoBehaviour
 
         if (harpoonController != null)
             harpoonController.SetHarpoonLight(false);
+        if (harpoonController != null)
+            harpoonController.SetCabinLight(false);
 
         isLowering = true;
         isCooldown = true;

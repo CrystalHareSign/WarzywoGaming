@@ -85,6 +85,13 @@ public class CameraToMonitor : MonoBehaviour
     private float timeRemaining;
     private Coroutine timerCoroutine;
     private Coroutine blinkCoroutine; // Przechowuje referencjê do korutyny BlinkTargetCell
+    private bool isTargetBlinking = false;
+    private bool isTargetVisible = true;
+    public float blinkInterval = 0.2f;
+    public int randomizeSteps = 3;
+    public float randomizeDelay = 0.1f;
+    public int modelGlitchSteps = 3;
+    public float modelGlitchDelay = 0.08f;
 
     [Header("UI – Konsola monitora")]
     public TextMeshProUGUI consoleTextDisplay;
@@ -1063,10 +1070,12 @@ public class CameraToMonitor : MonoBehaviour
                 InitializeLocalizedCommands(); // Zainicjuj komendy po odblokowaniu
                 StartLogSequence(); // Rozpocznij sekwencjê logów
 
-                if (modelText != null)
-                {
-                    modelText.text = "Siegdu & Babi v2.7_4_1998";
-                }
+                //if (modelText != null)
+                //{
+                //    modelText.text = "Siegdu & Babi v2.7_4_1998";
+                //}
+
+                StartModelNameGlitchReveal("Siegdu & Babi v2.7_4_1998");
 
                 // Usuñ komendê "hack" (lub jej odpowiednik w innym jêzyku)
                 string localizedHackCommand = LanguageManager.Instance.currentLanguage switch
@@ -1383,17 +1392,14 @@ public class CameraToMonitor : MonoBehaviour
 
     private void UpdateGridDisplay(string additionalMessage, string hexColor = "#FFFFFF")
     {
-        // Sprawdzenie consoleTextDisplay
         if (consoleTextDisplay == null) return;
 
-        // Sprawdzenie czy grid zosta³ zainicjalizowany
         if (grid == null)
         {
             Debug.LogError("Grid is null. Ensure it is initialized before calling UpdateGridDisplay.");
             return;
         }
 
-        // Sprawdzenie czy cursorPosition mieœci siê w zakresie grid
         if (cursorPosition.x < 0 || cursorPosition.x >= gridSize ||
             cursorPosition.y < 0 || cursorPosition.y >= gridSize)
         {
@@ -1401,7 +1407,6 @@ public class CameraToMonitor : MonoBehaviour
             return;
         }
 
-        // Sprawdzenie czy logHistory zosta³a zainicjalizowana
         if (logHistory == null)
         {
             logHistory = new List<string>();
@@ -1409,33 +1414,53 @@ public class CameraToMonitor : MonoBehaviour
 
         StringBuilder gridBuilder = new StringBuilder();
 
-        // Budowanie siatki
         for (int i = 0; i < gridSize; i++)
         {
             for (int j = 0; j < gridSize; j++)
             {
+                bool isCursor = (i == cursorPosition.x && j == cursorPosition.y);
                 string cellValue = grid[i, j];
+                bool isTargetCell = (targetCoordinate != null && i == targetCoordinate.x && j == targetCoordinate.y);
 
-                if (i == cursorPosition.x && j == cursorPosition.y)
+                if (cellValue == "X")
                 {
-                    gridBuilder.Append($" [<color=#FFFF00>{cellValue}</color>] "); // ¯ó³ty kolor dla kursora
-                }
-                else if (cellValue != "X")
-                {
-                    gridBuilder.Append($" (<color=#FFFFFF>{cellValue}</color>) "); // Bia³y kolor dla wartoœci komórek
+                    if (isCursor)
+                        gridBuilder.Append("<color=#FFD200>[X]</color>");
+                    else
+                        gridBuilder.Append("<color=#00E700>( )</color>");
                 }
                 else
                 {
-                    gridBuilder.Append(" (  ) "); // Domyœlne puste komórki
+                    if (cellValue.Length > 1)
+                        cellValue = cellValue.Substring(0, 1);
+
+                    if (isTargetCell && isTargetBlinking)
+                    {
+                        string renderValue = isTargetVisible ? "0" : " ";
+                        if (isCursor)
+                            gridBuilder.Append($"<color=#FFD200>[{renderValue}]</color>");
+                        else
+                            gridBuilder.Append($"<color=#00E700>(</color><color=#FFD200>{renderValue}</color><color=#00E700>)</color>");
+                    }
+                    else if (isCursor)
+                    {
+                        gridBuilder.Append($"<color=#FFD200>[{cellValue}]</color>");
+                    }
+                    else
+                    {
+                        gridBuilder.Append($"<color=#00E700>(</color><color=#FFD200>{cellValue}</color><color=#00E700>)</color>");
+                    }
                 }
+
+                if (j < gridSize - 1)
+                    gridBuilder.Append(" ");
             }
+            gridBuilder.AppendLine();
             gridBuilder.AppendLine();
         }
 
-        // Dodanie pustej linii miêdzy tabel¹ a logami
         gridBuilder.AppendLine();
 
-        // Wyœwietlanie czasu
         if (isMiniGameActive && isTimerEnabled)
         {
             TimeSpan timeSpan = TimeSpan.FromSeconds(timeRemaining);
@@ -1446,20 +1471,18 @@ public class CameraToMonitor : MonoBehaviour
 
             string timerColor;
             if (timeRemaining <= 10f)
-                timerColor = "#FF0000"; // czerwony
+                timerColor = "#FF0000";
             else if (timeRemaining <= 20f)
-                timerColor = "#FFD200"; // z³oty
+                timerColor = "#FFD200";
             else
-                timerColor = "#00E700"; // zielony
+                timerColor = "#00E700";
 
             string localizedTimeLeft = LanguageManager.Instance.GetLocalizedMessage("miniGameTimer");
             gridBuilder.AppendLine($"<color={timerColor}> >>> {localizedTimeLeft}: {formattedTime}</color>");
         }
 
-        // Dodanie pustej linii miêdzy tabel¹ a logami
         gridBuilder.AppendLine();
 
-        // Obs³uga logów
         if (!string.IsNullOrEmpty(additionalMessage))
         {
             string formattedMessage = $"<color={hexColor}> {additionalMessage}</color>";
@@ -1476,7 +1499,6 @@ public class CameraToMonitor : MonoBehaviour
             gridBuilder.AppendLine(log);
         }
 
-        // Aktualizacja tekstu konsoli
         consoleTextDisplay.text = gridBuilder.ToString();
     }
 
@@ -1592,7 +1614,7 @@ public class CameraToMonitor : MonoBehaviour
             return;
         }
 
-        int distance = Mathf.Abs(targetCoordinate.x - row) + Mathf.Abs(targetCoordinate.y - col);
+        int distance = Mathf.Max(Mathf.Abs(targetCoordinate.x - row), Mathf.Abs(targetCoordinate.y - col)); // Chebyshev
         grid[row, col] = distance.ToString();
         remainingAttempts--;
 
@@ -1657,22 +1679,22 @@ public class CameraToMonitor : MonoBehaviour
             timerCoroutine = null;
         }
 
-        isMiniGameActive = false; // Wy³¹czamy mini-grê
-        canInteract = false; // Blokujemy interakcjê
+        isMiniGameActive = false;
+        canInteract = false;
 
         if (isWin)
         {
-
             foreach (var playSoundOnObject in playSoundObjects)
             {
                 if (playSoundOnObject == null) continue;
                 playSoundOnObject.PlaySound("TerminalWin", 0.7F, false);
             }
 
-            hasWonGame = true; // Oznaczamy, ¿e gra zakoñczy³a siê wygran¹
-            // Wygrana gra - cel miga przez 5 sekund
-            ModelNameRandomSymbols();
-            StartCoroutine(BlinkTargetCell(targetCoordinate, 5f));
+            hasWonGame = true;
+            StartModelNameHackerReveal(modelText.text);
+            if (blinkCoroutine != null)
+                StopCoroutine(blinkCoroutine);
+            blinkCoroutine = StartCoroutine(BlinkTargetCell(targetCoordinate, 5f));
             UpdateGridDisplay(LanguageManager.Instance.GetLocalizedMessage("miniGameWin"), "#FFD200");
 
             string localizedHackCommand = LanguageManager.Instance.currentLanguage switch
@@ -1684,12 +1706,11 @@ public class CameraToMonitor : MonoBehaviour
 
             if (commandDictionary.ContainsKey(localizedHackCommand))
             {
-                commandDictionary.Remove(localizedHackCommand); // Usuwamy komendê z listy
+                commandDictionary.Remove(localizedHackCommand);
             }
         }
         else
         {
-
             foreach (var playSoundOnObject in playSoundObjects)
             {
                 if (playSoundOnObject == null) continue;
@@ -1697,55 +1718,45 @@ public class CameraToMonitor : MonoBehaviour
             }
 
             // Przegrana gra - ujawniamy cel graczowi
-            grid[targetCoordinate.x, targetCoordinate.y] = "0"; // Oznaczamy cel jako `0`
-            StartCoroutine(BlinkTargetCell(targetCoordinate, 5f)); // Miganie celu przez 5 sekund
+            grid[targetCoordinate.x, targetCoordinate.y] = "0";
+            if (blinkCoroutine != null)
+                StopCoroutine(blinkCoroutine);
+            blinkCoroutine = StartCoroutine(BlinkTargetCell(targetCoordinate, 5f));
             UpdateGridDisplay(LanguageManager.Instance.GetLocalizedMessage("miniGameOver"), "#FFD200");
         }
 
-        // Rozpoczynamy sekwencjê startow¹ po czasie migania tylko, jeœli gra nie zosta³a wymuszenie zakoñczona
         if (!isGameForceEnded)
         {
             StartCoroutine(StartSequenceAfterDelay(5f));
         }
     }
 
-    // Zmieniona metoda BlinkTargetCell
+
     private IEnumerator BlinkTargetCell(Vector2Int target, float duration)
     {
         float elapsedTime = 0f;
-        bool isVisible = true; // Czy cel jest widoczny w danej chwili
+        isTargetBlinking = true;
+        isTargetVisible = true;
 
         while (elapsedTime < duration)
         {
-            // Miganie: Na zmianê pokazuj/ukrywaj cel za pomoc¹ przezroczystoœci
-            grid[target.x, target.y] = isVisible ? "<color=#FFFFFF>0</color>" : "<color=#00000000>0</color>";
-            UpdateGridDisplay(null); // Aktualizacja siatki z migaj¹cym celem
-
-            isVisible = !isVisible; // Zmieñ stan widocznoœci
-            elapsedTime += 0.5f; // Odczekaj 0.5 sekundy
-            yield return new WaitForSeconds(0.5f);
-
-            // SprawdŸ, czy korutyna zosta³a przerwana przez gracza
-            if (blinkCoroutine == null)
-            {
-                yield break; // Natychmiast zakoñcz korutynê
-            }
+            isTargetVisible = !isTargetVisible;
+            UpdateGridDisplay(null);
+            elapsedTime += blinkInterval;
+            yield return new WaitForSeconds(blinkInterval);
         }
 
-        // Po zakoñczeniu migania upewnij siê, ¿e cel pozostaje widoczny
-        grid[target.x, target.y] = "<color=#FFFFFF>0</color>";
-        UpdateGridDisplay(null); // Finalna aktualizacja siatki
-        blinkCoroutine = null; // Resetuj referencjê po zakoñczeniu
+        isTargetBlinking = false;
+        isTargetVisible = true;
+        UpdateGridDisplay(null);
+        blinkCoroutine = null;
     }
 
-    // Dodaj pomocnicz¹ metodê do resetowania widocznoœci celu
     private void ResetTargetCellVisibility()
     {
-        if (targetCoordinate != null)
-        {
-            grid[targetCoordinate.x, targetCoordinate.y] = "<color=#FFFFFF>0</color>";
-            UpdateGridDisplay(null); // Finalna aktualizacja siatki z widocznym celem
-        }
+        isTargetBlinking = false;
+        isTargetVisible = true;
+        UpdateGridDisplay(null);
     }
 
     // Dodana metoda uruchamiaj¹ca sekwencjê startow¹ po opóŸnieniu
@@ -1763,57 +1774,126 @@ public class CameraToMonitor : MonoBehaviour
         isGameForceEnded = false; // Zresetuj flagê na pocz¹tku nowej gry
     }
 
-    private void ModelNameRandomSymbols()
+    public void StartModelNameHackerReveal(string oldText)
     {
         if (modelText != null)
+            StartCoroutine(ModelNameHackerRevealCoroutine(oldText));
+    }
+
+    private IEnumerator ModelNameHackerRevealCoroutine(string oldText)
+    {
+        string baseTemplate = "******-&-****-*/.^_%_!##$";
+        int templateLength = baseTemplate.Length;
+        int passwordLength = generatedPassword.Length;
+
+        // Losowe miejsca na cyfry
+        List<int> insertionIndices = Enumerable.Range(0, templateLength)
+            .OrderBy(_ => UnityEngine.Random.value)
+            .Take(passwordLength)
+            .OrderBy(i => i)
+            .ToList();
+
+        // Mapowanie: indeks szablonu -> cyfra has³a
+        Dictionary<int, char> passwordMap = new Dictionary<int, char>();
+        for (int i = 0; i < passwordLength; i++)
+            passwordMap[insertionIndices[i]] = generatedPassword[i];
+
+        // Uzupe³nij/podetnij oldText do d³ugoœci szablonu
+        if (oldText.Length < templateLength)
+            oldText = oldText.PadRight(templateLength, ' ');
+        else if (oldText.Length > templateLength)
+            oldText = oldText.Substring(0, templateLength);
+
+        // Start: wyœwietl stary tekst
+        string[] display = new string[templateLength];
+        for (int i = 0; i < templateLength; i++)
+            display[i] = $"<color=#00E700>{oldText[i]}</color>";
+        modelText.text = string.Concat(display);
+
+        // Po kolei animuj tylko jeden znak naraz
+        for (int pos = 0; pos < templateLength; pos++)
         {
-            //                    "Siegdu & Babi v2.7_4_1998";
-            string baseTemplate = "******-&-****-*/.^_%_!##$";
-            int templateLength = baseTemplate.Length;
-            int passwordLength = generatedPassword.Length;
-
-            // Wybierz losowe unikalne indeksy w bazowym tekœcie do wstawienia cyfr
-            List<int> insertionIndices = Enumerable.Range(0, templateLength)
-                .OrderBy(_ => UnityEngine.Random.value)
-                .Take(passwordLength)
-                .OrderBy(i => i) // Wa¿ne: zachowaj kolejnoœæ od lewej do prawej
-                .ToList();
-
-            // Zamieñ znaki w bazowym ci¹gu na cyfry z has³a z kolorem
-            char[] result = baseTemplate.ToCharArray();
-            for (int i = 0; i < passwordLength; i++)
+            for (int step = 0; step < randomizeSteps; step++)
             {
-                string coloredDigit = $"<color=#FFD200>{generatedPassword[i]}</color>";
-                int index = insertionIndices[i];
-
-                // Zamieñ znak na znacznik koloru + cyfra
-                // Uwaga: trzeba bêdzie u¿yæ StringBuilder zamiast char[] jeœli liczysz na renderowanie tagów
-                result[index] = '\0'; // tymczasowo znak pusty, póŸniej zast¹pimy
-
-                // Wstaw kolorowany znak do odpowiedniego miejsca w stringu
+                // Zamieniamy TYLKO aktualny znak na losowy, reszta bez zmian
+                char randomChar = GetRandomSymbol();
+                string[] tempDisplay = (string[])display.Clone();
+                tempDisplay[pos] = $"<color=#00E700>{randomChar}</color>";
+                modelText.text = string.Concat(tempDisplay);
+                yield return new WaitForSeconds(randomizeDelay);
             }
 
-            // Finalna budowa stringa z tagami <color>
-            StringBuilder finalString = new StringBuilder();
-            int passwordIndex = 0;
-            for (int i = 0; i < templateLength; i++)
-            {
-                if (insertionIndices.Contains(i))
-                {
-                    finalString.Append($"<color=#FFD200>{generatedPassword[passwordIndex]}</color>");
-                    passwordIndex++;
-                }
-                else
-                {
-                    finalString.Append(baseTemplate[i]);
-                }
-            }
+            // Po animacji: jeœli to miejsce na cyfrê — cyfra na ¿ó³to, jeœli nie — znak szablonu na zielono
+            if (passwordMap.ContainsKey(pos))
+                display[pos] = $"<color=#FFD200>{passwordMap[pos]}</color>";
+            else
+                display[pos] = $"<color=#00E700>{baseTemplate[pos]}</color>";
 
-            modelText.text = finalString.ToString();
+            modelText.text = string.Concat(display);
+            yield return new WaitForSeconds(randomizeDelay * 1.2f);
         }
 
-        //ClearMonitorConsole();
-        //StartLogSequence();
+        // Upewnij siê, ¿e wyœwietlony jest wynik koñcowy
+        modelText.text = string.Concat(display);
+    }
+
+    private char GetRandomSymbol()
+    {
+        const string symbols = "*&-^_%_!#$@";
+        return symbols[UnityEngine.Random.Range(0, symbols.Length)];
+    }
+
+    public void StartModelNameGlitchReveal(string targetText)
+    {
+        if (modelText != null)
+            StartCoroutine(RevealModelNameGlitchCoroutine(targetText));
+    }
+
+    private IEnumerator RevealModelNameGlitchCoroutine(string targetText)
+    {
+        int length = targetText.Length;
+
+        // Najpierw startowa wersja tekstu (jeœli chcesz, mo¿esz ustawiæ dowoln¹, np. sam¹ nazwê modelu lub pusty string)
+        string[] display = new string[length];
+        for (int i = 0; i < length; i++)
+            display[i] = $"<color=#00E700>{targetText[i]}</color>"; // lub inny kolor startowy
+
+        // Kilka kroków: ca³oœæ losowo "glitchuje"
+        for (int step = 0; step < modelGlitchSteps; step++)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                display[i] = $"<color=#00E700>{GetRandomSymbol()}</color>";
+            }
+            modelText.text = string.Concat(display);
+            yield return new WaitForSeconds(modelGlitchDelay);
+        }
+
+        // Wyœwietl finalny model (prawdziwa nazwa, zielona lub domyœlna)
+        for (int i = 0; i < length; i++)
+            display[i] = $"<color=#00E700>{targetText[i]}</color>";
+        modelText.text = string.Concat(display);
+    }
+
+    // Buduje stringa z kolorowaniem tylko tych znaków, które s¹ ju¿ "zaakceptowane"
+    private string BuildColoredModelString(char[] model, List<int> passwordIndices, int lastReveal, int justRevealed, bool showAllColored = false)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < model.Length; i++)
+        {
+            // Czy ten znak to jeden z miejsc na cyfrê has³a?
+            int passIdx = passwordIndices.IndexOf(i);
+            if (passIdx != -1 && (showAllColored || passIdx <= lastReveal))
+            {
+                // Jeœli chcemy kolorowaæ tylko ostatnio ujawniony — mo¿esz te¿ wyró¿niæ
+                sb.Append($"<color=#FFD200>{model[i]}</color>");
+            }
+            else
+            {
+                sb.Append(model[i]);
+            }
+        }
+        return sb.ToString();
     }
 
     private void StartLogSequence()
