@@ -226,12 +226,12 @@ public class TurretController : MonoBehaviour
         Vector3 targetTurretBasePosition = new Vector3(turretBase.position.x, targetHeight, turretBase.position.z);
         Vector3 targetEnterAreaPosition = new Vector3(enterArea.position.x, targetEnterAreaHeight, enterArea.position.z);
 
-        while (turretBase.position.y < targetHeight)
+        float epsilon = 0.01f;
+        while (Mathf.Abs(turretBase.position.y - targetHeight) > epsilon)
         {
             turretBase.position = Vector3.MoveTowards(turretBase.position, targetTurretBasePosition, raiseSpeed * Time.deltaTime);
             enterArea.position = Vector3.MoveTowards(enterArea.position, targetEnterAreaPosition, raiseSpeed * Time.deltaTime);
 
-            // Synchronizuj gracza z enterArea podczas unoszenia
             if (playerMovement != null)
                 playerMovement.transform.position = enterArea.position;
 

@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class GridManager : MonoBehaviour
 {
@@ -16,6 +17,7 @@ public class GridManager : MonoBehaviour
     public float dropHeight = 7f; // Wysokoœæ, na jakiej loot ma upaœæ
     public float checkInterval = 2f; // Czas (w sekundach) po którym sprawdzamy kafelki
     private float timeSinceLastCheck = 0f; // Zmienna do liczenia czasu
+    public float lootThrowForce = 2f; // Si³a rzutu lootem, edytowalna w Inspectorze
 
     private int currentPrefabIndex = 0; // Aktualny indeks prefabrykatu
     private GameObject previewObject; // Obiekt podgl¹du
@@ -64,17 +66,15 @@ public class GridManager : MonoBehaviour
 
     void Update()
     {
-
-        // Obs³uguje naciœniêcie Q do wyjœcia z trybu budowania i upuszczenia przedmiotu
         if (Input.GetKeyDown(KeyCode.Q))
         {
-            // Jeœli gracz ma podniesiony przedmiot Loot
             if (LootParent.childCount > 0)
-            {
-                GameObject lootItem = LootParent.GetChild(0).gameObject; // Zak³adamy, ¿e gracz ma tylko jeden przedmiot w rêce
-                //Debug.Log("Dropping loot item");
-                DropLootItem(lootItem); // Upuszczamy przedmiot
-            }
+                DropLootItem(LootParent.GetChild(0).gameObject, false); // odk³adanie
+        }
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (LootParent.childCount > 0)
+                DropLootItem(LootParent.GetChild(0).gameObject, true); // rzut
         }
 
         // Zabezpieczenie: dzia³a tylko w scenie "Home"
@@ -134,13 +134,21 @@ public class GridManager : MonoBehaviour
         return isWithinBounds;
     }
 
-    private void DropLootItem(GameObject lootItem)
+    private void DropLootItem(GameObject lootItem, bool throwIt)
     {
+        // Sprawdzenie czy gracz jest uziemiony
+        PlayerMovement playerMovement = player.GetComponent<PlayerMovement>();
+        if (playerMovement != null && !playerMovement.isGrounded)
+        {
+            Debug.LogWarning("Nie mo¿na upuœciæ/rzuciæ przedmiotu, gdy gracz nie jest uziemiony.");
+            return;
+        }
+
         // Pobieramy Collider obiektu Loot
         Collider lootCollider = lootItem.GetComponent<Collider>();
         if (lootCollider == null)
         {
-            //Debug.LogWarning("Loot nie ma komponentu Collider.");
+            Debug.LogWarning("Loot nie ma komponentu Collider.");
             return;
         }
 
@@ -148,62 +156,79 @@ public class GridManager : MonoBehaviour
         Collider gridAreaCollider = gridArea.GetComponent<Collider>();
         if (gridAreaCollider == null)
         {
-            //Debug.LogWarning("Siatka nie ma komponentu Collider.");
+            Debug.LogWarning("Siatka nie ma komponentu Collider.");
             return;
         }
 
-        // Ustawiamy docelow¹ pozycjê przedmiotu na pozycji gracza, ale z okreœlon¹ wysokoœci¹ 'dropHeight' (na osi Y)
-        Vector3 dropPosition = new Vector3
-        (
-            player.transform.position.x, // U¿ywamy pozycji gracza w X
-            dropHeight, // Ustawiamy Y na dropHeight
-            player.transform.position.z  // U¿ywamy pozycji gracza w Z
-        );
+        Vector3 dropPosition;
 
-        // Sprawdzamy, czy kolidery siê przecinaj¹ przy docelowej pozycji
+        if (throwIt)
+        {
+            dropPosition = player.transform.position + player.transform.forward * 1.0f + Vector3.up * 1.0f;
+        }
+        else
+        {
+            Vector3 forwardOffset = player.transform.forward * 0.6f;
+            Vector3 rayOrigin = player.transform.position + forwardOffset + Vector3.up * 0.1f;
+            RaycastHit hit;
+            if (!Physics.Raycast(rayOrigin, Vector3.down, out hit, 5f, LayerMask.GetMask("Default", "Floor", "Ground")))
+            {
+                Debug.LogWarning("Nie znaleziono pod³ogi pod graczem.");
+                return;
+            }
+            float lootHeight = lootCollider.bounds.size.y;
+            dropPosition = hit.point + Vector3.up * (lootHeight / 2f);
+        }
+
         Vector3 lootSize = lootCollider.bounds.size;
-        Collider[] colliders = Physics.OverlapBox(dropPosition, lootSize / 2, lootItem.transform.rotation, LayerMask.GetMask("Default","InteractableItem")); // Zak³adamy, ¿e u¿ywasz warstwy "Default"
-
+        Collider[] colliders = Physics.OverlapBox(dropPosition, lootSize / 2, lootItem.transform.rotation, LayerMask.GetMask("Default", "InteractableItem"));
         foreach (var collider in colliders)
         {
-            if (collider == gridAreaCollider)
+            if (collider == gridAreaCollider || collider == lootCollider)
             {
-                Debug.LogWarning("Nie mo¿na upuœciæ przedmiotu wewn¹trz obszaru siatki.");
-                return;
-            }
-            if (collider == lootCollider)
-            {
-                Debug.LogWarning("Nie mo¿na upuœciæ przedmiotu wewn¹trz innego przedmiotu.");
+                Debug.LogWarning("Nie mo¿na upuœciæ/rzuciæ przedmiotu na innym obiekcie.");
                 return;
             }
         }
 
-        Inventory inventory = Object.FindFirstObjectByType<Inventory>(); // ZnajdŸ skrypt Inventory
-
+        Inventory inventory = Object.FindFirstObjectByType<Inventory>();
         if (inventory != null)
         {
-            inventory.isLootBeingDropped = true; // Ustaw flagê, ¿e loot jest w trakcie upuszczania
+            inventory.isLootBeingDropped = true;
         }
 
-        // Usuwamy przedmiot z LootParent, aby go "upuœciæ"
-        lootItem.transform.SetParent(null); // Przenosimy przedmiot na œwiat
-
-        // Ustawiamy pozycjê przedmiotu na docelow¹ pozycjê
+        lootItem.transform.SetParent(null);
         lootItem.transform.position = dropPosition;
-
-        // Ustawiamy pocz¹tkow¹ rotacjê wzglêdem œwiata (np. ustawiamy na 0, 0, 0)
         lootItem.transform.rotation = Quaternion.identity;
 
-        // Ustawiamy przedmiot na Loot
+        Rigidbody rb = lootItem.GetComponent<Rigidbody>();
+        if (rb == null) rb = lootItem.AddComponent<Rigidbody>();
+        rb.isKinematic = false;
+        rb.useGravity = true;
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        Collider playerCollider = player.GetComponent<Collider>();
+
+        if (throwIt)
+        {
+            lootCollider.isTrigger = false;
+            if (playerCollider != null)
+                Physics.IgnoreCollision(lootCollider, playerCollider, true);
+
+            rb.AddForce(player.transform.forward * lootThrowForce + Vector3.up * 1.5f, ForceMode.Impulse);
+        }
+        else
+        {
+            lootCollider.isTrigger = false; //  najwa¿niejsze!
+            if (playerCollider != null)
+                Physics.IgnoreCollision(lootCollider, playerCollider, true);
+        }
+
         lootItem.GetComponent<InteractableItem>().isLoot = true;
-
-        // Usuwamy przedmiot z listy BuildingPrefabs, co automatycznie wy³¹cza tryb budowania
-        buildingPrefabs.Remove(lootItem); // Usuwamy obiekt z listy prefabrykowanych obiektów budowy
-
-        // Wy³¹czamy tryb budowania
+        buildingPrefabs.Remove(lootItem);
         isBuildingMode = false;
 
-        // Usuwamy podgl¹d prefabrykowanego obiektu, jeœli istnieje
         if (previewObject != null)
         {
             Destroy(previewObject);
@@ -213,29 +238,26 @@ public class GridManager : MonoBehaviour
         foreach (var playSoundOnObject in playSoundObjects)
         {
             if (playSoundOnObject == null) continue;
-
             playSoundOnObject.PlaySound("LootDrop", 0.6f, false);
         }
 
-        // Ukrywamy kafelki (lub inne obiekty zwi¹zane z trybem budowania)
         ToggleGridVisibility(false);
 
-        // Sprawdzamy, czy istnieje nieaktywna broñ w Inventory, a jeœli tak, to j¹ aktywujemy
         if (inventory != null && inventory.currentWeaponPrefab != null)
         {
             inventory.currentWeaponPrefab.SetActive(true);
             inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
         }
 
-        // Aktywujemy kafelki pod lootem
         PrefabSize prefabSize = lootItem.GetComponent<PrefabSize>();
         UnmarkTilesAsOccupied(lootItem.transform.position, prefabSize);
 
+        LootColliderController oldController = lootItem.GetComponent<LootColliderController>();
+        if (oldController != null) Destroy(oldController);
         LootColliderController colliderController = lootItem.AddComponent<LootColliderController>();
         colliderController.Initialize(lootCollider);
-
-        //Debug.Log("Przedmiot upuszczony, tryb budowania wy³¹czony i kafelki ukryte.");
     }
+
     private void CheckTiles()
     {
         List<Vector3> tilesToActivate = new List<Vector3>();
@@ -408,20 +430,19 @@ public class GridManager : MonoBehaviour
                 foreach (var playSoundOnObject in playSoundObjects)
                 {
                     if (playSoundOnObject == null) continue;
-
                     playSoundOnObject.PlaySound("LootPlace", 0.7f, false);
                 }
 
                 // Dodanie LootColliderController do nowego obiektu
-                Collider buildedCollider = buildedObject.GetComponent<Collider>();
-                if (buildedCollider != null)
+                Collider lootCollider = buildedObject.GetComponent<Collider>();
+                if (lootCollider != null)
                 {
                     LootColliderController colliderController = buildedObject.AddComponent<LootColliderController>();
-                    colliderController.Initialize(buildedCollider);
+                    colliderController.Initialize(lootCollider); // Zostanie automatycznie przypisany gracz w Start()
                 }
                 else
                 {
-                    Debug.LogWarning(" Brak colliderea w postawionym obiekcie!");
+                    Debug.LogWarning("Brak colliderea w postawionym obiekcie!");
                 }
 
                 // Usuwamy obiekt podgl¹du z listy LootParent w Inventory

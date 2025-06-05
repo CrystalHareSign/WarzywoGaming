@@ -20,6 +20,7 @@ public class PlayerInteraction : MonoBehaviour
     private TurretController turretController;
     private TreasureRefiner treasureRefiner;
     private CameraToMonitor cameraToMonitor;
+    private AudioChanger audioChanger;
     private bool hasRefinerBeenUsed = false;
 
     void Awake()
@@ -35,6 +36,12 @@ public class PlayerInteraction : MonoBehaviour
 
     void Start()
     {
+        audioChanger = Object.FindFirstObjectByType<AudioChanger>();
+        if (audioChanger == null)
+        {
+            Debug.LogError("Brak obiektu TurretController w scenie.");
+        }
+
         turretController = Object.FindFirstObjectByType<TurretController>();
         if (turretController == null)
         {
@@ -91,6 +98,22 @@ public class PlayerInteraction : MonoBehaviour
             InteractableItem interactableItem = hit.collider.GetComponent<InteractableItem>();
             if (interactableItem != null && !interactableItem.hoverMessage.isInteracted)
             {
+                // --- TU DODAJ ---
+                bool isWheel = interactableItem.category == "Wheel" || interactableItem.itemName.StartsWith("Opona");
+                if (isWheel && audioChanger != null && audioChanger.isPlayerInside)
+                {
+                    HideUI();
+                    return;
+                }
+
+                // Monitor busa: mo¿na tylko w œrodku
+                bool isBusMonitor = interactableItem.isMonitor && interactableItem.busMonitor;
+                if (isBusMonitor && audioChanger != null && !audioChanger.isPlayerInside)
+                {
+                    HideUI();
+                    return;
+                }
+
                 if (messageText != null && interactableItem.hoverMessage != null)
                 {
                     messageText.text = interactableItem.hoverMessage.message;

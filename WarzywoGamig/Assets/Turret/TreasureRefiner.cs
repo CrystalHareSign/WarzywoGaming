@@ -852,6 +852,9 @@ public class TreasureRefiner : MonoBehaviour
         // 3. Spawnowanie – ustaw Y manualnie
         Vector3 spawnPos = new Vector3(spawnPoint.position.x, spawnYPosition, spawnPoint.position.z);
         GameObject spawned = Instantiate(prefabToSpawn, spawnPos, Quaternion.identity);
+
+        //spawned.transform.localScale = Vector3.one * 1.3f;
+
         spawned.transform.SetParent(spawnPoint); // opcjonalnie jako dziecko
 
         // Dodanie LootColliderController
@@ -1184,7 +1187,12 @@ public class TreasureRefiner : MonoBehaviour
             foreach (Collider col in overlaps)
             {
                 if (col.transform != spawnPoint)
+                {
+                    Debug.Log("[IsSpawnPointBlocked] Spawn point koliduje z: " +
+                              col.gameObject.name + " (tag: " + col.gameObject.tag +
+                              ", layer: " + LayerMask.LayerToName(col.gameObject.layer) + ")");
                     return true;
+                }
             }
         }
 

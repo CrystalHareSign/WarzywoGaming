@@ -362,6 +362,16 @@ public class Inventory : MonoBehaviour
 
                 lootItem.SetActive(true);
 
+                // WYŁĄCZ FIZYKĘ
+                Rigidbody rb = lootItem.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    rb.isKinematic = true;
+                    rb.useGravity = false;
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                }
+
                 if (lootCollider != null)
                 {
                     lootCollider.isTrigger = true;

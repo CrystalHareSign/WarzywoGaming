@@ -33,6 +33,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
 
     [Header("Monitor")]
     public bool isMonitor = false; //  czy jest Refiner
+    public bool busMonitor = false; //  czy jest Refiner
 
     [Header("System kierowczy")]
     public bool alwaysInteractive = false;

@@ -18,7 +18,7 @@ public class PlayerMovement : MonoBehaviour
 
     private CharacterController controller;
     private Vector3 velocity;
-    private bool isGrounded;
+    public bool isGrounded;
     private Transform platform = null;
     private Vector3 lastPlatformPosition;
     private bool isJumping = false;
