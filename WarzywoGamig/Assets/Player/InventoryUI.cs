@@ -7,9 +7,11 @@ using UnityEditor.Experimental.GraphView;
 public class InventoryUI : MonoBehaviour
 {
     public Image weaponImage; // Ikona broni
-    public Image[] itemImages = new Image[4]; // Tablica obrazków dla przedmiotów
-    public TextMeshProUGUI[] itemTexts = new TextMeshProUGUI[4]; // Tablica tekstów dla ilości przedmiotów
-    public TextMeshProUGUI[] itemCategoryTexts = new TextMeshProUGUI[4]; // Tablica tekstów dla kategorii zasobów
+    public Image[] itemImages = new Image[6]; // Tablica obrazków dla przedmiotów
+    public Image[] slotBackgrounds = new Image[6]; // Tła dla slotów (np. szare, czerwone, itp.)
+    public TextMeshProUGUI[] itemTexts = new TextMeshProUGUI[6]; // Tablica tekstów dla ilości przedmiotów
+    public TextMeshProUGUI[] itemCategoryTexts = new TextMeshProUGUI[6]; // Tablica tekstów dla kategorii zasobów
+    public TextMeshProUGUI[] slotNumberTexts = new TextMeshProUGUI[6];
 
     public Sprite defaultWeaponSprite; // Domyślny obrazek broni
     public Sprite defaultItemSprite; // Domyślny obrazek przedmiotu
@@ -25,9 +27,12 @@ public class InventoryUI : MonoBehaviour
     public TextMeshProUGUI slashText;
 
     // --- DODANE: obsługa wyboru aktywnego itemu ---
-    public int selectedItemIndex = 0;
+    private int lastWeaponCount = 0;
+    public int selectedSlotIndex = 0;
     public Color normalItemColor = Color.yellow;
     public Color selectedItemColor = Color.white;
+
+    public bool isInputBlocked = false;
 
     private Gun currentWeapon; // Aktualnie trzymana broń
 
@@ -74,93 +79,148 @@ public class InventoryUI : MonoBehaviour
         slashText.gameObject.SetActive(false);
     }
 
-    void Update()
+    public void Update()
     {
+        if (isInputBlocked)
+            return;
+
         var inventory = Inventory.Instance;
-        var ui = InventoryUI.Instance;
+        int weaponSlots = Mathf.Min(inventory.weapons.Count, 3);
+        int itemSlots = Mathf.Min(inventory.items.Count, 6);
+        int totalSlots = weaponSlots + itemSlots;
 
         float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (scroll > 0f) // scroll w górę
-            ui.SelectPreviousItem(inventory.items); // w górę: poprzedni
-        else if (scroll < 0f) // scroll w dół
-            ui.SelectNextItem(inventory.items); // w dół: następny
-    }
-
-    // --- DODANE: przewijanie wyboru itemu ---
-    public void SelectNextItem(List<GameObject> items)
-    {
-        if (items == null || items.Count == 0)
-            return;
-        selectedItemIndex = (selectedItemIndex + 1) % Mathf.Min(items.Count, itemImages.Length);
-        UpdateItemUI(items);
-    }
-
-    public void SelectPreviousItem(List<GameObject> items)
-    {
-        if (items == null || items.Count == 0)
-            return;
-        selectedItemIndex = (selectedItemIndex - 1 + Mathf.Min(items.Count, itemImages.Length)) % Mathf.Min(items.Count, itemImages.Length);
-        UpdateItemUI(items);
-    }
-
-    public void UpdateInventoryUI(List<string> weapons, List<GameObject> items)
-    {
-        // --- Zabezpieczenie indexu, żeby NIGDY nie wybiegał poza zakres ---
-        if (selectedItemIndex >= items.Count)
-            selectedItemIndex = Mathf.Max(0, items.Count - 1);
-        if (selectedItemIndex < 0 && items.Count > 0)
-            selectedItemIndex = 0;
-        // --- Jeśli jest tylko jeden item, index zawsze 0 ---
-        if (items.Count == 1)
-            selectedItemIndex = 0;
-
-        bool weaponEquipped = false;
-
-        foreach (var weaponName in weapons)
+        if (totalSlots > 0)
         {
-            if (string.IsNullOrEmpty(weaponName)) continue;
+            if (scroll > 0f)
+                SelectPreviousSlot(inventory, totalSlots);
+            else if (scroll < 0f)
+                SelectNextSlot(inventory, totalSlots);
+        }
 
-            // Pobierz prefab/dane broni z WeaponDatabase (przypisz w Inspectorze!)
-            WeaponPrefabEntry found = weaponDatabase.weaponPrefabsList.Find(w => w.weaponName == weaponName);
+        // Klawisze 1-3: wybierz broń TYLKO jeśli istnieje
+        if (weaponSlots >= 1 && Input.GetKeyDown(KeyCode.Alpha1)) SelectSlot(inventory, 0);
+        if (weaponSlots >= 2 && Input.GetKeyDown(KeyCode.Alpha2)) SelectSlot(inventory, 1);
+        if (weaponSlots >= 3 && Input.GetKeyDown(KeyCode.Alpha3)) SelectSlot(inventory, 2);
 
-            if (found != null && found.weaponPrefab != null)
+        // Klawisze 4-9: wybierz item TYLKO jeśli istnieje taki indeks!
+        if (itemSlots >= 1 && Input.GetKeyDown(KeyCode.Alpha4)) SelectSlot(inventory, weaponSlots + 0);
+        if (itemSlots >= 2 && Input.GetKeyDown(KeyCode.Alpha5)) SelectSlot(inventory, weaponSlots + 1);
+        if (itemSlots >= 3 && Input.GetKeyDown(KeyCode.Alpha6)) SelectSlot(inventory, weaponSlots + 2);
+        if (itemSlots >= 4 && Input.GetKeyDown(KeyCode.Alpha7)) SelectSlot(inventory, weaponSlots + 3);
+        if (itemSlots >= 5 && Input.GetKeyDown(KeyCode.Alpha8)) SelectSlot(inventory, weaponSlots + 4);
+        if (itemSlots >= 6 && Input.GetKeyDown(KeyCode.Alpha9)) SelectSlot(inventory, weaponSlots + 5);
+    }
+
+
+    public void SelectNextSlot(Inventory inventory, int totalSlots)
+    {
+        if (totalSlots == 0) return;
+        selectedSlotIndex = (selectedSlotIndex + 1) % totalSlots;
+        SelectSlot(inventory, selectedSlotIndex);
+    }
+
+    public void SelectPreviousSlot(Inventory inventory, int totalSlots)
+    {
+        if (totalSlots == 0) return;
+        selectedSlotIndex = (selectedSlotIndex - 1 + totalSlots) % totalSlots;
+        SelectSlot(inventory, selectedSlotIndex);
+    }
+
+    public void SelectSlot(Inventory inventory, int slotIndex)
+    {
+        int weaponSlots = Mathf.Min(inventory.weapons.Count, 3);
+        int itemSlots = Mathf.Min(inventory.items.Count, 6);
+        int totalSlots = weaponSlots + itemSlots;
+
+        // Clamp to valid range
+        slotIndex = Mathf.Clamp(slotIndex, 0, totalSlots - 1);
+        selectedSlotIndex = slotIndex;
+
+        if (slotIndex < weaponSlots)
+        {
+            // Wybierz broń
+            inventory.EquipWeapon(inventory.weapons[slotIndex]);
+        }
+        else if (slotIndex - weaponSlots < itemSlots)
+        {
+            // Wybierz item
+            int itemIdx = slotIndex - weaponSlots;
+            UpdateItemUI(inventory.items); // podświetlanie
+                                           // (dalsza obsługa aktywnego itemu, np. użycie, jeśli chcesz)
+        }
+        UpdateInventoryUI(inventory.weapons, inventory.items, inventory.currentWeaponName);
+    }
+    public void UpdateInventoryUI(List<string> weapons, List<GameObject> items, string currentWeaponName)
+    {
+        int oldWeaponCount = lastWeaponCount; // dodaj pole lastWeaponCount do klasy InventoryUI
+        int weaponCount = weapons.Count;
+        int itemCount = items.Count;
+        int totalSlots = weaponCount + itemCount;
+
+        // Zapamiętaj poprzednią ilość broni przed zmianą
+        lastWeaponCount = weaponCount;
+
+        // Jeśli liczba broni się zmieniła i był wybrany item, przesuń index!
+        if (weaponCount != oldWeaponCount && selectedSlotIndex >= oldWeaponCount)
+        {
+            // Przesuwamy index itema o różnicę w weaponCount
+            selectedSlotIndex += (weaponCount - oldWeaponCount);
+            // Upewnij się że nie wyjechało poza zakres
+            selectedSlotIndex = Mathf.Clamp(selectedSlotIndex, 0, totalSlots - 1);
+        }
+
+        // Clamp selectedSlotIndex do slotów broni + itemów
+        if (selectedSlotIndex >= totalSlots)
+            selectedSlotIndex = Mathf.Max(0, totalSlots - 1);
+        if (selectedSlotIndex < 0 && totalSlots > 0)
+            selectedSlotIndex = 0;
+        if (totalSlots == 1)
+            selectedSlotIndex = 0;
+
+        // --- AKTUALIZACJA UI BRONI (tylko aktualnie wyposażona broń) ---
+        Gun gun = null;
+        GameObject currentWeaponPrefab = null;
+        if (Inventory.Instance != null)
+            currentWeaponPrefab = Inventory.Instance.currentWeaponPrefab;
+
+        if (!string.IsNullOrEmpty(currentWeaponName))
+        {
+            weaponImage.sprite = weaponIcons.ContainsKey(currentWeaponName)
+                ? weaponIcons[currentWeaponName]
+                : defaultWeaponSprite;
+            weaponImage.enabled = true;
+
+            weaponNameText.text = currentWeaponName;
+            weaponNameText.gameObject.SetActive(true);
+
+            if (currentWeaponPrefab != null)
             {
-                Debug.Log("Weapon found: " + weaponName);
-
-                // Ikona
-                weaponImage.sprite = weaponIcons.ContainsKey(weaponName) ? weaponIcons[weaponName] : defaultWeaponSprite;
-                weaponImage.enabled = true;
-                weaponEquipped = true;
-
-                // Nazwa broni
-                weaponNameText.text = weaponName;
-                weaponNameText.gameObject.SetActive(true);
-
-                Gun gun = found.weaponPrefab.GetComponent<Gun>();
+                gun = currentWeaponPrefab.GetComponent<Gun>();
                 if (gun != null)
-                {
-                    Debug.Log("Updating weapon UI for: " + gun.name);
-                    currentWeapon = gun;
                     UpdateWeaponUI(gun);
-                }
                 else
-                {
-                    Debug.LogWarning("Gun component not found on prefab for: " + weaponName);
-                }
+                    HideWeaponUI();
             }
             else
             {
-                Debug.LogWarning("WeaponPrefabEntry or prefab not found for: " + weaponName);
+                WeaponPrefabEntry found = weaponDatabase.weaponPrefabsList.Find(w => w.weaponName == currentWeaponName);
+                if (found != null && found.weaponPrefab != null)
+                {
+                    gun = found.weaponPrefab.GetComponent<Gun>();
+                    if (gun != null)
+                        UpdateWeaponUI(gun);
+                    else
+                        HideWeaponUI();
+                }
+                else
+                    HideWeaponUI();
             }
-        }
-
-        if (!weaponEquipped)
-        {
-            HideWeaponUI(); // <--- dodaj to
+            ShowWeaponUI();
         }
         else
         {
-            ShowWeaponUI();
+            HideWeaponUI();
         }
 
         // Aktualizacja UI dla przedmiotów
@@ -169,57 +229,84 @@ public class InventoryUI : MonoBehaviour
 
     private void UpdateItemUI(List<GameObject> items)
     {
-        // --- Zabezpieczenie indexu, żeby NIGDY nie wybiegał poza zakres ---
-        if (selectedItemIndex >= items.Count)
-            selectedItemIndex = Mathf.Max(0, items.Count - 1);
-        if (selectedItemIndex < 0 && items.Count > 0)
-            selectedItemIndex = 0;
-        // --- Jeśli jest tylko jeden item, index zawsze 0 ---
-        if (items.Count == 1)
-            selectedItemIndex = 0;
-
-        // Ukryj wszystkie ikony, teksty ilości oraz kategorie przedmiotów
-        for (int i = 0; i < itemImages.Length; i++)
+        if (items == null)
         {
-            itemImages[i].enabled = false;
-            itemTexts[i].gameObject.SetActive(false);
-            itemCategoryTexts[i].gameObject.SetActive(false);
+            Debug.LogWarning("UpdateItemUI called with null items list!");
+            return;
         }
 
-        int maxSlots = Mathf.Min(items.Count, itemImages.Length, itemTexts.Length, itemCategoryTexts.Length);
+        int weaponCount = Inventory.Instance.weapons.Count;
+
+        // Ukryj wszystkie sloty i tła
+        for (int i = 0; i < itemImages.Length; i++)
+        {
+            if (itemImages[i] != null)
+                itemImages[i].enabled = false;
+            if (itemTexts[i] != null)
+                itemTexts[i].gameObject.SetActive(false);
+            if (itemCategoryTexts[i] != null)
+                itemCategoryTexts[i].gameObject.SetActive(false);
+            if (slotBackgrounds != null && i < slotBackgrounds.Length && slotBackgrounds[i] != null)
+                slotBackgrounds[i].enabled = false;
+            // Ukryj numer slotu jeśli nie ma itema
+            if (slotNumberTexts != null && i < slotNumberTexts.Length && slotNumberTexts[i] != null)
+                slotNumberTexts[i].gameObject.SetActive(false);
+        }
+
+        int maxSlots = Mathf.Min(items.Count, itemImages.Length, itemTexts.Length, itemCategoryTexts.Length, slotBackgrounds != null ? slotBackgrounds.Length : int.MaxValue);
 
         for (int i = 0; i < maxSlots; i++)
         {
             if (items[i] == null)
+            {
+                Debug.LogWarning($"items[{i}] is null!");
+                if (slotNumberTexts != null && i < slotNumberTexts.Length && slotNumberTexts[i] != null)
+                    slotNumberTexts[i].gameObject.SetActive(false);
                 continue;
+            }
 
-            InteractableItem item = items[i].GetComponent<InteractableItem>();
-            TreasureResources treasureResources = items[i].GetComponent<TreasureResources>();
+            var item = items[i].GetComponent<InteractableItem>();
+            var treasureResources = items[i].GetComponent<TreasureResources>();
+            if (item == null || treasureResources == null || treasureResources.resourceCategories == null || treasureResources.resourceCategories.Count == 0)
+            {
+                Debug.LogWarning($"Item or TreasureResources missing on items[{i}]");
+                if (slotNumberTexts != null && i < slotNumberTexts.Length && slotNumberTexts[i] != null)
+                    slotNumberTexts[i].gameObject.SetActive(false);
+                continue;
+            }
 
-            if (item != null && treasureResources != null && treasureResources.resourceCategories != null && treasureResources.resourceCategories.Count > 0)
+            if (slotBackgrounds != null && i < slotBackgrounds.Length && slotBackgrounds[i] != null)
+                slotBackgrounds[i].enabled = true;
+
+            if (itemImages[i] != null)
             {
                 itemImages[i].sprite = itemIcons.ContainsKey(item.itemName) ? itemIcons[item.itemName] : defaultItemSprite;
                 itemImages[i].enabled = true;
-
-                itemTexts[i].text = treasureResources.resourceCategories[0].resourceCount.ToString();
-                itemTexts[i].gameObject.SetActive(true);
-
-                string categoryName = treasureResources.resourceCategories[0].name;
-                itemCategoryTexts[i].text = categoryName;
-                itemCategoryTexts[i].gameObject.SetActive(true);
-
-                // PODŚWIETLENIE aktualnie wybranego itemu
-                if (i == selectedItemIndex)
+                // PODŚWIETLENIE: tylko gdy aktywny slot to item (poprawka!)
+                if (selectedSlotIndex >= weaponCount && (i == selectedSlotIndex - weaponCount))
                     itemImages[i].color = selectedItemColor;
                 else
                     itemImages[i].color = normalItemColor;
             }
-            else
+
+            if (itemTexts[i] != null)
             {
-                // Ukryj slot jeśli brak danych
-                itemImages[i].enabled = false;
-                itemTexts[i].gameObject.SetActive(false);
-                itemCategoryTexts[i].gameObject.SetActive(false);
+                itemTexts[i].text = treasureResources.resourceCategories[0].resourceCount.ToString();
+                itemTexts[i].gameObject.SetActive(true);
+            }
+
+            if (itemCategoryTexts[i] != null)
+            {
+                string categoryName = treasureResources.resourceCategories[0].name;
+                itemCategoryTexts[i].text = categoryName;
+                itemCategoryTexts[i].gameObject.SetActive(true);
+            }
+
+            // --- NUMERACJA SLOTÓW: 4, 5, 6, ... ---
+            if (slotNumberTexts != null && i < slotNumberTexts.Length && slotNumberTexts[i] != null)
+            {
+                slotNumberTexts[i].text = (i + 4).ToString();
+                slotNumberTexts[i].gameObject.SetActive(true);
             }
         }
     }
@@ -299,28 +386,64 @@ public class InventoryUI : MonoBehaviour
     {
         for (int i = 0; i < itemImages.Length; i++)
         {
-            itemImages[i].enabled = false;
-            itemTexts[i].gameObject.SetActive(false);
-            itemCategoryTexts[i].gameObject.SetActive(false);
+            if (itemImages[i] != null)
+                itemImages[i].enabled = false;
+            if (itemTexts[i] != null)
+                itemTexts[i].gameObject.SetActive(false);
+            if (itemCategoryTexts[i] != null)
+                itemCategoryTexts[i].gameObject.SetActive(false);
+            if (slotBackgrounds != null && i < slotBackgrounds.Length && slotBackgrounds[i] != null)
+                slotBackgrounds[i].enabled = false;
+            // Ukryj numer slotu jeśli masz tablicę slotNumberTexts
+            if (slotNumberTexts != null && i < slotNumberTexts.Length && slotNumberTexts[i] != null)
+                slotNumberTexts[i].gameObject.SetActive(false);
         }
     }
 
     public void ShowItemUI(List<GameObject> items)
     {
-        int maxSlots = Mathf.Min(items.Count, itemImages.Length, itemTexts.Length, itemCategoryTexts.Length);
+        int maxSlots = Mathf.Min(
+            items.Count,
+            itemImages.Length,
+            itemTexts.Length,
+            itemCategoryTexts.Length,
+            slotBackgrounds != null ? slotBackgrounds.Length : int.MaxValue,
+            slotNumberTexts != null ? slotNumberTexts.Length : int.MaxValue
+        );
 
         for (int i = 0; i < maxSlots; i++)
         {
-            if (items[i] == null) continue;
+            if (items[i] == null)
+            {
+                if (slotNumberTexts != null && i < slotNumberTexts.Length && slotNumberTexts[i] != null)
+                    slotNumberTexts[i].gameObject.SetActive(false);
+                continue;
+            }
 
             InteractableItem item = items[i].GetComponent<InteractableItem>();
             TreasureResources treasureResources = items[i].GetComponent<TreasureResources>();
 
             if (item != null && treasureResources != null && treasureResources.resourceCategories != null && treasureResources.resourceCategories.Count > 0)
             {
-                itemImages[i].enabled = true;
-                itemTexts[i].gameObject.SetActive(true);
-                itemCategoryTexts[i].gameObject.SetActive(true);
+                if (itemImages[i] != null)
+                    itemImages[i].enabled = true;
+                if (itemTexts[i] != null)
+                    itemTexts[i].gameObject.SetActive(true);
+                if (itemCategoryTexts[i] != null)
+                    itemCategoryTexts[i].gameObject.SetActive(true);
+                if (slotBackgrounds != null && i < slotBackgrounds.Length && slotBackgrounds[i] != null)
+                    slotBackgrounds[i].enabled = true;
+                // Numeracja slotów: 4, 5, 6, ...
+                if (slotNumberTexts != null && i < slotNumberTexts.Length && slotNumberTexts[i] != null)
+                {
+                    slotNumberTexts[i].text = (i + 4).ToString();
+                    slotNumberTexts[i].gameObject.SetActive(true);
+                }
+            }
+            else
+            {
+                if (slotNumberTexts != null && i < slotNumberTexts.Length && slotNumberTexts[i] != null)
+                    slotNumberTexts[i].gameObject.SetActive(false);
             }
         }
     }

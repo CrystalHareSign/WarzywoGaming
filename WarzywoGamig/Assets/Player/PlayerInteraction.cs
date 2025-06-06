@@ -89,6 +89,11 @@ public class PlayerInteraction : MonoBehaviour
         if (playerInventory != null && playerInventory.lootParent != null && playerInventory.lootParent.childCount > 0)
         {
             HideUI();
+            if (inventoryUI != null)
+            {
+                inventoryUI.HideWeaponUI();
+                inventoryUI.HideItemUI();
+            }
             return;
         }
 
@@ -295,7 +300,7 @@ public class PlayerInteraction : MonoBehaviour
     {
         if (treasureRefiner != null)
         {
-            treasureRefiner.RemoveSelectedItemFromInventory(inventoryUI.selectedItemIndex);
+            treasureRefiner.RemoveSelectedItemFromInventory(inventoryUI.selectedSlotIndex);
         }
     }
 
@@ -358,9 +363,6 @@ public class PlayerInteraction : MonoBehaviour
             inventory.enabled = true;
             inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
             inventoryUI.ShowWeaponUI();
-
-            // <<< TO DODAJ
-            if (inventoryUI != null && inventory != null)
             inventoryUI.ShowItemUI(inventory.items);
 
             Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
@@ -370,6 +372,9 @@ public class PlayerInteraction : MonoBehaviour
     }
     public void ReactivateInventoryAndUI()
     {
+        if (inventoryUI != null)
+            inventoryUI.isInputBlocked = false;
+
         if (inventory != null)
         {
             inventory.enabled = true;
@@ -380,7 +385,7 @@ public class PlayerInteraction : MonoBehaviour
                 {
                     inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
                     inventoryUI.ShowWeaponUI();
-                    inventoryUI.ShowItemUI(inventory.items); // DODAJ TÊ LINIJKÊ
+                    inventoryUI.ShowItemUI(inventory.items);
                 }
             }
             else

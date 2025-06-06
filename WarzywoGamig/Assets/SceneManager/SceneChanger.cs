@@ -197,7 +197,11 @@ public class SceneChanger : MonoBehaviour
 
         if (InventoryUI.Instance != null)
         {
-            InventoryUI.Instance.UpdateInventoryUI(Inventory.Instance.weapons, Inventory.Instance.items);
+            InventoryUI.Instance.UpdateInventoryUI(
+                Inventory.Instance.weapons,
+                Inventory.Instance.items,
+                Inventory.Instance.currentWeaponName // <-- dodane
+            );
         }
 
         StartCoroutine(RefreshWheelsUIDelayed());

@@ -6,6 +6,7 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using Object = UnityEngine.Object;
 
 
 public class CameraToMonitor : MonoBehaviour
@@ -15,6 +16,7 @@ public class CameraToMonitor : MonoBehaviour
     public PlayerInteraction playerInteraction;
     public MouseLook mouseLookScript;
     public SceneChanger sceneChanger;
+    public InventoryUI inventoryUI;
     public HoverMessage monitorHoverMessage;
     public TreasureRefiner treasureRefiner;
     public GameObject crossHair;
@@ -203,8 +205,10 @@ public class CameraToMonitor : MonoBehaviour
 
         UpdateLogEntriesLanguage(); // Ustaw pocz¹tkowy jêzyk
 
+        inventoryUI = Object.FindFirstObjectByType<InventoryUI>();
+
         // ZnajdŸ wszystkie obiekty posiadaj¹ce PlaySoundOnObject i dodaj do listy
-       playSoundObjects.AddRange(UnityEngine.Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
+        playSoundObjects.AddRange(UnityEngine.Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
 
     }
     private void GeneratePassword()
@@ -655,6 +659,9 @@ public class CameraToMonitor : MonoBehaviour
                 flashlightWasOnBeforeMonitor = playerInteraction.inventory.flashlight.enabled;
                 playerInteraction.inventory.FlashlightOff();
             }
+
+            if (inventoryUI != null)
+                inventoryUI.isInputBlocked = true;
 
             isUsingMonitor = true;
 

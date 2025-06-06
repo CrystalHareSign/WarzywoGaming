@@ -19,6 +19,7 @@ public class Inventory : MonoBehaviour
     public Transform lootParent; // Transform, do którego będą przypisane lootowe przedmioty
     public bool isLootBeingDropped = false; // Flaga kontrolująca proces upuszczania lootu
     public Light flashlight; // Przeciągnij latarkę z Hierarchii do tego pola w Inspectorze
+    public Dictionary<string, AmmoState> weaponAmmoStates = new Dictionary<string, AmmoState>();
 
     public Dictionary<string, GameObject> weaponPrefabs = new Dictionary<string, GameObject>();
 
@@ -273,11 +274,27 @@ public class Inventory : MonoBehaviour
         EquipWeapon(newWeapon.itemName);
     }
 
-    // Wyekwipowanie broni na podstawie NAZWY
+    // Wyekwipowanie broni na podstawie NAZWY z zachowaniem amunicji
     public void EquipWeapon(string weaponName)
     {
         Debug.Log($"EquipWeapon: Trying to equip weapon '{weaponName}'");
 
+        // ZAPISZ amunicję poprzedniej broni (jeśli była)
+        if (currentWeaponName != null && currentWeaponPrefab != null)
+        {
+            Gun oldGun = currentWeaponPrefab.GetComponent<Gun>();
+            if (oldGun != null)
+            {
+                if (!weaponAmmoStates.ContainsKey(currentWeaponName))
+                    weaponAmmoStates[currentWeaponName] = new AmmoState();
+                weaponAmmoStates[currentWeaponName].currentAmmo = oldGun.currentAmmo;
+                weaponAmmoStates[currentWeaponName].totalAmmo = oldGun.totalAmmo;
+
+                oldGun.CancelReload(); // <--- TO DODAJ!
+            }
+        }
+
+        // Zniszcz starą broń
         if (currentWeaponPrefab != null)
         {
             Debug.LogWarning("EquipWeapon: Destroying currentWeaponPrefab: " + currentWeaponPrefab.name + " (before new instantiation!)");
@@ -306,6 +323,22 @@ public class Inventory : MonoBehaviour
         if (gunScript != null)
         {
             Debug.Log("EquipWeapon: Gun component found, enabling and equipping.");
+            // PRZYWRÓĆ amunicję z zapamiętanego stanu, jeśli istnieje
+            if (weaponAmmoStates.ContainsKey(weaponName))
+            {
+                gunScript.currentAmmo = weaponAmmoStates[weaponName].currentAmmo;
+                gunScript.totalAmmo = weaponAmmoStates[weaponName].totalAmmo;
+            }
+            else
+            {
+                // Pierwsze podniesienie tej broni – zapisz domyślne wartości
+                weaponAmmoStates[weaponName] = new AmmoState
+                {
+                    currentAmmo = gunScript.currentAmmo,
+                    totalAmmo = gunScript.totalAmmo
+                };
+            }
+
             gunScript.enabled = true;
             gunScript.EquipWeapon();
         }
@@ -317,6 +350,9 @@ public class Inventory : MonoBehaviour
         currentWeaponName = weaponName;
 
         Debug.Log($"EquipWeapon: Equipped '{weaponName}', prefab: {currentWeaponPrefab?.name}, parent: {currentWeaponPrefab?.transform.parent?.name ?? "brak parenta"}");
+
+        // Aktualizacja UI po zmianie broni
+        UpdateInventoryUI();
 
         // TEST: opóźniony log sprawdzający, czy prefab nadal istnieje po 1 sekundzie
         StartCoroutine(CheckWeaponAfterDelay());
@@ -506,7 +542,7 @@ public class Inventory : MonoBehaviour
     {
         if (inventoryUI != null)
         {
-            inventoryUI.UpdateInventoryUI(weapons, items);
+            inventoryUI.UpdateInventoryUI(weapons, items, currentWeaponName);
         }
     }
     public void ClearInventory()
@@ -541,4 +577,9 @@ public class WeaponPrefabEntry
 {
     public string weaponName; // Nazwa broni
     public GameObject weaponPrefab; // Prefab broni
+}
+public class AmmoState
+{
+    public int currentAmmo;
+    public int totalAmmo;
 }

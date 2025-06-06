@@ -7,6 +7,7 @@ public class TurretController : MonoBehaviour
     public PlayerMovement playerMovement; // Skrypt odpowiadający za poruszanie gracza
     public HarpoonController harpoonController;  // Referencja do skryptu HarpoonController
     public Inventory inventory;  // Skrypt odpowiadający za inwentaryzację
+    public InventoryUI inventoryUI;
 
     public Transform enterArea;   // Punkt, do którego teleportuje się gracz
     public Transform exitArea;    // Punkt, z którego teleportuje się gracz po zakończeniu
@@ -59,8 +60,9 @@ public class TurretController : MonoBehaviour
 
         playerMovement = Object.FindFirstObjectByType<PlayerMovement>();
         inventory = Object.FindFirstObjectByType<Inventory>();
+        inventoryUI = Object.FindFirstObjectByType<InventoryUI>();
 
-        if (playerMovement == null || inventory == null)
+        if (playerMovement == null || inventory == null || inventoryUI == null)
         {
             Debug.LogError("Brak komponentów PlayerMovement lub Inventory w scenie.");
         }
@@ -140,6 +142,9 @@ public class TurretController : MonoBehaviour
                 flashlightWasOnBeforeTurret = inventory.flashlight.enabled;
                 inventory.FlashlightOff();
             }
+
+            if (inventoryUI != null)
+                inventoryUI.isInputBlocked = true;
 
             if (harpoonController != null)
                 harpoonController.SetCabinLight(true);

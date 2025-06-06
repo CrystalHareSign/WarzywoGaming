@@ -112,22 +112,47 @@ public class SaveManager : MonoBehaviour
                         if (!string.IsNullOrEmpty(weaponName))
                         {
                             data.weapons.Add(weaponName);
+
+                            int currentAmmo = 0, totalAmmo = 0;
+
+                            // Jeœli to broñ aktualnie trzymana – pobierz z instancji
                             if (inventory.currentWeaponPrefab != null && inventory.currentWeaponName == weaponName)
                             {
                                 Gun gun = inventory.currentWeaponPrefab.GetComponent<Gun>();
                                 if (gun != null)
                                 {
-                                    data.weaponSaveDatas.Add(new WeaponSaveData
-                                    {
-                                        weaponName = weaponName,
-                                        currentAmmo = gun.currentAmmo,
-                                        totalAmmo = gun.totalAmmo
-                                    });
+                                    currentAmmo = gun.currentAmmo;
+                                    totalAmmo = gun.totalAmmo;
                                 }
                             }
+                            // Dla pozosta³ych – pobierz ze s³ownika AmmoState
+                            else if (inventory.weaponAmmoStates.ContainsKey(weaponName))
+                            {
+                                currentAmmo = inventory.weaponAmmoStates[weaponName].currentAmmo;
+                                totalAmmo = inventory.weaponAmmoStates[weaponName].totalAmmo;
+                            }
+                            // Jeœli nie ma jeszcze w s³owniku (np. nowa broñ) – domyœlne wartoœci
+                            else
+                            {
+                                if (inventory.weaponPrefabs.TryGetValue(weaponName, out var prefab) && prefab != null)
+                                {
+                                    Gun gun = prefab.GetComponent<Gun>();
+                                    if (gun != null)
+                                    {
+                                        currentAmmo = gun.currentAmmo;
+                                        totalAmmo = gun.totalAmmo;
+                                    }
+                                }
+                            }
+
+                            data.weaponSaveDatas.Add(new WeaponSaveData
+                            {
+                                weaponName = weaponName,
+                                currentAmmo = currentAmmo,
+                                totalAmmo = totalAmmo
+                            });
                         }
                     }
-
                     foreach (var itemObj in inventory.items)
                     {
                         if (itemObj != null)
@@ -320,6 +345,17 @@ public class SaveManager : MonoBehaviour
 
         if (inventory != null)
         {
+            // --- PRZYWRÓÆ STAN AMUNICJI KA¯DEJ BRONI ---
+            inventory.weaponAmmoStates.Clear();
+            foreach (var weaponSave in data.weaponSaveDatas)
+            {
+                inventory.weaponAmmoStates[weaponSave.weaponName] = new AmmoState
+                {
+                    currentAmmo = weaponSave.currentAmmo,
+                    totalAmmo = weaponSave.totalAmmo
+                };
+            }
+
             inventory.weapons.Clear();
             foreach (string weaponName in data.weapons)
             {
@@ -427,7 +463,7 @@ public class SaveManager : MonoBehaviour
             //Debug.Log("Load: items quantities = " + string.Join(",", loadedItemQuant));
 
             if (inventoryUI != null)
-                inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items);
+                inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items, inventory.currentWeaponName);
         }
 
         // --- WCZYTANIE KOLEKTORÓW (TurretCollector) ---

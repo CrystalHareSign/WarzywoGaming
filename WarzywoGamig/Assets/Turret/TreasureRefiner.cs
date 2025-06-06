@@ -1021,11 +1021,11 @@ public class TreasureRefiner : MonoBehaviour
                 {
                     // Popraw indeks po usuniêciu
                     if (inventory.items.Count == 0)
-                        inventoryUI.selectedItemIndex = 0;
-                    else if (inventoryUI.selectedItemIndex >= inventory.items.Count)
-                        inventoryUI.selectedItemIndex = inventory.items.Count - 1;
+                        inventoryUI.selectedSlotIndex = 0;
+                    else if (inventoryUI.selectedSlotIndex >= inventory.items.Count)
+                        inventoryUI.selectedSlotIndex = inventory.items.Count - 1;
 
-                    inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items);
+                    inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items, inventory.currentWeaponName);
                 }
             }
         }
