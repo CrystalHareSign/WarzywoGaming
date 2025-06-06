@@ -7,6 +7,7 @@ using UnityEditor.Experimental.GraphView;
 public class InventoryUI : MonoBehaviour
 {
     public Image weaponImage; // Ikona broni
+    public Image weaponBackgroundImage; // Tło pod UI broni
     public Image[] itemImages = new Image[6]; // Tablica obrazków dla przedmiotów
     public Image[] slotBackgrounds = new Image[6]; // Tła dla slotów (np. szare, czerwone, itp.)
     public TextMeshProUGUI[] itemTexts = new TextMeshProUGUI[6]; // Tablica tekstów dla ilości przedmiotów
@@ -77,6 +78,7 @@ public class InventoryUI : MonoBehaviour
         totalAmmoText.gameObject.SetActive(false);
         reloadingText.gameObject.SetActive(false);
         slashText.gameObject.SetActive(false);
+        weaponBackgroundImage.gameObject.SetActive(false);
     }
 
     public void Update()
@@ -318,6 +320,10 @@ public class InventoryUI : MonoBehaviour
             return;
         }
 
+        // Pobierz nazwę broni z InteractableItem
+        var interactable = gun.GetComponent<InteractableItem>();
+        weaponNameText.text = interactable != null ? interactable.itemName : "";
+
         ammoText.gameObject.SetActive(true);
         totalAmmoText.gameObject.SetActive(true);
         slashText.gameObject.SetActive(true);
@@ -372,6 +378,7 @@ public class InventoryUI : MonoBehaviour
         totalAmmoText.gameObject.SetActive(false);
         slashText.gameObject.SetActive(false);
         weaponImage.gameObject.SetActive(false);
+        weaponBackgroundImage.gameObject.SetActive(false);
     }
     public void ShowWeaponUI()
     {
@@ -380,6 +387,7 @@ public class InventoryUI : MonoBehaviour
         totalAmmoText.gameObject.SetActive(true);
         slashText.gameObject.SetActive(true);
         weaponImage.gameObject.SetActive(true);
+        weaponBackgroundImage.gameObject.SetActive(true);
     }
 
     public void HideItemUI()

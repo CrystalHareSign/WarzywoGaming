@@ -22,6 +22,7 @@ public class PlayerInteraction : MonoBehaviour
     private CameraToMonitor cameraToMonitor;
     private AudioChanger audioChanger;
     private bool hasRefinerBeenUsed = false;
+    private bool wasHoldingLoot = false;
 
     void Awake()
     {
@@ -79,6 +80,7 @@ public class PlayerInteraction : MonoBehaviour
 
     void Update()
     {
+        // ...w Update():
         if (playerCamera == null)
         {
             Debug.LogError("PlayerCamera is not assigned in the Inspector.");
@@ -86,24 +88,106 @@ public class PlayerInteraction : MonoBehaviour
         }
 
         Inventory playerInventory = Object.FindFirstObjectByType<Inventory>();
-        if (playerInventory != null && playerInventory.lootParent != null && playerInventory.lootParent.childCount > 0)
+        bool isHoldingLoot = playerInventory != null && playerInventory.lootParent != null && playerInventory.lootParent.childCount > 0;
+
+        // SprawdŸ czy JESTEŒ przy monitorze lub wie¿yczce
+        bool isAnyMonitorActive = false;
+        var allMonitors = Object.FindObjectsByType<CameraToMonitor>(FindObjectsSortMode.None);
+        foreach (var monitor in allMonitors)
+        {
+            if (monitor.isUsingMonitor)
+            {
+                isAnyMonitorActive = true;
+                break;
+            }
+        }
+        bool isTurretActive = false;
+        TurretController checkTurretController = Object.FindFirstObjectByType<TurretController>();
+        if (checkTurretController != null && checkTurretController.isUsingTurret)
+            isTurretActive = true;
+
+        // Detekcja przejœcia loot->brak loot
+        bool justDroppedLoot = wasHoldingLoot && !isHoldingLoot;
+        wasHoldingLoot = isHoldingLoot;
+
+        // --- UI podczas trzymania loot ---
+        if (isHoldingLoot)
         {
             HideUI();
             if (inventoryUI != null)
             {
-                inventoryUI.HideWeaponUI();
-                inventoryUI.HideItemUI();
+                Transform loot = playerInventory.lootParent.GetChild(0);
+                TreasureValue treasureValue = loot.GetComponent<TreasureValue>();
+                if (treasureValue != null)
+                {
+                    // Wyœwietl kategoriê jako nazwê broni
+                    inventoryUI.weaponNameText.text = treasureValue.category;
+                    inventoryUI.weaponNameText.gameObject.SetActive(true);
+
+                    // Wyœwietl iloœæ w ammoText
+                    inventoryUI.ammoText.text = treasureValue.amount.ToString();
+                    inventoryUI.ammoText.gameObject.SetActive(true);
+
+                    // Ukryj pozosta³e elementy UI broni
+                    inventoryUI.totalAmmoText.gameObject.SetActive(false);
+                    inventoryUI.slashText.gameObject.SetActive(false);
+                    inventoryUI.reloadingText.gameObject.SetActive(false);
+                    inventoryUI.weaponImage.gameObject.SetActive(false);
+
+                    // Ukryj UI itemów
+                    inventoryUI.HideItemUI();
+                }
+                else
+                {
+                    inventoryUI.HideWeaponUI();
+                    inventoryUI.HideItemUI();
+                }
             }
             return;
         }
 
+        // --- NATYCHMIAST po puszczeniu loot: odœwie¿ UI broni i itemów ---
+        if (justDroppedLoot && inventoryUI != null && !isAnyMonitorActive && !isTurretActive)
+        {
+            if (inventory == null || inventory.currentWeaponPrefab == null)
+                inventoryUI.HideWeaponUI();
+            else
+            {
+                Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
+                if (gunScript != null)
+                {
+                    inventoryUI.UpdateWeaponUI(gunScript);
+                    inventoryUI.ShowWeaponUI();
+                }
+            }
+            inventoryUI.ShowItemUI(inventory.items);
+            return; // KLUCZOWE! Nie duplikuj ni¿ej
+        }
+
+        // --- UI broni/itemów w normalnym stanie ---
+        if (!isAnyMonitorActive && !isTurretActive && inventoryUI != null)
+        {
+            if (inventory == null || inventory.currentWeaponPrefab == null)
+                inventoryUI.HideWeaponUI();
+            else
+            {
+                Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
+                if (gunScript != null)
+                {
+                    inventoryUI.UpdateWeaponUI(gunScript);
+                    inventoryUI.ShowWeaponUI();
+                }
+            }
+            inventoryUI.ShowItemUI(inventory.items);
+        }
+
+        // ...reszta Twojego Update() bez zmian...
         RaycastHit hit;
         if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward, out hit, interactionRange, interactableLayer))
         {
             InteractableItem interactableItem = hit.collider.GetComponent<InteractableItem>();
             if (interactableItem != null && !interactableItem.hoverMessage.isInteracted)
             {
-                // --- TU DODAJ ---
                 bool isWheel = interactableItem.category == "Wheel" || interactableItem.itemName.StartsWith("Opona");
                 if (isWheel && audioChanger != null && audioChanger.isPlayerInside)
                 {
@@ -111,7 +195,6 @@ public class PlayerInteraction : MonoBehaviour
                     return;
                 }
 
-                // Monitor busa: mo¿na tylko w œrodku
                 bool isBusMonitor = interactableItem.isMonitor && interactableItem.busMonitor;
                 if (isBusMonitor && audioChanger != null && !audioChanger.isPlayerInside)
                 {
@@ -145,7 +228,6 @@ public class PlayerInteraction : MonoBehaviour
                         requiredHoldTime = currentInteractableItem.requiredHoldTime;
                         interactionTimer += Time.deltaTime;
 
-                        // Dezaktywacja broni tylko przy interakcjach wymagaj¹cych przytrzymania
                         if (requiredHoldTime > 0f && interactionTimer == Time.deltaTime)
                         {
                             if (inventory != null && inventory.currentWeaponPrefab != null)
@@ -172,7 +254,6 @@ public class PlayerInteraction : MonoBehaviour
                             {
                                 UseTurret(interactableItem);
 
-                                // DEAKTYWUJ BROÑ przy wie¿yczce
                                 if (inventory != null && inventory.currentWeaponPrefab != null)
                                 {
                                     Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
@@ -183,7 +264,6 @@ public class PlayerInteraction : MonoBehaviour
                                     inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
                                     inventoryUI.HideWeaponUI();
                                 }
-                                // SCHOWAJ UI ITEMÓW przy monitorze
                                 if (inventoryUI != null)
                                     inventoryUI.HideItemUI();
                             }
@@ -192,7 +272,6 @@ public class PlayerInteraction : MonoBehaviour
                             {
                                 UseMonitor(interactableItem);
 
-                                // DEZAKTYWUJ BROÑ:
                                 if (inventory != null && inventory.currentWeaponPrefab != null)
                                 {
                                     Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
@@ -203,7 +282,6 @@ public class PlayerInteraction : MonoBehaviour
                                     inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
                                     inventoryUI.HideWeaponUI();
                                 }
-                                // SCHOWAJ UI ITEMÓW przy monitorze
                                 if (inventoryUI != null)
                                     inventoryUI.HideItemUI();
                             }
