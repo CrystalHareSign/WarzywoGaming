@@ -12,6 +12,17 @@ public class HarpoonController : MonoBehaviour
     public Transform treasureMountPoint;
     public Light harpoonLight;
     public Light cabinLight;
+
+    [Header("Ulepszenie trafiania")]
+    [Tooltip("Mnożnik promienia SphereCollider używany tylko do przewidywania trafienia harpunem (np. 1.0 = normalny hitbox, 1.2 = +20% większy). Im wyższa wartość, tym łatwiej trafić.")]
+    public float aimForgiveness = 1.2f;  // 1.0 = normalny promień, 1.2 = +20% hitboxu
+
+    [Tooltip("Maksymalny czas (w sekundach) na który przewidywana jest przyszła pozycja celu podczas strzału. Ogranicza przewidywanie, żeby harpun nie próbował gonić celu przez pół mapy.")]
+    public float maxInterceptTime = 2.0f; // Maksymalny czas przewidywania w sekundach
+
+    [Tooltip("Siła auto-aim – ile procent ścieżki do środka celu harpun 'dociąga' się, jeśli i tak trafiłby w sferę. 0 = brak auto-aim, 0.15 = delikatna pomoc.")]
+    public float autoAimStrength = 0.15f;
+
     [Header("HARPUN PARAMETRY")]
     public float shootSpeed = 20f;
     public float returnSpeed = 10f;
@@ -43,7 +54,6 @@ public class HarpoonController : MonoBehaviour
     private TurretController turretController;
     private TurretCollector turretCollector;
     private float reloadTimer = 0f; // Nowa zmienna do liczenia czasu przeładowania
-
 
     [Header("TUBE - Pamietej aby całkowity czas wszyskich etapow musi byc równy ReloadTime")]
     // Dodajemy referencję do obiektu, który ma się poruszać
@@ -85,7 +95,6 @@ public class HarpoonController : MonoBehaviour
 
     void Start()
     {
-
         // Znajdź wszystkie obiekty posiadające PlaySoundOnObject i dodaj do listy
         playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
 
@@ -96,7 +105,6 @@ public class HarpoonController : MonoBehaviour
         timeBeforeAnimation = reloadTime * 0.125f;
         pauseTime = reloadTime * 0.125f;
         timeAfterAnimation = reloadTime * 0.25f;
-
 
         if (tabletCanvas == null)
         {
@@ -593,18 +601,40 @@ public class HarpoonController : MonoBehaviour
     Vector3 PredictTargetPosition(GameObject target)
     {
         TreasureTracker treasureTracker = target.GetComponent<TreasureTracker>();
+        if (treasureTracker == null) return target.transform.position;
 
-        if (treasureTracker != null)
+        Vector3 targetPosition = target.transform.position;
+        Vector3 targetVelocity = treasureTracker.CurrentVelocity;
+        Vector3 shooterPosition = firePoint.position;
+
+        // Przewidujemy czas dolotu na podstawie odległości i prędkości strzału
+        float distance = Vector3.Distance(shooterPosition, targetPosition);
+        float timeToTarget = distance / shootSpeed;
+
+        // Przewidywana pozycja celu po czasie dolotu
+        Vector3 predictedPosition = targetPosition + targetVelocity * timeToTarget;
+
+        // Sprawdzamy, czy przewidywany punkt jest w obrębie sfery celu (z forgiveness)
+        SphereCollider sphere = target.GetComponent<SphereCollider>();
+        if (sphere != null)
         {
-            Vector3 targetVelocity = treasureTracker.CurrentVelocity;
-            float distanceToTarget = Vector3.Distance(firePoint.position, target.transform.position);
-            float timeToTarget = distanceToTarget / shootSpeed;
-            Vector3 predictedPosition = target.transform.position + targetVelocity * timeToTarget;
+            Vector3 sphereCenter = target.transform.TransformPoint(sphere.center);
+            float sphereRadius = sphere.radius * Mathf.Max(target.transform.lossyScale.x, target.transform.lossyScale.y, target.transform.lossyScale.z) * aimForgiveness;
 
-            return predictedPosition;
+            if ((predictedPosition - sphereCenter).magnitude > sphereRadius)
+            {
+                // Jeśli przewidywany punkt jest poza sferą — celuj w najbliższy punkt na powierzchni sfery
+                Vector3 dir = (predictedPosition - sphereCenter).normalized;
+                predictedPosition = sphereCenter + dir * sphereRadius;
+            }
+            else
+            {
+                // (opcjonalnie) auto-aim: lekko dociągnij do środka
+                predictedPosition = Vector3.Lerp(predictedPosition, sphereCenter, autoAimStrength);
+            }
         }
 
-        return target.transform.position;
+        return predictedPosition;
     }
 
     Vector3 GetMouseWorldPosition()

@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 485955327588741876}
   - component: {fileID: 5417915076474674903}
   - component: {fileID: 8170853131550300779}
-  - component: {fileID: 1792684878213392267}
   - component: {fileID: 4950273555117707181}
   - component: {fileID: 475431196178243200}
   - component: {fileID: 4038086263189531332}
@@ -19,6 +18,7 @@ GameObject:
   - component: {fileID: 4271873553961582138}
   - component: {fileID: 4947389128925703613}
   - component: {fileID: 3853402127191409258}
+  - component: {fileID: 8211838770384651337}
   m_Layer: 7
   m_Name: TreasureCopper
   m_TagString: Treasure
@@ -94,27 +94,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &1792684878213392267
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5478168576074083467}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 3, y: 1, z: 3}
-  m_Center: {x: 0, y: 0.5, z: 0}
 --- !u!54 &4950273555117707181
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -222,6 +201,7 @@ MonoBehaviour:
   isTurret: 0
   isRefiner: 0
   isMonitor: 0
+  busMonitor: 0
   alwaysInteractive: 0
   hasCooldown: 0
   usesHealthSystem: 0
@@ -232,6 +212,7 @@ MonoBehaviour:
   UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
+  wheelHealthUI: {fileID: 0}
   wheelManager: {fileID: 0}
 --- !u!114 &3853402127191409258
 MonoBehaviour:
@@ -257,3 +238,24 @@ MonoBehaviour:
   messageFontSize: 20
   keyFontSize: 30
   message: "Wci\u015Bnij E aby podnie\u015B\u0107"
+--- !u!135 &8211838770384651337
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5478168576074083467}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 1.5
+  m_Center: {x: 0, y: 0, z: 0}

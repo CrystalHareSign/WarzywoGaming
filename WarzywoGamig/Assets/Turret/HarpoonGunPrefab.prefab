@@ -236,6 +236,9 @@ MonoBehaviour:
   treasureMountPoint: {fileID: 448290755306350194, guid: 600dfc55fcceaa74db396d3660ded222, type: 3}
   harpoonLight: {fileID: 4375712867117210977}
   cabinLight: {fileID: 1634931776263792634}
+  aimForgiveness: 1.5
+  maxInterceptTime: 1
+  autoAimStrength: 0.5
   shootSpeed: 1000
   returnSpeed: 1000
   maxRange: 400
@@ -244,7 +247,7 @@ MonoBehaviour:
   returnTolerance: 10
   maxHorizontalAngleToTarget: 45
   maxVerticalAngleToTarget: 45
-  detectionRange: 300
+  detectionRange: 500
   minDetectionRange: 20
   showRangesInScene: 0
   reloadFillImage: {fileID: 4736710876411684597}

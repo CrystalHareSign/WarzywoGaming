@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 931167686690798680}
   - component: {fileID: 7897631521226793586}
   - component: {fileID: 56179964848103197}
-  - component: {fileID: 6761115961010013151}
   - component: {fileID: -688377564213083489}
   - component: {fileID: 6979507498194262447}
   - component: {fileID: 6767437065646373606}
@@ -19,6 +18,7 @@ GameObject:
   - component: {fileID: 2387934818213602335}
   - component: {fileID: -6617605308913028778}
   - component: {fileID: -712420782758217477}
+  - component: {fileID: -5518787906552898992}
   m_Layer: 7
   m_Name: TreasureSilver
   m_TagString: Treasure
@@ -94,27 +94,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &6761115961010013151
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1591325824849679810}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 3, y: 1, z: 3}
-  m_Center: {x: 0, y: 0.5, z: 0}
 --- !u!54 &-688377564213083489
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -222,6 +201,7 @@ MonoBehaviour:
   isTurret: 0
   isRefiner: 0
   isMonitor: 0
+  busMonitor: 0
   alwaysInteractive: 0
   hasCooldown: 0
   usesHealthSystem: 0
@@ -232,6 +212,7 @@ MonoBehaviour:
   UsingSceneSystem: 0
   SceneMain: 0
   SceneHome: 0
+  wheelHealthUI: {fileID: 0}
   wheelManager: {fileID: 0}
 --- !u!114 &-712420782758217477
 MonoBehaviour:
@@ -257,3 +238,24 @@ MonoBehaviour:
   messageFontSize: 20
   keyFontSize: 30
   message: "Wci\u015Bnij E aby podnie\u015B\u0107"
+--- !u!135 &-5518787906552898992
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1591325824849679810}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 1.5
+  m_Center: {x: 0, y: 0, z: 0}
