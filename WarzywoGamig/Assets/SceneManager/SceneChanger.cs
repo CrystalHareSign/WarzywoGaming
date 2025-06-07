@@ -29,7 +29,7 @@ public class SceneChanger : MonoBehaviour
 
     // Statyczna zmienna na pozycjê wzglêdn¹ gracza wzglêdem busa
     public static Vector3 lastRelativePlayerPos = Vector3.zero;
-    public static Vector3 defaultRelativePlayerPos = new Vector3(0f, 5f, 0f); // przyk³adowy offset obok busa
+    public static Vector3 defaultRelativePlayerPos = new Vector3(-5f, 5f, 5f); // przyk³adowy offset obok busa
 
 
     void Start()
