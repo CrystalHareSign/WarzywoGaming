@@ -236,9 +236,9 @@ MonoBehaviour:
   treasureMountPoint: {fileID: 448290755306350194, guid: 600dfc55fcceaa74db396d3660ded222, type: 3}
   harpoonLight: {fileID: 4375712867117210977}
   cabinLight: {fileID: 1634931776263792634}
-  aimForgiveness: 1.5
+  aimForgiveness: 3
   maxInterceptTime: 1
-  autoAimStrength: 0.5
+  autoAimStrength: 1
   shootSpeed: 1000
   returnSpeed: 1000
   maxRange: 400
