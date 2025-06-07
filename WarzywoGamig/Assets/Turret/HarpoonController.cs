@@ -91,10 +91,12 @@ public class HarpoonController : MonoBehaviour
 
         // Zakładając, że zmienna Reload jest już zdefiniowana
         treasureLifetime = reloadTime * 0.5f;
+
         fullAnimationTime = reloadTime * 0.5f;
         timeBeforeAnimation = reloadTime * 0.125f;
         pauseTime = reloadTime * 0.125f;
         timeAfterAnimation = reloadTime * 0.25f;
+
 
         if (tabletCanvas == null)
         {
@@ -377,16 +379,19 @@ public class HarpoonController : MonoBehaviour
 
     private IEnumerator MoveObjectDuringReload()
     {
+        // Używamy wyłącznie proporcji względem reloadTime
+        float forwardMovementTime = fullAnimationTime * 0.75f;
+        float reverseMovementTime = fullAnimationTime * 0.25f;
+        // Poprawka: remainingTimeAfterAnim NIE powinien być liczony jako reloadTimer - fullAnimationTime!
+        // Obliczamy go na podstawie timeAfterAnimation:
+        float remainingTimeAfterAnim = timeAfterAnimation;
+
         yield return new WaitForSeconds(timeBeforeAnimation);
 
         float elapsedTime = 0f;
         Vector3 initialLocalPos = movingObject.transform.localPosition;
         Quaternion initialRotation = movingObject.transform.localRotation;
         Vector3 targetPosition = initialLocalPos + Vector3.forward * moveDistance;
-
-        float forwardMovementTime = fullAnimationTime * 0.75f;
-        float reverseMovementTime = fullAnimationTime * 0.25f;
-        float remainingTimeAfterAnim = reloadTimer - fullAnimationTime;
 
         foreach (var sfx in playSoundObjects)
         {
@@ -396,6 +401,7 @@ public class HarpoonController : MonoBehaviour
         }
 
         // 🔁 Ruch do przodu + obrót
+        elapsedTime = 0f;
         while (elapsedTime < forwardMovementTime)
         {
             float t = elapsedTime / forwardMovementTime;
@@ -404,7 +410,6 @@ public class HarpoonController : MonoBehaviour
             elapsedTime += Time.deltaTime;
             yield return null;
         }
-
         movingObject.transform.localPosition = targetPosition;
 
         // ⏸ Pauza + obrót
