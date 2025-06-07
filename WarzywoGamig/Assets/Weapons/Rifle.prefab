@@ -126,10 +126,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hoverMessage: {fileID: 0}
   itemName: Rifle
+  category: 
+  quantity: 0
   startAsNonInteractive: 0
   canBePickedUp: 1
   canBeDropped: 1
   isWeapon: 1
+  isLoot: 0
+  isTurret: 0
+  isRefiner: 0
+  isMonitor: 0
+  busMonitor: 0
   alwaysInteractive: 0
   hasCooldown: 0
   usesHealthSystem: 0
@@ -137,6 +144,11 @@ MonoBehaviour:
   currentHealth: 0
   requiredHoldTime: 0
   wheelIndex: 0
+  UsingSceneSystem: 0
+  SceneMain: 0
+  SceneHome: 0
+  wheelHealthUI: {fileID: 0}
+  wheelManager: {fileID: 0}
 --- !u!114 &2808113240025287969
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -149,10 +161,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9c10a544bb40ac40ba2b7fe60df5b57, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  message: "Wci\u015Bnij E aby podnie\u015B\u0107"
+  messageEnglish: 
+  messagePolish: 
+  keyText: '[E]'
   interactionDistance: 5
   isInteracted: 0
   alwaysActive: 1
+  UsingSceneSystem: 0
+  SceneMain: 0
+  SceneHome: 0
+  messageFontSize: 20
+  keyFontSize: 30
+  message: "Wci\u015Bnij E aby podnie\u015B\u0107"
 --- !u!114 &2763177521429961776
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -166,7 +186,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxAmmo: 30
-  currentAmmo: 0
+  currentAmmo: 30
   totalAmmo: 300
   reloadTime: 5
   damage: 40

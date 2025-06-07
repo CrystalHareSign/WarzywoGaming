@@ -32,8 +32,6 @@ public class Gun : MonoBehaviour
 
     void Start()
     {
-        if (currentAmmo == 0)
-            currentAmmo = maxAmmo;
 
         inventoryUI = Object.FindFirstObjectByType<InventoryUI>();
     }
@@ -96,6 +94,7 @@ public class Gun : MonoBehaviour
     public void StartReload()
     {
         if (isReloading) return;
+        if (!isWeaponEquipped) return; // <-- kluczowa linia, nie przeładowuj jeśli broń nie jest trzymana
 
         // Jeśli coroutine już działa, nie uruchamiaj kolejnej
         reloadCoroutine = StartCoroutine(Reload());
@@ -111,6 +110,14 @@ public class Gun : MonoBehaviour
         }
 
         yield return new WaitForSeconds(reloadTime);
+
+        // Jeśli w trakcie reloadu broń została schowana, przerywamy!
+        if (!isWeaponEquipped)
+        {
+            isReloading = false;
+            reloadCoroutine = null;
+            yield break;
+        }
 
         int bulletsToReload = Mathf.Min(maxAmmo - currentAmmo, totalAmmo);
         currentAmmo += bulletsToReload;
