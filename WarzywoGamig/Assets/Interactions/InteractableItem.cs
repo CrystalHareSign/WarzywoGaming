@@ -25,6 +25,10 @@ public class InteractableItem : MonoBehaviour, IInteractable
     public bool isWeapon;    // Okreœla, czy przedmiot jest broni¹
     public bool isLoot = false;  // Flaga, która decyduje, czy przedmiot jest lootem
 
+    [Header("NPC Dialogue")]
+    public bool isNPC = false; // Zaznacz w Inspectorze dla NPC
+    public DialogueData npcDialogue; // Asset dialogu
+
     [Header("Turret")]
     public bool isTurret = false; // Okreœla, czy przedmiot jest wie¿yczk¹
 
@@ -58,12 +62,19 @@ public class InteractableItem : MonoBehaviour, IInteractable
 
     public WheelHealthUI wheelHealthUI;
     public WheelManager wheelManager;
+    public DialogueManager dialogueManager;
 
     private void Start()
     {
         hoverMessage = GetComponent<HoverMessage>();
         wheelHealthUI = Object.FindFirstObjectByType<WheelHealthUI>();
+        dialogueManager = Object.FindFirstObjectByType<DialogueManager>();
 
+        if (dialogueManager == null)
+        {
+            Debug.LogError($"[ERROR] Brak komponentu DialogueManager na {gameObject.name}");
+            return;
+        }
         if (hoverMessage == null)
         {
             Debug.LogError($"[ERROR] Brak komponentu HoverMessage na {gameObject.name}");
@@ -116,6 +127,13 @@ public class InteractableItem : MonoBehaviour, IInteractable
         // Sprawdzanie aktywnej sceny
         if (IsSceneActive())
         {
+            if (isNPC && npcDialogue != null && dialogueManager != null)
+            {
+                // Przekazujemy referencjê do hoverMessage!
+                dialogueManager.StartDialogue(npcDialogue, hoverMessage);
+                return;
+            }
+
             if (hoverMessage.alwaysActive || InteractivityManager.Instance.IsInteractable(gameObject))
             {
                 if (usesHealthSystem)
@@ -137,10 +155,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
                     StartCoroutine(CooldownCoroutine());
                 }
             }
-            else
-            {
-                //Debug.LogWarning($"[WARNING] Próba interakcji z nieinteraktywnym obiektem: {itemName}");
-            }
+            // else: nieinteraktywny, mo¿esz dodaæ log
         }
         else
         {
