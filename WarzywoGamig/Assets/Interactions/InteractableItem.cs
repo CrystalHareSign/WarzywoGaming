@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 
 public class InteractableItem : MonoBehaviour, IInteractable
@@ -11,10 +12,10 @@ public class InteractableItem : MonoBehaviour, IInteractable
     public string itemName; // Nazwa przedmiotu
 
     [Header("Kategoria przedmiotu")]
-    public string category; // <-- DODAJ TO POLE
+    public string category;
 
     [Header("Iloœæ przedmiotu")]
-    public int quantity = 0; // <-- DODAJ TO POLE
+    public int quantity = 0;
 
     [Header("Zaczyna grê jako Naprawione/Zepsute")]
     public bool startAsNonInteractive = false;
@@ -22,22 +23,23 @@ public class InteractableItem : MonoBehaviour, IInteractable
     [Header("System Itemów")]
     public bool canBePickedUp = false;
     public bool canBeDropped = false;
-    public bool isWeapon;    // Okreœla, czy przedmiot jest broni¹
-    public bool isLoot = false;  // Flaga, która decyduje, czy przedmiot jest lootem
+    public bool isWeapon;
+    public bool isLoot = false;
 
     [Header("NPC Dialogue")]
     public bool isNPC = false; // Zaznacz w Inspectorze dla NPC
-    public DialogueData npcDialogue; // Asset dialogu
+    public List<DialogueData> npcDialogues; // LISTA dialogów dla NPC
+    public int currentDialogueIndex = 0;    // AKTUALNY dialog z listy
 
     [Header("Turret")]
-    public bool isTurret = false; // Okreœla, czy przedmiot jest wie¿yczk¹
+    public bool isTurret = false;
 
     [Header("Refiner")]
-    public bool isRefiner = false; //  czy jest Refiner
+    public bool isRefiner = false;
 
     [Header("Monitor")]
-    public bool isMonitor = false; //  czy jest Refiner
-    public bool busMonitor = false; //  czy jest Refiner
+    public bool isMonitor = false;
+    public bool busMonitor = false;
 
     [Header("System kierowczy")]
     public bool alwaysInteractive = false;
@@ -46,17 +48,16 @@ public class InteractableItem : MonoBehaviour, IInteractable
     private static bool isCooldownActive = false;
 
     [Header("System zdrowia BUSA")]
-    public bool usesHealthSystem = false; // Czy ten przedmiot korzysta z systemu zdrowia?
-    public int maxHealth = 2; // Maksymalne zdrowie to 2
-    [SerializeField] private int currentHealth; // Aktualne zdrowie
-    public float requiredHoldTime = 0f; // Czas trzymania przycisku interakcji
+    public bool usesHealthSystem = false;
+    public int maxHealth = 2;
+    [SerializeField] private int currentHealth;
+    public float requiredHoldTime = 0f;
 
     [Header("UI System Zdrowia")]
-    public int wheelIndex; // Indeks ko³a (0-3)
+    public int wheelIndex;
 
     [Header("SCENY")]
-    // Dodane boole do sprawdzania aktywnej sceny
-    public bool UsingSceneSystem = false; // Nowy prze³¹cznik
+    public bool UsingSceneSystem = false;
     public bool SceneMain = false;
     public bool SceneHome = false;
 
@@ -89,12 +90,10 @@ public class InteractableItem : MonoBehaviour, IInteractable
 
         if (usesHealthSystem)
         {
-            // Ustaw currentHealth tylko, jeœli NIE trwa ³adowanie save
             if (SaveManager.Instance == null || !SaveManager.Instance.isLoading)
             {
                 currentHealth = maxHealth;
             }
-
             InteractivityManager.Instance.RegisterInteractable(gameObject, alwaysInteractive);
             UpdateUI();
         }
@@ -109,7 +108,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
 
         if (isLoot && GridManager.Instance != null)
         {
-
+            // Twój kod jeœli potrzebujesz
         }
         else if (isLoot)
         {
@@ -124,13 +123,12 @@ public class InteractableItem : MonoBehaviour, IInteractable
             return;
         }
 
-        // Sprawdzanie aktywnej sceny
         if (IsSceneActive())
         {
-            if (isNPC && npcDialogue != null && dialogueManager != null)
+            if (isNPC && npcDialogues != null && npcDialogues.Count > 0 && dialogueManager != null)
             {
-                // Przekazujemy referencjê do hoverMessage!
-                dialogueManager.StartDialogue(npcDialogue, hoverMessage);
+                // Przekazujemy AKTUALNY dialog z listy oraz referencjê do hoverMessage
+                dialogueManager.StartDialogue(npcDialogues[currentDialogueIndex], hoverMessage);
                 return;
             }
 
@@ -155,18 +153,18 @@ public class InteractableItem : MonoBehaviour, IInteractable
                     StartCoroutine(CooldownCoroutine());
                 }
             }
-            // else: nieinteraktywny, mo¿esz dodaæ log
         }
         else
         {
             Debug.LogWarning($"[WARNING] Obiekt {itemName} nie jest aktywny w tej scenie.");
         }
     }
+
     private bool IsSceneActive()
     {
         if (!UsingSceneSystem)
         {
-            return true; // Jeœli nie korzystamy z systemu scen, zawsze zwracamy true
+            return true;
         }
 
         if (SceneMain && SceneManager.GetActiveScene().name == "Main")
@@ -190,7 +188,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
             case "OponaPP": return 1;
             case "OponaLT": return 2;
             case "OponaPT": return 3;
-            default: return -1; // Jeœli nazwa nie pasuje
+            default: return -1;
         }
     }
 
@@ -199,9 +197,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
         if (usesHealthSystem)
         {
             currentHealth = Mathf.Max(currentHealth - amount, 0);
-            //Debug.Log($"[LOG] {itemName} otrzyma³ {amount} obra¿eñ. Aktualne zdrowie: {currentHealth}/{maxHealth}");
 
-            // Upewnij siê, ¿e mo¿na naprawiaæ od razu po obra¿eniach
             if (currentHealth < maxHealth)
             {
                 InteractivityManager.Instance.UpdateInteractivityStatus(gameObject, true);
@@ -223,13 +219,10 @@ public class InteractableItem : MonoBehaviour, IInteractable
         if (usesHealthSystem && currentHealth < maxHealth)
         {
             currentHealth++;
-            //Debug.Log($"[LOG] {itemName} naprawiony. Aktualne zdrowie: {currentHealth}/{maxHealth}");
-
             UpdateUI();
 
             if (currentHealth == maxHealth)
             {
-                //Debug.Log($"[LOG] {itemName} w pe³ni naprawiony. Wy³¹czanie interaktywnoœci.");
                 InteractivityManager.Instance.UpdateInteractivityStatus(gameObject, false);
                 hoverMessage.isInteracted = true;
             }
@@ -238,7 +231,6 @@ public class InteractableItem : MonoBehaviour, IInteractable
 
     public void UpdateUI()
     {
-        // Za ka¿dym razem pobierz aktualny WheelHealthUI:
         wheelHealthUI = Object.FindFirstObjectByType<WheelHealthUI>();
         if (wheelHealthUI != null)
         {
@@ -267,6 +259,22 @@ public class InteractableItem : MonoBehaviour, IInteractable
                 InteractivityManager.Instance.UpdateInteractivityStatus(gameObject, false);
                 if (hoverMessage != null) hoverMessage.isInteracted = true;
             }
+        }
+    }
+
+    public void SetDialogueIndex(int newIndex)
+    {
+        if (npcDialogues != null && newIndex >= 0 && newIndex < npcDialogues.Count)
+        {
+            currentDialogueIndex = newIndex;
+        }
+    }
+
+    public void NextDialogue()
+    {
+        if (npcDialogues != null && currentDialogueIndex < npcDialogues.Count - 1)
+        {
+            currentDialogueIndex++;
         }
     }
 }

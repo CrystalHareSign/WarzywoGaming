@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c515d69168ea4048ae4123f34242b13, type: 3}
+  m_Name: Dude_2
+  m_EditorClassIdentifier: 
+  speakerNameEnglish: Dude
+  speakerNamePolish: "Kole\u015B"
+  speakerNameGerman: 
+  nodes:
+  - textEnglish: Thanks stranger, here it's your cash
+    textPolish: "Dzi\u0119ki nieznajomy, to twoja zap\u0142ata"
+    textGerman: 
+    audioEnglish: {fileID: 0}
+    audioPolish: {fileID: 0}
+    audioGerman: {fileID: 0}
+    responses:
+    - textEnglish: 'Take money [1000]'
+      textPolish: "We\u017A pieni\u0105dze [1000]"
+      textGerman: 
+      nextNode: -1
+      action: TalkToGuard
+      setDialogueIndex: -1
+  startNode: 0

@@ -9,32 +9,36 @@ public class DialogueManager : MonoBehaviour
     public TMP_Text speakerText;
     public TMP_Text dialogueText;
     public ScrollRect dialogueScrollRect;
-    public Button[] answerButtons;             // 4 przyciski
-    public TMP_Text[] answerButtonTexts;       // 4 TMP_Texty do opisów tych przycisków
+    public Button[] answerButtons;
+    public TMP_Text[] answerButtonTexts;
     public AudioSource audioSource;
 
     private DialogueData currentDialogue;
     private int currentNodeIndex;
 
-    // Dodane: referencje do skryptów od ruchu i kamery
     private PlayerMovement playerMovement;
     private MouseLook mouseLook;
 
-    // Statyczna flaga aktywnoœci dialogu
     public static bool DialogueActive { get; private set; } = false;
-
-    // Singleton (opcjonalnie jeœli chcesz mieæ Instance)
     public static DialogueManager Instance { get; private set; }
 
     // Dodane: referencja do aktualnego hovera rozmówcy
     private HoverMessage currentNpcHover;
 
+    // NOWE: referencja do InteractableItem, który wywo³a³ dialog
+    private InteractableItem currentInteractableItem;
+
     void Awake()
     {
         if (Instance == null)
+        {
             Instance = this;
+            DontDestroyOnLoad(this.gameObject);
+        }
         else
+        {
             Destroy(gameObject);
+        }
     }
 
     void Start()
@@ -42,13 +46,11 @@ public class DialogueManager : MonoBehaviour
         if (dialoguePanel != null)
             dialoguePanel.SetActive(false);
 
-        // ZnajdŸ komponenty w scenie (mo¿esz te¿ zrobiæ to przez publiczne pola i przeci¹gn¹æ w Inspectorze)
         playerMovement = FindAnyObjectByType<PlayerMovement>();
         mouseLook = FindAnyObjectByType<MouseLook>();
     }
 
-    // Dodane: teraz przyjmujemy referencjê do HoverMessage NPC
-    public void StartDialogue(DialogueData dialogue, HoverMessage npcHover)
+    public void StartDialogue(DialogueData dialogue, HoverMessage npcHover, InteractableItem interactableItem = null)
     {
         DialogueActive = true;
         currentNpcHover = npcHover;
@@ -57,14 +59,13 @@ public class DialogueManager : MonoBehaviour
 
         currentDialogue = dialogue;
         currentNodeIndex = dialogue.startNode;
+        currentInteractableItem = interactableItem;
 
-        // Wy³¹cz ruch i kamerê oraz odblokuj kursor
         if (playerMovement != null) playerMovement.enabled = false;
         if (mouseLook != null) mouseLook.enabled = false;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        // Poka¿ panel dialogu
         if (dialoguePanel != null)
             dialoguePanel.SetActive(true);
 
@@ -74,10 +75,9 @@ public class DialogueManager : MonoBehaviour
     void ShowCurrentNode()
     {
         var node = currentDialogue.nodes[currentNodeIndex];
-        speakerText.text = node.speakerName;
+        speakerText.text = GetLocalizedSpeakerName(currentDialogue); // <-- poprawka!
         dialogueText.text = GetLocalizedNodeText(node);
 
-        // Audio
         if (audioSource)
         {
             audioSource.Stop();
@@ -89,12 +89,10 @@ public class DialogueManager : MonoBehaviour
             }
         }
 
-        // Przewiñ na górê scrolla
         Canvas.ForceUpdateCanvases();
         if (dialogueScrollRect)
             dialogueScrollRect.verticalNormalizedPosition = 1f;
 
-        // Ustaw przyciski
         int answersCount = node.responses != null ? node.responses.Length : 0;
         for (int i = 0; i < answerButtons.Length; i++)
         {
@@ -114,6 +112,24 @@ public class DialogueManager : MonoBehaviour
                 answerButtons[i].onClick.RemoveAllListeners();
             }
         }
+    }
+
+    // Nowa wersja – bierze imiê z DialogueData, nie z node!
+    string GetLocalizedSpeakerName(DialogueData data)
+    {
+        if (LanguageManager.Instance != null)
+        {
+            switch (LanguageManager.Instance.currentLanguage)
+            {
+                case LanguageManager.Language.Polski:
+                    return string.IsNullOrEmpty(data.speakerNamePolish) ? data.speakerNameEnglish : data.speakerNamePolish;
+                case LanguageManager.Language.Deutsch:
+                    return string.IsNullOrEmpty(data.speakerNameGerman) ? data.speakerNameEnglish : data.speakerNameGerman;
+                default:
+                    return data.speakerNameEnglish;
+            }
+        }
+        return data.speakerNameEnglish;
     }
 
     string GetLocalizedNodeText(DialogueNode node)
@@ -170,9 +186,15 @@ public class DialogueManager : MonoBehaviour
     void OnResponse(int responseIndex)
     {
         var response = currentDialogue.nodes[currentNodeIndex].responses[responseIndex];
+
         if (!string.IsNullOrEmpty(response.action))
         {
             PerformAction(response.action);
+        }
+
+        if (currentInteractableItem != null && response.setDialogueIndex >= 0)
+        {
+            currentInteractableItem.SetDialogueIndex(response.setDialogueIndex);
         }
 
         if (response.nextNode == -1)
@@ -200,26 +222,26 @@ public class DialogueManager : MonoBehaviour
         if (dialoguePanel != null)
             dialoguePanel.SetActive(false);
 
-        // W³¹cz ruch i kamerê oraz zablokuj kursor
         if (playerMovement != null) playerMovement.enabled = true;
         if (mouseLook != null) mouseLook.enabled = true;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        // Przywróæ hover NPC jeœli by³ przekazany
         if (currentNpcHover != null)
         {
             currentNpcHover.isInteracted = false;
             currentNpcHover = null;
         }
 
-        // Flaga nieaktywny dialog
+        currentInteractableItem = null;
         DialogueActive = false;
     }
-
     void PerformAction(string action)
     {
-        Debug.Log("NPC Action: " + action);
-        // Dodaj tu w³asn¹ obs³ugê np. if (action == "OpenGate") { ... }
+        if (!string.IsNullOrEmpty(action))
+        {
+            // Zak³adamy, ¿e masz DialogueActionHandler jako singleton lub komponent w scenie
+            DialogueActionHandler.Instance?.HandleAction(action, currentInteractableItem);
+        }
     }
 }

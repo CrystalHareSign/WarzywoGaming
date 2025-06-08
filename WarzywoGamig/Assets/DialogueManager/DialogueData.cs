@@ -3,6 +3,11 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Dialogue/Dialogue Data", fileName = "NewDialogueData")]
 public class DialogueData : ScriptableObject
 {
+    [Header("Imiê postaci w ró¿nych jêzykach")]
+    public string speakerNameEnglish;
+    public string speakerNamePolish;
+    public string speakerNameGerman;
+
     public DialogueNode[] nodes;
     public int startNode = 0;
 }
@@ -10,8 +15,6 @@ public class DialogueData : ScriptableObject
 [System.Serializable]
 public class DialogueNode
 {
-    public string speakerName;
-
     [Header("Tekst w ró¿nych jêzykach")]
     [TextArea(2, 6)] public string textEnglish;
     [TextArea(2, 6)] public string textPolish;
@@ -28,11 +31,11 @@ public class DialogueNode
 [System.Serializable]
 public class DialogueResponse
 {
-    [Header("OdpowiedŸ w ró¿nych jêzykach")]
     public string textEnglish;
     public string textPolish;
     public string textGerman;
 
-    public int nextNode = -1;
-    public string action;
+    public int nextNode = -1; // domyœlnie -1: koniec rozmowy
+    public string action; // opcjonalnie: akcja do wykonania
+    public int setDialogueIndex = -1; // domyœlnie -1: nie zmieniaj dialogu
 }
