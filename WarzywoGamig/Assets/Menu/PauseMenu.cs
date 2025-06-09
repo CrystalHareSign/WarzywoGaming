@@ -67,6 +67,8 @@ public class PauseMenu : MonoBehaviour
 
     void Update()
     {
+        // Blokuj pauzê jeœli trwa dialog
+        if (DialogueManager.DialogueActive) return;
         // Dodanie warunku, który sprawdza, czy menu jest dostêpne
         if (!CameraToMonitor.CanUseMenu) return; // Jeœli flaga jest ustawiona na false, zablokuj dostêp do menu
 
