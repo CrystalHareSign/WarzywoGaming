@@ -16,4 +16,4 @@ MonoBehaviour:
   doorways:
   - localPosition: {x: -5, y: 0, z: -5}
     direction: 3
-  spawnChance: 100
+  spawnChance: 80

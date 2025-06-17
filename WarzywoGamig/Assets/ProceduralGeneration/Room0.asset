@@ -10,16 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e173c60c2f5f08444a638de650237a1c, type: 3}
-  m_Name: Room3
+  m_Name: Room0
   m_EditorClassIdentifier: 
-  prefab: {fileID: 102254422600819035, guid: b9f0ebaa0bad6e146937b6b2c197d186, type: 3}
+  prefab: {fileID: 1254767924092155014, guid: 357592b68f4672b43b90ffcddb5c1b8c, type: 3}
   doorways:
-  - localPosition: {x: -5, y: 0, z: -10}
-    direction: 1
-  - localPosition: {x: 10, y: 0, z: -5}
-    direction: 2
-  - localPosition: {x: -5, y: 0, z: 10}
+  - localPosition: {x: 0, y: 0, z: 10}
     direction: 0
-  - localPosition: {x: -10, y: 0, z: -5}
-    direction: 3
-  spawnChance: 50
+  spawnChance: 100

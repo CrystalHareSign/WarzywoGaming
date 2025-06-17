@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections.Generic;
 
 public class ProceduralLevelGenerator : MonoBehaviour
 {
@@ -9,23 +9,28 @@ public class ProceduralLevelGenerator : MonoBehaviour
     [Header("Start Room")]
     public RoomPrefabData startRoomPrefab;
 
+    [Header("Start Room Position")]
+    public Vector3 startRoomPositionOverride = Vector3.zero;
+
     [Header("Generation Settings")]
     [Tooltip("Ile pokoi ma byæ w poziomie")]
     public int roomCount = 10;
 
     [Header("Direction Restriction")]
     public DoorDirection forbiddenDirection = DoorDirection.North;
-
     public float forbiddenMargin = 0.01f;
 
     [Header("Debug/Generation")]
     [Tooltip("Czy generowaæ automatycznie na starcie")]
     public bool autoGenerateOnStart = true;
 
+    [Header("Door Prefabs")]
+    public List<GameObject> doorClosedPrefabs;   // Lista zamkniêtych (œlepych) drzwi
+    public List<GameObject> doorActivePrefabs;   // Lista otwartych (przechodnich) drzwi
+
     private List<PlacedRoom> placedRooms = new List<PlacedRoom>();
     private Vector3 startRoomPosition;
 
-    // Struktura do backtrackingu: zapamiêtuje jak pokój by³ do³o¿ony
     private class GenerationStep
     {
         public PlacedRoom room;
@@ -50,7 +55,9 @@ public class ProceduralLevelGenerator : MonoBehaviour
     {
         ClearPreviousLevel();
         bool success = TryGenerateLevelWithBacktracking();
-        if (!success)
+        if (success)
+            SpawnDoors();
+        else
             Debug.LogError($"Nie uda³o siê wygenerowaæ poziomu z {roomCount} pokojami (po backtrackingu)!");
         yield break;
     }
@@ -64,25 +71,23 @@ public class ProceduralLevelGenerator : MonoBehaviour
         generationSteps.Clear();
     }
 
-    /// <summary>
-    /// Pêtla generacji z backtrackingiem i poprawnym odznaczaniem drzwi
-    /// </summary>
     private bool TryGenerateLevelWithBacktracking()
     {
         generationSteps.Clear();
 
-        // Start room
         RoomPrefabData startRoomData = startRoomPrefab != null ? startRoomPrefab : GetRandomRoomPrefab();
-        Quaternion yRot = GetRandomYRotation();
-        GameObject startRoomGO = Instantiate(startRoomData.prefab, Vector3.zero, yRot);
+        // Start room zawsze w domyœlnej rotacji, pozycja z inspektora!
+        Quaternion yRot = Quaternion.identity;
+        GameObject startRoomGO = Instantiate(startRoomData.prefab, startRoomPositionOverride, yRot);
         Bounds startBounds = GetRoomBounds(startRoomGO);
+        Debug.Log($"START ROOM bounds: center={startBounds.center}, size={startBounds.size}");
         var startRoom = new PlacedRoom(startRoomGO, startRoomData, GetDoorwaysWorld(startRoomGO, startRoomData), startBounds);
         placedRooms.Add(startRoom);
         generationSteps.Add(new GenerationStep { room = startRoom, parentRoomIndex = -1, parentDoorIndex = -1, thisDoorIndex = -1 });
         startRoomPosition = startRoomGO.transform.position;
 
         int placed = 1;
-        int maxAttempts = 10000; // zabezpieczenie przed wieczn¹ pêtl¹
+        int maxAttempts = 10000;
         int attempts = 0;
 
         while (placed < roomCount && attempts < maxAttempts)
@@ -100,8 +105,7 @@ public class ProceduralLevelGenerator : MonoBehaviour
             }
             else
             {
-                // BACKTRACK: usuñ ostatni krok i odblokuj drzwi w rodzicu
-                if (generationSteps.Count <= 1) // nie usuwaj startowego
+                if (generationSteps.Count <= 1)
                     break;
                 var lastStep = generationSteps[generationSteps.Count - 1];
                 generationSteps.RemoveAt(generationSteps.Count - 1);
@@ -122,7 +126,6 @@ public class ProceduralLevelGenerator : MonoBehaviour
         return false;
     }
 
-    // Fisher-Yates shuffle
     void Shuffle<T>(List<T> list)
     {
         for (int i = list.Count - 1; i > 0; i--)
@@ -160,7 +163,6 @@ public class ProceduralLevelGenerator : MonoBehaviour
         return eligibleRooms[eligibleRooms.Count - 1];
     }
 
-    // Nowa metoda: TryPlaceNextRoomWithTrace
     bool TryPlaceNextRoomWithTrace(out int usedRoomIdx, out int usedParentDoor, out int usedThisDoor)
     {
         usedRoomIdx = -1; usedParentDoor = -1; usedThisDoor = -1;
@@ -208,6 +210,10 @@ public class ProceduralLevelGenerator : MonoBehaviour
                         Vector3 candidateDir = yRot * GetDirectionVector(candidateDoor.direction);
 
                         var doorway = placed.doorways[i];
+
+                        if (roomData == placed.data)
+                            continue;
+
                         if (Vector3.Angle(doorway.direction, -candidateDir) > 1f)
                             continue;
 
@@ -218,19 +224,95 @@ public class ProceduralLevelGenerator : MonoBehaviour
 
                         var newRoomGO = Instantiate(roomData.prefab, offset, rot);
                         Bounds newBounds = GetRoomBounds(newRoomGO);
+                        Debug.Log($"NEW ROOM prefab={roomData.prefab.name} bounds: center={newBounds.center}, size={newBounds.size}");
+
+                        // Sprawdzenie "œlepych drzwi" dla nowego pokoju
+                        bool badDoorInWall = false;
+                        var newDoorways = GetDoorwaysWorld(newRoomGO, roomData);
+                        for (int dwIdx = 0; dwIdx < newDoorways.Count; dwIdx++)
+                        {
+                            if (dwIdx == j) continue;
+                            var testDoor = newDoorways[dwIdx];
+                            foreach (var other in placedRooms)
+                            {
+                                if (other == placed) continue;
+                                if (other.bounds.Contains(testDoor.position))
+                                {
+                                    bool hasMatchingDoor = false;
+                                    for (int o = 0; o < other.doorways.Count; o++)
+                                    {
+                                        var odw = other.doorways[o];
+                                        if (Vector3.Distance(odw.position, testDoor.position) < 0.2f &&
+                                            Vector3.Angle(odw.direction, -testDoor.direction) < 5f)
+                                        {
+                                            hasMatchingDoor = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!hasMatchingDoor)
+                                    {
+                                        badDoorInWall = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (badDoorInWall) break;
+                        }
+                        if (badDoorInWall)
+                        {
+                            Destroy(newRoomGO);
+                            continue;
+                        }
+
+                        // Sprawdzenie czy istniej¹ce drzwi nie prowadz¹ w œcianê nowego pokoju
+                        bool otherDoorInNewWall = false;
+                        foreach (var other in placedRooms)
+                        {
+                            for (int o = 0; o < other.doorways.Count; o++)
+                            {
+                                var odw = other.doorways[o];
+                                if (other.IsDoorConnected(o)) continue;
+                                if (newBounds.Contains(odw.position))
+                                {
+                                    bool hasMatchingDoor = false;
+                                    for (int nd = 0; nd < newDoorways.Count; nd++)
+                                    {
+                                        var ndw = newDoorways[nd];
+                                        if (Vector3.Distance(ndw.position, odw.position) < 0.2f &&
+                                            Vector3.Angle(ndw.direction, -odw.direction) < 5f)
+                                        {
+                                            hasMatchingDoor = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!hasMatchingDoor)
+                                    {
+                                        otherDoorInNewWall = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (otherDoorInNewWall) break;
+                        }
+                        if (otherDoorInNewWall)
+                        {
+                            Destroy(newRoomGO);
+                            continue;
+                        }
 
                         if (IsColliding(newBounds))
                         {
+                            Debug.LogWarning($"KOLIZJA podczas próby dodania {roomData.prefab.name} w {newBounds.center} (size={newBounds.size})");
                             Destroy(newRoomGO);
                             continue;
                         }
                         if (IsInForbiddenHemisphere(newBounds.center, startRoomPosition, forbiddenDirection, forbiddenMargin))
                         {
+                            Debug.LogWarning($"POKÓJ {roomData.prefab.name} znalaz³ siê w zabronionej pó³sferze!");
                             Destroy(newRoomGO);
                             continue;
                         }
 
-                        var newDoorways = GetDoorwaysWorld(newRoomGO, roomData);
                         var newPlaced = new PlacedRoom(newRoomGO, roomData, newDoorways, newBounds);
                         placedRooms.Add(newPlaced);
                         placed.MarkDoorConnected(i);
@@ -281,7 +363,7 @@ public class ProceduralLevelGenerator : MonoBehaviour
     {
         foreach (var placed in placedRooms)
         {
-            if (placed != null && placed.bounds.Intersects(newBounds))
+            if (placed != null && BoundsTouchOrOverlap(placed.bounds, newBounds))
             {
                 Debug.LogWarning($"Collision between {placed.room.name} and new room at {newBounds.center}");
                 return true;
@@ -290,13 +372,36 @@ public class ProceduralLevelGenerator : MonoBehaviour
         return false;
     }
 
+    bool BoundsTouchOrOverlap(Bounds a, Bounds b)
+    {
+        float tolerance = 0.05f;
+        if (a.max.x - tolerance <= b.min.x || b.max.x - tolerance <= a.min.x) return false;
+        if (a.max.y - tolerance <= b.min.y || b.max.y - tolerance <= a.min.y) return false;
+        if (a.max.z - tolerance <= b.min.z || b.max.z - tolerance <= a.min.z) return false;
+        return true;
+    }
+
     Bounds GetRoomBounds(GameObject roomGO)
     {
-        Renderer rend = roomGO.GetComponentInChildren<Renderer>();
-        if (rend != null)
-            return rend.bounds;
-        else
-            return new Bounds(roomGO.transform.position, Vector3.one * 5f);
+        var colliders = roomGO.GetComponentsInChildren<Collider>();
+        if (colliders.Length > 0)
+        {
+            Bounds bounds = colliders[0].bounds;
+            for (int i = 1; i < colliders.Length; i++)
+                bounds.Encapsulate(colliders[i].bounds);
+            bounds.Expand(-0.2f);
+            return bounds;
+        }
+        var renderers = roomGO.GetComponentsInChildren<Renderer>();
+        if (renderers.Length > 0)
+        {
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+                bounds.Encapsulate(renderers[i].bounds);
+            bounds.Expand(-0.2f);
+            return bounds;
+        }
+        return new Bounds(roomGO.transform.position, Vector3.one * 5f);
     }
 
     Quaternion GetRandomYRotation()
@@ -333,6 +438,53 @@ public class ProceduralLevelGenerator : MonoBehaviour
             });
         }
         return result;
+    }
+
+    // --- Spawnowanie drzwi po wygenerowaniu poziomu ---
+    void SpawnDoors()
+    {
+        foreach (var placed in placedRooms)
+        {
+            for (int i = 0; i < placed.doorways.Count; i++)
+            {
+                var dw = placed.doorways[i];
+
+                // Czy za tymi drzwiami jest inny pokój z drzwiami naprzeciwko?
+                bool hasExit = false;
+                foreach (var other in placedRooms)
+                {
+                    if (other == placed) continue;
+                    foreach (var odw in other.doorways)
+                    {
+                        if (
+                            Vector3.Distance(odw.position, dw.position) < 0.2f &&
+                            Vector3.Angle(odw.direction, -dw.direction) < 5f
+                        )
+                        {
+                            hasExit = true;
+                            break;
+                        }
+                    }
+                    if (hasExit) break;
+                }
+
+                // Losowy prefab z listy
+                GameObject prefab = null;
+                if (hasExit && doorActivePrefabs != null && doorActivePrefabs.Count > 0)
+                {
+                    prefab = doorActivePrefabs[Random.Range(0, doorActivePrefabs.Count)];
+                }
+                else if (!hasExit && doorClosedPrefabs != null && doorClosedPrefabs.Count > 0)
+                {
+                    prefab = doorClosedPrefabs[Random.Range(0, doorClosedPrefabs.Count)];
+                }
+
+                if (prefab != null)
+                {
+                    GameObject go = GameObject.Instantiate(prefab, dw.position, Quaternion.LookRotation(dw.direction), placed.room.transform);
+                }
+            }
+        }
     }
 }
 

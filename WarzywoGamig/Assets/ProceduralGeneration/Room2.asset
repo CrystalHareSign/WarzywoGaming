@@ -20,4 +20,4 @@ MonoBehaviour:
     direction: 3
   - localPosition: {x: 0, y: 0, z: 10}
     direction: 0
-  spawnChance: 20
+  spawnChance: 50
