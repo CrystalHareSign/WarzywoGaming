@@ -8,6 +8,10 @@ public class HoverMessage : MonoBehaviour
     [TextArea] public string messageEnglish;
     [TextArea] public string messagePolish;
 
+    [Header("Teksty info (popup) po jêzykach")]
+    [TextArea] public string infoEnglish;
+    [TextArea] public string infoPolish;
+
     [Header("Tekst klawisza (wspólny)")]
     public string keyText = "[E]";
 
@@ -24,7 +28,12 @@ public class HoverMessage : MonoBehaviour
     public int messageFontSize = 20;
     public int keyFontSize = 30;
 
+    [Header("Wygl¹d popupa")]
+    public int infoFontSize = 20; // Rozmiar czcionki popupu
+    public float duration = 3f;   // Czas wyœwietlania popupu w sekundach
+
     [HideInInspector] public string message;
+    [HideInInspector] public string infoMessage;
 
     private void Start()
     {
@@ -52,15 +61,15 @@ public class HoverMessage : MonoBehaviour
         {
             case LanguageManager.Language.English:
                 message = messageEnglish;
+                infoMessage = infoEnglish;
                 break;
             case LanguageManager.Language.Polski:
                 message = messagePolish;
+                infoMessage = infoPolish;
                 break;
-            //case LanguageManager.Language.German:
-            //    message = messageGerman;
-            //    break;
             default:
                 message = messageEnglish;
+                infoMessage = infoEnglish;
                 break;
         }
     }

@@ -67,6 +67,7 @@ public class PauseMenu : MonoBehaviour
 
     void Update()
     {
+        if (InputBlocker.Active) return;
         // Blokuj pauzê jeœli trwa dialog
         if (DialogueManager.DialogueActive) return;
         // Dodanie warunku, który sprawdza, czy menu jest dostêpne

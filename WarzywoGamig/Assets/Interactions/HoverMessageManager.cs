@@ -1,13 +1,17 @@
-using UnityEngine;
 using TMPro;
+using UnityEngine;
+using System.Collections;
 
 public class HoverMessageManager : MonoBehaviour
 {
-    public TMP_Text messageText; // Tekst, który bêdzie wyœwietlany po najechaniu kursorem
+    public TMP_Text messageText; // Tekst wyœwietlany po najechaniu kursorem
     public TMP_Text keyText; // Tekst z przyciskiem (np. "E")
-    private Camera mainCamera;
+    public TMP_Text messageTextInfo; // Tekst popup do informacji (fadeout)
 
+    private Camera mainCamera;
     public static HoverMessageManager Instance;
+
+    private Coroutine infoFadeCoroutine = null;
 
     private void Awake()
     {
@@ -15,11 +19,9 @@ public class HoverMessageManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            //Debug.Log("HoverMessageManager initialized.");
         }
         else
         {
-            //Debug.LogWarning("Another instance of HoverMessageManager found. Destroying this instance.");
             Destroy(gameObject);
         }
     }
@@ -27,19 +29,15 @@ public class HoverMessageManager : MonoBehaviour
     void Start()
     {
         // Ukryj tekst na pocz¹tku
-        if (messageText != null)
+        if (messageText != null) messageText.gameObject.SetActive(false);
+        if (keyText != null) keyText.gameObject.SetActive(false);
+        if (messageTextInfo != null)
         {
-            messageText.gameObject.SetActive(false);
+            messageTextInfo.gameObject.SetActive(false);
+            SetTextAlpha(messageTextInfo, 1f);
         }
-
-        if (keyText != null)
-        {
-            keyText.gameObject.SetActive(false); // Upewnij siê, ¿e jest zakomentowane!
-        }
-
         mainCamera = Camera.main;
     }
-
 
     void Update()
     {
@@ -54,18 +52,17 @@ public class HoverMessageManager : MonoBehaviour
                 if (messageText != null && keyText != null)
                 {
                     messageText.text = hoverMessage.message;
-                    keyText.text = hoverMessage.keyText; // Nie zapomnij u¿yæ hoverMessage.keyText
+                    keyText.text = hoverMessage.keyText;
 
                     messageText.fontSize = hoverMessage.messageFontSize;
                     keyText.fontSize = hoverMessage.keyFontSize;
 
                     messageText.gameObject.SetActive(true);
-                    keyText.gameObject.SetActive(true); // W³¹czamy keyText, jak messageText
+                    keyText.gameObject.SetActive(true);
                 }
             }
             else
             {
-                // Ukrywamy oba teksty
                 if (messageText != null && keyText != null)
                 {
                     messageText.gameObject.SetActive(false);
@@ -83,4 +80,66 @@ public class HoverMessageManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Wywo³aj popup z tekstem i opcjonalnym czasem trwania (domyœlnie 3 sekundy).
+    /// </summary>
+    public void ShowInfoPopup(string text, float duration = 3f)
+    {
+        if (messageTextInfo == null) return;
+
+        if (infoFadeCoroutine != null)
+        {
+            StopCoroutine(infoFadeCoroutine);
+        }
+
+        messageTextInfo.text = text;
+        messageTextInfo.alpha = 1f;
+        messageTextInfo.gameObject.SetActive(true);
+
+        infoFadeCoroutine = StartCoroutine(FadeOutInfo(duration));
+    }
+    public void ShowInfoPopup(string text, int fontSize, float duration = 3f)
+    {
+        if (messageTextInfo == null) return;
+
+        if (infoFadeCoroutine != null)
+        {
+            StopCoroutine(infoFadeCoroutine);
+        }
+
+        messageTextInfo.fontSize = fontSize;
+        messageTextInfo.text = text;
+        messageTextInfo.alpha = 1f;
+        messageTextInfo.gameObject.SetActive(true);
+
+        infoFadeCoroutine = StartCoroutine(FadeOutInfo(duration));
+    }
+
+    private IEnumerator FadeOutInfo(float duration)
+    {
+        yield return new WaitForSeconds(duration);
+
+        float fadeTime = 1.0f;
+        float elapsed = 0f;
+
+        while (elapsed < fadeTime)
+        {
+            elapsed += Time.deltaTime;
+            float alpha = Mathf.Lerp(1f, 0f, elapsed / fadeTime);
+            SetTextAlpha(messageTextInfo, alpha);
+            yield return null;
+        }
+
+        messageTextInfo.gameObject.SetActive(false);
+        SetTextAlpha(messageTextInfo, 1f); // reset alpha na przysz³oœæ
+        infoFadeCoroutine = null;
+    }
+
+    private void SetTextAlpha(TMP_Text text, float alpha)
+    {
+        if (text == null) return;
+        Color c = text.color;
+        c.a = alpha;
+        text.color = c;
+    }
 }

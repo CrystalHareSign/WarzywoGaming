@@ -31,7 +31,6 @@ public class PlayerInteraction : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-
         DontDestroyOnLoad(gameObject);
     }
 
@@ -39,48 +38,33 @@ public class PlayerInteraction : MonoBehaviour
     {
         audioChanger = Object.FindFirstObjectByType<AudioChanger>();
         if (audioChanger == null)
-        {
-            Debug.LogError("Brak obiektu TurretController w scenie.");
-        }
+            Debug.LogError("Brak obiektu AudioChanger w scenie.");
 
         turretController = Object.FindFirstObjectByType<TurretController>();
         if (turretController == null)
-        {
             Debug.LogError("Brak obiektu TurretController w scenie.");
-        }
 
         treasureRefiner = Object.FindFirstObjectByType<TreasureRefiner>();
         if (treasureRefiner == null)
-        {
             Debug.LogError("Brak obiektu TreasureRefiner w scenie.");
-        }
 
         cameraToMonitor = Object.FindFirstObjectByType<CameraToMonitor>();
         if (cameraToMonitor == null)
-        {
             Debug.LogError("Brak obiektu CameraToMonitor w scenie.");
-        }
 
         if (progressCircle != null)
         {
             progressCircle.gameObject.SetActive(false);
             progressCircle.fillAmount = 0f;
         }
-
         if (messageText != null)
-        {
             messageText.gameObject.SetActive(false);
-        }
-
         if (keyText != null)
-        {
             keyText.gameObject.SetActive(false);
-        }
     }
 
     void Update()
     {
-        // ...w Update():
         if (playerCamera == null)
         {
             Debug.LogError("PlayerCamera is not assigned in the Inspector.");
@@ -90,7 +74,6 @@ public class PlayerInteraction : MonoBehaviour
         Inventory playerInventory = Object.FindFirstObjectByType<Inventory>();
         bool isHoldingLoot = playerInventory != null && playerInventory.lootParent != null && playerInventory.lootParent.childCount > 0;
 
-        // SprawdŸ czy JESTEŒ przy monitorze lub wie¿yczce
         bool isAnyMonitorActive = false;
         var allMonitors = Object.FindObjectsByType<CameraToMonitor>(FindObjectsSortMode.None);
         foreach (var monitor in allMonitors)
@@ -106,11 +89,9 @@ public class PlayerInteraction : MonoBehaviour
         if (checkTurretController != null && checkTurretController.isUsingTurret)
             isTurretActive = true;
 
-        // Detekcja przejœcia loot->brak loot
         bool justDroppedLoot = wasHoldingLoot && !isHoldingLoot;
         wasHoldingLoot = isHoldingLoot;
 
-        // --- UI podczas trzymania loot ---
         if (isHoldingLoot)
         {
             HideUI();
@@ -120,21 +101,14 @@ public class PlayerInteraction : MonoBehaviour
                 TreasureValue treasureValue = loot.GetComponent<TreasureValue>();
                 if (treasureValue != null)
                 {
-                    // Wyœwietl kategoriê jako nazwê broni
                     inventoryUI.weaponNameText.text = treasureValue.category;
                     inventoryUI.weaponNameText.gameObject.SetActive(true);
-
-                    // Wyœwietl iloœæ w ammoText
                     inventoryUI.ammoText.text = treasureValue.amount.ToString();
                     inventoryUI.ammoText.gameObject.SetActive(true);
-
-                    // Ukryj pozosta³e elementy UI broni
                     inventoryUI.totalAmmoText.gameObject.SetActive(false);
                     inventoryUI.slashText.gameObject.SetActive(false);
                     inventoryUI.reloadingText.gameObject.SetActive(false);
                     inventoryUI.weaponImage.gameObject.SetActive(false);
-
-                    // Ukryj UI itemów
                     inventoryUI.HideItemUI();
                 }
                 else
@@ -146,7 +120,6 @@ public class PlayerInteraction : MonoBehaviour
             return;
         }
 
-        // --- NATYCHMIAST po puszczeniu loot: odœwie¿ UI broni i itemów ---
         if (justDroppedLoot && inventoryUI != null && !isAnyMonitorActive && !isTurretActive)
         {
             if (inventory == null || inventory.currentWeaponPrefab == null)
@@ -161,10 +134,9 @@ public class PlayerInteraction : MonoBehaviour
                 }
             }
             inventoryUI.ShowItemUI(inventory.items);
-            return; // KLUCZOWE! Nie duplikuj ni¿ej
+            return;
         }
 
-        // --- UI broni/itemów w normalnym stanie ---
         if (!isAnyMonitorActive && !isTurretActive && inventoryUI != null)
         {
             if (inventory == null || inventory.currentWeaponPrefab == null)
@@ -181,20 +153,68 @@ public class PlayerInteraction : MonoBehaviour
             inventoryUI.ShowItemUI(inventory.items);
         }
 
-        // ...reszta Twojego Update() bez zmian...
         RaycastHit hit;
         if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward, out hit, interactionRange, interactableLayer))
         {
             InteractableItem interactableItem = hit.collider.GetComponent<InteractableItem>();
             if (interactableItem != null && !interactableItem.hoverMessage.isInteracted)
             {
+                // --- FOTEL KIEROWCY: przytrzymaj E aby potwierdziæ podró¿ ---
+                if (interactableItem.isDriverSeat)
+                {
+                    requiredHoldTime = interactableItem.requiredHoldTime > 0f ? interactableItem.requiredHoldTime : 2f;
+                    if (messageText != null && interactableItem.hoverMessage != null)
+                    {
+                        messageText.text = interactableItem.hoverMessage.message;
+                        messageText.fontSize = interactableItem.hoverMessage.messageFontSize;
+                        messageText.gameObject.SetActive(true);
+                    }
+                    if (keyText != null && interactableItem.hoverMessage != null)
+                    {
+                        keyText.text = interactableItem.hoverMessage.keyText;
+                        keyText.fontSize = interactableItem.hoverMessage.keyFontSize;
+                        keyText.gameObject.SetActive(true);
+                    }
+                    if (progressCircle != null)
+                        progressCircle.gameObject.SetActive(true);
+
+                    if (Input.GetKey(KeyCode.E))
+                    {
+                        if (currentInteractableItem == interactableItem)
+                        {
+                            interactionTimer += Time.deltaTime;
+                            if (progressCircle != null)
+                                progressCircle.fillAmount = interactionTimer / requiredHoldTime;
+                            if (interactionTimer >= requiredHoldTime)
+                            {
+                                UseDriverSeat(interactableItem);
+                                interactionTimer = 0f;
+                                HideUI();
+                            }
+                        }
+                        else
+                        {
+                            currentInteractableItem = interactableItem;
+                            interactionTimer = 0f;
+                            if (progressCircle != null)
+                                progressCircle.fillAmount = 0f;
+                        }
+                    }
+                    else
+                    {
+                        interactionTimer = 0f;
+                        if (progressCircle != null)
+                            progressCircle.fillAmount = 0f;
+                    }
+                    return;
+                }
+
                 bool isWheel = interactableItem.category == "Wheel" || interactableItem.itemName.StartsWith("Opona");
                 if (isWheel && audioChanger != null && audioChanger.isPlayerInside)
                 {
                     HideUI();
                     return;
                 }
-
                 bool isBusMonitor = interactableItem.isMonitor && interactableItem.busMonitor;
                 if (isBusMonitor && audioChanger != null && !audioChanger.isPlayerInside)
                 {
@@ -208,14 +228,12 @@ public class PlayerInteraction : MonoBehaviour
                     messageText.fontSize = interactableItem.hoverMessage.messageFontSize;
                     messageText.gameObject.SetActive(true);
                 }
-
                 if (keyText != null && interactableItem.hoverMessage != null)
                 {
                     keyText.text = interactableItem.hoverMessage.keyText;
                     keyText.fontSize = interactableItem.hoverMessage.keyFontSize;
                     keyText.gameObject.SetActive(true);
                 }
-
                 if (progressCircle != null)
                 {
                     progressCircle.gameObject.SetActive(true);
@@ -332,6 +350,16 @@ public class PlayerInteraction : MonoBehaviour
         }
     }
 
+    // Prosta metoda: wywo³uje tylko DriverSeatInteraction na tym przedmiocie
+    private void UseDriverSeat(InteractableItem interactableItem)
+    {
+        var driverSeat = interactableItem.GetComponent<DriverSeatInteraction>();
+        if (driverSeat != null)
+        {
+            driverSeat.StartTravel();
+        }
+    }
+
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         progressCircle = GameObject.Find("ProgressCircle")?.GetComponent<Image>();
@@ -385,19 +413,11 @@ public class PlayerInteraction : MonoBehaviour
     private void HideUI()
     {
         if (progressCircle != null)
-        {
             progressCircle.gameObject.SetActive(false);
-        }
-
         if (messageText != null)
-        {
             messageText.gameObject.SetActive(false);
-        }
-
         if (keyText != null)
-        {
             keyText.gameObject.SetActive(false);
-        }
     }
 
     private void ResetInteraction()
@@ -408,20 +428,13 @@ public class PlayerInteraction : MonoBehaviour
             progressCircle.fillAmount = 0f;
             progressCircle.gameObject.SetActive(false);
         }
-
         if (messageText != null)
-        {
             messageText.gameObject.SetActive(false);
-        }
-
         if (keyText != null)
-        {
             keyText.gameObject.SetActive(false);
-        }
 
         currentInteractableItem = null;
 
-        // SprawdŸ czy którykolwiek monitor jest aktywny
         bool isAnyMonitorActive = false;
         var allMonitors = Object.FindObjectsByType<CameraToMonitor>(FindObjectsSortMode.None);
         foreach (var monitor in allMonitors)
@@ -448,6 +461,7 @@ public class PlayerInteraction : MonoBehaviour
                 gunScript.EquipWeapon();
         }
     }
+
     public void ReactivateInventoryAndUI()
     {
         if (inventoryUI != null)

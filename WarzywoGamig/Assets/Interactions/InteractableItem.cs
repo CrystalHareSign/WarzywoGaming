@@ -41,6 +41,9 @@ public class InteractableItem : MonoBehaviour, IInteractable
     public bool isMonitor = false;
     public bool busMonitor = false;
 
+    [Header("Driver Seat")]
+    public bool isDriverSeat = false;
+
     [Header("System kierowczy")]
     public bool alwaysInteractive = false;
     public bool hasCooldown = false;

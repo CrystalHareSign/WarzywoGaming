@@ -35,6 +35,9 @@ public class CameraToMonitor : MonoBehaviour
     public static bool CanUseMenu = true; // Flaga, która kontroluje, czy menu jest dostêpne
     public bool isUsingMonitor = false;
     private bool flashlightWasOnBeforeMonitor = false;
+    public static string pendingTravelScene = null;
+    public float travelConfirmTime = 10f;
+    private Coroutine travelConfirmCoroutine = null;
 
     [Header("Info")]
     public bool hasInfo = false;
@@ -470,6 +473,7 @@ public class CameraToMonitor : MonoBehaviour
         }
     }
 
+    // Ta metoda wywo³ywana po wpisaniu komendy zmiany sceny na monitorze
     public void ExitTerminalAndChangeScene(string targetSceneName, float delaySeconds = 3f)
     {
         string currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
@@ -484,57 +488,76 @@ public class CameraToMonitor : MonoBehaviour
                 playSoundOnObject.PlaySound("TerminalError", errorVolume, false);
             }
 
-            return; // Przerywamy – nie wychodzimy z terminala ani nie zmieniamy sceny
+            return;
         }
 
-        StartCoroutine(ExitAndDelaySceneChange(targetSceneName, delaySeconds));
+        // Ustaw scenê do podró¿y i rozpocznij licznik czasu na potwierdzenie
+        pendingTravelScene = targetSceneName;
+        if (travelConfirmCoroutine != null)
+            StopCoroutine(travelConfirmCoroutine);
+        travelConfirmCoroutine = StartCoroutine(TravelConfirmCountdown(travelConfirmTime));
+
+        // WyjdŸ z terminala (wróæ kamer¹ do postaci)
+        StartCoroutine(MoveCameraBackToOriginalPosition());
+
+        // Wyœwietl UI zachêcaj¹cy do podejœcia do fotela (mo¿esz tu dodaæ w³asny system powiadomieñ)
+        ShowTravelPrompt();
     }
 
-    private IEnumerator ExitAndDelaySceneChange(string sceneName, float delay)
+    private void ShowTravelPrompt()
     {
-        // ZnajdŸ TreasureRefiner w scenie
-        TreasureRefiner treasureRefiner = UnityEngine.Object.FindFirstObjectByType<TreasureRefiner>();
+        
+    }
 
-        // SprawdŸ, czy TreasureRefiner istnieje i czy rafinacja jest w toku
-        if (treasureRefiner != null && treasureRefiner.isSpawning)
+    private IEnumerator TravelConfirmCountdown(float seconds)
+    {
+        float timer = seconds;
+        // Tu mo¿esz wrzuciæ aktualizacjê UI z odliczaniem, jeœli chcesz
+        while (timer > 0 && pendingTravelScene != null)
         {
-            Debug.Log("Rafinacja w toku. Nie mo¿na zmieniæ sceny.");
-            ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("refiningBlocked"), "#FF0000");
+            // (Opcjonalnie) Aktualizuj licznik na UI
+            timer -= Time.deltaTime;
+            yield return null;
+        }
+        if (pendingTravelScene != null)
+        {
+            // Czas min¹³ - anuluj podró¿
+            pendingTravelScene = null;
+        }
+        travelConfirmCoroutine = null;
+    }
 
-            foreach (var playSoundOnObject in playSoundObjects)
+    public void ConfirmTravel()
+    {
+        if (string.IsNullOrEmpty(pendingTravelScene))
+            return;
+
+        // Ju¿ jesteœmy w tej scenie? Przerwij.
+        string currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        if (pendingTravelScene == currentScene)
+        {
+            pendingTravelScene = null;
+            if (travelConfirmCoroutine != null)
             {
-                if (playSoundOnObject == null) continue;
-                playSoundOnObject.PlaySound("TerminalError", errorVolume, false);
+                StopCoroutine(travelConfirmCoroutine);
+                travelConfirmCoroutine = null;
             }
-
-            yield break; // Zatrzymaj korutynê, jeœli rafinacja w toku
+            return;
         }
 
-        // Jeœli nie ma rafinacji, przechodzimy do dalszych operacji
-        yield return StartCoroutine(MoveCameraBackToOriginalPosition());
-
-        CanUseMenu = false;
-
-        // Zablokuj mo¿liwoœæ interakcji
-        DisablePlayerMovementAndMouseLook();
-
-        ShowConsoleMessage(string.Format(LanguageManager.Instance.GetLocalizedMessage("changingScene"), sceneName, delay), "#FFD200");
-
-        yield return new WaitForSeconds(delay);
-
-        // Zmieñ scenê
+        // Zmiana sceny
         if (sceneChanger != null)
         {
-            sceneChanger.TryChangeScene(sceneName);
-        }
-        else
-        {
-            Debug.LogError("Brak referencji do SceneChanger!");
+            sceneChanger.TryChangeScene(pendingTravelScene);
         }
 
-        // Po zmianie sceny, przywróæ kontrolki
-        EnablePlayerMovementAndMouseLook();
-        CanUseMenu = true;
+        // Reset stanu
+        pendingTravelScene = null;
+        if (travelConfirmCoroutine != null)
+        {
+            StopCoroutine(travelConfirmCoroutine);
+            travelConfirmCoroutine = null;
+        }
     }
 
     private IEnumerator DisplayHelpLogs()
