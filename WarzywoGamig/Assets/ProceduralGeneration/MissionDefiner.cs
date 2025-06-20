@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 using System.Collections;
 
 public class MissionDefiner : MonoBehaviour
@@ -6,7 +7,12 @@ public class MissionDefiner : MonoBehaviour
     [Header("Cel kamery podczas interakcji")]
     public Transform cameraTargetPosition;
     public float cameraMoveSpeed = 4f;
-    public GameObject missionCanvas; // UI misji (opcjonalnie)
+
+    [Header("UI Kanwy")]
+    public GameObject missionCanvas;    // Canvas z ikonami lokacji
+    public GameObject summaryCanvas;    // Canvas z nazw¹ i liczb¹ pokoi
+    public TMP_Text summaryNameText;    // TMP_Text na nazwê lokacji
+    public TMP_Text summaryRoomsText;   // TMP_Text na liczbê pokoi
 
     // Publiczne referencje, dynamicznie przypisywane jeœli puste
     public PlayerMovement playerMovementScript;
@@ -42,8 +48,7 @@ public class MissionDefiner : MonoBehaviour
         if (crossHair == null)
             crossHair = GameObject.FindWithTag("Crosshair") ?? GameObject.Find("Crosshair");
 
-        if (missionCanvas != null)
-            missionCanvas.SetActive(false);
+        // NIE ukrywaj Canvasów!
     }
 
     public void UseDefiner()
@@ -93,8 +98,7 @@ public class MissionDefiner : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        if (missionCanvas != null)
-            missionCanvas.SetActive(true);
+        // NIE ukrywaj missionCanvas ani summaryCanvas!
 
         Vector3 startPos = Camera.main.transform.position;
         Quaternion startRot = Camera.main.transform.rotation;
@@ -172,8 +176,7 @@ public class MissionDefiner : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        if (missionCanvas != null)
-            missionCanvas.SetActive(false);
+        // NIE ukrywaj missionCanvas ani summaryCanvas!
 
         isCameraMoving = false;
         isInteracting = false;
@@ -186,5 +189,23 @@ public class MissionDefiner : MonoBehaviour
         {
             ExitDefiner();
         }
+    }
+
+    // --- WYBÓR LOKACJI ---
+
+    public void OnLocationSelected(MissionLocationIcon icon)
+    {
+        MissionSettings.locationName = icon.locationName;
+        MissionSettings.roomCount = icon.roomCount;
+        ShowSummary(icon.locationName, icon.roomCount);
+
+        // tutaj zmieniasz scenê swoim systemem
+    }
+
+    private void ShowSummary(string locationName, int roomCount)
+    {
+        // NIE ukrywaj/pokazuj canvasów!
+        if (summaryNameText != null) summaryNameText.text = locationName;
+        if (summaryRoomsText != null) summaryRoomsText.text = $"Liczba pokoi: {roomCount}";
     }
 }

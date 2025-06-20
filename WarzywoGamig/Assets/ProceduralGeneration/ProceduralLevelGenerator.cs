@@ -47,6 +47,13 @@ public class ProceduralLevelGenerator : MonoBehaviour
 
     void Start()
     {
+        // Pobierz roomCount z MissionSettings jeœli zosta³ ustawiony (np. przez MissionDefiner w poprzedniej scenie)
+        if (MissionSettings.roomCount > 0)
+        {
+            roomCount = MissionSettings.roomCount;
+            // (opcjonalnie) mo¿esz u¿yæ te¿ MissionSettings.locationName
+        }
+
         if (autoGenerateOnStart)
             GenerateLevel();
     }
