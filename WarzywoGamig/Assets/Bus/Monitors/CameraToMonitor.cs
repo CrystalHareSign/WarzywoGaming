@@ -415,6 +415,16 @@ public class CameraToMonitor : MonoBehaviour
             };
 
             commandDictionary[localizedMain] = new CommandData(() => ExitTerminalAndChangeScene("Main", 3f), true);
+
+
+            string localizedMission = LanguageManager.Instance.currentLanguage switch
+            {
+                LanguageManager.Language.Polski => "misja", // Polski
+                LanguageManager.Language.Deutsch => "mission", // Niemiecki
+                _ => "mission" // Angielski
+            };
+
+            commandDictionary[localizedMission] = new CommandData(() => ExitTerminalAndChangeScene("ProceduralLevels", 3f), true);
         }
 
         string localizedHelp = LanguageManager.Instance.currentLanguage switch
@@ -606,6 +616,7 @@ public class CameraToMonitor : MonoBehaviour
                 yield return new WaitForSeconds(0.2f);
                 ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("command_home_desc")}", "#00E700");
                 ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("command_main_desc")}", "#00E700");
+                ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("command_mission_desc")}", "#00E700");
             }
 
             yield break;

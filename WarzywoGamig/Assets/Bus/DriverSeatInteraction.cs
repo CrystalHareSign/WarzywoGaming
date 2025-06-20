@@ -39,6 +39,9 @@ public class DriverSeatInteraction : MonoBehaviour
     // --- HOVER MESSAGE INTERACTIVITY ---
     private HoverMessage hoverMessage;
 
+    // --- FLAGA BLOKUJ¥CA INTERAKCJE W CA£EJ GRZE ---
+    public static bool IsAnyDriverSeatActive = false;
+
     private void Awake()
     {
         DontDestroyOnLoad(this.gameObject);
@@ -92,6 +95,8 @@ public class DriverSeatInteraction : MonoBehaviour
             cam.transform.rotation = lastCameraRotation;
 
             UnblockPlayerControl();
+            // Odblokuj flagê po powrocie do gry
+            IsAnyDriverSeatActive = false;
         }
     }
 
@@ -106,6 +111,33 @@ public class DriverSeatInteraction : MonoBehaviour
                     hoverMsg.infoMessage,
                     hoverMsg.infoFontSize,
                     hoverMsg.duration
+                );
+            }
+            return;
+        }
+
+        // --- Blokada tras niedozwolonych ---
+        string currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        string targetScene = CameraToMonitor.pendingTravelScene;
+        string proceduralScene = "ProceduralLevels"; // Zmieñ na nazwê swojej proceduralnej sceny, lub pobierz z konfiguracji
+
+        bool allowed = false;
+        if (currentScene == "Home" && targetScene == "Main")
+            allowed = true;
+        else if (currentScene == "Main" && (targetScene == "Home" || targetScene == proceduralScene))
+            allowed = true;
+        else if (currentScene == proceduralScene && targetScene == "Home")
+            allowed = true;
+
+        if (!allowed)
+        {
+            // Wyœwietl popup z uniwersaln¹ treœci¹, któr¹ ustawisz w t³umaczeniach lub w inspectorze HoverMessage
+            if (hoverMessage != null && HoverMessageManager.Instance != null)
+            {
+                HoverMessageManager.Instance.ShowInfoPopup(
+                    hoverMessage.infoMessage,
+                    hoverMessage.infoFontSize,
+                    hoverMessage.duration
                 );
             }
             return;
@@ -131,6 +163,26 @@ public class DriverSeatInteraction : MonoBehaviour
         {
             flashlightWasOnBeforeTravel = Inventory.Instance.flashlight.enabled;
             Inventory.Instance.FlashlightOff();
+        }
+
+        IsAnyDriverSeatActive = true;
+
+        // Ukryj UI i broñ natychmiast po rozpoczêciu podró¿y
+        if (player != null)
+        {
+            // Ukrycie crosshaira
+            if (player.crosshair != null)
+                player.crosshair.SetActive(false);
+
+            // Ukrycie broni
+            if (player.inventory != null && player.inventory.currentWeaponPrefab != null)
+                player.inventory.currentWeaponPrefab.SetActive(false);
+
+            if (player.inventoryUI != null)
+            {
+                player.inventoryUI.HideWeaponUI();
+                player.inventoryUI.HideItemUI();
+            }
         }
 
         BlockPlayerControl();
@@ -168,6 +220,7 @@ public class DriverSeatInteraction : MonoBehaviour
             shouldPlayExitAnim = true;
             cameraToMonitor.ConfirmTravel();
         }
+        // NIE odblokowuj flagi tutaj – odblokowanie dopiero po powrocie do gry!
         travelCoroutine = null;
     }
 
@@ -198,5 +251,12 @@ public class DriverSeatInteraction : MonoBehaviour
             else
                 Inventory.Instance.FlashlightOff();
         }
+
+        // --- PRZYWRÓÆ CROSSHAIR ---
+        var player = FindFirstObjectByType<PlayerInteraction>();
+        if (player != null && player.crosshair != null)
+            player.crosshair.SetActive(true);
+
+        // Flaga IsAnyDriverSeatActive odblokowywana w DelayedExitLogicAfterSceneLoad
     }
 }

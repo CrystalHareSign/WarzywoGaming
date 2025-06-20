@@ -13,6 +13,7 @@ public class PlayerInteraction : MonoBehaviour
     public TMP_Text keyText;
     public Inventory inventory;
     public InventoryUI inventoryUI;
+    public GameObject crosshair;
 
     private float interactionTimer = 0f;
     private InteractableItem currentInteractableItem = null;
@@ -70,6 +71,10 @@ public class PlayerInteraction : MonoBehaviour
             Debug.LogError("PlayerCamera is not assigned in the Inspector.");
             return;
         }
+
+        // --- Blokada interakcji gdy aktywny MissionDefiner lub DriverSeat ---
+        if (MissionDefiner.IsAnyDefinerActive || DriverSeatInteraction.IsAnyDriverSeatActive)
+            return;
 
         Inventory playerInventory = Object.FindFirstObjectByType<Inventory>();
         bool isHoldingLoot = playerInventory != null && playerInventory.lootParent != null && playerInventory.lootParent.childCount > 0;
@@ -304,13 +309,33 @@ public class PlayerInteraction : MonoBehaviour
                                     inventoryUI.HideItemUI();
                             }
 
+                            // --- MissionDefiner obs³uga ---
+                            if (currentInteractableItem.isMissionDefiner)
+                            {
+                                UseMissionDefiner(interactableItem);
+
+                                if (inventory != null && inventory.currentWeaponPrefab != null)
+                                {
+                                    Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
+                                    if (gunScript != null)
+                                        gunScript.CancelReload();
+                                    inventory.currentWeaponPrefab.SetActive(false);
+                                    inventory.enabled = false;
+                                    inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+                                    inventoryUI.HideWeaponUI();
+                                }
+                                if (inventoryUI != null)
+                                    inventoryUI.HideItemUI();
+                            }
+                            // -----------------------------
+
                             if (currentInteractableItem.isRefiner && !hasRefinerBeenUsed)
                             {
                                 RemoveOldestItemFromInventory(interactableItem);
                                 inventory.RefreshItemListChronologically();
                                 hasRefinerBeenUsed = true;
                             }
-                            else if (!currentInteractableItem.isTurret && !currentInteractableItem.isMonitor && !currentInteractableItem.isRefiner)
+                            else if (!currentInteractableItem.isTurret && !currentInteractableItem.isMonitor && !currentInteractableItem.isMissionDefiner && !currentInteractableItem.isRefiner)
                             {
                                 InteractWithObject(currentInteractableItem);
                             }
@@ -350,30 +375,39 @@ public class PlayerInteraction : MonoBehaviour
         }
     }
 
-    // Prosta metoda: wywo³uje tylko DriverSeatInteraction na tym przedmiocie
+    void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // --- DODAJ TO: wymuœ ukrycie UI i broni jeœli nadal trwa podró¿ fotelowa ---
+        if (DriverSeatInteraction.IsAnyDriverSeatActive)
+        {
+            if (inventory != null && inventory.currentWeaponPrefab != null)
+                inventory.currentWeaponPrefab.SetActive(false);
+
+            if (inventoryUI != null)
+            {
+                inventoryUI.HideWeaponUI();
+                inventoryUI.HideItemUI();
+            }
+            HideUI();
+        }
+    }
+
     private void UseDriverSeat(InteractableItem interactableItem)
     {
         var driverSeat = interactableItem.GetComponent<DriverSeatInteraction>();
         if (driverSeat != null)
         {
             driverSeat.StartTravel();
-        }
-    }
-
-    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        progressCircle = GameObject.Find("ProgressCircle")?.GetComponent<Image>();
-        messageText = GameObject.Find("MessageText")?.GetComponent<TMP_Text>();
-
-        if (progressCircle != null)
-        {
-            progressCircle.gameObject.SetActive(false);
-            progressCircle.fillAmount = 0f;
-        }
-
-        if (messageText != null)
-        {
-            messageText.gameObject.SetActive(false);
         }
     }
 
@@ -399,6 +433,15 @@ public class PlayerInteraction : MonoBehaviour
         if (specificMonitor != null)
         {
             specificMonitor.UseMonitor();
+        }
+    }
+
+    private void UseMissionDefiner(InteractableItem interactableItem)
+    {
+        MissionDefiner missionDefiner = interactableItem.GetComponent<MissionDefiner>();
+        if (missionDefiner != null)
+        {
+            missionDefiner.UseDefiner();
         }
     }
 
@@ -434,6 +477,10 @@ public class PlayerInteraction : MonoBehaviour
             keyText.gameObject.SetActive(false);
 
         currentInteractableItem = null;
+
+        // --- Blokada przywracania UI/broni gdy aktywny MissionDefiner lub DriverSeat ---
+        if (MissionDefiner.IsAnyDefinerActive || DriverSeatInteraction.IsAnyDriverSeatActive)
+            return;
 
         bool isAnyMonitorActive = false;
         var allMonitors = Object.FindObjectsByType<CameraToMonitor>(FindObjectsSortMode.None);

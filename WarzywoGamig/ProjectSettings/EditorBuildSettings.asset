@@ -20,6 +20,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/LoadingScreen.unity
     guid: 1dadcfe1fd4f5ae4bb3565aa4ad0835d
+  - enabled: 1
+    path: Assets/ProceduralLevels.unity
+    guid: 2f570397e8348a4419134e816831d24a
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

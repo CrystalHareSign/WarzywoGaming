@@ -9,6 +9,7 @@ public class SceneChanger : MonoBehaviour
 
     [SerializeField] private string scene1;
     [SerializeField] private string scene2;
+    [SerializeField] private string scene3;
 
     [Header("Ustaw punkt spawnu gracza po za³adowaniu sceny")]
     [SerializeField] private Transform playerSpawnPoint;
@@ -61,20 +62,35 @@ public class SceneChanger : MonoBehaviour
         TreasureRefiner treasureRefiner = Object.FindFirstObjectByType<TreasureRefiner>();
         if (treasureRefiner != null && treasureRefiner.isSpawning)
         {
-            Debug.Log("Rafinacja w toku. Nie mo¿na zmieniæ sceny.");
+            Debug.Log(LanguageManager.Instance.GetLocalizedMessage("refiningBlocked"));
             if (cameraToMonitor != null && cameraToMonitor.canInteract)
             {
-                cameraToMonitor.ShowConsoleMessage(">>> Rafinacja w toku. Nie mo¿na zmieniæ sceny.", "#FF0000");
+                cameraToMonitor.ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("refiningBlocked"), "#FF0000");
             }
             return;
         }
 
         if (currentScene == sceneName)
         {
-            Debug.Log("Ju¿ jesteœ w tej scenie!");
+            Debug.Log(LanguageManager.Instance.GetLocalizedMessage("alreadyInScene"));
             if (cameraToMonitor != null && cameraToMonitor.canInteract)
             {
-                cameraToMonitor.ShowConsoleMessage(">>> Ju¿ jesteœ w tej scenie...", "#FF0000");
+                cameraToMonitor.ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("alreadyInScene"), "#FF0000");
+            }
+            return;
+        }
+
+        // BLOKADA przejœæ zgodnie z zasadami
+        if (
+            (currentScene == "Home" && sceneName != "Main") ||
+            (currentScene == "Main" && sceneName != "Home" && sceneName != "ProceduralLevels") ||
+            (currentScene == "ProceduralLevels" && sceneName != "Home")
+        )
+        {
+            Debug.Log(LanguageManager.Instance.GetLocalizedMessage("invalidResponse"));
+            if (cameraToMonitor != null && cameraToMonitor.canInteract)
+            {
+                cameraToMonitor.ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("invalidResponse"), "#FF0000");
             }
             return;
         }
@@ -86,6 +102,7 @@ public class SceneChanger : MonoBehaviour
             if (playerObj != null && bus != null)
                 lastRelativePlayerPos = playerObj.transform.position - bus.transform.position;
 
+            // Obs³uga specjalnych przejœæ
             if (currentScene == "Home" && sceneName == "Main")
             {
                 ExecuteMethodsForMainScene();
@@ -94,10 +111,18 @@ public class SceneChanger : MonoBehaviour
             {
                 ExecuteMethodsForHomeScene();
             }
+            else if (currentScene == "Main" && sceneName == "ProceduralLevels")
+            {
+                ExecuteMethodsForProceduralLevels();
+            }
+            else if (currentScene == "ProceduralLevels" && sceneName == "Home")
+            {
+                ExecuteMethodsForHomeScene();
+            }
 
             if (cameraToMonitor != null)
             {
-                cameraToMonitor.ShowConsoleMessage(">>> Próba zmiany sceny...", "#00E700");
+                cameraToMonitor.ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("changingScene"), "#00E700");
             }
             SceneManager.LoadScene(sceneName);
         }
@@ -124,6 +149,17 @@ public class SceneChanger : MonoBehaviour
     }
 
     private void ExecuteMethodsForHomeScene()
+    {
+        foreach (var playSound in playSoundObjects)
+        {
+            if (playSound == null) continue;
+            playSound.StopSound("DieselBusEngine");
+            playSound.StopSound("TiresOnGravel");
+            playSound.StopSound("Storm");
+        }
+    }
+
+    private void ExecuteMethodsForProceduralLevels()
     {
         foreach (var playSound in playSoundObjects)
         {

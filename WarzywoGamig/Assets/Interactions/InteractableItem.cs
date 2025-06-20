@@ -44,6 +44,9 @@ public class InteractableItem : MonoBehaviour, IInteractable
     [Header("Driver Seat")]
     public bool isDriverSeat = false;
 
+    [Header("Mission Definer")]
+    public bool isMissionDefiner = false; // NOWE POLE
+
     [Header("System kierowczy")]
     public bool alwaysInteractive = false;
     public bool hasCooldown = false;
@@ -142,6 +145,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
                 }
                 else
                 {
+                    // Wywo³anie eventu lub dodatkowych interakcji
                     onInteract?.Invoke();
                     if (hoverMessage != null && !hoverMessage.alwaysActive)
                     {
