@@ -77,6 +77,8 @@ public class TerminalTranslations
     public string command_home_desc;
     public string command_main_desc;
     public string command_mission_desc;
+    public string mustGoOnRoute;
+    public string notEnoughFuel;
     public string command_help_key;
     public string terminalSecured;
     public string terminalExit;

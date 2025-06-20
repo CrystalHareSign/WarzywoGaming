@@ -80,6 +80,28 @@ public class SceneChanger : MonoBehaviour
             return;
         }
 
+        // Specjalny komunikat: Home -> ProceduralLevels
+        if (currentScene == "Home" && sceneName == "ProceduralLevels")
+        {
+            if (cameraToMonitor != null && cameraToMonitor.canInteract)
+            {
+                string msg = LanguageManager.Instance.GetLocalizedMessage("mustGoOnRoute");
+                cameraToMonitor.ShowConsoleMessage(msg, "#FF0000");
+            }
+            return;
+        }
+
+        // Specjalny komunikat: ProceduralLevels -> Main
+        if (currentScene == "ProceduralLevels" && sceneName == "Main")
+        {
+            if (cameraToMonitor != null && cameraToMonitor.canInteract)
+            {
+                string msg = LanguageManager.Instance.GetLocalizedMessage("notEnoughFuel");
+                cameraToMonitor.ShowConsoleMessage(msg, "#FF0000");
+            }
+            return;
+        }
+
         // BLOKADA przejœæ zgodnie z zasadami
         if (
             (currentScene == "Home" && sceneName != "Main") ||

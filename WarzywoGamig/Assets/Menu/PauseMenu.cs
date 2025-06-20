@@ -75,6 +75,8 @@ public class PauseMenu : MonoBehaviour
 
         if (MissionDefiner.IsAnyDefinerActive) return;
 
+        if (DriverSeatInteraction.IsAnyDriverSeatActive) return;
+
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             // Jeœli jesteœ w jednym z podmenu opcji – wracaj do optionsMenuUI

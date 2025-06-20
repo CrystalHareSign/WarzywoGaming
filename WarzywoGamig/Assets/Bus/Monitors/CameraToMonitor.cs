@@ -1177,10 +1177,45 @@ public class CameraToMonitor : MonoBehaviour
             string confirmYesKey = LanguageManager.Instance.GetLocalizedMessage("confirmYesKey").ToLower();
             string confirmNoKey = LanguageManager.Instance.GetLocalizedMessage("confirmNoKey").ToLower();
 
+            // Pobierz klucze komend z t³umaczenia
+            string missionCmd = LanguageManager.Instance.GetLocalizedMessage("command_mission_key").ToLower();
+            string mainCmd = LanguageManager.Instance.GetLocalizedMessage("command_main_key").ToLower();
+
             if (command == confirmYesKey)
             {
-                ShowConsoleMessage($">>> {string.Format(LanguageManager.Instance.GetLocalizedMessage("executingCommand"), pendingCommand)}", "#00E700");
+                string pending = pendingCommand.ToLower();
 
+                // BLOKADA: Home -> ProceduralLevels (misja)
+                if (currentScene == "home" && pending == missionCmd)
+                {
+                    ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("executingCommand")}", "#00E700");
+                    ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("mustGoOnRoute"), "#FF0000");
+                    foreach (var playSoundOnObject in playSoundObjects)
+                    {
+                        if (playSoundOnObject == null) continue;
+                        playSoundOnObject.PlaySound("TerminalError", 0.3f, false);
+                    }
+                    pendingCommand = null;
+                    ClearInputField();
+                    return;
+                }
+                // BLOKADA: ProceduralLevels -> Main
+                if (currentScene == "procedurallevels" && pending == mainCmd)
+                {
+                    ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("executingCommand")}", "#00E700");
+                    ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("notEnoughFuel"), "#FF0000");
+                    foreach (var playSoundOnObject in playSoundObjects)
+                    {
+                        if (playSoundOnObject == null) continue;
+                        playSoundOnObject.PlaySound("TerminalError", 0.3f, false);
+                    }
+                    pendingCommand = null;
+                    ClearInputField();
+                    return;
+                }
+
+                // Jeœli NIE ma blokady — wykonaj komendê
+                ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("executingCommand")}", "#00E700");
                 foreach (var playSoundOnObject in playSoundObjects)
                 {
                     if (playSoundOnObject == null) continue;
