@@ -1177,16 +1177,12 @@ public class CameraToMonitor : MonoBehaviour
             string confirmYesKey = LanguageManager.Instance.GetLocalizedMessage("confirmYesKey").ToLower();
             string confirmNoKey = LanguageManager.Instance.GetLocalizedMessage("confirmNoKey").ToLower();
 
-            // Pobierz klucze komend z t³umaczenia
-            string missionCmd = LanguageManager.Instance.GetLocalizedMessage("command_mission_key").ToLower();
-            string mainCmd = LanguageManager.Instance.GetLocalizedMessage("command_main_key").ToLower();
-
             if (command == confirmYesKey)
             {
                 string pending = pendingCommand.ToLower();
 
-                // BLOKADA: Home -> ProceduralLevels (misja)
-                if (currentScene == "home" && pending == missionCmd)
+                // BLOKADA: Home -> ProceduralLevels
+                if (currentScene == "home" && (pending == "mission" || pending == "misja"))
                 {
                     ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("executingCommand")}", "#00E700");
                     ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("mustGoOnRoute"), "#FF0000");
@@ -1200,7 +1196,7 @@ public class CameraToMonitor : MonoBehaviour
                     return;
                 }
                 // BLOKADA: ProceduralLevels -> Main
-                if (currentScene == "procedurallevels" && pending == mainCmd)
+                if (currentScene == "procedurallevels" && (pending == "main" || pending == "trasa"))
                 {
                     ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("executingCommand")}", "#00E700");
                     ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("notEnoughFuel"), "#FF0000");
