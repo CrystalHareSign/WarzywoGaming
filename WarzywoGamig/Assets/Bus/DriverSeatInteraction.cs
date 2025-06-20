@@ -36,6 +36,9 @@ public class DriverSeatInteraction : MonoBehaviour
 
     private bool needToPlayExitAnimAfterSpawn = false;
 
+    // --- HOVER MESSAGE INTERACTIVITY ---
+    private HoverMessage hoverMessage;
+
     private void Awake()
     {
         DontDestroyOnLoad(this.gameObject);
@@ -43,6 +46,7 @@ public class DriverSeatInteraction : MonoBehaviour
             playerMovementScript = FindFirstObjectByType<PlayerMovement>();
         if (mouseLookScript == null)
             mouseLookScript = FindFirstObjectByType<MouseLook>();
+        hoverMessage = GetComponent<HoverMessage>();
     }
 
     private void OnEnable()
@@ -85,7 +89,7 @@ public class DriverSeatInteraction : MonoBehaviour
             player.transform.position = lastPlayerPosition;
             player.transform.rotation = lastPlayerRotation;
             cam.transform.position = lastCameraPosition;
-             cam.transform.rotation = lastCameraRotation;
+            cam.transform.rotation = lastCameraRotation;
 
             UnblockPlayerControl();
         }
@@ -130,6 +134,10 @@ public class DriverSeatInteraction : MonoBehaviour
         }
 
         BlockPlayerControl();
+
+        // BLOKADA HOVER MESSAGE: nie mo¿na wchodziæ w interakcjê z fotelem podczas podró¿y
+        if (hoverMessage != null)
+            hoverMessage.isInteracted = true;
 
         Vector3 startPos = cam.transform.position;
         Quaternion startRot = cam.transform.rotation;
@@ -178,6 +186,10 @@ public class DriverSeatInteraction : MonoBehaviour
         if (mouseLookScript != null)
             mouseLookScript.enabled = true;
         InputBlocker.Active = false;
+
+        // ODBLOKOWANIE HOVER MESSAGE: z powrotem mo¿na wejœæ w interakcjê z fotelem po podró¿y
+        if (hoverMessage != null)
+            hoverMessage.isInteracted = false;
 
         if (Inventory.Instance != null && Inventory.Instance.flashlight != null)
         {

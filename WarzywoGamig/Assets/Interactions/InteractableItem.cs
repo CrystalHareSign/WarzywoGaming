@@ -130,7 +130,6 @@ public class InteractableItem : MonoBehaviour, IInteractable
         {
             if (isNPC && npcDialogues != null && npcDialogues.Count > 0 && dialogueManager != null)
             {
-                // Przekazujemy AKTUALNY dialog z listy oraz referencjê do hoverMessage
                 dialogueManager.StartDialogue(npcDialogues[currentDialogueIndex], hoverMessage);
                 return;
             }
@@ -153,6 +152,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
 
                 if (hasCooldown)
                 {
+                    SetAllInteractablesInteracted(true); // Wy³¹cz wszystkie interakcje na czas cooldownu
                     StartCoroutine(CooldownCoroutine());
                 }
             }
@@ -246,6 +246,16 @@ public class InteractableItem : MonoBehaviour, IInteractable
         isCooldownActive = true;
         yield return new WaitForSeconds(cooldownTime);
         isCooldownActive = false;
+        SetAllInteractablesInteracted(false); // Odblokuj wszystkie interakcje po cooldownie
+    }
+
+    private void SetAllInteractablesInteracted(bool state)
+    {
+        foreach (var item in Object.FindObjectsByType<InteractableItem>(FindObjectsSortMode.None))
+        {
+            if (item.hoverMessage != null)
+                item.hoverMessage.isInteracted = state;
+        }
     }
 
     public void RefreshInteractivity()
