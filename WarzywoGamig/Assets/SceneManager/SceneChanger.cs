@@ -5,6 +5,7 @@ using System.Collections;
 
 public class SceneChanger : MonoBehaviour
 {
+    public static event System.Action OnPlayerSpawned; // <--- EVENT
 
     [SerializeField] private string scene1;
     [SerializeField] private string scene2;
@@ -27,16 +28,11 @@ public class SceneChanger : MonoBehaviour
     private GameObject player;
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
-    // Statyczna zmienna na pozycjê wzglêdn¹ gracza wzglêdem busa
     public static Vector3 lastRelativePlayerPos = Vector3.zero;
-    public static Vector3 defaultRelativePlayerPos = new Vector3(-5f, 5f, 5f); // przyk³adowy offset obok busa
-
+    public static Vector3 defaultRelativePlayerPos = new Vector3(-5f, 5f, 5f);
 
     void Start()
     {
-        assignInteraction = Object.FindFirstObjectByType<AssignInteraction>();
-        playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
-
         assignInteraction = Object.FindFirstObjectByType<AssignInteraction>();
         playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
 
@@ -62,48 +58,34 @@ public class SceneChanger : MonoBehaviour
     {
         string currentScene = SceneManager.GetActiveScene().name;
 
-        // ZnajdŸ TreasureRefiner w scenie
         TreasureRefiner treasureRefiner = Object.FindFirstObjectByType<TreasureRefiner>();
-
-        // SprawdŸ, czy rafinacja jest w toku
         if (treasureRefiner != null && treasureRefiner.isSpawning)
         {
             Debug.Log("Rafinacja w toku. Nie mo¿na zmieniæ sceny.");
-
-            // Wyœwietl komunikat w konsoli monitora tylko, gdy mo¿emy wchodziæ w interakcje
             if (cameraToMonitor != null && cameraToMonitor.canInteract)
             {
                 cameraToMonitor.ShowConsoleMessage(">>> Rafinacja w toku. Nie mo¿na zmieniæ sceny.", "#FF0000");
             }
-
-            return; // Zakoñcz dzia³anie metody, nie zmieniaj¹c sceny
+            return;
         }
 
-        // Sprawdzenie, czy próba zmiany sceny na tê sam¹
         if (currentScene == sceneName)
         {
             Debug.Log("Ju¿ jesteœ w tej scenie!");
-
-            // Wyœwietl komunikat w konsoli monitora
             if (cameraToMonitor != null && cameraToMonitor.canInteract)
             {
                 cameraToMonitor.ShowConsoleMessage(">>> Ju¿ jesteœ w tej scenie...", "#FF0000");
             }
-
-            return; // Zakoñcz dzia³anie metody, nie zmieniaj¹c sceny
+            return;
         }
 
-        // Je¿eli scena jest inna i rafinacja nie jest w toku, przeprowadŸ zmianê sceny
         if (!isSceneChanging && cameraToMonitor.canInteract)
         {
             isSceneChanging = true;
-
-            // --- ZAPAMIÊTAJ POZYCJÊ GRACZA WZGLÊDEM BUSA ---
             var playerObj = GameObject.FindGameObjectWithTag("Player");
             if (playerObj != null && bus != null)
                 lastRelativePlayerPos = playerObj.transform.position - bus.transform.position;
 
-            // Dostosowanie: Wykonaj metody specyficzne dla scen
             if (currentScene == "Home" && sceneName == "Main")
             {
                 ExecuteMethodsForMainScene();
@@ -113,13 +95,10 @@ public class SceneChanger : MonoBehaviour
                 ExecuteMethodsForHomeScene();
             }
 
-            // Wyœwietlenie logu w konsoli monitora
             if (cameraToMonitor != null)
             {
                 cameraToMonitor.ShowConsoleMessage(">>> Próba zmiany sceny...", "#00E700");
             }
-
-            // Za³aduj scenê
             SceneManager.LoadScene(sceneName);
         }
     }
@@ -133,13 +112,6 @@ public class SceneChanger : MonoBehaviour
             playSound.PlaySound("DieselBusEngine", 1.2f, true);
             playSound.PlaySound("Storm", 0.1f, true);
         }
-
-        //var inventory = Object.FindFirstObjectByType<Inventory>();
-        //if (inventory != null) inventory.ClearInventory();            czyszcenie itemow po zmienie sceny
-
-        //var treasureRefiner = Object.FindFirstObjectByType<TreasureRefiner>();
-        //if (treasureRefiner != null) treasureRefiner.ResetSlots();    czyszczenie refinera po zmianie sceny
-
         if (TurretBody != null)
         {
             var turretController = TurretBody.GetComponent<TurretController>();
@@ -175,7 +147,6 @@ public class SceneChanger : MonoBehaviour
             Debug.LogWarning("Bus nie zosta³ przypisany w inspektorze!");
         }
 
-        // Reset turret position and rotation
         if (TurretBody != null)
         {
             TurretBody.transform.position = turretStartPosition;
@@ -192,7 +163,7 @@ public class SceneChanger : MonoBehaviour
         if (cameraToMonitor != null && cameraToMonitor.inputField != null)
         {
             cameraToMonitor.inputField.gameObject.SetActive(true);
-            cameraToMonitor.inputField.ActivateInputField(); // <- TO JEST KLUCZOWE
+            cameraToMonitor.inputField.ActivateInputField();
         }
 
         if (InventoryUI.Instance != null)
@@ -200,7 +171,7 @@ public class SceneChanger : MonoBehaviour
             InventoryUI.Instance.UpdateInventoryUI(
                 Inventory.Instance.weapons,
                 Inventory.Instance.items,
-                Inventory.Instance.currentWeaponName // <-- dodane
+                Inventory.Instance.currentWeaponName
             );
         }
 
@@ -209,7 +180,6 @@ public class SceneChanger : MonoBehaviour
 
     private IEnumerator RefreshWheelsUIDelayed()
     {
-        // Odczekaj jedn¹ klatkê, ¿eby WheelHealthUI zd¹¿y³ siê zainicjalizowaæ!
         yield return null;
         var allWheels = Object.FindObjectsByType<InteractableItem>(FindObjectsSortMode.None);
         foreach (var item in allWheels)
@@ -221,7 +191,6 @@ public class SceneChanger : MonoBehaviour
 
     private IEnumerator SpawnPlayerWhenBusIsReady()
     {
-        // Jeœli trwa ³adowanie z save, NIE ustawiaj pozycji gracza (SaveManager siê tym zajmie)
         if (SaveManager.Instance != null && SaveManager.Instance.isLoading)
         {
             yield break;
@@ -241,17 +210,19 @@ public class SceneChanger : MonoBehaviour
         {
             Vector3 relPos = SceneChanger.lastRelativePlayerPos;
             if (relPos == Vector3.zero)
-                relPos = SceneChanger.defaultRelativePlayerPos; // <- tu ustawiasz domyœlne miejsce na start
+                relPos = SceneChanger.defaultRelativePlayerPos;
 
             player.transform.position = bus.transform.position + relPos;
         }
-
         else
         {
             Debug.LogWarning("Brak gracza lub busa do ustawienia pozycji!");
         }
-    }
 
+        // --- EVENT: informacja, ¿e gracz ju¿ jest ustawiony! ---
+        if (OnPlayerSpawned != null)
+            OnPlayerSpawned.Invoke();
+    }
 
     private void OnEnable()
     {

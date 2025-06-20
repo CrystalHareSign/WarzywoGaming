@@ -34,6 +34,8 @@ public class DriverSeatInteraction : MonoBehaviour
     private static float cachedAnimationDuration = 1.2f;
     private static float cachedPauseBeforeExitAnim = 1.0f;
 
+    private bool needToPlayExitAnimAfterSpawn = false;
+
     private void Awake()
     {
         DontDestroyOnLoad(this.gameObject);
@@ -46,10 +48,12 @@ public class DriverSeatInteraction : MonoBehaviour
     private void OnEnable()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
+        SceneChanger.OnPlayerSpawned += OnPlayerSpawnedAndReady;
     }
     private void OnDisable()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneChanger.OnPlayerSpawned -= OnPlayerSpawnedAndReady;
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -57,12 +61,20 @@ public class DriverSeatInteraction : MonoBehaviour
         if (shouldPlayExitAnim)
         {
             shouldPlayExitAnim = false;
-            float pause = cachedPauseBeforeExitAnim;
-            StartCoroutine(DelayedExitAnimAfterSceneLoad(pause));
+            cachedPauseBeforeExitAnim = Mathf.Max(0.01f, cachedPauseBeforeExitAnim);
+            needToPlayExitAnimAfterSpawn = true;
         }
     }
 
-    private IEnumerator DelayedExitAnimAfterSceneLoad(float delay)
+    private void OnPlayerSpawnedAndReady()
+    {
+        if (!needToPlayExitAnimAfterSpawn) return;
+        needToPlayExitAnimAfterSpawn = false;
+
+        StartCoroutine(DelayedExitLogicAfterSceneLoad(cachedPauseBeforeExitAnim));
+    }
+
+    private IEnumerator DelayedExitLogicAfterSceneLoad(float delay)
     {
         yield return new WaitForSeconds(delay);
 
@@ -70,49 +82,13 @@ public class DriverSeatInteraction : MonoBehaviour
         Camera cam = Camera.main;
         if (player != null && cam != null)
         {
-            GameObject seatStart = GameObject.Find("DriverSeatStart");
-            if (seatStart != null)
-            {
-                player.transform.position = seatStart.transform.position;
-                player.transform.rotation = seatStart.transform.rotation;
-                cam.transform.position = seatStart.transform.position;
-                cam.transform.rotation = seatStart.transform.rotation;
-            }
-            player.StartCoroutine(ExitDriverSeatAnimation(player.transform, cam, cachedAnimationDuration, player));
+            player.transform.position = lastPlayerPosition;
+            player.transform.rotation = lastPlayerRotation;
+            cam.transform.position = lastCameraPosition;
+             cam.transform.rotation = lastCameraRotation;
+
+            UnblockPlayerControl();
         }
-    }
-
-    public static IEnumerator ExitDriverSeatAnimation(Transform player, Camera camera, float duration, PlayerInteraction playerInteraction)
-    {
-        Vector3 startPlayerPos = player.position;
-        Quaternion startPlayerRot = player.rotation;
-        Vector3 endPlayerPos = lastPlayerPosition;
-        Quaternion endPlayerRot = lastPlayerRotation;
-
-        Vector3 startCamPos = camera.transform.position;
-        Quaternion startCamRot = camera.transform.rotation;
-        Vector3 endCamPos = lastCameraPosition;
-        Quaternion endCamRot = lastCameraRotation;
-
-        float elapsed = 0f;
-        while (elapsed < duration)
-        {
-            float t = elapsed / duration;
-            player.position = Vector3.Lerp(startPlayerPos, endPlayerPos, t);
-            player.rotation = Quaternion.Slerp(startPlayerRot, endPlayerRot, t);
-            camera.transform.position = Vector3.Lerp(startCamPos, endCamPos, t);
-            camera.transform.rotation = Quaternion.Slerp(startCamRot, endCamRot, t);
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-        player.position = endPlayerPos;
-        player.rotation = endPlayerRot;
-        camera.transform.position = endCamPos;
-        camera.transform.rotation = endCamRot;
-
-        var seat = FindFirstObjectByType<DriverSeatInteraction>();
-        if (seat != null)
-            seat.UnblockPlayerControl();
     }
 
     public void StartTravel()
@@ -128,7 +104,6 @@ public class DriverSeatInteraction : MonoBehaviour
                     hoverMsg.duration
                 );
             }
-            Debug.Log("Najpierw wyznacz cel podró¿y na monitorze!");
             return;
         }
 
@@ -176,7 +151,7 @@ public class DriverSeatInteraction : MonoBehaviour
         cachedAnimationDuration = animationDuration;
         cachedPauseBeforeExitAnim = pauseBeforeExitAnim;
 
-        InputBlocker.Active = true; // InputBlocker w³¹czany na koñcu animacji siadania
+        InputBlocker.Active = true;
 
         yield return new WaitForSeconds(pauseAfterSit);
 
