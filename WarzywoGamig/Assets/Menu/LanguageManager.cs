@@ -80,6 +80,9 @@ public class TerminalTranslations
     public string mustGoOnRoute;
     public string notEnoughFuel;
     public string command_help_key;
+    public string command_home_key;
+    public string command_main_key;
+    public string command_mission_key;
     public string terminalSecured;
     public string terminalExit;
     public string locations;

@@ -396,45 +396,18 @@ public class CameraToMonitor : MonoBehaviour
 
         if (mainMonitor)
         {
-            // Ustawienie komend zale¿nie od jêzyka
-            string localizedHome = LanguageManager.Instance.currentLanguage switch
-            {
-                LanguageManager.Language.Polski => "dom", // Polski
-                LanguageManager.Language.Deutsch => "haus", // Niemiecki
-                _ => "home" // Angielski
-            };
+            string homeCmd = LanguageManager.Instance.GetLocalizedMessage("command_home_key").ToLower();
+            string mainCmd = LanguageManager.Instance.GetLocalizedMessage("command_main_key").ToLower();
+            string missionCmd = LanguageManager.Instance.GetLocalizedMessage("command_mission_key").ToLower();
 
-            // Dodanie komend do s³ownika
-            commandDictionary[localizedHome] = new CommandData(() => ExitTerminalAndChangeScene("Home", 3f), true);
-
-            string localizedMain = LanguageManager.Instance.currentLanguage switch
-            {
-                LanguageManager.Language.Polski => "trasa", // Polski
-                LanguageManager.Language.Deutsch => "route", // Niemiecki
-                _ => "route" // Angielski
-            };
-
-            commandDictionary[localizedMain] = new CommandData(() => ExitTerminalAndChangeScene("Main", 3f), true);
-
-
-            string localizedMission = LanguageManager.Instance.currentLanguage switch
-            {
-                LanguageManager.Language.Polski => "misja", // Polski
-                LanguageManager.Language.Deutsch => "mission", // Niemiecki
-                _ => "mission" // Angielski
-            };
-
-            commandDictionary[localizedMission] = new CommandData(() => ExitTerminalAndChangeScene("ProceduralLevels", 3f), true);
+            commandDictionary[homeCmd] = new CommandData(() => ExitTerminalAndChangeScene("Home", 3f), true);
+            commandDictionary[mainCmd] = new CommandData(() => ExitTerminalAndChangeScene("Main", 3f), true);
+            commandDictionary[missionCmd] = new CommandData(() => ExitTerminalAndChangeScene("ProceduralLevels", 3f), true);
         }
 
-        string localizedHelp = LanguageManager.Instance.currentLanguage switch
-        {
-            LanguageManager.Language.Polski => "pomoc", // Polski
-            LanguageManager.Language.Deutsch => "hilfe", // Niemiecki
-            _ => "help" // Angielski
-        };
-
-        commandDictionary[localizedHelp] = new CommandData(() => StartCoroutine(DisplayHelpLogs()), false);
+        // Komenda help
+        string helpCmd = LanguageManager.Instance.GetLocalizedMessage("command_help_key").ToLower();
+        commandDictionary[helpCmd] = new CommandData(() => StartCoroutine(DisplayHelpLogs()), false);
 
     }
     public void StartFunction()
@@ -1174,15 +1147,23 @@ public class CameraToMonitor : MonoBehaviour
 
         if (!string.IsNullOrEmpty(pendingCommand))
         {
+            // Pobierz potwierdzenia z t³umaczenia, zawsze na ma³e litery!
             string confirmYesKey = LanguageManager.Instance.GetLocalizedMessage("confirmYesKey").ToLower();
             string confirmNoKey = LanguageManager.Instance.GetLocalizedMessage("confirmNoKey").ToLower();
 
-            if (command == confirmYesKey)
-            {
-                string pending = pendingCommand.ToLower();
+            // Pobierz kluczowe s³owa komend z t³umaczenia (na ma³e litery)
+            string missionCmd = LanguageManager.Instance.GetLocalizedMessage("command_mission_key").ToLower();
+            string mainCmd = LanguageManager.Instance.GetLocalizedMessage("command_main_key").ToLower();
+            string homeCmd = LanguageManager.Instance.GetLocalizedMessage("command_home_key").ToLower();
 
-                // BLOKADA: Home -> ProceduralLevels
-                if (currentScene == "home" && (pending == "mission" || pending == "misja"))
+            // Nazwa sceny na ma³e litery!
+            string pending = pendingCommand.ToLower();
+            string commandLower = command.ToLower();
+
+            if (commandLower == confirmYesKey)
+            {
+                // BLOKADA: Home -> ProceduralLevels (tylko jeœli pending to missionCmd)
+                if (currentScene == "home" && pending == missionCmd)
                 {
                     ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("executingCommand")}", "#00E700");
                     ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("mustGoOnRoute"), "#FF0000");
@@ -1195,8 +1176,8 @@ public class CameraToMonitor : MonoBehaviour
                     ClearInputField();
                     return;
                 }
-                // BLOKADA: ProceduralLevels -> Main
-                if (currentScene == "procedurallevels" && (pending == "main" || pending == "trasa"))
+                // BLOKADA: ProceduralLevels -> Main (tylko jeœli pending to mainCmd)
+                if (currentScene == "procedurallevels" && pending == mainCmd)
                 {
                     ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("executingCommand")}", "#00E700");
                     ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("notEnoughFuel"), "#FF0000");
@@ -1210,7 +1191,7 @@ public class CameraToMonitor : MonoBehaviour
                     return;
                 }
 
-                // Jeœli NIE ma blokady — wykonaj komendê
+                // Jeœli NIE ma blokady — wykonaj komendê (upewnij siê, ¿e istnieje!)
                 ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("executingCommand")}", "#00E700");
                 foreach (var playSoundOnObject in playSoundObjects)
                 {
@@ -1218,9 +1199,12 @@ public class CameraToMonitor : MonoBehaviour
                     playSoundOnObject.PlaySound("TerminalAccept", 0.3f, false);
                 }
 
-                commandDictionary[pendingCommand].command.Invoke();
+                if (commandDictionary.TryGetValue(pendingCommand, out var cmd))
+                    cmd.command.Invoke();
+                else
+                    ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("unknownCommand"), "#FF0000");
             }
-            else if (command == confirmNoKey)
+            else if (commandLower == confirmNoKey)
             {
                 ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("commandCancelled"), "#FF0000");
 
