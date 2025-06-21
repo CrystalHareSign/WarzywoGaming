@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using System.Collections;
+using UnityEngine.UI;
 
 public class MissionDefiner : MonoBehaviour
 {
@@ -10,11 +11,18 @@ public class MissionDefiner : MonoBehaviour
 
     [Header("UI Kanwy")]
     public GameObject missionCanvas;    // Canvas z ikonami lokacji
-    public GameObject summaryCanvas;    // Canvas z nazw¹ i liczb¹ pokoi
+    public GameObject summaryCanvas;    // Canvas z nazw¹ i liczb¹ pokoi (zawsze aktywny)
     public TMP_Text summaryNameText;    // TMP_Text na nazwê lokacji
     public TMP_Text summaryRoomsText;   // TMP_Text na liczbê pokoi
 
-    // Publiczne referencje, dynamicznie przypisywane jeœli puste
+    [Header("UI Przycisków")]
+    public Button confirmButton;
+    public Button exitButton; // Tylko dwa przyciski
+
+    [Header("Tooltip do ikon")]
+    public MissionLocationTooltipPanel tooltipPanel;
+
+    // Inne referencje
     public PlayerMovement playerMovementScript;
     public MouseLook mouseLookScript;
     public InventoryUI inventoryUI;
@@ -30,25 +38,30 @@ public class MissionDefiner : MonoBehaviour
     private bool flashlightWasOnBefore = false;
     private bool weaponWasActiveBefore = false;
 
+    // Stan wyboru
+    private string pendingLocationName = null;
+    private int pendingRoomCount = 0;
+    private bool locationConfirmed = false;
+
     public static bool IsAnyDefinerActive = false;
 
     void Start()
     {
-        // Dynamiczne przypisanie jeœli puste
-        if (playerMovementScript == null)
-            playerMovementScript = Object.FindFirstObjectByType<PlayerMovement>();
-        if (mouseLookScript == null)
-            mouseLookScript = Object.FindFirstObjectByType<MouseLook>();
-        if (playerInteraction == null)
-            playerInteraction = Object.FindFirstObjectByType<PlayerInteraction>();
-        if (inventoryUI == null)
-            inventoryUI = Object.FindFirstObjectByType<InventoryUI>();
-        if (inventory == null)
-            inventory = Object.FindFirstObjectByType<Inventory>();
-        if (crossHair == null)
-            crossHair = GameObject.FindWithTag("Crosshair") ?? GameObject.Find("Crosshair");
+        if (playerMovementScript == null) playerMovementScript = Object.FindFirstObjectByType<PlayerMovement>();
+        if (mouseLookScript == null) mouseLookScript = Object.FindFirstObjectByType<MouseLook>();
+        if (playerInteraction == null) playerInteraction = Object.FindFirstObjectByType<PlayerInteraction>();
+        if (inventoryUI == null) inventoryUI = Object.FindFirstObjectByType<InventoryUI>();
+        if (inventory == null) inventory = Object.FindFirstObjectByType<Inventory>();
+        if (crossHair == null) crossHair = GameObject.FindWithTag("Crosshair") ?? GameObject.Find("Crosshair");
 
-        // NIE ukrywaj Canvasów!
+        if (missionCanvas != null) missionCanvas.SetActive(true);
+        if (summaryCanvas != null) summaryCanvas.SetActive(true);
+
+        HideMissionDefinerButtons();
+        ClearSummary();
+
+        if (confirmButton != null) confirmButton.onClick.AddListener(OnConfirmClicked);
+        if (exitButton != null) exitButton.onClick.AddListener(OnExitClicked);
     }
 
     public void UseDefiner()
@@ -60,7 +73,6 @@ public class MissionDefiner : MonoBehaviour
             originalCameraPosition = Camera.main.transform.position;
             originalCameraRotation = Camera.main.transform.rotation;
 
-            // SCHOWAJ broñ (jeœli trzymasz)
             if (inventory != null && inventory.currentWeaponPrefab != null)
             {
                 weaponWasActiveBefore = inventory.currentWeaponPrefab.activeSelf;
@@ -71,6 +83,8 @@ public class MissionDefiner : MonoBehaviour
                 weaponWasActiveBefore = false;
             }
 
+            ShowMissionDefinerButtons();
+            ClearSummary();
             StartCoroutine(MoveCameraToTarget());
         }
     }
@@ -98,8 +112,6 @@ public class MissionDefiner : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        // NIE ukrywaj missionCanvas ani summaryCanvas!
-
         Vector3 startPos = Camera.main.transform.position;
         Quaternion startRot = Camera.main.transform.rotation;
         Vector3 targetPos = cameraTargetPosition.position;
@@ -119,12 +131,96 @@ public class MissionDefiner : MonoBehaviour
         isCameraMoving = false;
     }
 
+    public void OnLocationSelected(MissionLocationIcon icon)
+    {
+        if (isCameraMoving)
+        {
+            return;
+        }
+
+        pendingLocationName = icon.locationName;
+        pendingRoomCount = icon.roomCount;
+        locationConfirmed = false;
+
+        ShowSummary(pendingLocationName, pendingRoomCount);
+        ShowMissionDefinerButtons();
+    }
+
+    private void ShowSummary(string locationName, int roomCount)
+    {
+        if (summaryNameText != null) summaryNameText.text = locationName;
+        if (summaryRoomsText != null) summaryRoomsText.text = $"Liczba pokoi: {roomCount}";
+    }
+
+    private void ClearSummary()
+    {
+        if (summaryNameText != null) summaryNameText.text = "";
+        if (summaryRoomsText != null) summaryRoomsText.text = "";
+    }
+
+    // ZATWIERDZENIE I WYJŒCIE
+    public void OnConfirmClicked()
+    {
+        if (isCameraMoving) return;
+
+        if (!string.IsNullOrEmpty(pendingLocationName))
+        {
+            MissionSettings.locationName = pendingLocationName;
+            MissionSettings.roomCount = pendingRoomCount;
+            locationConfirmed = true;
+
+            // PRZEKAZANIE DANYCH DO MONITORA!
+            if (MissionMonitor.Instance != null)
+                MissionMonitor.Instance.SetSummary(pendingLocationName, pendingRoomCount);
+
+            HideMissionDefinerButtons();
+            // NIE czyœcimy summaryCanvas! Zostaje z info do zmiany sceny.
+            tooltipPanel?.HideTooltip();
+            ExitDefiner();
+        }
+    }
+
+    // EXIT — RESETUJ I WYJD
+    public void OnExitClicked()
+    {
+        if (isCameraMoving) return;
+
+        pendingLocationName = null;
+        pendingRoomCount = 0;
+        locationConfirmed = false;
+
+        // Czyœcimy summaryCanvas (lokalny podgl¹d)
+        ClearSummary();
+
+        // Czyœcimy równie¿ MissionMonitor (persistent canvas)
+        if (MissionMonitor.Instance != null)
+        {
+            MissionMonitor.Instance.ClearSummary();
+            MissionMonitor.Instance.UpdateUI(); // Upewnij siê, ¿e UI siê odœwie¿a
+        }
+
+        HideMissionDefinerButtons();
+        if (tooltipPanel != null)
+            tooltipPanel.HideTooltip();
+
+        ExitDefiner();
+    }
+
+    private void ShowMissionDefinerButtons()
+    {
+        if (confirmButton != null) confirmButton.gameObject.SetActive(true);
+        if (exitButton != null) exitButton.gameObject.SetActive(true);
+    }
+
+    private void HideMissionDefinerButtons()
+    {
+        if (confirmButton != null) confirmButton.gameObject.SetActive(false);
+        if (exitButton != null) exitButton.gameObject.SetActive(false);
+    }
+
     public void ExitDefiner()
     {
-        if (isInteracting)
-        {
-            StartCoroutine(MoveCameraBack());
-        }
+        StartCoroutine(MoveCameraBack());
     }
 
     IEnumerator MoveCameraBack()
@@ -155,7 +251,6 @@ public class MissionDefiner : MonoBehaviour
                 inventoryUI.ShowItemUI(inventory.items);
         }
 
-        // ODS£OÑ broñ jeœli by³a aktywna wczeœniej i NIE trzymasz lootu
         bool holdingLoot = false;
         if (inventory != null && inventory.lootParent != null && inventory.lootParent.childCount > 0)
             holdingLoot = true;
@@ -176,8 +271,6 @@ public class MissionDefiner : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        // NIE ukrywaj missionCanvas ani summaryCanvas!
-
         isCameraMoving = false;
         isInteracting = false;
         IsAnyDefinerActive = false;
@@ -185,27 +278,10 @@ public class MissionDefiner : MonoBehaviour
 
     void Update()
     {
-        if (isInteracting && Input.GetKeyDown(KeyCode.Escape))
+        // ESC = szybkie wyjœcie, jak Exit
+        if (isInteracting && Input.GetKeyDown(KeyCode.Escape) && !isCameraMoving)
         {
-            ExitDefiner();
+            OnExitClicked();
         }
-    }
-
-    // --- WYBÓR LOKACJI ---
-
-    public void OnLocationSelected(MissionLocationIcon icon)
-    {
-        MissionSettings.locationName = icon.locationName;
-        MissionSettings.roomCount = icon.roomCount;
-        ShowSummary(icon.locationName, icon.roomCount);
-
-        // tutaj zmieniasz scenê swoim systemem
-    }
-
-    private void ShowSummary(string locationName, int roomCount)
-    {
-        // NIE ukrywaj/pokazuj canvasów!
-        if (summaryNameText != null) summaryNameText.text = locationName;
-        if (summaryRoomsText != null) summaryRoomsText.text = $"Liczba pokoi: {roomCount}";
     }
 }
