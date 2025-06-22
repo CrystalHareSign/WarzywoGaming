@@ -11,8 +11,9 @@ public class MissionDefiner : MonoBehaviour
 
     [Header("UI Kanwy")]
     public GameObject missionCanvas;    // Canvas z ikonami lokacji
-    public GameObject summaryCanvas;    // Canvas z nazw¹ i liczb¹ pokoi (zawsze aktywny)
+    public GameObject summaryCanvas;    // Canvas z nazw¹, typem i liczb¹ pokoi (zawsze aktywny)
     public TMP_Text summaryNameText;    // TMP_Text na nazwê lokacji
+    public TMP_Text summaryTypeText;    // TMP_Text na typ misji (NOWE POLE)
     public TMP_Text summaryRoomsText;   // TMP_Text na liczbê pokoi
 
     [Header("UI Przycisków")]
@@ -41,6 +42,7 @@ public class MissionDefiner : MonoBehaviour
     // Stan wyboru
     private string pendingLocationName = null;
     private int pendingRoomCount = 0;
+    private MissionLocationType pendingLocationType = MissionLocationType.ProceduralRaid;
     private bool locationConfirmed = false;
 
     public static bool IsAnyDefinerActive = false;
@@ -140,20 +142,42 @@ public class MissionDefiner : MonoBehaviour
 
         pendingLocationName = icon.locationName;
         pendingRoomCount = icon.roomCount;
+        pendingLocationType = icon.locationType;
         locationConfirmed = false;
 
-        ShowSummary(pendingLocationName, pendingRoomCount);
+        ShowSummary(pendingLocationName, pendingRoomCount, pendingLocationType);
+
+        // Pozwól potwierdziæ tylko jeœli typ lokacji na to pozwala (np. dla RouteOnly zawsze true, dla ProceduralRaid tylko jeœli roomCount > 0)
+        if (confirmButton != null)
+        {
+            if (pendingLocationType == MissionLocationType.RouteOnly)
+                confirmButton.interactable = true;
+            else
+                confirmButton.interactable = pendingRoomCount > 0;
+        }
+
         ShowMissionDefinerButtons();
     }
 
+    private void ShowSummary(string locationName, int roomCount, MissionLocationType locationType)
+    {
+        if (summaryTypeText != null)
+            summaryTypeText.text = "Typ misji: " + (locationType == MissionLocationType.ProceduralRaid ? "RAID" : "GRIND BUS");
+        if (summaryNameText != null)
+            summaryNameText.text = locationName;
+        if (summaryRoomsText != null)
+            summaryRoomsText.text = roomCount > 0 ? $"Liczba pokoi: {roomCount}" : "";
+    }
+
+    // Przeci¹¿enie do zachowania kompatybilnoœci w innych miejscach w kodzie
     private void ShowSummary(string locationName, int roomCount)
     {
-        if (summaryNameText != null) summaryNameText.text = locationName;
-        if (summaryRoomsText != null) summaryRoomsText.text = $"Liczba pokoi: {roomCount}";
+        ShowSummary(locationName, roomCount, pendingLocationType);
     }
 
     private void ClearSummary()
     {
+        if (summaryTypeText != null) summaryTypeText.text = "";
         if (summaryNameText != null) summaryNameText.text = "";
         if (summaryRoomsText != null) summaryRoomsText.text = "";
     }
@@ -167,11 +191,12 @@ public class MissionDefiner : MonoBehaviour
         {
             MissionSettings.locationName = pendingLocationName;
             MissionSettings.roomCount = pendingRoomCount;
+            MissionSettings.locationType = pendingLocationType;
             locationConfirmed = true;
 
             // PRZEKAZANIE DANYCH DO MONITORA!
             if (MissionMonitor.Instance != null)
-                MissionMonitor.Instance.SetSummary(pendingLocationName, pendingRoomCount);
+                MissionMonitor.Instance.SetSummary(pendingLocationName, pendingRoomCount, pendingLocationType);
 
             HideMissionDefinerButtons();
             // NIE czyœcimy summaryCanvas! Zostaje z info do zmiany sceny.
@@ -187,6 +212,7 @@ public class MissionDefiner : MonoBehaviour
 
         pendingLocationName = null;
         pendingRoomCount = 0;
+        pendingLocationType = MissionLocationType.ProceduralRaid;
         locationConfirmed = false;
 
         // Czyœcimy summaryCanvas (lokalny podgl¹d)
@@ -194,10 +220,7 @@ public class MissionDefiner : MonoBehaviour
 
         // Czyœcimy równie¿ MissionMonitor (persistent canvas)
         if (MissionMonitor.Instance != null)
-        {
             MissionMonitor.Instance.ClearSummary();
-            MissionMonitor.Instance.UpdateUI(); // Upewnij siê, ¿e UI siê odœwie¿a
-        }
 
         HideMissionDefinerButtons();
         if (tooltipPanel != null)

@@ -12,6 +12,7 @@ public class MissionMonitor : MonoBehaviour
     // Persistent data
     private string savedLocationName;
     private int savedRoomCount;
+    private MissionLocationType savedLocationType;
 
     void Awake()
     {
@@ -26,10 +27,11 @@ public class MissionMonitor : MonoBehaviour
         }
     }
 
-    public void SetSummary(string locationName, int roomCount)
+    public void SetSummary(string locationName, int roomCount, MissionLocationType locationType)
     {
         savedLocationName = locationName;
         savedRoomCount = roomCount;
+        savedLocationType = locationType;
         UpdateUI();
     }
 
@@ -39,6 +41,7 @@ public class MissionMonitor : MonoBehaviour
             summaryNameText.text = savedLocationName ?? "";
         if (summaryRoomsText != null)
             summaryRoomsText.text = savedRoomCount > 0 ? $"Liczba pokoi: {savedRoomCount}" : "";
+        // Jeœli chcesz dodaæ pole na typ misji, tu mo¿na je zaktualizowaæ
     }
 
     public bool HasSummary()
@@ -50,6 +53,13 @@ public class MissionMonitor : MonoBehaviour
     {
         savedLocationName = null;
         savedRoomCount = 0;
-        UpdateUI();
+        savedLocationType = MissionLocationType.ProceduralRaid;
+        if (summaryNameText != null) summaryNameText.text = "";
+        if (summaryRoomsText != null) summaryRoomsText.text = "";
+    }
+
+    public MissionLocationType GetSavedLocationType()
+    {
+        return savedLocationType;
     }
 }

@@ -3,15 +3,36 @@ using TMPro;
 
 public class MissionLocationTooltipPanel : MonoBehaviour
 {
+    public TMP_Text typeText;
     public TMP_Text nameText;
     public TMP_Text roomCountText;
     [Header("0.01 +-")]
     public float margin = 0.01f; // Edytowalny margines
 
-    public void ShowTooltip(string locationName, int roomCount, RectTransform targetRect)
+    public void ShowTooltip(string locationName, int roomCount, MissionLocationType locationType, RectTransform targetRect)
     {
-        if (nameText != null) nameText.text = locationName;
-        if (roomCountText != null) roomCountText.text = $"Liczba pokoi: {roomCount}";
+        // Ustaw typ
+        if (typeText != null)
+            typeText.text = "Typ: " + (locationType == MissionLocationType.ProceduralRaid ? "RAID" : "GRIND BUS");
+
+        // Ustaw nazwê
+        if (nameText != null)
+            nameText.text = "Nazwa: " + locationName;
+
+        // Poka¿ lub ukryj iloœæ pokoi w zale¿noœci od typu lokacji
+        if (roomCountText != null)
+        {
+            if (locationType == MissionLocationType.ProceduralRaid)
+            {
+                roomCountText.text = "Iloœæ pokoi: " + roomCount;
+                roomCountText.gameObject.SetActive(true);
+            }
+            else
+            {
+                roomCountText.gameObject.SetActive(false);
+            }
+        }
+
         gameObject.SetActive(true);
 
         RectTransform tooltipRect = GetComponent<RectTransform>();
@@ -26,25 +47,16 @@ public class MissionLocationTooltipPanel : MonoBehaviour
         // 8 mo¿liwych pozycji (prawo, lewo, góra, dó³, oraz po skosie)
         Vector2[] candidates = new Vector2[]
         {
-            // PRAWO
             iconPos + new Vector2(iconSize.x / 2 + tooltipSize.x / 2 + margin, 0),
-            // LEWO
             iconPos + new Vector2(-iconSize.x / 2 - tooltipSize.x / 2 - margin, 0),
-            // GÓRA
             iconPos + new Vector2(0, iconSize.y / 2 + tooltipSize.y / 2 + margin),
-            // DÓ£
             iconPos + new Vector2(0, -iconSize.y / 2 - tooltipSize.y / 2 - margin),
-            // PRAWO-GÓRA
             iconPos + new Vector2(iconSize.x / 2 + tooltipSize.x / 2 + margin, iconSize.y / 2 + tooltipSize.y / 2 + margin),
-            // PRAWO-DÓ£
             iconPos + new Vector2(iconSize.x / 2 + tooltipSize.x / 2 + margin, -iconSize.y / 2 - tooltipSize.y / 2 - margin),
-            // LEWO-GÓRA
             iconPos + new Vector2(-iconSize.x / 2 - tooltipSize.x / 2 - margin, iconSize.y / 2 + tooltipSize.y / 2 + margin),
-            // LEWO-DÓ£
             iconPos + new Vector2(-iconSize.x / 2 - tooltipSize.x / 2 - margin, -iconSize.y / 2 - tooltipSize.y / 2 - margin)
         };
 
-        // SprawdŸ ka¿d¹ z pozycji
         foreach (Vector2 candidate in candidates)
         {
             bool inside =

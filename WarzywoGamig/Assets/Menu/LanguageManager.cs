@@ -83,6 +83,7 @@ public class TerminalTranslations
     public string command_home_key;
     public string command_main_key;
     public string command_mission_key;
+    public string noMissionTargetSelected;
     public string terminalSecured;
     public string terminalExit;
     public string locations;

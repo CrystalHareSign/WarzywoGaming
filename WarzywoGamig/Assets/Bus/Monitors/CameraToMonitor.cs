@@ -1190,6 +1190,20 @@ public class CameraToMonitor : MonoBehaviour
                     ClearInputField();
                     return;
                 }
+                // NOWA BLOKADA (RouteOnly = nie wybrano celu misji)
+                if (pending == missionCmd && MissionSettings.locationType == MissionLocationType.RouteOnly)
+                {
+                    ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("executingCommand")}", "#00E700");
+                    ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("noMissionTargetSelected"), "#FF0000");
+                    foreach (var playSoundOnObject in playSoundObjects)
+                    {
+                        if (playSoundOnObject == null) continue;
+                        playSoundOnObject.PlaySound("TerminalError", 0.3f, false);
+                    }
+                    pendingCommand = null;
+                    ClearInputField();
+                    return;
+                }
 
                 // Jeœli NIE ma blokady — wykonaj komendê (upewnij siê, ¿e istnieje!)
                 ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("executingCommand")}", "#00E700");
