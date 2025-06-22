@@ -159,15 +159,15 @@ public class SceneChanger : MonoBehaviour
             playSound.PlaySound("DieselBusEngine", 1.2f, true);
             playSound.PlaySound("Storm", 0.1f, true);
         }
-        if (TurretBody != null)
-        {
-            var turretController = TurretBody.GetComponent<TurretController>();
-            if (turretController != null)
-            {
-                var turretCollector = turretController.GetComponentInChildren<TurretCollector>();
-                if (turretCollector != null) turretCollector.ClearAllSlots();
-            }
-        }
+        //if (TurretBody != null)
+        //{
+        //    var turretController = TurretBody.GetComponent<TurretController>();
+        //    if (turretController != null)
+        //    {
+        //        var turretCollector = turretController.GetComponentInChildren<TurretCollector>();
+        //        if (turretCollector != null) turretCollector.ClearAllSlots();
+        //    }
+        //}
     }
 
     private void ExecuteMethodsForHomeScene()
