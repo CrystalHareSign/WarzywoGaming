@@ -3,10 +3,13 @@ using UnityEngine.EventSystems;
 
 public class MissionLocationIcon : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
+    [Header("5 min = 6.0 km\n10 min = 12.0 km\n15 min = 18.0 km")]
     [Header("Dane lokacji")]
-    public string locationName;
-    public int roomCount;
     public MissionLocationType locationType = MissionLocationType.ProceduralRaid;
+    public string locationName;
+    public float totalDistanceKm;
+    public float dangerZoneKm;
+    public int roomCount;
 
     [Header("Referencje")]
     public MissionDefiner missionDefiner;
@@ -15,8 +18,8 @@ public class MissionLocationIcon : MonoBehaviour, IPointerEnterHandler, IPointer
     {
         if (missionDefiner != null && missionDefiner.tooltipPanel != null)
         {
-            // Przekazujemy typ lokacji, ¿eby tooltip wiedzia³ co pokazaæ
-            missionDefiner.tooltipPanel.ShowTooltip(locationName, roomCount, locationType, GetComponent<RectTransform>());
+            // Przekazujemy oba dystanse do tooltipa!
+            missionDefiner.tooltipPanel.ShowTooltip(locationName, roomCount, locationType, totalDistanceKm, dangerZoneKm, GetComponent<RectTransform>());
         }
     }
 

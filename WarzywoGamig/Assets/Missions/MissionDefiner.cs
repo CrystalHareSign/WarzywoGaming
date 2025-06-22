@@ -13,8 +13,10 @@ public class MissionDefiner : MonoBehaviour
     public GameObject missionCanvas;    // Canvas z ikonami lokacji
     public GameObject summaryCanvas;    // Canvas z nazw¹, typem i liczb¹ pokoi (zawsze aktywny)
     public TMP_Text summaryNameText;    // TMP_Text na nazwê lokacji
-    public TMP_Text summaryTypeText;    // TMP_Text na typ misji (NOWE POLE)
+    public TMP_Text summaryTypeText;    // TMP_Text na typ misji
     public TMP_Text summaryRoomsText;   // TMP_Text na liczbê pokoi
+    public TMP_Text summaryDistanceText; // TMP_Text na oba dystanse
+    public TMP_Text summaryDangerZoneText; // TMP_Text na sam danger zone
 
     [Header("UI Przycisków")]
     public Button confirmButton;
@@ -43,6 +45,8 @@ public class MissionDefiner : MonoBehaviour
     private string pendingLocationName = null;
     private int pendingRoomCount = 0;
     private MissionLocationType pendingLocationType = MissionLocationType.ProceduralRaid;
+    private float pendingTotalDistanceKm = 0f;    // Ca³kowity dystans
+    private float pendingDangerZoneKm = 0f;       // Danger zone (grywalny dystans)
     private bool locationConfirmed = false;
 
     public static bool IsAnyDefinerActive = false;
@@ -143,11 +147,13 @@ public class MissionDefiner : MonoBehaviour
         pendingLocationName = icon.locationName;
         pendingRoomCount = icon.roomCount;
         pendingLocationType = icon.locationType;
+        pendingTotalDistanceKm = icon.totalDistanceKm;       // Odczyt z ikony
+        pendingDangerZoneKm = icon.dangerZoneKm;             // Odczyt z ikony
         locationConfirmed = false;
 
-        ShowSummary(pendingLocationName, pendingRoomCount, pendingLocationType);
+        ShowSummary(pendingLocationName, pendingRoomCount, pendingLocationType, pendingTotalDistanceKm, pendingDangerZoneKm);
 
-        // Pozwól potwierdziæ tylko jeœli typ lokacji na to pozwala (np. dla RouteOnly zawsze true, dla ProceduralRaid tylko jeœli roomCount > 0)
+        // Pozwól potwierdziæ tylko jeœli typ lokacji na to pozwala
         if (confirmButton != null)
         {
             if (pendingLocationType == MissionLocationType.RouteOnly)
@@ -159,7 +165,8 @@ public class MissionDefiner : MonoBehaviour
         ShowMissionDefinerButtons();
     }
 
-    private void ShowSummary(string locationName, int roomCount, MissionLocationType locationType)
+    // Nowa wersja ShowSummary z dwoma dystansami
+    private void ShowSummary(string locationName, int roomCount, MissionLocationType locationType, float totalDistanceKm, float dangerZoneKm)
     {
         if (summaryTypeText != null)
             summaryTypeText.text = "Typ misji: " + (locationType == MissionLocationType.ProceduralRaid ? "RAID" : "GRIND BUS");
@@ -167,12 +174,16 @@ public class MissionDefiner : MonoBehaviour
             summaryNameText.text = locationName;
         if (summaryRoomsText != null)
             summaryRoomsText.text = roomCount > 0 ? $"Liczba pokoi: {roomCount}" : "";
+        if (summaryDistanceText != null)
+            summaryDistanceText.text = $"Dystans: {totalDistanceKm:0.0} km";
+        if (summaryDangerZoneText != null)
+            summaryDangerZoneText.text = $"Danger zone: {dangerZoneKm:0.0} km";
     }
 
     // Przeci¹¿enie do zachowania kompatybilnoœci w innych miejscach w kodzie
     private void ShowSummary(string locationName, int roomCount)
     {
-        ShowSummary(locationName, roomCount, pendingLocationType);
+        ShowSummary(locationName, roomCount, pendingLocationType, pendingTotalDistanceKm, pendingDangerZoneKm);
     }
 
     private void ClearSummary()
@@ -180,6 +191,8 @@ public class MissionDefiner : MonoBehaviour
         if (summaryTypeText != null) summaryTypeText.text = "";
         if (summaryNameText != null) summaryNameText.text = "";
         if (summaryRoomsText != null) summaryRoomsText.text = "";
+        if (summaryDistanceText != null) summaryDistanceText.text = "";
+        if (summaryDangerZoneText != null) summaryDangerZoneText.text = "";
     }
 
     // ZATWIERDZENIE I WYJŒCIE
@@ -192,14 +205,15 @@ public class MissionDefiner : MonoBehaviour
             MissionSettings.locationName = pendingLocationName;
             MissionSettings.roomCount = pendingRoomCount;
             MissionSettings.locationType = pendingLocationType;
+            MissionSettings.totalDistanceKm = pendingTotalDistanceKm;
+            MissionSettings.dangerZoneKm = pendingDangerZoneKm;
             locationConfirmed = true;
 
             // PRZEKAZANIE DANYCH DO MONITORA!
             if (MissionMonitor.Instance != null)
-                MissionMonitor.Instance.SetSummary(pendingLocationName, pendingRoomCount, pendingLocationType);
+                MissionMonitor.Instance.SetSummary(pendingLocationName, pendingRoomCount, pendingLocationType, pendingTotalDistanceKm, pendingDangerZoneKm);
 
             HideMissionDefinerButtons();
-            // NIE czyœcimy summaryCanvas! Zostaje z info do zmiany sceny.
             tooltipPanel?.HideTooltip();
             ExitDefiner();
         }
@@ -213,6 +227,8 @@ public class MissionDefiner : MonoBehaviour
         pendingLocationName = null;
         pendingRoomCount = 0;
         pendingLocationType = MissionLocationType.ProceduralRaid;
+        pendingTotalDistanceKm = 0f;
+        pendingDangerZoneKm = 0f;
         locationConfirmed = false;
 
         // Czyœcimy summaryCanvas (lokalny podgl¹d)

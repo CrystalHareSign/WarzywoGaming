@@ -97,6 +97,9 @@ public class DriverSeatInteraction : MonoBehaviour
             UnblockPlayerControl();
             // Odblokuj flagê po powrocie do gry
             IsAnyDriverSeatActive = false;
+
+            if (MissionMonitor.Instance != null)
+                MissionMonitor.Instance.StartTravel();
         }
     }
 

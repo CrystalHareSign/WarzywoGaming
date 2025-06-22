@@ -6,20 +6,20 @@ public class MissionLocationTooltipPanel : MonoBehaviour
     public TMP_Text typeText;
     public TMP_Text nameText;
     public TMP_Text roomCountText;
+    public TMP_Text tooltipDistanceText;
+    public TMP_Text tooltipDangerZoneText;
     [Header("0.01 +-")]
-    public float margin = 0.01f; // Edytowalny margines
+    public float margin = 0.01f;
 
-    public void ShowTooltip(string locationName, int roomCount, MissionLocationType locationType, RectTransform targetRect)
+    // Obs³uguje oba dystanse: totalDistanceKm i dangerZoneKm osobno
+    public void ShowTooltip(string locationName, int roomCount, MissionLocationType locationType, float totalDistanceKm, float dangerZoneKm, RectTransform targetRect)
     {
-        // Ustaw typ
         if (typeText != null)
             typeText.text = "Typ: " + (locationType == MissionLocationType.ProceduralRaid ? "RAID" : "GRIND BUS");
 
-        // Ustaw nazwê
         if (nameText != null)
             nameText.text = "Nazwa: " + locationName;
 
-        // Poka¿ lub ukryj iloœæ pokoi w zale¿noœci od typu lokacji
         if (roomCountText != null)
         {
             if (locationType == MissionLocationType.ProceduralRaid)
@@ -33,6 +33,14 @@ public class MissionLocationTooltipPanel : MonoBehaviour
             }
         }
 
+        // Osobno: dystans ca³kowity
+        if (tooltipDistanceText != null)
+            tooltipDistanceText.text = $"Dystans: {totalDistanceKm:0.0} km";
+
+        // Osobno: danger zone
+        if (tooltipDangerZoneText != null)
+            tooltipDangerZoneText.text = $"Danger zone: {dangerZoneKm:0.0} km";
+
         gameObject.SetActive(true);
 
         RectTransform tooltipRect = GetComponent<RectTransform>();
@@ -44,7 +52,6 @@ public class MissionLocationTooltipPanel : MonoBehaviour
         Vector2 tooltipSize = tooltipRect.sizeDelta;
         Vector2 parentSize = parent.rect.size;
 
-        // 8 mo¿liwych pozycji (prawo, lewo, góra, dó³, oraz po skosie)
         Vector2[] candidates = new Vector2[]
         {
             iconPos + new Vector2(iconSize.x / 2 + tooltipSize.x / 2 + margin, 0),
