@@ -36,8 +36,6 @@ public class CameraToMonitor : MonoBehaviour
     public bool isUsingMonitor = false;
     private bool flashlightWasOnBeforeMonitor = false;
     public static string pendingTravelScene = null;
-    public float travelConfirmTime = 10f;
-    private Coroutine travelConfirmCoroutine = null;
 
     [Header("Info")]
     public bool hasInfo = false;
@@ -476,9 +474,7 @@ public class CameraToMonitor : MonoBehaviour
 
         // Ustaw scenê do podró¿y i rozpocznij licznik czasu na potwierdzenie
         pendingTravelScene = targetSceneName;
-        if (travelConfirmCoroutine != null)
-            StopCoroutine(travelConfirmCoroutine);
-        travelConfirmCoroutine = StartCoroutine(TravelConfirmCountdown(travelConfirmTime));
+
 
         // WyjdŸ z terminala (wróæ kamer¹ do postaci)
         StartCoroutine(MoveCameraBackToOriginalPosition());
@@ -492,24 +488,6 @@ public class CameraToMonitor : MonoBehaviour
         
     }
 
-    private IEnumerator TravelConfirmCountdown(float seconds)
-    {
-        float timer = seconds;
-        // Tu mo¿esz wrzuciæ aktualizacjê UI z odliczaniem, jeœli chcesz
-        while (timer > 0 && pendingTravelScene != null)
-        {
-            // (Opcjonalnie) Aktualizuj licznik na UI
-            timer -= Time.deltaTime;
-            yield return null;
-        }
-        if (pendingTravelScene != null)
-        {
-            // Czas min¹³ - anuluj podró¿
-            pendingTravelScene = null;
-        }
-        travelConfirmCoroutine = null;
-    }
-
     public void ConfirmTravel()
     {
         if (string.IsNullOrEmpty(pendingTravelScene))
@@ -520,11 +498,6 @@ public class CameraToMonitor : MonoBehaviour
         if (pendingTravelScene == currentScene)
         {
             pendingTravelScene = null;
-            if (travelConfirmCoroutine != null)
-            {
-                StopCoroutine(travelConfirmCoroutine);
-                travelConfirmCoroutine = null;
-            }
             return;
         }
 
@@ -536,11 +509,6 @@ public class CameraToMonitor : MonoBehaviour
 
         // Reset stanu
         pendingTravelScene = null;
-        if (travelConfirmCoroutine != null)
-        {
-            StopCoroutine(travelConfirmCoroutine);
-            travelConfirmCoroutine = null;
-        }
     }
 
     private IEnumerator DisplayHelpLogs()
@@ -1203,6 +1171,28 @@ public class CameraToMonitor : MonoBehaviour
                     pendingCommand = null;
                     ClearInputField();
                     return;
+                }
+                // BLOKADA RAID: przejœcie do ProceduralLevels tylko gdy licznik = 0 i timer aktywny
+                if (currentScene == "main" && pending == missionCmd && MissionSettings.locationType == MissionLocationType.ProceduralRaid)
+                {
+                    var mm = MissionMonitor.Instance;
+                    if (mm != null)
+                    {
+                        // Jeœli licznik nie jest zerowy lub timer nieaktywny, blokuj przejœcie
+                        if (mm.GetDistanceLeft() > 0f || !mm.IsTimerActive())
+                        {
+                            ShowConsoleMessage($">>> {LanguageManager.Instance.GetLocalizedMessage("executingCommand")}", "#00E700");
+                            ShowConsoleMessage(LanguageManager.Instance.GetLocalizedMessage("tooFarToExitRoute"), "#FF0000");
+                            foreach (var playSoundOnObject in playSoundObjects)
+                            {
+                                if (playSoundOnObject == null) continue;
+                                playSoundOnObject.PlaySound("TerminalError", 0.3f, false);
+                            }
+                            pendingCommand = null;
+                            ClearInputField();
+                            return;
+                        }
+                    }
                 }
 
                 // Jeœli NIE ma blokady — wykonaj komendê (upewnij siê, ¿e istnieje!)

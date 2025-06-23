@@ -25,6 +25,9 @@ public class MissionMonitor : MonoBehaviour
     private bool isTraveling = false;
     private bool isTimerActive = false;
 
+    public float GetDistanceLeft() => distanceLeft;
+    public bool IsTimerActive() => isTimerActive;
+
     void Awake()
     {
         if (Instance == null)
@@ -35,6 +38,59 @@ public class MissionMonitor : MonoBehaviour
         else
         {
             Destroy(gameObject);
+        }
+    }
+
+    void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        HandleSceneChange();
+    }
+
+    private void HandleSceneChange()
+    {
+        string scene = SceneManager.GetActiveScene().name;
+
+        if (scene == "ProceduralLevels")
+        {
+            // Reset po wejœciu do miejsca docelowego
+            isTraveling = false;
+            isTimerActive = false;
+            distanceLeft = 0f;
+            timerAfterArrival = 0f;
+            UpdateUI();
+        }
+        else if (scene == "Home")
+        {
+            // Reset po powrocie do bazy
+            isTraveling = false;
+            isTimerActive = false;
+            distanceLeft = 0f;
+            timerAfterArrival = 0f;
+            // Jeœli nie ma aktywnej misji, czyœæ UI
+            if (!HasSummary())
+            {
+                if (summaryNameText != null) summaryNameText.text = "";
+                if (summaryRoomsText != null) summaryRoomsText.text = "";
+                if (statusText != null) statusText.text = "";
+            }
+            else
+            {
+                UpdateUI();
+            }
+        }
+        else
+        {
+            UpdateUI();
         }
     }
 
@@ -61,9 +117,14 @@ public class MissionMonitor : MonoBehaviour
 
         if (statusText != null)
         {
+            string scene = SceneManager.GetActiveScene().name;
+            if (scene == "ProceduralLevels")
+            {
+                statusText.text = "0 km";
+                return;
+            }
             if (!isTraveling && !isTimerActive)
             {
-                string scene = SceneManager.GetActiveScene().name;
                 if (scene == "Home")
                 {
                     // Jeœli jest wybrana misja (total > 0), pokazuj total, w przeciwnym razie czyœæ pole
@@ -72,10 +133,6 @@ public class MissionMonitor : MonoBehaviour
                 else if (scene == "Main")
                 {
                     statusText.text = savedDangerZoneKm > 0f ? $"{savedDangerZoneKm:0.0} km" : "";
-                }
-                else if (scene == "ProceduralLevels")
-                {
-                    statusText.text = "0 km";
                 }
                 else
                 {
@@ -88,7 +145,7 @@ public class MissionMonitor : MonoBehaviour
 
     public bool HasSummary()
     {
-        return !string.IsNullOrEmpty(savedLocationName) && savedRoomCount > 0;
+        return !string.IsNullOrEmpty(savedLocationName);
     }
 
     public void ClearSummary()
@@ -126,6 +183,33 @@ public class MissionMonitor : MonoBehaviour
 
     void Update()
     {
+        string scene = SceneManager.GetActiveScene().name;
+
+        // Wymuszenie 0 km i resetu licznika/timera w ProceduralLevels
+        if (scene == "ProceduralLevels")
+        {
+            if (statusText != null)
+                statusText.text = "0 km";
+            isTraveling = false;
+            isTimerActive = false;
+            distanceLeft = 0f;
+            timerAfterArrival = 0f;
+            return;
+        }
+
+        // Reset po powrocie do Home jeœli nie ma aktywnej misji
+        if (scene == "Home" && !HasSummary())
+        {
+            if (summaryNameText != null) summaryNameText.text = "";
+            if (summaryRoomsText != null) summaryRoomsText.text = "";
+            if (statusText != null) statusText.text = "";
+            isTraveling = false;
+            isTimerActive = false;
+            distanceLeft = 0f;
+            timerAfterArrival = 0f;
+            return;
+        }
+
         if (isTraveling)
         {
             distanceLeft -= Time.deltaTime * travelSpeed;

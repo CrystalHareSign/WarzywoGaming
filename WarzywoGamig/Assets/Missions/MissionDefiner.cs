@@ -47,7 +47,6 @@ public class MissionDefiner : MonoBehaviour
     private MissionLocationType pendingLocationType = MissionLocationType.ProceduralRaid;
     private float pendingTotalDistanceKm = 0f;    // Ca³kowity dystans
     private float pendingDangerZoneKm = 0f;       // Danger zone (grywalny dystans)
-    private bool locationConfirmed = false;
 
     public static bool IsAnyDefinerActive = false;
 
@@ -149,7 +148,6 @@ public class MissionDefiner : MonoBehaviour
         pendingLocationType = icon.locationType;
         pendingTotalDistanceKm = icon.totalDistanceKm;       // Odczyt z ikony
         pendingDangerZoneKm = icon.dangerZoneKm;             // Odczyt z ikony
-        locationConfirmed = false;
 
         ShowSummary(pendingLocationName, pendingRoomCount, pendingLocationType, pendingTotalDistanceKm, pendingDangerZoneKm);
 
@@ -180,12 +178,6 @@ public class MissionDefiner : MonoBehaviour
             summaryDangerZoneText.text = $"Danger zone: {dangerZoneKm:0.0} km";
     }
 
-    // Przeci¹¿enie do zachowania kompatybilnoœci w innych miejscach w kodzie
-    private void ShowSummary(string locationName, int roomCount)
-    {
-        ShowSummary(locationName, roomCount, pendingLocationType, pendingTotalDistanceKm, pendingDangerZoneKm);
-    }
-
     private void ClearSummary()
     {
         if (summaryTypeText != null) summaryTypeText.text = "";
@@ -207,7 +199,6 @@ public class MissionDefiner : MonoBehaviour
             MissionSettings.locationType = pendingLocationType;
             MissionSettings.totalDistanceKm = pendingTotalDistanceKm;
             MissionSettings.dangerZoneKm = pendingDangerZoneKm;
-            locationConfirmed = true;
 
             // PRZEKAZANIE DANYCH DO MONITORA!
             if (MissionMonitor.Instance != null)
@@ -229,7 +220,6 @@ public class MissionDefiner : MonoBehaviour
         pendingLocationType = MissionLocationType.ProceduralRaid;
         pendingTotalDistanceKm = 0f;
         pendingDangerZoneKm = 0f;
-        locationConfirmed = false;
 
         // Czyœcimy summaryCanvas (lokalny podgl¹d)
         ClearSummary();
