@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prefab: {fileID: 3832860996769782069, guid: 717d2d8562bc5a845a4d92b7e8f850e3, type: 3}
   doorways:
-  - localPosition: {x: -5, y: 0, z: -5}
+  - localPosition: {x: -15, y: 0, z: -15}
     direction: 3
-  - localPosition: {x: 5, y: 0, z: 5}
+  - localPosition: {x: 15, y: 0, z: 15}
     direction: 2
-  - localPosition: {x: 0, y: 0, z: 10}
+  - localPosition: {x: 0, y: 0, z: 30}
     direction: 0
-  spawnChance: 50
+  spawnChance: 20

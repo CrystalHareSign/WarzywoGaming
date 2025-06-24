@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prefab: {fileID: 1254767924092155014, guid: 357592b68f4672b43b90ffcddb5c1b8c, type: 3}
   doorways:
-  - localPosition: {x: 0, y: 0, z: 10}
+  - localPosition: {x: 0, y: 0, z: 30}
     direction: 0
   spawnChance: 100
