@@ -17,3 +17,5 @@ MonoBehaviour:
   - localPosition: {x: 0, y: 0, z: 30}
     direction: 0
   spawnChance: 100
+  itemSpawnPoints:
+  - {x: 0, y: 0, z: 0}

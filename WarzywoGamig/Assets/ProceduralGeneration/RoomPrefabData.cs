@@ -22,5 +22,6 @@ public class RoomPrefabData : ScriptableObject
     public GameObject prefab;
     public List<Doorway> doorways;
     [Range(0, 100)]
-    public int spawnChance = 100; // 1.0 = 100% szansa
+    public int spawnChance = 100;
+    public List<Vector3> itemSpawnPoints; // Pozycje lokalne na itemy
 }

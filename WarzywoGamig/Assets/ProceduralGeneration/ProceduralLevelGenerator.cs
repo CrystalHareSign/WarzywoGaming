@@ -1,6 +1,16 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+[System.Serializable]
+public class ItemEntry
+{
+    public ItemPrefabData itemData;
+    [Range(0f, 1f)]
+    public float spawnChance = 0.2f;
+    [Tooltip("Maksymalna liczba tego itemu na mapie (0 = wyliczana automatycznie)")]
+    public int maxCount = 0;
+}
+
 public class ProceduralLevelGenerator : MonoBehaviour
 {
     [Header("Room Prefabs")]
@@ -25,8 +35,34 @@ public class ProceduralLevelGenerator : MonoBehaviour
     public bool autoGenerateOnStart = true;
 
     [Header("Door Prefabs")]
-    public List<GameObject> doorClosedPrefabs;   // Lista zamkniêtych (œlepych) drzwi
-    public List<GameObject> doorActivePrefabs;   // Lista otwartych (przechodnich) drzwi
+    public List<GameObject> doorClosedPrefabs;
+    public List<GameObject> doorActivePrefabs;
+
+    // ---- ITEM SYSTEM ----
+    [Header("Item Spawning")]
+    public List<ItemEntry> items;
+
+    [Header("Loot Enrichment")]
+    [Range(1, 5)]
+    [Tooltip("Poziom wzbogacenia poziomu w loot: 1 = bardzo ma³o, 5 = bardzo du¿o")]
+    public int lootLevel = 3;
+
+    [Tooltip("Dodatkowy mno¿nik szansy na pojawienie siê przedmiotu za ka¿dy pokój oddalony od pokoju startowego.")]
+    public float distanceBonusPerRoom = 0.15f;
+
+    [Tooltip("Maksymalny ³¹czny mno¿nik szansy wynikaj¹cy z oddalenia od startowego pokoju.")]
+    public float maxDistanceBonus = 2.0f;
+
+    [Tooltip("Wspó³czynnik zmniejszaj¹cy szansê na pojawienie siê kolejnego przedmiotu w tym samym pokoju.")]
+    public float roomSpawnPenalty = 0.7f;
+
+    [Tooltip("Bazowa szansa na pojawienie siê przedmiotu w danym miejscu przed uwzglêdnieniem wszystkich bonusów i kar.")]
+    public float baseSpawnChance = 0.5f;
+
+    [HideInInspector]
+    public int maxItemsOnMap = 10;
+
+    private static readonly float[] LootLevelMultipliers = { 0.7f, 1.0f, 1.2f, 1.5f, 2.0f };
 
     private List<PlacedRoom> placedRooms = new List<PlacedRoom>();
     private Vector3 startRoomPosition;
@@ -47,15 +83,46 @@ public class ProceduralLevelGenerator : MonoBehaviour
 
     void Start()
     {
-        // Pobierz roomCount z MissionSettings jeœli zosta³ ustawiony (np. przez MissionDefiner w poprzedniej scenie)
         if (MissionSettings.roomCount > 0)
-        {
             roomCount = MissionSettings.roomCount;
-            // (opcjonalnie) mo¿esz u¿yæ te¿ MissionSettings.locationName
-        }
+
+        AutoBalanceItemSpawnParameters();
 
         if (autoGenerateOnStart)
             GenerateLevel();
+    }
+
+    void AutoBalanceItemSpawnParameters()
+    {
+        int rooms = roomCount;
+        int lootIdx = Mathf.Clamp(lootLevel, 1, 5) - 1;
+        float multiplier = LootLevelMultipliers[lootIdx];
+
+        maxItemsOnMap = Mathf.Clamp(Mathf.RoundToInt(rooms * multiplier), 1, 9999);
+
+        baseSpawnChance = Mathf.Clamp01(1.1f / rooms + 0.25f);
+
+        int maxDist = Mathf.Max(rooms - 1, 1);
+        maxDistanceBonus = 2.0f;
+        distanceBonusPerRoom = (maxDistanceBonus - 1f) / maxDist;
+
+        roomSpawnPenalty = Mathf.Lerp(0.5f, 0.85f, Mathf.InverseLerp(5, 30, rooms));
+
+        // --- Automatyczne, lekko losowe maxCount dla itemów ---
+        float sumChances = 0f;
+        foreach (var it in items)
+            sumChances += Mathf.Max(0f, it.spawnChance);
+
+        foreach (var it in items)
+        {
+            // Jeœli maxCount <= 0, licz automatycznie. Pozostaw wartoœæ jeœli ustawiono w Inspectorze.
+            if (it.maxCount <= 0)
+            {
+                float softLimit = maxItemsOnMap * it.spawnChance / sumChances;
+                float boost = Random.Range(1.10f, 1.25f); // 10–25% nadwy¿ki
+                it.maxCount = Mathf.Max(1, Mathf.RoundToInt(softLimit * boost));
+            }
+        }
     }
 
     private System.Collections.IEnumerator GenerateLevelCoroutine()
@@ -63,7 +130,10 @@ public class ProceduralLevelGenerator : MonoBehaviour
         ClearPreviousLevel();
         bool success = TryGenerateLevelWithBacktracking();
         if (success)
+        {
             SpawnDoors();
+            SpawnItemsInRooms();
+        }
         else
             Debug.LogError($"Nie uda³o siê wygenerowaæ poziomu z {roomCount} pokojami (po backtrackingu)!");
         yield break;
@@ -83,11 +153,9 @@ public class ProceduralLevelGenerator : MonoBehaviour
         generationSteps.Clear();
 
         RoomPrefabData startRoomData = startRoomPrefab != null ? startRoomPrefab : GetRandomRoomPrefab();
-        // Start room zawsze w domyœlnej rotacji, pozycja z inspektora!
         Quaternion yRot = Quaternion.identity;
         GameObject startRoomGO = Instantiate(startRoomData.prefab, startRoomPositionOverride, yRot);
         Bounds startBounds = GetRoomBounds(startRoomGO);
-        Debug.Log($"START ROOM bounds: center={startBounds.center}, size={startBounds.size}");
         var startRoom = new PlacedRoom(startRoomGO, startRoomData, GetDoorwaysWorld(startRoomGO, startRoomData), startBounds);
         placedRooms.Add(startRoom);
         generationSteps.Add(new GenerationStep { room = startRoom, parentRoomIndex = -1, parentDoorIndex = -1, thisDoorIndex = -1 });
@@ -231,11 +299,10 @@ public class ProceduralLevelGenerator : MonoBehaviour
 
                         var newRoomGO = Instantiate(roomData.prefab, offset, rot);
                         Bounds newBounds = GetRoomBounds(newRoomGO);
-                        Debug.Log($"NEW ROOM prefab={roomData.prefab.name} bounds: center={newBounds.center}, size={newBounds.size}");
+                        var newDoorways = GetDoorwaysWorld(newRoomGO, roomData);
 
                         // Sprawdzenie "œlepych drzwi" dla nowego pokoju
                         bool badDoorInWall = false;
-                        var newDoorways = GetDoorwaysWorld(newRoomGO, roomData);
                         for (int dwIdx = 0; dwIdx < newDoorways.Count; dwIdx++)
                         {
                             if (dwIdx == j) continue;
@@ -309,13 +376,11 @@ public class ProceduralLevelGenerator : MonoBehaviour
 
                         if (IsColliding(newBounds))
                         {
-                            Debug.LogWarning($"KOLIZJA podczas próby dodania {roomData.prefab.name} w {newBounds.center} (size={newBounds.size})");
                             Destroy(newRoomGO);
                             continue;
                         }
                         if (IsInForbiddenHemisphere(newBounds.center, startRoomPosition, forbiddenDirection, forbiddenMargin))
                         {
-                            Debug.LogWarning($"POKÓJ {roomData.prefab.name} znalaz³ siê w zabronionej pó³sferze!");
                             Destroy(newRoomGO);
                             continue;
                         }
@@ -372,7 +437,6 @@ public class ProceduralLevelGenerator : MonoBehaviour
         {
             if (placed != null && BoundsTouchOrOverlap(placed.bounds, newBounds))
             {
-                Debug.LogWarning($"Collision between {placed.room.name} and new room at {newBounds.center}");
                 return true;
             }
         }
@@ -447,7 +511,6 @@ public class ProceduralLevelGenerator : MonoBehaviour
         return result;
     }
 
-    // --- Spawnowanie drzwi po wygenerowaniu poziomu ---
     void SpawnDoors()
     {
         foreach (var placed in placedRooms)
@@ -455,8 +518,6 @@ public class ProceduralLevelGenerator : MonoBehaviour
             for (int i = 0; i < placed.doorways.Count; i++)
             {
                 var dw = placed.doorways[i];
-
-                // Czy za tymi drzwiami jest inny pokój z drzwiami naprzeciwko?
                 bool hasExit = false;
                 foreach (var other in placedRooms)
                 {
@@ -475,7 +536,6 @@ public class ProceduralLevelGenerator : MonoBehaviour
                     if (hasExit) break;
                 }
 
-                // Losowy prefab z listy
                 GameObject prefab = null;
                 if (hasExit && doorActivePrefabs != null && doorActivePrefabs.Count > 0)
                 {
@@ -492,6 +552,143 @@ public class ProceduralLevelGenerator : MonoBehaviour
                 }
             }
         }
+    }
+
+    // ---- SPAWN ITEMÓW ----
+    void SpawnItemsInRooms()
+    {
+        var allSpawnPoints = new List<(PlacedRoom room, Vector3 localPos)>();
+        foreach (var room in placedRooms)
+        {
+            if (room.data.itemSpawnPoints == null) continue;
+            foreach (var pos in room.data.itemSpawnPoints)
+                allSpawnPoints.Add((room, pos));
+        }
+        if (allSpawnPoints.Count == 0 || items == null || items.Count == 0) return;
+
+        var roomDistances = ComputeRoomDistances(placedRooms);
+        int maxDist = 1;
+        foreach (var d in roomDistances.Values)
+            if (d > maxDist) maxDist = d;
+
+        var itemsInRoom = new Dictionary<PlacedRoom, int>();
+        var itemTypeCounter = new Dictionary<ItemEntry, int>();
+        foreach (var r in placedRooms) itemsInRoom[r] = 0;
+        foreach (var it in items) itemTypeCounter[it] = 0;
+
+        Shuffle(allSpawnPoints);
+
+        int spawned = 0;
+        foreach (var (room, localPos) in allSpawnPoints)
+        {
+            if (spawned >= maxItemsOnMap) break;
+
+            float normDist = roomDistances.TryGetValue(room, out int dist) ? (float)dist / (float)maxDist : 0f;
+            float distanceBonus = 1.0f + Mathf.Min(normDist * distanceBonusPerRoom * maxDist, maxDistanceBonus - 1.0f);
+            float roomPenalty = Mathf.Pow(roomSpawnPenalty, itemsInRoom[room]);
+            float finalChance = baseSpawnChance * distanceBonus * roomPenalty;
+
+            if (Random.value > finalChance) continue;
+
+            var entry = PickWeightedItem(items, itemTypeCounter);
+            if (entry == null || entry.itemData == null || entry.itemData.prefab == null) continue;
+
+            if (entry.maxCount > 0 && itemTypeCounter[entry] >= entry.maxCount)
+                continue; // respektuj limit typu
+
+            Vector3 worldPos = room.room.transform.TransformPoint(localPos);
+            Instantiate(entry.itemData.prefab, worldPos, Quaternion.identity, room.room.transform);
+
+            spawned++;
+            itemsInRoom[room]++;
+            itemTypeCounter[entry]++;
+        }
+
+        // --- DEBUG STATYSTYKI PO GENERACJI ---
+        Dictionary<int, int> roomsWithXItems = new Dictionary<int, int>();
+        int minItems = int.MaxValue, maxItems = int.MinValue, totalItems = 0;
+        foreach (var kvp in itemsInRoom)
+        {
+            int cnt = kvp.Value;
+            if (!roomsWithXItems.ContainsKey(cnt))
+                roomsWithXItems[cnt] = 0;
+            roomsWithXItems[cnt]++;
+            minItems = Mathf.Min(minItems, cnt);
+            maxItems = Mathf.Max(maxItems, cnt);
+            totalItems += cnt;
+        }
+        Debug.Log($"[GENERATOR] Liczba pokoi: {placedRooms.Count}");
+        Debug.Log($"[GENERATOR] Liczba zespawnowanych itemów: {spawned}");
+        for (int i = minItems; i <= maxItems; i++)
+        {
+            int count = roomsWithXItems.ContainsKey(i) ? roomsWithXItems[i] : 0;
+            Debug.Log($"[GENERATOR] Pokoi z {i} itemami: {count}");
+        }
+        // --- DEBUG: Liczba sztuk ka¿dego typu itemu ---
+        foreach (var it in items)
+        {
+            string name = it.itemData != null && it.itemData.prefab != null
+                ? it.itemData.prefab.name
+                : "(brak prefab)";
+            int count = itemTypeCounter.TryGetValue(it, out int c) ? c : 0;
+            Debug.Log($"[GENERATOR] Item '{name}': {count} sztuk");
+        }
+    }
+
+    Dictionary<PlacedRoom, int> ComputeRoomDistances(List<PlacedRoom> placedRooms)
+    {
+        var distances = new Dictionary<PlacedRoom, int>();
+        if (placedRooms.Count == 0) return distances;
+        var queue = new Queue<PlacedRoom>();
+        distances[placedRooms[0]] = 0;
+        queue.Enqueue(placedRooms[0]);
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            int dist = distances[current];
+            foreach (var neighbor in GetConnectedNeighbors(current, placedRooms))
+            {
+                if (!distances.ContainsKey(neighbor))
+                {
+                    distances[neighbor] = dist + 1;
+                    queue.Enqueue(neighbor);
+                }
+            }
+        }
+        return distances;
+    }
+
+    List<PlacedRoom> GetConnectedNeighbors(PlacedRoom room, List<PlacedRoom> allRooms)
+    {
+        var neighbors = new List<PlacedRoom>();
+        foreach (var other in allRooms)
+        {
+            if (other == room) continue;
+            foreach (var dw in room.doorways)
+                foreach (var odw in other.doorways)
+                    if (Vector3.Distance(dw.position, odw.position) < 0.2f && Vector3.Angle(dw.direction, -odw.direction) < 5f)
+                        neighbors.Add(other);
+        }
+        return neighbors;
+    }
+
+    ItemEntry PickWeightedItem(List<ItemEntry> list, Dictionary<ItemEntry, int> counters)
+    {
+        var eligible = new List<ItemEntry>();
+        foreach (var i in list)
+            if (i.maxCount == 0 || counters[i] < i.maxCount)
+                eligible.Add(i);
+        if (eligible.Count == 0) return null;
+        float sum = 0f;
+        foreach (var i in eligible) sum += Mathf.Max(0f, i.spawnChance);
+        if (sum <= 0f) return null;
+        float roll = Random.value * sum, acc = 0f;
+        foreach (var i in eligible)
+        {
+            acc += Mathf.Max(0f, i.spawnChance);
+            if (roll <= acc) return i;
+        }
+        return eligible[eligible.Count - 1];
     }
 }
 
