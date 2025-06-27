@@ -12,14 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e173c60c2f5f08444a638de650237a1c, type: 3}
   m_Name: Room2
   m_EditorClassIdentifier: 
-  prefab: {fileID: 8205837589839968162, guid: 4d987a757a7cebf4384448364132966a, type: 3}
+  prefab: {fileID: 8269203744476408642, guid: 4d987a757a7cebf4384448364132966a, type: 3}
   doorways:
-  - localPosition: {x: 15, y: 0, z: -8}
+  - localPosition: {x: -15, y: 0, z: -15}
+    direction: 3
+  - localPosition: {x: 15, y: 0, z: 15}
     direction: 2
-  - localPosition: {x: 0, y: 0, z: -22.5}
-    direction: 1
-  - localPosition: {x: 0, y: 0, z: 37.5}
+  - localPosition: {x: 0, y: 0, z: 30}
     direction: 0
   spawnChance: 50
   itemSpawnPoints:
-  - {x: 5, y: 2, z: 2}
+  - {x: -4, y: 2, z: -6}

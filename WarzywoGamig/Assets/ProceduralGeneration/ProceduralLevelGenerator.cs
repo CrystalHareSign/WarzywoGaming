@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 [System.Serializable]
 public class ItemEntry
@@ -133,9 +134,8 @@ public class ProceduralLevelGenerator : MonoBehaviour
         {
             SpawnDoors();
             SpawnItemsInRooms();
+            ValidateDoorwaysNoWall();
         }
-        else
-            Debug.LogError($"Nie uda³o siê wygenerowaæ poziomu z {roomCount} pokojami (po backtrackingu)!");
         yield break;
     }
 
@@ -273,8 +273,12 @@ public class ProceduralLevelGenerator : MonoBehaviour
                 for (int j = 0; j < roomData.doorways.Count; j++) candidateDoorIndices.Add(j);
                 Shuffle(candidateDoorIndices);
 
+                bool placedRoom = false;
+
                 foreach (int angle in yAngles)
                 {
+                    if (placedRoom) break;
+
                     var yRot = Quaternion.Euler(0, angle, 0);
 
                     foreach (int j in candidateDoorIndices)
@@ -301,8 +305,11 @@ public class ProceduralLevelGenerator : MonoBehaviour
                         Bounds newBounds = GetRoomBounds(newRoomGO);
                         var newDoorways = GetDoorwaysWorld(newRoomGO, roomData);
 
-                        // Sprawdzenie "œlepych drzwi" dla nowego pokoju
-                        bool badDoorInWall = false;
+                        float tolerance = 0.09f;
+                        float angleTolerance = 3f;
+                        bool invalid = false;
+
+                        // WALIDACJA 1: Nowy doorway nie mo¿e byæ w œcianie istniej¹cego pokoju
                         for (int dwIdx = 0; dwIdx < newDoorways.Count; dwIdx++)
                         {
                             if (dwIdx == j) continue;
@@ -313,11 +320,11 @@ public class ProceduralLevelGenerator : MonoBehaviour
                                 if (other.bounds.Contains(testDoor.position))
                                 {
                                     bool hasMatchingDoor = false;
-                                    for (int o = 0; o < other.doorways.Count; o++)
+                                    foreach (var odw in other.doorways)
                                     {
-                                        var odw = other.doorways[o];
-                                        if (Vector3.Distance(odw.position, testDoor.position) < 0.2f &&
-                                            Vector3.Angle(odw.direction, -testDoor.direction) < 5f)
+                                        float dist = Vector3.Distance(odw.position, testDoor.position);
+                                        float angleDiff = Vector3.Angle(odw.direction, -testDoor.direction);
+                                        if (dist < tolerance && angleDiff < angleTolerance)
                                         {
                                             hasMatchingDoor = true;
                                             break;
@@ -325,21 +332,38 @@ public class ProceduralLevelGenerator : MonoBehaviour
                                     }
                                     if (!hasMatchingDoor)
                                     {
-                                        badDoorInWall = true;
-                                        break;
+                                        // Walidacja raycastem w œcianê istniej¹cego pokoju
+                                        Vector3 from = testDoor.position - testDoor.direction * 0.2f;
+                                        Ray ray = new Ray(from, testDoor.direction);
+                                        if (Physics.Raycast(ray, out RaycastHit hit, 0.4f))
+                                        {
+                                            if (hit.collider.transform.IsChildOf(other.room.transform) && !IsDoorCollider(hit.collider))
+                                            {
+                                                Debug.LogError($"[GENERATOR BLOCKED] Doorway nowego pokoju w œcianie istniej¹cego (raycast): {testDoor.position} w bounds {other.room.name} ({other.bounds.center})");
+                                                Destroy(newRoomGO);
+                                                invalid = true;
+                                                break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Debug.LogError($"[GENERATOR BLOCKED] Doorway nowego pokoju w œcianie istniej¹cego: {testDoor.position} w bounds {other.room.name} ({other.bounds.center})");
+                                            Destroy(newRoomGO);
+                                            invalid = true;
+                                            break;
+                                        }
                                     }
                                 }
+                                if (invalid) break;
                             }
-                            if (badDoorInWall) break;
+                            if (invalid) break;
                         }
-                        if (badDoorInWall)
+                        if (invalid)
                         {
-                            Destroy(newRoomGO);
                             continue;
                         }
 
-                        // Sprawdzenie czy istniej¹ce drzwi nie prowadz¹ w œcianê nowego pokoju
-                        bool otherDoorInNewWall = false;
+                        // WALIDACJA 2: Doorwaye istniej¹cych pokoi nie mog¹ byæ w œcianie nowego pokoju
                         foreach (var other in placedRooms)
                         {
                             for (int o = 0; o < other.doorways.Count; o++)
@@ -352,8 +376,9 @@ public class ProceduralLevelGenerator : MonoBehaviour
                                     for (int nd = 0; nd < newDoorways.Count; nd++)
                                     {
                                         var ndw = newDoorways[nd];
-                                        if (Vector3.Distance(ndw.position, odw.position) < 0.2f &&
-                                            Vector3.Angle(ndw.direction, -odw.direction) < 5f)
+                                        float dist = Vector3.Distance(ndw.position, odw.position);
+                                        float angleDiff = Vector3.Angle(ndw.direction, -odw.direction);
+                                        if (dist < tolerance && angleDiff < angleTolerance)
                                         {
                                             hasMatchingDoor = true;
                                             break;
@@ -361,19 +386,38 @@ public class ProceduralLevelGenerator : MonoBehaviour
                                     }
                                     if (!hasMatchingDoor)
                                     {
-                                        otherDoorInNewWall = true;
-                                        break;
+                                        // Walidacja raycastem w œcianê nowego pokoju
+                                        Vector3 from = odw.position - odw.direction * 0.2f;
+                                        Ray ray = new Ray(from, odw.direction);
+                                        if (Physics.Raycast(ray, out RaycastHit hit, 0.4f))
+                                        {
+                                            if (hit.collider.transform.IsChildOf(newRoomGO.transform) && !IsDoorCollider(hit.collider))
+                                            {
+                                                Debug.LogError($"[GENERATOR BLOCKED] Doorway istniej¹cego pokoju w œcianie nowego (raycast): {odw.position} w bounds {newBounds.center} ({newRoomGO.name})");
+                                                Destroy(newRoomGO);
+                                                invalid = true;
+                                                break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Debug.LogError($"[GENERATOR BLOCKED] Doorway istniej¹cego pokoju w œcianie nowego: {odw.position} w bounds {newBounds.center} ({newRoomGO.name})");
+                                            Destroy(newRoomGO);
+                                            invalid = true;
+                                            break;
+                                        }
                                     }
                                 }
+                                if (invalid) break;
                             }
-                            if (otherDoorInNewWall) break;
+                            if (invalid) break;
                         }
-                        if (otherDoorInNewWall)
+                        if (invalid)
                         {
-                            Destroy(newRoomGO);
                             continue;
                         }
 
+                        // Pozosta³e walidacje
                         if (IsColliding(newBounds))
                         {
                             Destroy(newRoomGO);
@@ -385,6 +429,7 @@ public class ProceduralLevelGenerator : MonoBehaviour
                             continue;
                         }
 
+                        // Jeœli dotarliœmy tu — pokój jest OK!
                         var newPlaced = new PlacedRoom(newRoomGO, roomData, newDoorways, newBounds);
                         placedRooms.Add(newPlaced);
                         placed.MarkDoorConnected(i);
@@ -393,12 +438,24 @@ public class ProceduralLevelGenerator : MonoBehaviour
                         usedRoomIdx = roomIdx;
                         usedParentDoor = i;
                         usedThisDoor = j;
-                        return true;
+                        placedRoom = true;
+                        break;
                     }
                 }
+                if (placedRoom)
+                    return true;
             }
         }
         return false;
+    }
+
+    // Funkcja pomocnicza - mo¿esz dostosowaæ do swoich potrzeb, np. po nazwie, layerze, tagu lub zawsze false
+    bool IsDoorCollider(Collider col)
+    {
+        // Jeœli nie masz osobnych colliderów drzwi, zwracaj zawsze false
+        return false;
+        // Jeœli chcesz sprawdzaæ po nazwie:
+        // return col.gameObject.name.ToLower().Contains("door");
     }
 
     static bool IsInForbiddenHemisphere(Vector3 check, Vector3 start, DoorDirection forbidden, float margin)
@@ -558,8 +615,12 @@ public class ProceduralLevelGenerator : MonoBehaviour
     void SpawnItemsInRooms()
     {
         var allSpawnPoints = new List<(PlacedRoom room, Vector3 localPos)>();
-        foreach (var room in placedRooms)
+        for (int idx = 0; idx < placedRooms.Count; idx++)
         {
+            var room = placedRooms[idx];
+            // Pomijamy pokój startowy (zwykle jest pierwszy na liœcie)
+            if (idx == 0)
+                continue;
             if (room.data.itemSpawnPoints == null) continue;
             foreach (var pos in room.data.itemSpawnPoints)
                 allSpawnPoints.Add((room, pos));
@@ -602,36 +663,6 @@ public class ProceduralLevelGenerator : MonoBehaviour
             spawned++;
             itemsInRoom[room]++;
             itemTypeCounter[entry]++;
-        }
-
-        // --- DEBUG STATYSTYKI PO GENERACJI ---
-        Dictionary<int, int> roomsWithXItems = new Dictionary<int, int>();
-        int minItems = int.MaxValue, maxItems = int.MinValue, totalItems = 0;
-        foreach (var kvp in itemsInRoom)
-        {
-            int cnt = kvp.Value;
-            if (!roomsWithXItems.ContainsKey(cnt))
-                roomsWithXItems[cnt] = 0;
-            roomsWithXItems[cnt]++;
-            minItems = Mathf.Min(minItems, cnt);
-            maxItems = Mathf.Max(maxItems, cnt);
-            totalItems += cnt;
-        }
-        Debug.Log($"[GENERATOR] Liczba pokoi: {placedRooms.Count}");
-        Debug.Log($"[GENERATOR] Liczba zespawnowanych itemów: {spawned}");
-        for (int i = minItems; i <= maxItems; i++)
-        {
-            int count = roomsWithXItems.ContainsKey(i) ? roomsWithXItems[i] : 0;
-            Debug.Log($"[GENERATOR] Pokoi z {i} itemami: {count}");
-        }
-        // --- DEBUG: Liczba sztuk ka¿dego typu itemu ---
-        foreach (var it in items)
-        {
-            string name = it.itemData != null && it.itemData.prefab != null
-                ? it.itemData.prefab.name
-                : "(brak prefab)";
-            int count = itemTypeCounter.TryGetValue(it, out int c) ? c : 0;
-            Debug.Log($"[GENERATOR] Item '{name}': {count} sztuk");
         }
     }
 
@@ -689,6 +720,58 @@ public class ProceduralLevelGenerator : MonoBehaviour
             if (roll <= acc) return i;
         }
         return eligible[eligible.Count - 1];
+    }
+
+    void ValidateDoorwaysNoWall()
+    {
+        float wallEdgeTolerance = 0.05f;
+        float matchingDoorTolerance = 0.13f;
+        float angleTolerance = 5f;
+
+        for (int i = 0; i < placedRooms.Count; i++)
+        {
+            var roomA = placedRooms[i];
+            for (int d = 0; d < roomA.doorways.Count; d++)
+            {
+                var dwA = roomA.doorways[d];
+                for (int j = 0; j < placedRooms.Count; j++)
+                {
+                    if (i == j) continue;
+                    var roomB = placedRooms[j];
+
+                    var testBounds = roomB.bounds;
+                    testBounds.Expand(-0.05f);
+                    Vector3 closest = testBounds.ClosestPoint(dwA.position);
+                    float wallDist = Vector3.Distance(dwA.position, closest);
+
+                    if (testBounds.Contains(dwA.position) && wallDist > wallEdgeTolerance)
+                    {
+                        // SprawdŸ czy jest doorway naprzeciw w roomB
+                        bool foundMatch = false;
+                        foreach (var dwB in roomB.doorways)
+                        {
+                            float dist = Vector3.Distance(dwA.position, dwB.position);
+                            float angle = Vector3.Angle(dwA.direction, -dwB.direction);
+                            if (dist < matchingDoorTolerance && angle < angleTolerance)
+                            {
+                                foundMatch = true;
+                                break;
+                            }
+                        }
+                        if (!foundMatch)
+                        {
+                            Debug.LogError(
+                                $"[WALL CHECK] Doorway Z POKOJU {roomA.room.name} (pos={dwA.position}, dir={dwA.direction}) " +
+                                $"jest w scianie pokoju {roomB.room.name}!\n" +
+                                $"Bounds center: {testBounds.center}, size: {testBounds.size}, dystans do œciany: {wallDist}\n" +
+                                $"DOORWAYS w roomB:\n" +
+                                string.Join("\n", roomB.doorways.Select(dw => $"pos={dw.position}, dir={dw.direction}"))
+                            );
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
