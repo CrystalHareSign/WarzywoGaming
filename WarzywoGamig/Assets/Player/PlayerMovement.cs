@@ -71,6 +71,8 @@ public class PlayerMovement : MonoBehaviour
         float moveX = Input.GetAxis("Horizontal");
         float moveZ = Input.GetAxis("Vertical");
         Vector3 move = transform.right * moveX + transform.forward * moveZ;
+        if (move.magnitude > 1f)
+            move = move.normalized;
 
         // Ustal, czy sprint został aktywowany
         bool isSprintKeyPressed = Input.GetKey(sprintKey);

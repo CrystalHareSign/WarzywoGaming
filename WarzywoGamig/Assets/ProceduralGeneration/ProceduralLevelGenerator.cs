@@ -35,6 +35,11 @@ public class ProceduralLevelGenerator : MonoBehaviour
     [Tooltip("Czy generowaæ automatycznie na starcie")]
     public bool autoGenerateOnStart = true;
 
+    [Header("Room Spawning Mode")]
+    public bool stepByStepRoomSpawning = false;
+    [Tooltip("Czas miêdzy spawnem kolejnych pokoi w trybie step-by-step (sekundy)")]
+    public float roomSpawnInterval = 2.0f;
+
     [Header("Door Prefabs")]
     public List<GameObject> doorClosedPrefabs;
     public List<GameObject> doorActivePrefabs;
@@ -86,6 +91,8 @@ public class ProceduralLevelGenerator : MonoBehaviour
     {
         if (MissionSettings.roomCount > 0)
             roomCount = MissionSettings.roomCount;
+        if (MissionSettings.lootLevel > 0)
+            lootLevel = MissionSettings.lootLevel;
 
         AutoBalanceItemSpawnParameters();
 
@@ -129,14 +136,86 @@ public class ProceduralLevelGenerator : MonoBehaviour
     private System.Collections.IEnumerator GenerateLevelCoroutine()
     {
         ClearPreviousLevel();
-        bool success = TryGenerateLevelWithBacktracking();
+
+        if (stepByStepRoomSpawning)
+        {
+            yield return StartCoroutine(GenerateLevelStepByStepCoroutine());
+        }
+        else
+        {
+            bool success = TryGenerateLevelWithBacktracking();
+            if (success)
+            {
+                SpawnDoors();
+                SpawnItemsInRooms();
+                ValidateDoorwaysNoWall();
+            }
+        }
+        yield break;
+    }
+
+    // Nowa corutyna krokowego spawnowania pokoi
+    private System.Collections.IEnumerator GenerateLevelStepByStepCoroutine()
+    {
+        generationSteps.Clear();
+
+        RoomPrefabData startRoomData = startRoomPrefab != null ? startRoomPrefab : GetRandomRoomPrefab();
+        Quaternion yRot = Quaternion.identity;
+        GameObject startRoomGO = Instantiate(startRoomData.prefab, startRoomPositionOverride, yRot);
+        Bounds startBounds = GetRoomBounds(startRoomGO);
+        var startRoom = new PlacedRoom(startRoomGO, startRoomData, GetDoorwaysWorld(startRoomGO, startRoomData), startBounds);
+        placedRooms.Add(startRoom);
+        generationSteps.Add(new GenerationStep { room = startRoom, parentRoomIndex = -1, parentDoorIndex = -1, thisDoorIndex = -1 });
+        startRoomPosition = startRoomGO.transform.position;
+
+        int placed = 1;
+        int maxAttempts = 10000;
+        int attempts = 0;
+        bool success = false;
+
+        while (placed < roomCount && attempts < maxAttempts)
+        {
+            if (TryPlaceNextRoomWithTrace(out int parentRoomIdx, out int parentDoor, out int thisDoor))
+            {
+                placed++;
+                generationSteps.Add(new GenerationStep
+                {
+                    room = placedRooms[placedRooms.Count - 1],
+                    parentRoomIndex = parentRoomIdx,
+                    parentDoorIndex = parentDoor,
+                    thisDoorIndex = thisDoor
+                });
+
+                // Spawnuj ten pokój i czekaj okreœlony interwa³
+                yield return new WaitForSeconds(roomSpawnInterval);
+            }
+            else
+            {
+                // Backtracking
+                if (generationSteps.Count <= 1)
+                    break;
+                var lastStep = generationSteps[generationSteps.Count - 1];
+                generationSteps.RemoveAt(generationSteps.Count - 1);
+
+                if (lastStep.parentRoomIndex >= 0 && lastStep.parentDoorIndex >= 0)
+                    placedRooms[lastStep.parentRoomIndex].UnmarkDoorConnected(lastStep.parentDoorIndex);
+
+                placedRooms.RemoveAt(placedRooms.Count - 1);
+                if (lastStep.room.room != null) Destroy(lastStep.room.room);
+                placed--;
+            }
+            attempts++;
+        }
+
+        if (placed >= roomCount)
+            success = true;
+
         if (success)
         {
             SpawnDoors();
             SpawnItemsInRooms();
             ValidateDoorwaysNoWall();
         }
-        yield break;
     }
 
     private void ClearPreviousLevel()

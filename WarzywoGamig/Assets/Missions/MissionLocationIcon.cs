@@ -14,12 +14,24 @@ public class MissionLocationIcon : MonoBehaviour, IPointerEnterHandler, IPointer
     [Header("Referencje")]
     public MissionDefiner missionDefiner;
 
+    [Header("Loot Level (1-5)")]
+    [Range(1, 5)]
+    public int lootLevel = 3; // Dodaj to pole, jeœli chcesz przekazywaæ lootLevel do tooltipa
+
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (missionDefiner != null && missionDefiner.tooltipPanel != null)
         {
-            // Przekazujemy oba dystanse do tooltipa!
-            missionDefiner.tooltipPanel.ShowTooltip(locationName, roomCount, locationType, totalDistanceKm, dangerZoneKm, GetComponent<RectTransform>());
+            // Przekazujemy lootLevel równie¿ do tooltipa, pamiêtaj o dostosowaniu funkcji ShowTooltip!
+            missionDefiner.tooltipPanel.ShowTooltip(
+                locationName,
+                roomCount,
+                locationType,
+                totalDistanceKm,
+                dangerZoneKm,
+                lootLevel,
+                GetComponent<RectTransform>()
+            );
         }
     }
 

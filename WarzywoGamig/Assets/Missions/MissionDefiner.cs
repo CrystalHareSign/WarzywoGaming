@@ -10,17 +10,24 @@ public class MissionDefiner : MonoBehaviour
     public float cameraMoveSpeed = 4f;
 
     [Header("UI Kanwy")]
-    public GameObject missionCanvas;    // Canvas z ikonami lokacji
-    public GameObject summaryCanvas;    // Canvas z nazw¹, typem i liczb¹ pokoi (zawsze aktywny)
-    public TMP_Text summaryNameText;    // TMP_Text na nazwê lokacji
-    public TMP_Text summaryTypeText;    // TMP_Text na typ misji
-    public TMP_Text summaryRoomsText;   // TMP_Text na liczbê pokoi
-    public TMP_Text summaryDistanceText; // TMP_Text na oba dystanse
-    public TMP_Text summaryDangerZoneText; // TMP_Text na sam danger zone
+    public GameObject missionCanvas;
+    public GameObject summaryCanvas;
+    public TMP_Text summaryNameText;
+    public TMP_Text summaryTypeText;
+    public TMP_Text summaryRoomsText;
+    public TMP_Text summaryDistanceText;
+    public TMP_Text summaryDangerZoneText;
+
+    [Header("Loot Level UI")]
+    public Transform summaryLootLevelContainer;
+    [Tooltip("Kolor aktywnej ikonki loot level")]
+    public Color lootLevelActiveColor = Color.yellow;
+    [Tooltip("Kolor nieaktywnej ikonki loot level")]
+    public Color lootLevelInactiveColor = Color.gray;
 
     [Header("UI Przycisków")]
     public Button confirmButton;
-    public Button exitButton; // Tylko dwa przyciski
+    public Button exitButton;
 
     [Header("Tooltip do ikon")]
     public MissionLocationTooltipPanel tooltipPanel;
@@ -45,8 +52,9 @@ public class MissionDefiner : MonoBehaviour
     private string pendingLocationName = null;
     private int pendingRoomCount = 0;
     private MissionLocationType pendingLocationType = MissionLocationType.ProceduralRaid;
-    private float pendingTotalDistanceKm = 0f;    // Ca³kowity dystans
-    private float pendingDangerZoneKm = 0f;       // Danger zone (grywalny dystans)
+    private float pendingTotalDistanceKm = 0f;
+    private float pendingDangerZoneKm = 0f;
+    private int pendingLootLevel = 1;
 
     public static bool IsAnyDefinerActive = false;
 
@@ -146,12 +154,12 @@ public class MissionDefiner : MonoBehaviour
         pendingLocationName = icon.locationName;
         pendingRoomCount = icon.roomCount;
         pendingLocationType = icon.locationType;
-        pendingTotalDistanceKm = icon.totalDistanceKm;       // Odczyt z ikony
-        pendingDangerZoneKm = icon.dangerZoneKm;             // Odczyt z ikony
+        pendingTotalDistanceKm = icon.totalDistanceKm;
+        pendingDangerZoneKm = icon.dangerZoneKm;
+        pendingLootLevel = icon.lootLevel;
 
         ShowSummary(pendingLocationName, pendingRoomCount, pendingLocationType, pendingTotalDistanceKm, pendingDangerZoneKm);
 
-        // Pozwól potwierdziæ tylko jeœli typ lokacji na to pozwala
         if (confirmButton != null)
         {
             if (pendingLocationType == MissionLocationType.RouteOnly)
@@ -163,7 +171,6 @@ public class MissionDefiner : MonoBehaviour
         ShowMissionDefinerButtons();
     }
 
-    // Nowa wersja ShowSummary z dwoma dystansami
     private void ShowSummary(string locationName, int roomCount, MissionLocationType locationType, float totalDistanceKm, float dangerZoneKm)
     {
         if (summaryTypeText != null)
@@ -176,6 +183,26 @@ public class MissionDefiner : MonoBehaviour
             summaryDistanceText.text = $"Dystans: {totalDistanceKm:0.0} km";
         if (summaryDangerZoneText != null)
             summaryDangerZoneText.text = $"Danger zone: {dangerZoneKm:0.0} km";
+        ShowLootLevel(pendingLootLevel, locationType);
+    }
+
+    private void ShowLootLevel(int lootLevel, MissionLocationType locationType)
+    {
+        // Loot level TYLKO dla ProceduralRaid
+        if (summaryLootLevelContainer == null) return;
+        if (locationType != MissionLocationType.ProceduralRaid || lootLevel <= 0)
+        {
+            summaryLootLevelContainer.gameObject.SetActive(false);
+            return;
+        }
+
+        summaryLootLevelContainer.gameObject.SetActive(true);
+        for (int i = 0; i < summaryLootLevelContainer.childCount; i++)
+        {
+            var icon = summaryLootLevelContainer.GetChild(i).GetComponent<Image>();
+            if (icon == null) continue;
+            icon.color = i < lootLevel ? lootLevelActiveColor : lootLevelInactiveColor;
+        }
     }
 
     private void ClearSummary()
@@ -185,9 +212,10 @@ public class MissionDefiner : MonoBehaviour
         if (summaryRoomsText != null) summaryRoomsText.text = "";
         if (summaryDistanceText != null) summaryDistanceText.text = "";
         if (summaryDangerZoneText != null) summaryDangerZoneText.text = "";
+        if (summaryLootLevelContainer != null)
+            summaryLootLevelContainer.gameObject.SetActive(false);
     }
 
-    // ZATWIERDZENIE I WYJŒCIE
     public void OnConfirmClicked()
     {
         if (isCameraMoving) return;
@@ -199,8 +227,8 @@ public class MissionDefiner : MonoBehaviour
             MissionSettings.locationType = pendingLocationType;
             MissionSettings.totalDistanceKm = pendingTotalDistanceKm;
             MissionSettings.dangerZoneKm = pendingDangerZoneKm;
+            MissionSettings.lootLevel = pendingLootLevel;
 
-            // PRZEKAZANIE DANYCH DO MONITORA!
             if (MissionMonitor.Instance != null)
                 MissionMonitor.Instance.SetSummary(pendingLocationName, pendingRoomCount, pendingLocationType, pendingTotalDistanceKm, pendingDangerZoneKm);
 
@@ -210,7 +238,6 @@ public class MissionDefiner : MonoBehaviour
         }
     }
 
-    // EXIT — RESETUJ I WYJD
     public void OnExitClicked()
     {
         if (isCameraMoving) return;
@@ -220,11 +247,10 @@ public class MissionDefiner : MonoBehaviour
         pendingLocationType = MissionLocationType.ProceduralRaid;
         pendingTotalDistanceKm = 0f;
         pendingDangerZoneKm = 0f;
+        pendingLootLevel = 1;
 
-        // Czyœcimy summaryCanvas (lokalny podgl¹d)
         ClearSummary();
 
-        // Czyœcimy równie¿ MissionMonitor (persistent canvas)
         if (MissionMonitor.Instance != null)
             MissionMonitor.Instance.ClearSummary();
 
@@ -307,7 +333,6 @@ public class MissionDefiner : MonoBehaviour
 
     void Update()
     {
-        // ESC = szybkie wyjœcie, jak Exit
         if (isInteracting && Input.GetKeyDown(KeyCode.Escape) && !isCameraMoving)
         {
             OnExitClicked();

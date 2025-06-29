@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class MissionMonitor : MonoBehaviour
 {
@@ -9,18 +10,25 @@ public class MissionMonitor : MonoBehaviour
     [Header("UI - Canvas Fields")]
     public TMP_Text summaryNameText;
     public TMP_Text summaryRoomsText;
-    public TMP_Text statusText; // Tylko to! (KM + TIMER w jednym)
+    public TMP_Text statusText;
+    [Header("Loot Level UI")]
+    public Transform summaryLootLevelContainer;
+    [Tooltip("Kolor aktywnej ikonki loot level")]
+    public Color lootLevelActiveColor = Color.yellow;
+    [Tooltip("Kolor nieaktywnej ikonki loot level")]
+    public Color lootLevelInactiveColor = Color.gray;
 
     // Persistent data
     private string savedLocationName;
     private int savedRoomCount;
     private MissionLocationType savedLocationType;
-    private float savedTotalDistanceKm;   // Ca³kowity dystans (info)
-    private float savedDangerZoneKm;      // Danger zone (grywalny dystans)
+    private float savedTotalDistanceKm;
+    private float savedDangerZoneKm;
+    private int savedLootLevel;
 
     // Logika podró¿y
     private float distanceLeft;
-    private float travelSpeed = 0.02f;   // km/s (np. 72 km/h)
+    private float travelSpeed = 0.02f;
     private float timerAfterArrival = 59f;
     private bool isTraveling = false;
     private bool isTimerActive = false;
@@ -62,7 +70,6 @@ public class MissionMonitor : MonoBehaviour
 
         if (scene == "ProceduralLevels")
         {
-            // Reset po wejœciu do miejsca docelowego
             isTraveling = false;
             isTimerActive = false;
             distanceLeft = 0f;
@@ -71,17 +78,17 @@ public class MissionMonitor : MonoBehaviour
         }
         else if (scene == "Home")
         {
-            // Reset po powrocie do bazy
             isTraveling = false;
             isTimerActive = false;
             distanceLeft = 0f;
             timerAfterArrival = 0f;
-            // Jeœli nie ma aktywnej misji, czyœæ UI
             if (!HasSummary())
             {
                 if (summaryNameText != null) summaryNameText.text = "";
                 if (summaryRoomsText != null) summaryRoomsText.text = "";
                 if (statusText != null) statusText.text = "";
+                if (summaryLootLevelContainer != null)
+                    summaryLootLevelContainer.gameObject.SetActive(false);
             }
             else
             {
@@ -94,7 +101,6 @@ public class MissionMonitor : MonoBehaviour
         }
     }
 
-    // Wywo³aj przy zatwierdzeniu misji!
     public void SetSummary(string locationName, int roomCount, MissionLocationType locationType, float totalDistanceKm, float dangerZoneKm)
     {
         savedLocationName = locationName;
@@ -102,7 +108,8 @@ public class MissionMonitor : MonoBehaviour
         savedLocationType = locationType;
         savedTotalDistanceKm = totalDistanceKm;
         savedDangerZoneKm = dangerZoneKm;
-        distanceLeft = savedDangerZoneKm; // TYLKO danger zone jest liczony!
+        savedLootLevel = MissionSettings.lootLevel;
+        distanceLeft = savedDangerZoneKm;
         isTraveling = false;
         isTimerActive = false;
         UpdateUI();
@@ -114,6 +121,8 @@ public class MissionMonitor : MonoBehaviour
             summaryNameText.text = savedLocationName ?? "";
         if (summaryRoomsText != null)
             summaryRoomsText.text = savedRoomCount > 0 ? $"Liczba pokoi: {savedRoomCount}" : "";
+
+        ShowLootLevel(savedLootLevel, savedLocationType);
 
         if (statusText != null)
         {
@@ -127,7 +136,6 @@ public class MissionMonitor : MonoBehaviour
             {
                 if (scene == "Home")
                 {
-                    // Jeœli jest wybrana misja (total > 0), pokazuj total, w przeciwnym razie czyœæ pole
                     statusText.text = savedTotalDistanceKm > 0f ? $"{savedTotalDistanceKm:0.0} km" : "";
                 }
                 else if (scene == "Main")
@@ -136,10 +144,28 @@ public class MissionMonitor : MonoBehaviour
                 }
                 else
                 {
-                    statusText.text = ""; // domyœlnie nic
+                    statusText.text = "";
                 }
             }
-            // Reszta logiki (podczas podró¿y/timera) obs³ugiwana w Update()
+        }
+    }
+
+    private void ShowLootLevel(int lootLevel, MissionLocationType locationType)
+    {
+        // Pokazuj loot level tylko dla ProceduralRaid
+        if (summaryLootLevelContainer == null) return;
+        if (locationType != MissionLocationType.ProceduralRaid || lootLevel <= 0)
+        {
+            summaryLootLevelContainer.gameObject.SetActive(false);
+            return;
+        }
+
+        summaryLootLevelContainer.gameObject.SetActive(true);
+        for (int i = 0; i < summaryLootLevelContainer.childCount; i++)
+        {
+            var icon = summaryLootLevelContainer.GetChild(i).GetComponent<Image>();
+            if (icon == null) continue;
+            icon.color = i < lootLevel ? lootLevelActiveColor : lootLevelInactiveColor;
         }
     }
 
@@ -155,9 +181,12 @@ public class MissionMonitor : MonoBehaviour
         savedLocationType = MissionLocationType.ProceduralRaid;
         savedTotalDistanceKm = 0f;
         savedDangerZoneKm = 0f;
+        savedLootLevel = 0;
         if (summaryNameText != null) summaryNameText.text = "";
         if (summaryRoomsText != null) summaryRoomsText.text = "";
         if (statusText != null) statusText.text = "";
+        if (summaryLootLevelContainer != null)
+            summaryLootLevelContainer.gameObject.SetActive(false);
         isTraveling = false;
         isTimerActive = false;
     }
@@ -167,14 +196,12 @@ public class MissionMonitor : MonoBehaviour
         return savedLocationType;
     }
 
-    // WYWO£AJ PO ZMIANIE SCENY!
     public void StartTravel()
     {
-        // Licznik tylko w Main!
         if (SceneManager.GetActiveScene().name != "Main")
             return;
 
-        distanceLeft = savedDangerZoneKm; // tylko danger zone!
+        distanceLeft = savedDangerZoneKm;
         isTraveling = true;
         isTimerActive = false;
         if (statusText != null)
@@ -185,7 +212,6 @@ public class MissionMonitor : MonoBehaviour
     {
         string scene = SceneManager.GetActiveScene().name;
 
-        // Wymuszenie 0 km i resetu licznika/timera w ProceduralLevels
         if (scene == "ProceduralLevels")
         {
             if (statusText != null)
@@ -197,12 +223,13 @@ public class MissionMonitor : MonoBehaviour
             return;
         }
 
-        // Reset po powrocie do Home jeœli nie ma aktywnej misji
         if (scene == "Home" && !HasSummary())
         {
             if (summaryNameText != null) summaryNameText.text = "";
             if (summaryRoomsText != null) summaryRoomsText.text = "";
             if (statusText != null) statusText.text = "";
+            if (summaryLootLevelContainer != null)
+                summaryLootLevelContainer.gameObject.SetActive(false);
             isTraveling = false;
             isTimerActive = false;
             distanceLeft = 0f;
@@ -239,7 +266,6 @@ public class MissionMonitor : MonoBehaviour
         }
         else
         {
-            // Jeœli nie podró¿ujemy i nie jest aktywny timer, odœwie¿ UI (np. po zmianie sceny)
             UpdateUI();
         }
     }
