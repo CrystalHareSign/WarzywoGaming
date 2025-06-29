@@ -68,6 +68,8 @@ public class PauseMenu : MonoBehaviour
     void Update()
     {
         if (InputBlocker.Active) return;
+        // Blokada menu pauzy gdy inventory otwarte
+        if (InventoryGridManager.InventoryOpen) return;
         // Blokuj pauzê jeœli trwa dialog
         if (DialogueManager.DialogueActive) return;
         // Dodanie warunku, który sprawdza, czy menu jest dostêpne
