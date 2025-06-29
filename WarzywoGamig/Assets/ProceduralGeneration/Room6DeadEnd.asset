@@ -10,13 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e173c60c2f5f08444a638de650237a1c, type: 3}
-  m_Name: Room4DeadEnd
+  m_Name: Room6DeadEnd
   m_EditorClassIdentifier: 
-  prefab: {fileID: 7444203408904406025, guid: 4fc68815e6a06994390a140359b7a811, type: 3}
+  prefab: {fileID: 4181181509904494485, guid: 6f99410c63b4f3140b34f4a555c7cfc1, type: 3}
   doorways:
-  - localPosition: {x: -15, y: 0, z: -15}
-    direction: 3
-  spawnChance: 50
+  - localPosition: {x: 0, y: 0, z: 15}
+    direction: 0
+  spawnChance: 70
   itemSpawnPoints:
-  - {x: -6, y: 2, z: 25}
-  - {x: 10, y: 2, z: -1}
+  - {x: -10, y: 2, z: -10}
