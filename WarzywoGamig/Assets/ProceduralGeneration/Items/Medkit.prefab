@@ -12,7 +12,9 @@ GameObject:
   - component: {fileID: 1942265645692739912}
   - component: {fileID: 6540238695756598066}
   - component: {fileID: 1592207634367702082}
-  m_Layer: 0
+  - component: {fileID: -4749726544465919495}
+  - component: {fileID: 4265895888411768413}
+  m_Layer: 7
   m_Name: Medkit
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -108,3 +110,75 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &-4749726544465919495
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2978588738764525441}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a232f88565b95744a8035c4ec583243, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverMessage: {fileID: 0}
+  itemName: MedKit
+  category: 
+  quantity: 0
+  startAsNonInteractive: 0
+  canBePickedUp: 1
+  canBeDropped: 0
+  isWeapon: 0
+  isLoot: 0
+  isNPC: 0
+  npcDialogues: []
+  currentDialogueIndex: 0
+  isTurret: 0
+  isRefiner: 0
+  isMonitor: 0
+  busMonitor: 0
+  isDriverSeat: 0
+  isMissionDefiner: 0
+  alwaysInteractive: 0
+  hasCooldown: 0
+  usesHealthSystem: 0
+  maxHealth: 2
+  currentHealth: 0
+  requiredHoldTime: 0
+  wheelIndex: 0
+  UsingSceneSystem: 0
+  SceneMain: 0
+  SceneHome: 0
+  wheelHealthUI: {fileID: 0}
+  wheelManager: {fileID: 0}
+  dialogueManager: {fileID: 0}
+--- !u!114 &4265895888411768413
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2978588738764525441}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9c10a544bb40ac40ba2b7fe60df5b57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  messageEnglish: Take
+  messagePolish: "We\u017A"
+  infoEnglish: 
+  infoPolish: 
+  keyText: '[E]'
+  interactionDistance: 5
+  isInteracted: 0
+  alwaysActive: 0
+  UsingSceneSystem: 0
+  SceneMain: 0
+  SceneHome: 0
+  messageFontSize: 20
+  keyFontSize: 30
+  infoFontSize: 20
+  duration: 3
+  message: 
+  infoMessage: 
