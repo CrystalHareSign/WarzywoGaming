@@ -449,7 +449,7 @@ public class PlayerInteraction : MonoBehaviour
     {
         if (treasureRefiner != null)
         {
-            treasureRefiner.RemoveSelectedItemFromInventory(inventoryUI.selectedSlotIndex);
+            treasureRefiner.RemoveSelectedItemFromInventory();
         }
     }
 

@@ -981,22 +981,20 @@ public class TreasureRefiner : MonoBehaviour
         }
     }
 
-    public void RemoveSelectedItemFromInventory(int selectedSlotIndex)
+    public void RemoveSelectedItemFromInventory()
     {
-        int weaponSlots = inventory.weapons.Count;
-        int itemIndex = selectedSlotIndex - weaponSlots;
-
-        // SprawdŸ poprawnoœæ indeksu itemu
-        if (itemIndex < 0 || itemIndex >= inventory.items.Count)
-            return;
-
         if (isRefining) return;
         isRefining = true;
 
-        bool resourcesAdded = false;
+        var selectedItem = inventoryUI.GetSelectedItem();
+        if (selectedItem == null)
+        {
+            isRefining = false;
+            return;
+        }
 
-        GameObject itemToRemove = inventory.items[itemIndex];
-        InteractableItem interactableItem = itemToRemove.GetComponent<InteractableItem>();
+        bool resourcesAdded = false;
+        InteractableItem interactableItem = selectedItem.GetComponent<InteractableItem>();
 
         if (interactableItem != null)
         {
@@ -1006,8 +1004,8 @@ public class TreasureRefiner : MonoBehaviour
             if (resourcesAdded)
             {
                 // Usuwamy przedmiot z inventory i niszczymy obiekt
-                inventory.items.RemoveAt(itemIndex);
-                Destroy(itemToRemove);
+                inventory.items.Remove(selectedItem);
+                Destroy(selectedItem);
 
                 // DŸwiêk
                 foreach (var playSoundOnObject in playSoundObjects)
@@ -1019,11 +1017,11 @@ public class TreasureRefiner : MonoBehaviour
                 // Aktualizuj UI
                 if (inventoryUI != null)
                 {
-                    // Popraw indeks po usuniêciu
+                    // Po usuniêciu, kursor zostaje na tym samym miejscu jeœli siê da, albo na koñcu listy
                     if (inventory.items.Count == 0)
-                        inventoryUI.selectedSlotIndex = 0;
-                    else if (inventoryUI.selectedSlotIndex >= weaponSlots + inventory.items.Count)
-                        inventoryUI.selectedSlotIndex = weaponSlots + inventory.items.Count - 1;
+                        inventoryUI.selectedSlotIndex = 2; // œrodek
+                    else if (inventoryUI.itemWindowStartIndex >= inventory.items.Count)
+                        inventoryUI.itemWindowStartIndex = inventory.items.Count - 1;
 
                     inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items, inventory.currentWeaponName);
                 }
