@@ -51,6 +51,10 @@ public class InventoryUI : MonoBehaviour
     // Nowy: index itemu, na którym "jest kursor" (czyli wybrany item względem całej listy)
     private int selectedItemIndex = 0;
 
+    // UI arrow indicators
+    public GameObject leftArrowIndicator;
+    public GameObject rightArrowIndicator;
+
     private void Awake()
     {
         if (Instance == null)
@@ -107,13 +111,13 @@ public class InventoryUI : MonoBehaviour
             float scroll = Input.GetAxis("Mouse ScrollWheel");
             if (scroll > 0.01f)
             {
-                if (selectedItemIndex < maxSelectedIndex)
-                    selectedItemIndex++;
+                if (selectedItemIndex > 0)
+                    selectedItemIndex--;
             }
             else if (scroll < -0.01f)
             {
-                if (selectedItemIndex > 0)
-                    selectedItemIndex--;
+                if (selectedItemIndex < maxSelectedIndex)
+                    selectedItemIndex++;
             }
 
             // Klawisze szybkiego wyboru
@@ -250,6 +254,7 @@ public class InventoryUI : MonoBehaviour
         }
 
         UpdateItemUI(items);
+        UpdateArrowIndicators(items.Count);
     }
 
     private void UpdateItemUI(List<GameObject> items)
@@ -342,6 +347,18 @@ public class InventoryUI : MonoBehaviour
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Pokazuje/ukrywa wskaźniki strzałek UI, gdy poza slotami są jeszcze itemy.
+    /// </summary>
+    private void UpdateArrowIndicators(int itemCount)
+    {
+        if (leftArrowIndicator != null)
+            leftArrowIndicator.SetActive(itemWindowStartIndex > 0);
+
+        if (rightArrowIndicator != null)
+            rightArrowIndicator.SetActive(itemWindowStartIndex + itemWindowSize < itemCount);
     }
 
     public void UpdateWeaponUI(Gun gun)
