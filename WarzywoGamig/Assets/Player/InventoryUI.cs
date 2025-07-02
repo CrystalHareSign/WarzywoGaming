@@ -89,23 +89,58 @@ public class InventoryUI : MonoBehaviour
         if (weaponSlots >= 2 && Input.GetKeyDown(KeyCode.Alpha2)) inventory.EquipWeapon(inventory.weapons[1]);
         if (weaponSlots >= 3 && Input.GetKeyDown(KeyCode.Alpha3)) inventory.EquipWeapon(inventory.weapons[2]);
 
-        // Karuzela: scroll zawsze aktywny, kursor zawsze środek
-        int center = 2;
-
         if (itemCount > 1)
         {
             float scroll = Input.GetAxis("Mouse ScrollWheel");
-            if (scroll > 0.01f)
-                MoveItemWindow(1, itemCount);
-            else if (scroll < -0.01f)
-                MoveItemWindow(-1, itemCount);
 
-            // Klawisze ruletki: 4,5,7,8
-            if (Input.GetKeyDown(KeyCode.Alpha4)) MoveItemWindow(center - 0, itemCount); // slot 0 (4)
-            if (Input.GetKeyDown(KeyCode.Alpha5)) MoveItemWindow(center - 1, itemCount); // slot 1 (5)
-            // 6 = center, nie ruszamy
-            if (Input.GetKeyDown(KeyCode.Alpha7)) MoveItemWindow(center - 3, itemCount); // slot 3 (7)
-            if (Input.GetKeyDown(KeyCode.Alpha8)) MoveItemWindow(center - 4, itemCount); // slot 4 (8)
+            if (scroll > 0.01f)
+            {
+                int newIdx = itemWindowStartIndex + 1;
+                if (newIdx >= 0 && newIdx < itemCount)
+                    MoveItemWindow(1, itemCount);
+            }
+            else if (scroll < -0.01f)
+            {
+                int newIdx = itemWindowStartIndex - 1;
+                if (newIdx >= 0 && newIdx < itemCount)
+                    MoveItemWindow(-1, itemCount);
+            }
+
+            // Mapa: slot numer -> index w tablicy slotów
+            // 4 -> 0, 5 -> 1, 6 -> 2, 7 -> 3, 8 -> 4
+            // Chcemy: po kliknięciu, item z tego slotu jest na środku (slot index 2)
+            if (Input.GetKeyDown(KeyCode.Alpha4))
+            {
+                int selectedIdx = 0;
+                int newStart = itemWindowStartIndex + (selectedIdx - 2);
+                if (newStart >= 0 && newStart < itemCount)
+                    itemWindowStartIndex = newStart;
+            }
+            if (Input.GetKeyDown(KeyCode.Alpha5))
+            {
+                int selectedIdx = 1;
+                int newStart = itemWindowStartIndex + (selectedIdx - 2);
+                if (newStart >= 0 && newStart < itemCount)
+                    itemWindowStartIndex = newStart;
+            }
+            if (Input.GetKeyDown(KeyCode.Alpha6))
+            {
+                // Center slot - nie zmieniaj
+            }
+            if (Input.GetKeyDown(KeyCode.Alpha7))
+            {
+                int selectedIdx = 3;
+                int newStart = itemWindowStartIndex + (selectedIdx - 2);
+                if (newStart >= 0 && newStart < itemCount)
+                    itemWindowStartIndex = newStart;
+            }
+            if (Input.GetKeyDown(KeyCode.Alpha8))
+            {
+                int selectedIdx = 4;
+                int newStart = itemWindowStartIndex + (selectedIdx - 2);
+                if (newStart >= 0 && newStart < itemCount)
+                    itemWindowStartIndex = newStart;
+            }
         }
         else
         {
