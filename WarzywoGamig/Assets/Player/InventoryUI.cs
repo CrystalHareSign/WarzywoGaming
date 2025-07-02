@@ -36,15 +36,20 @@ public class InventoryUI : MonoBehaviour
 
     private int lastWeaponCount = 0;
 
+    // Now: itemWindowStartIndex to ZAWSZE najniższy indeks widoczny w karuzeli
     public int itemWindowStartIndex = 0;
     private const int itemWindowSize = 5;
 
+    // selectedSlotIndex = indeks slotu UI, na którym jest kursor
     private int _selectedSlotIndex = 2;
     public int selectedSlotIndex
     {
         get { return _selectedSlotIndex; }
         set { _selectedSlotIndex = Mathf.Clamp(value, 0, itemImages.Length - 1); }
     }
+
+    // Nowy: index itemu, na którym "jest kursor" (czyli wybrany item względem całej listy)
+    private int selectedItemIndex = 0;
 
     private void Awake()
     {
@@ -89,75 +94,108 @@ public class InventoryUI : MonoBehaviour
         if (weaponSlots >= 2 && Input.GetKeyDown(KeyCode.Alpha2)) inventory.EquipWeapon(inventory.weapons[1]);
         if (weaponSlots >= 3 && Input.GetKeyDown(KeyCode.Alpha3)) inventory.EquipWeapon(inventory.weapons[2]);
 
-        if (itemCount > 1)
+        // -- Nowa logika karuzeli:
+        // selectedItemIndex - indeks itemu "pod kursorem" (względem całej listy)
+        // itemWindowStartIndex - indeks pierwszego itemu w oknie karuzeli
+        // selectedSlotIndex - pozycja slotu UI, na którym jest kursor (0-4)
+
+        int maxSelectedIndex = Mathf.Max(0, itemCount - 1);
+
+        // Scroll & strzałki: zmiana wybranego itemu (kursora) w zakresie [0, itemCount-1]
+        if (itemCount > 0)
         {
             float scroll = Input.GetAxis("Mouse ScrollWheel");
-
             if (scroll > 0.01f)
             {
-                int newIdx = itemWindowStartIndex + 1;
-                if (newIdx >= 0 && newIdx < itemCount)
-                    MoveItemWindow(1, itemCount);
+                if (selectedItemIndex < maxSelectedIndex)
+                    selectedItemIndex++;
             }
             else if (scroll < -0.01f)
             {
-                int newIdx = itemWindowStartIndex - 1;
-                if (newIdx >= 0 && newIdx < itemCount)
-                    MoveItemWindow(-1, itemCount);
+                if (selectedItemIndex > 0)
+                    selectedItemIndex--;
             }
 
-            // Mapa: slot numer -> index w tablicy slotów
-            // 4 -> 0, 5 -> 1, 6 -> 2, 7 -> 3, 8 -> 4
-            // Chcemy: po kliknięciu, item z tego slotu jest na środku (slot index 2)
+            // Klawisze szybkiego wyboru
+            // 4,5,6,7,8 – wybierają item z danego slotu UI (jeśli istnieje)
             if (Input.GetKeyDown(KeyCode.Alpha4))
             {
-                int selectedIdx = 0;
-                int newStart = itemWindowStartIndex + (selectedIdx - 2);
-                if (newStart >= 0 && newStart < itemCount)
-                    itemWindowStartIndex = newStart;
+                int target = itemWindowStartIndex + 0;
+                if (target < itemCount) selectedItemIndex = target;
             }
             if (Input.GetKeyDown(KeyCode.Alpha5))
             {
-                int selectedIdx = 1;
-                int newStart = itemWindowStartIndex + (selectedIdx - 2);
-                if (newStart >= 0 && newStart < itemCount)
-                    itemWindowStartIndex = newStart;
+                int target = itemWindowStartIndex + 1;
+                if (target < itemCount) selectedItemIndex = target;
             }
             if (Input.GetKeyDown(KeyCode.Alpha6))
             {
-                // Center slot - nie zmieniaj
+                int target = itemWindowStartIndex + 2;
+                if (target < itemCount) selectedItemIndex = target;
             }
             if (Input.GetKeyDown(KeyCode.Alpha7))
             {
-                int selectedIdx = 3;
-                int newStart = itemWindowStartIndex + (selectedIdx - 2);
-                if (newStart >= 0 && newStart < itemCount)
-                    itemWindowStartIndex = newStart;
+                int target = itemWindowStartIndex + 3;
+                if (target < itemCount) selectedItemIndex = target;
             }
             if (Input.GetKeyDown(KeyCode.Alpha8))
             {
-                int selectedIdx = 4;
-                int newStart = itemWindowStartIndex + (selectedIdx - 2);
-                if (newStart >= 0 && newStart < itemCount)
-                    itemWindowStartIndex = newStart;
+                int target = itemWindowStartIndex + 4;
+                if (target < itemCount) selectedItemIndex = target;
             }
         }
         else
         {
-            itemWindowStartIndex = 0;
+            selectedItemIndex = 0;
         }
 
-        selectedSlotIndex = 2; // kursor zawsze w środku
+        // -- Obliczanie okna karuzeli (itemWindowStartIndex) i pozycji kursora (selectedSlotIndex) --
+        CalculateCarousel(itemCount);
 
         UpdateInventoryUI(inventory.weapons, inventory.items, inventory.currentWeaponName);
     }
 
-    private void MoveItemWindow(int delta, int itemCount)
+    /// <summary>
+    /// Ustawia itemWindowStartIndex oraz selectedSlotIndex tak, by nie pokazywać pustych slotów karuzeli,
+    /// nawet przy końcach listy itemów. Kursor przesuwa się automatycznie na 4/5, 7/8 itd.
+    /// </summary>
+    private void CalculateCarousel(int itemCount)
     {
-        // Karuzela pozwala przesuwać nawet dla 2-4 itemów, kursor zawsze w środku
-        int minStart = 0;
-        int maxStart = Mathf.Max(0, itemCount - 1);
-        itemWindowStartIndex = Mathf.Clamp(itemWindowStartIndex + delta, minStart, maxStart);
+        // Zakładamy, że selectedItemIndex jest poprawny (0 <= selectedItemIndex < itemCount, jeśli itemCount > 0)
+        if (itemCount <= 0)
+        {
+            itemWindowStartIndex = 0;
+            selectedSlotIndex = 0;
+            return;
+        }
+
+        if (itemCount <= itemWindowSize)
+        {
+            itemWindowStartIndex = 0;
+            selectedSlotIndex = selectedItemIndex;
+            return;
+        }
+
+        // Jeśli możemy wyśrodkować...
+        int preferedStart = selectedItemIndex - 2;
+        // Jeśli za mało po lewej
+        if (preferedStart <= 0)
+        {
+            itemWindowStartIndex = 0;
+            selectedSlotIndex = selectedItemIndex;
+        }
+        // Jeśli za mało po prawej
+        else if (preferedStart + itemWindowSize >= itemCount)
+        {
+            itemWindowStartIndex = itemCount - itemWindowSize;
+            selectedSlotIndex = selectedItemIndex - itemWindowStartIndex;
+        }
+        // Normalnie kursor w środku
+        else
+        {
+            itemWindowStartIndex = preferedStart;
+            selectedSlotIndex = 2;
+        }
     }
 
     public void UpdateInventoryUI(List<string> weapons, List<GameObject> items, string currentWeaponName)
@@ -218,11 +256,10 @@ public class InventoryUI : MonoBehaviour
     {
         int itemCount = items.Count;
         int maxSlots = itemImages.Length;
-        int center = 2; // środkowy slot na kursor
 
         for (int i = 0; i < maxSlots; i++)
         {
-            int itemIdx = itemWindowStartIndex + (i - center);
+            int itemIdx = itemWindowStartIndex + i;
             bool hasItem = (itemIdx >= 0 && itemIdx < itemCount);
 
             // TŁA i NUMERY zawsze aktywne (nie zmieniaj numeracji slotów, używaj tej z edytora)
@@ -247,7 +284,7 @@ public class InventoryUI : MonoBehaviour
                     else
                         itemImages[i].sprite = null;
 
-                    itemImages[i].color = (i == center) ? selectedItemColor : normalItemColor;
+                    itemImages[i].color = (i == selectedSlotIndex) ? selectedItemColor : normalItemColor;
                 }
                 else
                 {
@@ -444,11 +481,11 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
-    // Pobierz wybrany item (kursor – środkowy slot, wybrany przez itemWindowStartIndex)
+    // Pobierz wybrany item (kursor – aktualny selectedItemIndex)
     public GameObject GetSelectedItem()
     {
         var items = Inventory.Instance.items;
-        int idx = itemWindowStartIndex;
+        int idx = selectedItemIndex;
         if (idx < 0 || idx >= items.Count) return null;
         return items[idx];
     }
