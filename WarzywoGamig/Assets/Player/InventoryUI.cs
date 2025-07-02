@@ -89,7 +89,9 @@ public class InventoryUI : MonoBehaviour
         if (weaponSlots >= 2 && Input.GetKeyDown(KeyCode.Alpha2)) inventory.EquipWeapon(inventory.weapons[1]);
         if (weaponSlots >= 3 && Input.GetKeyDown(KeyCode.Alpha3)) inventory.EquipWeapon(inventory.weapons[2]);
 
-        // SCROLL KARUZELI DZIAŁA ZAWSZE, KURSOR ZAWSZE W ŚRODKU
+        // Karuzela: scroll zawsze aktywny, kursor zawsze środek
+        int center = 2;
+
         if (itemCount > 1)
         {
             float scroll = Input.GetAxis("Mouse ScrollWheel");
@@ -98,17 +100,19 @@ public class InventoryUI : MonoBehaviour
             else if (scroll < -0.01f)
                 MoveItemWindow(-1, itemCount);
 
-            if (Input.GetKeyDown(KeyCode.Alpha4)) MoveItemWindow(2, itemCount);
-            if (Input.GetKeyDown(KeyCode.Alpha5)) MoveItemWindow(1, itemCount);
-            if (Input.GetKeyDown(KeyCode.Alpha7)) MoveItemWindow(-1, itemCount);
-            if (Input.GetKeyDown(KeyCode.Alpha8)) MoveItemWindow(-2, itemCount);
+            // Klawisze ruletki: 4,5,7,8
+            if (Input.GetKeyDown(KeyCode.Alpha4)) MoveItemWindow(center - 0, itemCount); // slot 0 (4)
+            if (Input.GetKeyDown(KeyCode.Alpha5)) MoveItemWindow(center - 1, itemCount); // slot 1 (5)
+            // 6 = center, nie ruszamy
+            if (Input.GetKeyDown(KeyCode.Alpha7)) MoveItemWindow(center - 3, itemCount); // slot 3 (7)
+            if (Input.GetKeyDown(KeyCode.Alpha8)) MoveItemWindow(center - 4, itemCount); // slot 4 (8)
         }
         else
         {
             itemWindowStartIndex = 0;
         }
 
-        selectedSlotIndex = 2; // kursor zawsze środek
+        selectedSlotIndex = 2; // kursor zawsze w środku
 
         UpdateInventoryUI(inventory.weapons, inventory.items, inventory.currentWeaponName);
     }
@@ -116,7 +120,6 @@ public class InventoryUI : MonoBehaviour
     private void MoveItemWindow(int delta, int itemCount)
     {
         // Karuzela pozwala przesuwać nawet dla 2-4 itemów, kursor zawsze w środku
-        // itemWindowStartIndex wskazuje "wybrany" item (na środku)
         int minStart = 0;
         int maxStart = Mathf.Max(0, itemCount - 1);
         itemWindowStartIndex = Mathf.Clamp(itemWindowStartIndex + delta, minStart, maxStart);
@@ -187,15 +190,12 @@ public class InventoryUI : MonoBehaviour
             int itemIdx = itemWindowStartIndex + (i - center);
             bool hasItem = (itemIdx >= 0 && itemIdx < itemCount);
 
-            // TŁA i NUMERY zawsze aktywne
+            // TŁA i NUMERY zawsze aktywne (nie zmieniaj numeracji slotów, używaj tej z edytora)
             if (slotBackgrounds != null && slotBackgrounds[i] != null)
                 slotBackgrounds[i].enabled = true;
 
             if (slotNumberTexts != null && slotNumberTexts[i] != null)
-            {
-                slotNumberTexts[i].text = (i + 1).ToString();
                 slotNumberTexts[i].gameObject.SetActive(true);
-            }
 
             // OBRAZEK slotu zawsze aktywny
             if (itemImages[i] != null)
@@ -398,7 +398,6 @@ public class InventoryUI : MonoBehaviour
                     slotBackgrounds[i].enabled = true;
                 if (slotNumberTexts != null && i < slotNumberTexts.Length && slotNumberTexts[i] != null)
                 {
-                    slotNumberTexts[i].text = (i + 1).ToString();
                     slotNumberTexts[i].gameObject.SetActive(true);
                 }
             }
