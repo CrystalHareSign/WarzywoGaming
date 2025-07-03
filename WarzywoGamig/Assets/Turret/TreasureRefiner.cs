@@ -996,7 +996,6 @@ public class TreasureRefiner : MonoBehaviour
         // Tylko zwyk³e itemy mo¿na wrzucaæ do refinera!
         if (!Inventory.Instance.items.Contains(selectedItem))
         {
-            // Mo¿esz tu dodaæ komunikat: "Do refinera mo¿na wrzucaæ tylko zwyk³e itemy!"
             isRefining = false;
             return;
         }
@@ -1006,48 +1005,88 @@ public class TreasureRefiner : MonoBehaviour
 
         if (interactableItem != null)
         {
-            // Próbujemy dodaæ zasoby z tego przedmiotu
             UpdateTreasureRefinerSlots(interactableItem, ref resourcesAdded);
 
             if (resourcesAdded)
             {
-                // Usuwamy przedmiot z inventory i niszczymy obiekt
+                // Zapamiêtaj aktualny indeks itemu (nie slot!)
+                int selectedItemIndex = inventoryUI.GetSelectedItemIndex_Normal();
+
                 Inventory.Instance.items.Remove(selectedItem);
                 Destroy(selectedItem);
 
-                // DŸwiêk
                 foreach (var playSoundOnObject in playSoundObjects)
                 {
                     if (playSoundOnObject == null) continue;
                     playSoundOnObject.PlaySound("PickUpLiquid1", 1.1f, false);
                 }
 
-                // Aktualizuj UI
                 if (inventoryUI != null)
                 {
-                    // Kursor zostaje na tym samym miejscu jeœli siê da, albo na koñcu listy
                     var itemsList = Inventory.Instance.items;
-                    int newWindowStart = inventoryUI.GetItemWindowStartIndex();
-                    int newSlotIndex = inventoryUI.GetSelectedSlotIndex();
-                    if (itemsList.Count == 0)
-                        newSlotIndex = 2; // œrodek
-                    else if (newWindowStart >= itemsList.Count)
-                        newWindowStart = Mathf.Max(0, itemsList.Count - 1);
+                    int itemCount = itemsList.Count;
 
-                    // Jeœli chcesz wymusiæ przesuniêcie slotu, to musisz mieæ publiczne settery/metody w InventoryUI
-                    // Mo¿esz dodaæ do InventoryUI publiczne metody SetSelectedSlotIndex(int) i SetItemWindowStartIndex(int)
-                    inventoryUI.SetItemWindowStartIndex_Normal(newWindowStart);
-                    inventoryUI.SetSelectedSlotIndex_Normal(newSlotIndex);
+                    // Cofnij kursor o jeden w lewo, jeœli "wyjecha³" poza listê
+                    if (itemCount == 0)
+                    {
+                        selectedItemIndex = 2; // œrodek, jak dotychczas
+                    }
+                    else if (selectedItemIndex >= itemCount)
+                    {
+                        selectedItemIndex = itemCount - 1; // cofnij na ostatni item
+                    }
 
-                    inventoryUI.UpdateInventoryUI(Inventory.Instance.weapons, Inventory.Instance.items, Inventory.Instance.usableItems, Inventory.Instance.currentWeaponName);
+                    // Przelicz karuzelê (mo¿esz wywo³aæ CalculateCarousel z InventoryUI)
+                    int windowStart = inventoryUI.GetItemWindowStartIndex();
+                    int slotIndex = inventoryUI.GetSelectedSlotIndex();
+                    // Mo¿esz wywo³aæ publiczn¹ CalculateCarousel lub skopiowaæ jej kod:
+                    // inventoryUI.CalculateCarousel(itemCount, ref windowStart, ref slotIndex, ref selectedItemIndex);
+
+                    // KOPIA LOGIKI CalculateCarousel (jeœli nie masz metody publicznej)
+                    const int itemWindowSize = 5;
+                    if (itemCount <= 0)
+                    {
+                        windowStart = 0;
+                        slotIndex = 0;
+                    }
+                    else if (itemCount <= itemWindowSize)
+                    {
+                        windowStart = 0;
+                        slotIndex = selectedItemIndex;
+                    }
+                    else
+                    {
+                        int preferedStart = selectedItemIndex - 2;
+                        if (preferedStart <= 0)
+                        {
+                            windowStart = 0;
+                            slotIndex = selectedItemIndex;
+                        }
+                        else if (preferedStart + itemWindowSize >= itemCount)
+                        {
+                            windowStart = itemCount - itemWindowSize;
+                            slotIndex = selectedItemIndex - windowStart;
+                        }
+                        else
+                        {
+                            windowStart = preferedStart;
+                            slotIndex = 2;
+                        }
+                    }
+
+                    // Ustaw wszystko w UI
+                    inventoryUI.SetItemWindowStartIndex_Normal(windowStart);
+                    inventoryUI.SetSelectedSlotIndex_Normal(slotIndex);
+                    inventoryUI.SetSelectedItemIndex_Normal(selectedItemIndex);
+
+                    inventoryUI.UpdateInventoryUI(
+                        Inventory.Instance.weapons,
+                        Inventory.Instance.items,
+                        Inventory.Instance.usableItems,
+                        Inventory.Instance.currentWeaponName
+                    );
                 }
             }
-        }
-
-        // Jeœli ¿aden przedmiot nie pasowa³
-        if (!resourcesAdded)
-        {
-            //Debug.Log("Nie mo¿na dodaæ zasobów albo wszystkie sloty przekroczy³yby max");
         }
 
         isRefining = false;

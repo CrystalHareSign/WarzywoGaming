@@ -28,6 +28,10 @@ public class InventoryUI : MonoBehaviour
     public Color normalItemColor = Color.yellow;
     public Color selectedItemColor = Color.white;
 
+    public Image categoryIndicatorImage;
+    public Color normalCategoryColor = Color.green;
+    public Color usableCategoryColor = Color.yellow;
+
     public bool isInputBlocked = false;
 
     private Gun currentWeapon;
@@ -83,6 +87,8 @@ public class InventoryUI : MonoBehaviour
         reloadingText.gameObject.SetActive(false);
         slashText.gameObject.SetActive(false);
         weaponBackgroundImage.gameObject.SetActive(false);
+
+        UpdateCategoryIndicatorSprite();
     }
 
     public void Update()
@@ -100,6 +106,8 @@ public class InventoryUI : MonoBehaviour
                 activeCategory = ItemCategory.Usable;
             else
                 activeCategory = ItemCategory.Normal;
+
+            UpdateCategoryIndicatorSprite();
         }
 
         // Wybierz aktualną listę i wskaźniki
@@ -279,6 +287,9 @@ public class InventoryUI : MonoBehaviour
 
         UpdateItemUI(shownList, windowStart, slotCursor);
         UpdateArrowIndicators(itemCount, windowStart);
+
+        // zsynchronizuj kolor wskaźnika kategorii także przy UpdateInventoryUI (nie tylko po TAB)
+        UpdateCategoryIndicatorSprite();
     }
 
     private void UpdateItemUI(List<GameObject> items, int windowStart, int slotCursor)
@@ -394,6 +405,16 @@ public class InventoryUI : MonoBehaviour
             rightArrowIndicator.SetActive(windowStart + itemWindowSize < itemCount);
     }
 
+    private void UpdateCategoryIndicatorSprite()
+    {
+        if (categoryIndicatorImage == null) return;
+
+        if (activeCategory == ItemCategory.Normal)
+            categoryIndicatorImage.color = normalCategoryColor;
+        else
+            categoryIndicatorImage.color = usableCategoryColor;
+    }
+
     public void UpdateWeaponUI(Gun gun)
     {
         if (gun == null) return;
@@ -483,6 +504,9 @@ public class InventoryUI : MonoBehaviour
             if (slotNumberTexts != null && i < slotNumberTexts.Length && slotNumberTexts[i] != null)
                 slotNumberTexts[i].gameObject.SetActive(false);
         }
+        // SCHOWAJ wskaźnik kategorii
+        if (categoryIndicatorImage != null)
+            categoryIndicatorImage.gameObject.SetActive(false);
     }
 
     public void ShowItemUI(List<GameObject> items)
@@ -529,6 +553,9 @@ public class InventoryUI : MonoBehaviour
                     slotNumberTexts[i].gameObject.SetActive(false);
             }
         }
+        // POKAŻ wskaźnik kategorii
+        if (categoryIndicatorImage != null)
+            categoryIndicatorImage.gameObject.SetActive(true);
     }
 
     // Pobierz wybrany item - z aktualnie aktywnej kategorii
@@ -559,5 +586,15 @@ public class InventoryUI : MonoBehaviour
     public void SetItemWindowStartIndex_Normal(int value)
     {
         itemWindowStartIndex_Normal = Mathf.Max(0, value);
+    }
+
+    // Getter i setter dla indeksu wybranego itemu (zwykłe itemy)
+    public int GetSelectedItemIndex_Normal()
+    {
+        return selectedItemIndex_Normal;
+    }
+    public void SetSelectedItemIndex_Normal(int value)
+    {
+        selectedItemIndex_Normal = Mathf.Clamp(value, 0, Mathf.Max(0, Inventory.Instance.items.Count - 1));
     }
 }
