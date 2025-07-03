@@ -6,10 +6,12 @@ public class Inventory : MonoBehaviour
 {
     // Lista broni: teraz tylko nazwy broni!
     public List<string> weapons = new List<string>(); // Lista broni (nazwy)
-    public List<GameObject> items = new List<GameObject>(); // Lista innych przedmiotów
+    public List<GameObject> items = new List<GameObject>(); // Lista zwykłych przedmiotów
+    public List<GameObject> usableItems = new List<GameObject>(); // Lista usable itemów
     public List<GameObject> loot = new List<GameObject>(); // Lista lootów
     public int maxWeapons = 3; // Maksymalna liczba broni, które gracz może nosić
     public int maxItems = 5; // Maksymalna liczba innych przedmiotów
+    public int maxUsableItems = 5; // Maksymalna liczba usable itemów
     public int maxLoot = 5; // Maksymalna liczba przedmiotów loot
     public float dropHeight = 1f; // Wysokość, na jakiej loot ma upaść
     public LayerMask interactableLayer; // Warstwa interaktywnych przedmiotów
@@ -61,14 +63,10 @@ public class Inventory : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(this.gameObject);
-
-        //Debug.Log("Inventory Awake: " + this.GetInstanceID());
     }
-
 
     void Start()
     {
-
         weaponPrefabs.Clear();
         foreach (var entry in weaponDatabase.weaponPrefabsList)
         {
@@ -89,7 +87,6 @@ public class Inventory : MonoBehaviour
         playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
 
         UpdateInventoryUI();
-        //Debug.Log("Inventory Start: " + this.GetInstanceID() + " - weapons count: " + weapons.Count);
     }
 
     void Update()
@@ -211,6 +208,28 @@ public class Inventory : MonoBehaviour
                         }
                     }
                 }
+                else if (interactableItem.isUsableItem)
+                {
+                    if (usableItems.Count < maxUsableItems)
+                    {
+                        usableItems.Add(hit.collider.gameObject);
+                        hit.collider.gameObject.SetActive(false);
+                        TurretCollector turretCollector = Object.FindFirstObjectByType<TurretCollector>();
+                        if (turretCollector != null)
+                        {
+                            turretCollector.ResetSlotForItem(hit.collider.gameObject);
+                        }
+                        RefreshUsableItemListChronologically();
+
+                        foreach (var playSoundOnObject in playSoundObjects)
+                        {
+                            if (playSoundOnObject == null) continue;
+
+                            playSoundOnObject.PlaySound("PickUpLiquid", 0.8f, false);
+                            playSoundOnObject.PlaySound("PickUpSteam", 0.6f, false);
+                        }
+                    }
+                }
                 else
                 {
                     if (items.Count < maxItems)
@@ -246,11 +265,20 @@ public class Inventory : MonoBehaviour
             }
         }
     }
+
     public void RefreshItemListChronologically()
     {
         for (int i = 0; i < items.Count; i++)
         {
             items[i].name = "Item_" + (i + 1);
+        }
+    }
+
+    public void RefreshUsableItemListChronologically()
+    {
+        for (int i = 0; i < usableItems.Count; i++)
+        {
+            usableItems[i].name = "UsableItem_" + (i + 1);
         }
     }
 
@@ -499,6 +527,10 @@ public class Inventory : MonoBehaviour
         {
             items.Remove(item);
         }
+        if (usableItems.Contains(item))
+        {
+            usableItems.Remove(item);
+        }
         if (loot.Contains(item))
         {
             loot.Remove(item);
@@ -542,9 +574,10 @@ public class Inventory : MonoBehaviour
     {
         if (inventoryUI != null)
         {
-            inventoryUI.UpdateInventoryUI(weapons, items, currentWeaponName);
+            inventoryUI.UpdateInventoryUI(weapons, items, usableItems, currentWeaponName);
         }
     }
+
     public void ClearInventory()
     {
         foreach (GameObject item in items)
@@ -552,6 +585,12 @@ public class Inventory : MonoBehaviour
             Destroy(item);
         }
         items.Clear();
+
+        foreach (GameObject item in usableItems)
+        {
+            Destroy(item);
+        }
+        usableItems.Clear();
 
         UpdateInventoryUI();
     }

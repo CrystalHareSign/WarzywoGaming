@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2898293754900151905}
   - component: {fileID: 5646069698478414382}
   - component: {fileID: 7838263279200377955}
+  - component: {fileID: 5309019386374068955}
   - component: {fileID: -5942627759815723941}
   - component: {fileID: -2107923001431748367}
   m_Layer: 7
@@ -110,6 +111,24 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &5309019386374068955
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3070864060014540926}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c67910c76a1db1d4eb32d13ba078b292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  resourceCategories:
+  - name: Key
+    isActive: 1
+    resourceCount: 1
+    minResourceCount: 1
+    maxResourceCount: 1
 --- !u!114 &-5942627759815723941
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -131,6 +150,7 @@ MonoBehaviour:
   canBeDropped: 0
   isWeapon: 0
   isLoot: 0
+  isUsableItem: 1
   isNPC: 0
   npcDialogues: []
   currentDialogueIndex: 0
@@ -165,7 +185,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9c10a544bb40ac40ba2b7fe60df5b57, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  messageEnglish: Take
+  messageEnglish: Pick
   messagePolish: "We\u017A"
   infoEnglish: 
   infoPolish: 

@@ -36,20 +36,20 @@ public class InventoryUI : MonoBehaviour
 
     private int lastWeaponCount = 0;
 
-    // Now: itemWindowStartIndex to ZAWSZE najniższy indeks widoczny w karuzeli
-    public int itemWindowStartIndex = 0;
+    // --- Karuzele dla obu kategorii ---
+    private enum ItemCategory { Normal, Usable }
+    private ItemCategory activeCategory = ItemCategory.Normal;
+
+    // Zwykłe itemy
+    private int itemWindowStartIndex_Normal = 0;
+    private int selectedSlotIndex_Normal = 0;
+    private int selectedItemIndex_Normal = 0;
+    // Usable itemy
+    private int itemWindowStartIndex_Usable = 0;
+    private int selectedSlotIndex_Usable = 0;
+    private int selectedItemIndex_Usable = 0;
+
     private const int itemWindowSize = 5;
-
-    // selectedSlotIndex = indeks slotu UI, na którym jest kursor
-    private int _selectedSlotIndex = 2;
-    public int selectedSlotIndex
-    {
-        get { return _selectedSlotIndex; }
-        set { _selectedSlotIndex = Mathf.Clamp(value, 0, itemImages.Length - 1); }
-    }
-
-    // Nowy: index itemu, na którym "jest kursor" (czyli wybrany item względem całej listy)
-    private int selectedItemIndex = 0;
 
     // UI arrow indicators
     public GameObject leftArrowIndicator;
@@ -92,20 +92,41 @@ public class InventoryUI : MonoBehaviour
 
         var inventory = Inventory.Instance;
         int weaponSlots = Mathf.Min(inventory.weapons.Count, 3);
-        int itemCount = inventory.items.Count;
 
-        if (weaponSlots >= 1 && Input.GetKeyDown(KeyCode.Alpha1)) inventory.EquipWeapon(inventory.weapons[0]);
-        if (weaponSlots >= 2 && Input.GetKeyDown(KeyCode.Alpha2)) inventory.EquipWeapon(inventory.weapons[1]);
-        if (weaponSlots >= 3 && Input.GetKeyDown(KeyCode.Alpha3)) inventory.EquipWeapon(inventory.weapons[2]);
+        // Przełączanie kategorii TAB-em
+        if (Input.GetKeyDown(KeyCode.Tab))
+        {
+            if (activeCategory == ItemCategory.Normal)
+                activeCategory = ItemCategory.Usable;
+            else
+                activeCategory = ItemCategory.Normal;
+        }
 
-        // -- Nowa logika karuzeli:
-        // selectedItemIndex - indeks itemu "pod kursorem" (względem całej listy)
-        // itemWindowStartIndex - indeks pierwszego itemu w oknie karuzeli
-        // selectedSlotIndex - pozycja slotu UI, na którym jest kursor (0-4)
+        // Wybierz aktualną listę i wskaźniki
+        List<GameObject> currentList;
+        ref int itemWindowStartIndex = ref itemWindowStartIndex_Normal;
+        ref int selectedSlotIndex = ref selectedSlotIndex_Normal;
+        ref int selectedItemIndex = ref selectedItemIndex_Normal;
 
+        if (activeCategory == ItemCategory.Normal)
+        {
+            currentList = inventory.items;
+            itemWindowStartIndex = ref itemWindowStartIndex_Normal;
+            selectedSlotIndex = ref selectedSlotIndex_Normal;
+            selectedItemIndex = ref selectedItemIndex_Normal;
+        }
+        else
+        {
+            currentList = inventory.usableItems;
+            itemWindowStartIndex = ref itemWindowStartIndex_Usable;
+            selectedSlotIndex = ref selectedSlotIndex_Usable;
+            selectedItemIndex = ref selectedItemIndex_Usable;
+        }
+
+        int itemCount = currentList.Count;
         int maxSelectedIndex = Mathf.Max(0, itemCount - 1);
 
-        // Scroll & strzałki: zmiana wybranego itemu (kursora) w zakresie [0, itemCount-1]
+        // Scroll & klawisze wyboru slotu
         if (itemCount > 0)
         {
             float scroll = Input.GetAxis("Mouse ScrollWheel");
@@ -120,8 +141,6 @@ public class InventoryUI : MonoBehaviour
                     selectedItemIndex++;
             }
 
-            // Klawisze szybkiego wyboru
-            // 4,5,6,7,8 – wybierają item z danego slotu UI (jeśli istnieje)
             if (Input.GetKeyDown(KeyCode.Alpha4))
             {
                 int target = itemWindowStartIndex + 0;
@@ -153,48 +172,40 @@ public class InventoryUI : MonoBehaviour
             selectedItemIndex = 0;
         }
 
-        // -- Obliczanie okna karuzeli (itemWindowStartIndex) i pozycji kursora (selectedSlotIndex) --
-        CalculateCarousel(itemCount);
+        // Ustal okno i slot kursora dla tej kategorii
+        CalculateCarousel(itemCount, ref itemWindowStartIndex, ref selectedSlotIndex, ref selectedItemIndex);
 
-        UpdateInventoryUI(inventory.weapons, inventory.items, inventory.currentWeaponName);
+        UpdateInventoryUI(inventory.weapons, inventory.items, inventory.usableItems, inventory.currentWeaponName);
     }
 
     /// <summary>
-    /// Ustawia itemWindowStartIndex oraz selectedSlotIndex tak, by nie pokazywać pustych slotów karuzeli,
-    /// nawet przy końcach listy itemów. Kursor przesuwa się automatycznie na 4/5, 7/8 itd.
+    /// Karuzela dla danej kategorii (okno, slot kursora)
     /// </summary>
-    private void CalculateCarousel(int itemCount)
+    private void CalculateCarousel(int itemCount, ref int itemWindowStartIndex, ref int selectedSlotIndex, ref int selectedItemIndex)
     {
-        // Zakładamy, że selectedItemIndex jest poprawny (0 <= selectedItemIndex < itemCount, jeśli itemCount > 0)
         if (itemCount <= 0)
         {
             itemWindowStartIndex = 0;
             selectedSlotIndex = 0;
             return;
         }
-
         if (itemCount <= itemWindowSize)
         {
             itemWindowStartIndex = 0;
             selectedSlotIndex = selectedItemIndex;
             return;
         }
-
-        // Jeśli możemy wyśrodkować...
         int preferedStart = selectedItemIndex - 2;
-        // Jeśli za mało po lewej
         if (preferedStart <= 0)
         {
             itemWindowStartIndex = 0;
             selectedSlotIndex = selectedItemIndex;
         }
-        // Jeśli za mało po prawej
         else if (preferedStart + itemWindowSize >= itemCount)
         {
             itemWindowStartIndex = itemCount - itemWindowSize;
             selectedSlotIndex = selectedItemIndex - itemWindowStartIndex;
         }
-        // Normalnie kursor w środku
         else
         {
             itemWindowStartIndex = preferedStart;
@@ -202,11 +213,17 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
+    // Przeciążona wersja do kompatybilności ze starym Inventory
     public void UpdateInventoryUI(List<string> weapons, List<GameObject> items, string currentWeaponName)
+    {
+        UpdateInventoryUI(weapons, items, null, currentWeaponName);
+    }
+
+    // Nowa wersja obsługująca usableItems
+    public void UpdateInventoryUI(List<string> weapons, List<GameObject> items, List<GameObject> usableItems, string currentWeaponName)
     {
         int oldWeaponCount = lastWeaponCount;
         int weaponCount = weapons.Count;
-        int itemCount = items.Count;
         lastWeaponCount = weaponCount;
 
         Gun gun = null;
@@ -214,6 +231,7 @@ public class InventoryUI : MonoBehaviour
         if (Inventory.Instance != null)
             currentWeaponPrefab = Inventory.Instance.currentWeaponPrefab;
 
+        // Bronie
         if (!string.IsNullOrEmpty(currentWeaponName))
         {
             weaponImage.sprite = weaponIcons.ContainsKey(currentWeaponName)
@@ -250,21 +268,27 @@ public class InventoryUI : MonoBehaviour
         }
         else
         {
-            HideWeaponUI(showBackgroundIfLoot: itemCount > 0);
+            HideWeaponUI(showBackgroundIfLoot: (items?.Count ?? 0) + (usableItems?.Count ?? 0) > 0);
         }
 
-        UpdateItemUI(items);
-        UpdateArrowIndicators(items.Count);
+        // Wybierz do wyświetlenia odpowiednią kategorię
+        List<GameObject> shownList = (activeCategory == ItemCategory.Normal) ? items : usableItems;
+        int itemCount = shownList != null ? shownList.Count : 0;
+        int windowStart = (activeCategory == ItemCategory.Normal) ? itemWindowStartIndex_Normal : itemWindowStartIndex_Usable;
+        int slotCursor = (activeCategory == ItemCategory.Normal) ? selectedSlotIndex_Normal : selectedSlotIndex_Usable;
+
+        UpdateItemUI(shownList, windowStart, slotCursor);
+        UpdateArrowIndicators(itemCount, windowStart);
     }
 
-    private void UpdateItemUI(List<GameObject> items)
+    private void UpdateItemUI(List<GameObject> items, int windowStart, int slotCursor)
     {
-        int itemCount = items.Count;
+        int itemCount = items != null ? items.Count : 0;
         int maxSlots = itemImages.Length;
 
         for (int i = 0; i < maxSlots; i++)
         {
-            int itemIdx = itemWindowStartIndex + i;
+            int itemIdx = windowStart + i;
             bool hasItem = (itemIdx >= 0 && itemIdx < itemCount);
 
             // TŁA i NUMERY zawsze aktywne (nie zmieniaj numeracji slotów, używaj tej z edytora)
@@ -289,7 +313,7 @@ public class InventoryUI : MonoBehaviour
                     else
                         itemImages[i].sprite = null;
 
-                    itemImages[i].color = (i == selectedSlotIndex) ? selectedItemColor : normalItemColor;
+                    itemImages[i].color = (i == slotCursor) ? selectedItemColor : normalItemColor;
                 }
                 else
                 {
@@ -307,8 +331,17 @@ public class InventoryUI : MonoBehaviour
                     var treasureResources = itemObj?.GetComponent<TreasureResources>();
                     if (treasureResources != null && treasureResources.resourceCategories != null && treasureResources.resourceCategories.Count > 0)
                     {
-                        itemTexts[i].text = treasureResources.resourceCategories[0].resourceCount.ToString();
-                        itemTexts[i].gameObject.SetActive(true);
+                        int count = treasureResources.resourceCategories[0].resourceCount;
+                        if (count > 1)
+                        {
+                            itemTexts[i].text = count.ToString();
+                            itemTexts[i].gameObject.SetActive(true);
+                        }
+                        else
+                        {
+                            itemTexts[i].text = "";
+                            itemTexts[i].gameObject.SetActive(false);
+                        }
                     }
                     else
                     {
@@ -352,13 +385,13 @@ public class InventoryUI : MonoBehaviour
     /// <summary>
     /// Pokazuje/ukrywa wskaźniki strzałek UI, gdy poza slotami są jeszcze itemy.
     /// </summary>
-    private void UpdateArrowIndicators(int itemCount)
+    private void UpdateArrowIndicators(int itemCount, int windowStart)
     {
         if (leftArrowIndicator != null)
-            leftArrowIndicator.SetActive(itemWindowStartIndex > 0);
+            leftArrowIndicator.SetActive(windowStart > 0);
 
         if (rightArrowIndicator != null)
-            rightArrowIndicator.SetActive(itemWindowStartIndex + itemWindowSize < itemCount);
+            rightArrowIndicator.SetActive(windowStart + itemWindowSize < itemCount);
     }
 
     public void UpdateWeaponUI(Gun gun)
@@ -498,12 +531,33 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
-    // Pobierz wybrany item (kursor – aktualny selectedItemIndex)
+    // Pobierz wybrany item - z aktualnie aktywnej kategorii
     public GameObject GetSelectedItem()
     {
-        var items = Inventory.Instance.items;
-        int idx = selectedItemIndex;
+        Inventory inventory = Inventory.Instance;
+        List<GameObject> items = (activeCategory == ItemCategory.Normal) ? inventory.items : inventory.usableItems;
+        int idx = (activeCategory == ItemCategory.Normal) ? selectedItemIndex_Normal : selectedItemIndex_Usable;
         if (idx < 0 || idx >= items.Count) return null;
         return items[idx];
+    }
+
+    // Publiczne gettery na slot i okno dla aktywnej kategorii
+    public int GetSelectedSlotIndex()
+    {
+        return (activeCategory == ItemCategory.Normal) ? selectedSlotIndex_Normal : selectedSlotIndex_Usable;
+    }
+    public int GetItemWindowStartIndex()
+    {
+        return (activeCategory == ItemCategory.Normal) ? itemWindowStartIndex_Normal : itemWindowStartIndex_Usable;
+    }
+
+    // Publiczne settery dla slotu i okna dla zwykłych itemów
+    public void SetSelectedSlotIndex_Normal(int value)
+    {
+        selectedSlotIndex_Normal = Mathf.Clamp(value, 0, itemImages.Length - 1);
+    }
+    public void SetItemWindowStartIndex_Normal(int value)
+    {
+        itemWindowStartIndex_Normal = Mathf.Max(0, value);
     }
 }

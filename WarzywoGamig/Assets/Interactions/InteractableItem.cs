@@ -26,6 +26,9 @@ public class InteractableItem : MonoBehaviour, IInteractable
     public bool isWeapon;
     public bool isLoot = false;
 
+    [Header("usable item")]
+    public bool isUsableItem = false;
+
     [Header("NPC Dialogue")]
     public bool isNPC = false; // Zaznacz w Inspectorze dla NPC
     public List<DialogueData> npcDialogues; // LISTA dialogów dla NPC

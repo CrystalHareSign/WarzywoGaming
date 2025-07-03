@@ -993,6 +993,14 @@ public class TreasureRefiner : MonoBehaviour
             return;
         }
 
+        // Tylko zwyk³e itemy mo¿na wrzucaæ do refinera!
+        if (!Inventory.Instance.items.Contains(selectedItem))
+        {
+            // Mo¿esz tu dodaæ komunikat: "Do refinera mo¿na wrzucaæ tylko zwyk³e itemy!"
+            isRefining = false;
+            return;
+        }
+
         bool resourcesAdded = false;
         InteractableItem interactableItem = selectedItem.GetComponent<InteractableItem>();
 
@@ -1004,7 +1012,7 @@ public class TreasureRefiner : MonoBehaviour
             if (resourcesAdded)
             {
                 // Usuwamy przedmiot z inventory i niszczymy obiekt
-                inventory.items.Remove(selectedItem);
+                Inventory.Instance.items.Remove(selectedItem);
                 Destroy(selectedItem);
 
                 // DŸwiêk
@@ -1017,13 +1025,21 @@ public class TreasureRefiner : MonoBehaviour
                 // Aktualizuj UI
                 if (inventoryUI != null)
                 {
-                    // Po usuniêciu, kursor zostaje na tym samym miejscu jeœli siê da, albo na koñcu listy
-                    if (inventory.items.Count == 0)
-                        inventoryUI.selectedSlotIndex = 2; // œrodek
-                    else if (inventoryUI.itemWindowStartIndex >= inventory.items.Count)
-                        inventoryUI.itemWindowStartIndex = inventory.items.Count - 1;
+                    // Kursor zostaje na tym samym miejscu jeœli siê da, albo na koñcu listy
+                    var itemsList = Inventory.Instance.items;
+                    int newWindowStart = inventoryUI.GetItemWindowStartIndex();
+                    int newSlotIndex = inventoryUI.GetSelectedSlotIndex();
+                    if (itemsList.Count == 0)
+                        newSlotIndex = 2; // œrodek
+                    else if (newWindowStart >= itemsList.Count)
+                        newWindowStart = Mathf.Max(0, itemsList.Count - 1);
 
-                    inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items, inventory.currentWeaponName);
+                    // Jeœli chcesz wymusiæ przesuniêcie slotu, to musisz mieæ publiczne settery/metody w InventoryUI
+                    // Mo¿esz dodaæ do InventoryUI publiczne metody SetSelectedSlotIndex(int) i SetItemWindowStartIndex(int)
+                    inventoryUI.SetItemWindowStartIndex_Normal(newWindowStart);
+                    inventoryUI.SetSelectedSlotIndex_Normal(newSlotIndex);
+
+                    inventoryUI.UpdateInventoryUI(Inventory.Instance.weapons, Inventory.Instance.items, Inventory.Instance.usableItems, Inventory.Instance.currentWeaponName);
                 }
             }
         }
