@@ -115,11 +115,20 @@ public class PlayerInteraction : MonoBehaviour
                     inventoryUI.reloadingText.gameObject.SetActive(false);
                     inventoryUI.weaponImage.gameObject.SetActive(false);
                     inventoryUI.HideItemUI();
+                    // Hide arrow indicators
+                    if (inventoryUI.leftArrowIndicator != null)
+                        inventoryUI.leftArrowIndicator.SetActive(false);
+                    if (inventoryUI.rightArrowIndicator != null)
+                        inventoryUI.rightArrowIndicator.SetActive(false);
                 }
                 else
                 {
                     inventoryUI.HideWeaponUI();
                     inventoryUI.HideItemUI();
+                    if (inventoryUI.leftArrowIndicator != null)
+                        inventoryUI.leftArrowIndicator.SetActive(false);
+                    if (inventoryUI.rightArrowIndicator != null)
+                        inventoryUI.rightArrowIndicator.SetActive(false);
                 }
             }
             return;
@@ -139,6 +148,7 @@ public class PlayerInteraction : MonoBehaviour
                 }
             }
             inventoryUI.ShowItemUI(inventory.items);
+            // Show arrow indicators will be handled in ShowItemUI
             return;
         }
 
@@ -195,6 +205,14 @@ public class PlayerInteraction : MonoBehaviour
                                 UseDriverSeat(interactableItem);
                                 interactionTimer = 0f;
                                 HideUI();
+                                // Hide arrow indicators
+                                if (inventoryUI != null)
+                                {
+                                    if (inventoryUI.leftArrowIndicator != null)
+                                        inventoryUI.leftArrowIndicator.SetActive(false);
+                                    if (inventoryUI.rightArrowIndicator != null)
+                                        inventoryUI.rightArrowIndicator.SetActive(false);
+                                }
                             }
                         }
                         else
@@ -218,12 +236,26 @@ public class PlayerInteraction : MonoBehaviour
                 if (isWheel && audioChanger != null && audioChanger.isPlayerInside)
                 {
                     HideUI();
+                    if (inventoryUI != null)
+                    {
+                        if (inventoryUI.leftArrowIndicator != null)
+                            inventoryUI.leftArrowIndicator.SetActive(false);
+                        if (inventoryUI.rightArrowIndicator != null)
+                            inventoryUI.rightArrowIndicator.SetActive(false);
+                    }
                     return;
                 }
                 bool isBusMonitor = interactableItem.isMonitor && interactableItem.busMonitor;
                 if (isBusMonitor && audioChanger != null && !audioChanger.isPlayerInside)
                 {
                     HideUI();
+                    if (inventoryUI != null)
+                    {
+                        if (inventoryUI.leftArrowIndicator != null)
+                            inventoryUI.leftArrowIndicator.SetActive(false);
+                        if (inventoryUI.rightArrowIndicator != null)
+                            inventoryUI.rightArrowIndicator.SetActive(false);
+                    }
                     return;
                 }
 
@@ -263,6 +295,10 @@ public class PlayerInteraction : MonoBehaviour
                                 inventory.enabled = false;
                                 inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
                                 inventoryUI.HideWeaponUI();
+                                if (inventoryUI.leftArrowIndicator != null)
+                                    inventoryUI.leftArrowIndicator.SetActive(false);
+                                if (inventoryUI.rightArrowIndicator != null)
+                                    inventoryUI.rightArrowIndicator.SetActive(false);
                             }
                         }
 
@@ -288,7 +324,13 @@ public class PlayerInteraction : MonoBehaviour
                                     inventoryUI.HideWeaponUI();
                                 }
                                 if (inventoryUI != null)
+                                {
                                     inventoryUI.HideItemUI();
+                                    if (inventoryUI.leftArrowIndicator != null)
+                                        inventoryUI.leftArrowIndicator.SetActive(false);
+                                    if (inventoryUI.rightArrowIndicator != null)
+                                        inventoryUI.rightArrowIndicator.SetActive(false);
+                                }
                             }
 
                             if (currentInteractableItem.isMonitor)
@@ -306,7 +348,13 @@ public class PlayerInteraction : MonoBehaviour
                                     inventoryUI.HideWeaponUI();
                                 }
                                 if (inventoryUI != null)
+                                {
                                     inventoryUI.HideItemUI();
+                                    if (inventoryUI.leftArrowIndicator != null)
+                                        inventoryUI.leftArrowIndicator.SetActive(false);
+                                    if (inventoryUI.rightArrowIndicator != null)
+                                        inventoryUI.rightArrowIndicator.SetActive(false);
+                                }
                             }
 
                             // --- MissionDefiner obs³uga ---
@@ -325,7 +373,13 @@ public class PlayerInteraction : MonoBehaviour
                                     inventoryUI.HideWeaponUI();
                                 }
                                 if (inventoryUI != null)
+                                {
                                     inventoryUI.HideItemUI();
+                                    if (inventoryUI.leftArrowIndicator != null)
+                                        inventoryUI.leftArrowIndicator.SetActive(false);
+                                    if (inventoryUI.rightArrowIndicator != null)
+                                        inventoryUI.rightArrowIndicator.SetActive(false);
+                                }
                             }
                             // -----------------------------
 
@@ -342,6 +396,13 @@ public class PlayerInteraction : MonoBehaviour
 
                             interactionTimer = 0f;
                             HideUI();
+                            if (inventoryUI != null)
+                            {
+                                if (inventoryUI.leftArrowIndicator != null)
+                                    inventoryUI.leftArrowIndicator.SetActive(false);
+                                if (inventoryUI.rightArrowIndicator != null)
+                                    inventoryUI.rightArrowIndicator.SetActive(false);
+                            }
                         }
                     }
                     else
@@ -397,6 +458,10 @@ public class PlayerInteraction : MonoBehaviour
             {
                 inventoryUI.HideWeaponUI();
                 inventoryUI.HideItemUI();
+                if (inventoryUI.leftArrowIndicator != null)
+                    inventoryUI.leftArrowIndicator.SetActive(false);
+                if (inventoryUI.rightArrowIndicator != null)
+                    inventoryUI.rightArrowIndicator.SetActive(false);
             }
             HideUI();
         }
@@ -461,6 +526,14 @@ public class PlayerInteraction : MonoBehaviour
             messageText.gameObject.SetActive(false);
         if (keyText != null)
             keyText.gameObject.SetActive(false);
+        // Hide arrow indicators as well
+        if (inventoryUI != null)
+        {
+            if (inventoryUI.leftArrowIndicator != null)
+                inventoryUI.leftArrowIndicator.SetActive(false);
+            if (inventoryUI.rightArrowIndicator != null)
+                inventoryUI.rightArrowIndicator.SetActive(false);
+        }
     }
 
     private void ResetInteraction()
