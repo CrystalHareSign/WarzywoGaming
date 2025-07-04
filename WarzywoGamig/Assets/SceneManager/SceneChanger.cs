@@ -23,6 +23,9 @@ public class SceneChanger : MonoBehaviour
 
     [SerializeField] private CameraToMonitor cameraToMonitor; // Referencja do CameraToMonitor
 
+    [Header("Collidery busa w trasie")]
+    [SerializeField] private List<Collider> managedColliders = new List<Collider>();
+
     private bool isSceneChanging = false;
     private AssignInteraction assignInteraction;
     private InteractableItem interactableItem;
@@ -192,9 +195,22 @@ public class SceneChanger : MonoBehaviour
         }
     }
 
+    private void UpdateCollidersForScene(string sceneName)
+    {
+        bool isMain = sceneName == "Main";
+        foreach (var col in managedColliders)
+        {
+            if (col != null)
+                col.isTrigger = !isMain;
+        }
+    }
+
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         isSceneChanging = false;
+
+        // Ustaw tryb colliderów
+        UpdateCollidersForScene(scene.name);
 
         if (bus != null)
         {
