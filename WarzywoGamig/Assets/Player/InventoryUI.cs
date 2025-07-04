@@ -294,6 +294,7 @@ public class InventoryUI : MonoBehaviour
 
     private void UpdateItemUI(List<GameObject> items, int windowStart, int slotCursor)
     {
+
         int itemCount = items != null ? items.Count : 0;
         int maxSlots = itemImages.Length;
 
@@ -311,12 +312,18 @@ public class InventoryUI : MonoBehaviour
 
             // OBRAZEK slotu zawsze aktywny
             if (itemImages[i] != null)
-            {
                 itemImages[i].enabled = true;
-                if (hasItem)
+
+            // Sprawdzenie czy item istnieje i nie został zniszczony
+            GameObject itemObj = (hasItem && items != null) ? items[itemIdx] : null;
+            bool validItem = hasItem && itemObj != null;
+
+            // OBRAZEK slotu
+            if (itemImages[i] != null)
+            {
+                if (validItem)
                 {
-                    GameObject itemObj = items[itemIdx];
-                    var item = itemObj?.GetComponent<InteractableItem>();
+                    var item = itemObj.GetComponent<InteractableItem>();
                     if (item != null && itemIcons.ContainsKey(item.itemName))
                         itemImages[i].sprite = itemIcons[item.itemName];
                     else if (item != null)
@@ -333,13 +340,12 @@ public class InventoryUI : MonoBehaviour
                 }
             }
 
-            // TEKSTY: tylko jeśli slot ma item
+            // TEKSTY: tylko jeśli slot ma poprawny item
             if (itemTexts[i] != null)
             {
-                if (hasItem)
+                if (validItem)
                 {
-                    GameObject itemObj = items[itemIdx];
-                    var treasureResources = itemObj?.GetComponent<TreasureResources>();
+                    var treasureResources = itemObj.GetComponent<TreasureResources>();
                     if (treasureResources != null && treasureResources.resourceCategories != null && treasureResources.resourceCategories.Count > 0)
                     {
                         int count = treasureResources.resourceCategories[0].resourceCount;
@@ -369,10 +375,9 @@ public class InventoryUI : MonoBehaviour
 
             if (itemCategoryTexts[i] != null)
             {
-                if (hasItem)
+                if (validItem)
                 {
-                    GameObject itemObj = items[itemIdx];
-                    var treasureResources = itemObj?.GetComponent<TreasureResources>();
+                    var treasureResources = itemObj.GetComponent<TreasureResources>();
                     if (treasureResources != null && treasureResources.resourceCategories != null && treasureResources.resourceCategories.Count > 0)
                     {
                         itemCategoryTexts[i].text = treasureResources.resourceCategories[0].name;

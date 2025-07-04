@@ -185,6 +185,7 @@ public class DriverSeatInteraction : MonoBehaviour
             {
                 player.inventoryUI.HideWeaponUI();
                 player.inventoryUI.HideItemUI();
+                player.inventoryUI.isInputBlocked = true;
             }
         }
 
@@ -259,6 +260,10 @@ public class DriverSeatInteraction : MonoBehaviour
         var player = FindFirstObjectByType<PlayerInteraction>();
         if (player != null && player.crosshair != null)
             player.crosshair.SetActive(true);
+
+        // ODBLOKUJ INPUT INVENTORY UI
+        if (InventoryUI.Instance != null)
+            InventoryUI.Instance.isInputBlocked = false;
 
         // Flaga IsAnyDriverSeatActive odblokowywana w DelayedExitLogicAfterSceneLoad
     }

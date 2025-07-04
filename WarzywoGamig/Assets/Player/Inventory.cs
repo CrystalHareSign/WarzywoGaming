@@ -186,6 +186,10 @@ public class Inventory : MonoBehaviour
                     {
                         Vector3 previousPosition = hit.collider.gameObject.transform.position;
                         loot.Add(hit.collider.gameObject);
+
+                        // ZABEZPIECZENIE: nie usuwaj po zmianie sceny!
+                        DontDestroyOnLoad(hit.collider.gameObject);
+
                         EquipLoot(hit.collider.gameObject);
 
                         if (currentWeaponPrefab != null)
@@ -213,6 +217,10 @@ public class Inventory : MonoBehaviour
                     if (usableItems.Count < maxUsableItems)
                     {
                         usableItems.Add(hit.collider.gameObject);
+
+                        // ZABEZPIECZENIE: nie usuwaj po zmianie sceny!
+                        DontDestroyOnLoad(hit.collider.gameObject);
+
                         hit.collider.gameObject.SetActive(false);
                         TurretCollector turretCollector = Object.FindFirstObjectByType<TurretCollector>();
                         if (turretCollector != null)
@@ -235,6 +243,10 @@ public class Inventory : MonoBehaviour
                     if (items.Count < maxItems)
                     {
                         items.Add(hit.collider.gameObject);
+
+                        // ZABEZPIECZENIE: nie usuwaj po zmianie sceny!
+                        DontDestroyOnLoad(hit.collider.gameObject);
+
                         hit.collider.gameObject.SetActive(false);
                         TurretCollector turretCollector = Object.FindFirstObjectByType<TurretCollector>();
                         if (turretCollector != null)
