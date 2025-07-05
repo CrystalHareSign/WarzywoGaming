@@ -128,10 +128,11 @@ public class PlayerMovement : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
 
-        // Odblokuj sprint po puszczeniu sprintKey, jeśli stamina się zregenerowała
+        // Odblokowanie sprintu po zregenerowaniu staminy:
         if (playerStats != null && playerStats.staminaExhausted)
         {
-            if (!isSprintKeyPressed && shiftHeldLastFrame && playerStats.currentStamina > 0.1f)
+            // Po prostu: stamina się odnowiła i shift NIE jest wciśnięty
+            if (!isSprintKeyPressed && playerStats.currentStamina > 0.1f)
             {
                 playerStats.staminaExhausted = false;
             }
