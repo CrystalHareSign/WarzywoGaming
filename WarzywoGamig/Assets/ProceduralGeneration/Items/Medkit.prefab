@@ -151,6 +151,7 @@ MonoBehaviour:
   isWeapon: 0
   isLoot: 0
   isUsableItem: 1
+  usableType: 0
   isNPC: 0
   npcDialogues: []
   currentDialogueIndex: 0

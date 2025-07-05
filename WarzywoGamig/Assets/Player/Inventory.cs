@@ -20,6 +20,8 @@ public class Inventory : MonoBehaviour
     public Transform weaponParent; // Transform, do którego będą przypisywane bronie jako dzieci
     public Transform lootParent; // Transform, do którego będą przypisane lootowe przedmioty
     public bool isLootBeingDropped = false; // Flaga kontrolująca proces upuszczania lootu
+    [Header("Sterowanie")]
+    public KeyCode flashlightKey = KeyCode.T;
     public Light flashlight; // Przeciągnij latarkę z Hierarchii do tego pola w Inspectorze
     public Dictionary<string, AmmoState> weaponAmmoStates = new Dictionary<string, AmmoState>();
 
@@ -100,7 +102,7 @@ public class Inventory : MonoBehaviour
             if (isLootBeingDropped) return;
             DropItemFromInventory();
         }
-        if (Input.GetKeyDown(KeyCode.F))
+        if (Input.GetKeyDown(flashlightKey))
         {
             // Sprawdź WSZYSTKIE monitory
             var monitors = Object.FindObjectsByType<CameraToMonitor>(FindObjectsSortMode.None);

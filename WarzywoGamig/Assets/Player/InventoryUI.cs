@@ -183,12 +183,51 @@ public class InventoryUI : MonoBehaviour
         // Ustal okno i slot kursora dla tej kategorii
         CalculateCarousel(itemCount, ref itemWindowStartIndex, ref selectedSlotIndex, ref selectedItemIndex);
 
+        if (activeCategory == ItemCategory.Usable && Input.GetKeyDown(KeyCode.F))
+        {
+            TryUseSelectedUsableItem();
+        }
+
         UpdateInventoryUI(inventory.weapons, inventory.items, inventory.usableItems, inventory.currentWeaponName);
     }
 
-    /// <summary>
-    /// Karuzela dla danej kategorii (okno, slot kursora)
-    /// </summary>
+    public void TryUseSelectedUsableItem()
+    {
+        if (activeCategory != ItemCategory.Usable)
+            return;
+
+        if (Inventory.Instance == null) return;
+        int idx = selectedItemIndex_Usable;
+        if (idx < 0 || idx >= Inventory.Instance.usableItems.Count) return;
+
+        GameObject itemObj = Inventory.Instance.usableItems[idx];
+        if (itemObj == null) return;
+
+        var interactable = itemObj.GetComponent<InteractableItem>();
+        if (interactable != null && interactable.isUsableItem && interactable.usableType == UsableType.Quick)
+        {
+            // Nowość: wywołanie przez managera efektów
+            if (interactable.data != null)
+            {
+                ItemEffectManager.Instance.UseItem(interactable.data, itemObj);
+            }
+            else if (interactable.onInteract != null)
+            {
+                interactable.onInteract.Invoke();
+            }
+
+            Inventory.Instance.usableItems.RemoveAt(idx);
+            Destroy(itemObj);
+
+            UpdateInventoryUI(
+                Inventory.Instance.weapons,
+                Inventory.Instance.items,
+                Inventory.Instance.usableItems,
+                Inventory.Instance.currentWeaponName
+            );
+        }
+    }
+
     private void CalculateCarousel(int itemCount, ref int itemWindowStartIndex, ref int selectedSlotIndex, ref int selectedItemIndex)
     {
         if (itemCount <= 0)

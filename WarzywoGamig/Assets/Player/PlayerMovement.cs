@@ -5,16 +5,16 @@ public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float sprintSpeed = 8f; // Nowa zmienna - sprint
+    [SerializeField] private float sprintSpeed = 8f;
     [SerializeField] private float gravity = -9.81f;
     [SerializeField] private float jumpHeight = 1.5f;
-    [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift; // Klawisz sprintu
+    [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
 
     [Header("Sound Settings")]
     [SerializeField] private string[] indoorWalkingSounds;
     [SerializeField] private string[] outdoorWalkingSounds;
     [SerializeField] private float walkSoundDelay = 0.5f;
-    [SerializeField] private float sprintSoundDelay = 0.3f; // Dźwięki sprintu
+    [SerializeField] private float sprintSoundDelay = 0.3f;
 
     private CharacterController controller;
     private Vector3 velocity;
@@ -28,12 +28,17 @@ public class PlayerMovement : MonoBehaviour
     private float lastSoundTime = 0f;
 
     private AudioChanger audioChanger;
+    private PlayerStats playerStats;
+
+    // Nowe pola do obsługi staminaExhausted
+    private bool shiftHeldLastFrame = false;
 
     private void Start()
     {
         controller = GetComponent<CharacterController>();
         playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
         audioChanger = Object.FindAnyObjectByType<AudioChanger>();
+        playerStats = PlayerStats.Instance;
     }
 
     private void Update()
@@ -65,7 +70,7 @@ public class PlayerMovement : MonoBehaviour
         {
             velocity.y = -2f;
             isJumping = false;
-            sprintingWhileAirborne = false; // Zresetuj po lądowaniu
+            sprintingWhileAirborne = false;
         }
 
         float moveX = Input.GetAxis("Horizontal");
@@ -74,20 +79,36 @@ public class PlayerMovement : MonoBehaviour
         if (move.magnitude > 1f)
             move = move.normalized;
 
-        // Ustal, czy sprint został aktywowany
         bool isSprintKeyPressed = Input.GetKey(sprintKey);
         bool isTryingToMove = move.magnitude > 0.1f;
 
+        // Obsługa staminaExhausted: sprint dostępny tylko, gdy stamina nie jest wyczerpana
+        bool canSprint = playerStats != null && playerStats.currentStamina > 0f && !playerStats.staminaExhausted;
+
         if (isGrounded)
         {
-            sprintingWhileAirborne = isSprintKeyPressed && isTryingToMove;
+            sprintingWhileAirborne = isSprintKeyPressed && isTryingToMove && canSprint;
         }
 
-        bool isSprinting = (isGrounded && isSprintKeyPressed && isTryingToMove) ||
-                           (!isGrounded && sprintingWhileAirborne);
+        bool isSprinting = ((isGrounded && isSprintKeyPressed && isTryingToMove && canSprint) ||
+                            (!isGrounded && sprintingWhileAirborne && canSprint));
 
         float currentSpeed = isSprinting ? sprintSpeed : moveSpeed;
         float currentSoundDelay = isSprinting ? sprintSoundDelay : walkSoundDelay;
+
+        if (isSprinting)
+        {
+            playerStats.UseStamina(playerStats.staminaUsage * Time.deltaTime);
+        }
+
+        // Jeśli stamina się skończyła, ustaw staminaExhausted
+        if (playerStats != null && playerStats.currentStamina <= 0f)
+        {
+            playerStats.staminaExhausted = true;
+            isSprinting = false;
+            currentSpeed = moveSpeed;
+            currentSoundDelay = walkSoundDelay;
+        }
 
         controller.Move(move * currentSpeed * Time.deltaTime);
 
@@ -106,8 +127,18 @@ public class PlayerMovement : MonoBehaviour
 
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
-    }
 
+        // Odblokuj sprint po puszczeniu sprintKey, jeśli stamina się zregenerowała
+        if (playerStats != null && playerStats.staminaExhausted)
+        {
+            if (!isSprintKeyPressed && shiftHeldLastFrame && playerStats.currentStamina > 0.1f)
+            {
+                playerStats.staminaExhausted = false;
+            }
+        }
+
+        shiftHeldLastFrame = isSprintKeyPressed;
+    }
 
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
@@ -132,12 +163,10 @@ public class PlayerMovement : MonoBehaviour
         {
             if (audioChanger.isPlayerInside)
             {
-                //Debug.Log("Gracz jest wewnątrz, odtwarzanie dźwięków wewnętrznych.");
                 PlayRandomSounds(indoorWalkingSounds);
             }
             else
             {
-                //Debug.Log("Gracz jest na zewnątrz, odtwarzanie dźwięków zewnętrznych.");
                 PlayRandomSounds(outdoorWalkingSounds);
             }
         }
@@ -149,12 +178,10 @@ public class PlayerMovement : MonoBehaviour
 
         int randomIndex = Random.Range(0, sounds.Length);
         string randomSound = sounds[randomIndex];
-        //Debug.Log("Odtwarzanie dźwięku: " + randomSound);
 
         foreach (var playSoundOnObject in playSoundObjects)
         {
             if (playSoundOnObject == null) continue;
-
             playSoundOnObject.PlaySound(randomSound, 0.5f, false);
         }
     }

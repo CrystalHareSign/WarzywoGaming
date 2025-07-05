@@ -2,6 +2,13 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
+using System.Security.Cryptography.X509Certificates;
+
+public enum UsableType
+{
+    Quick,
+    Context
+}
 
 public class InteractableItem : MonoBehaviour, IInteractable
 {
@@ -28,11 +35,16 @@ public class InteractableItem : MonoBehaviour, IInteractable
 
     [Header("usable item")]
     public bool isUsableItem = false;
+    public UsableType usableType = UsableType.Context;
+
+    // --- NOWOŒÆ: referencja do ScriptableObject z baz¹ danych efektów ---
+    [Header("Baza danych przedmiotu (ScriptableObject)")]
+    public ItemPrefabData data;
 
     [Header("NPC Dialogue")]
-    public bool isNPC = false; // Zaznacz w Inspectorze dla NPC
-    public List<DialogueData> npcDialogues; // LISTA dialogów dla NPC
-    public int currentDialogueIndex = 0;    // AKTUALNY dialog z listy
+    public bool isNPC = false;
+    public List<DialogueData> npcDialogues;
+    public int currentDialogueIndex = 0;
 
     [Header("Turret")]
     public bool isTurret = false;
@@ -48,7 +60,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
     public bool isDriverSeat = false;
 
     [Header("Mission Definer")]
-    public bool isMissionDefiner = false; // NOWE POLE
+    public bool isMissionDefiner = false;
 
     [Header("System kierowczy")]
     public bool alwaysInteractive = false;
@@ -79,6 +91,12 @@ public class InteractableItem : MonoBehaviour, IInteractable
         hoverMessage = GetComponent<HoverMessage>();
         wheelHealthUI = Object.FindFirstObjectByType<WheelHealthUI>();
         dialogueManager = Object.FindFirstObjectByType<DialogueManager>();
+
+        // --- Automatyczne podpinanie metody do onInteract na podstawie bazy danych ---
+        if (isUsableItem && usableType == UsableType.Quick && data != null)
+        {
+            onInteract += UseDatabaseEffect;
+        }
 
         if (dialogueManager == null)
         {
@@ -125,6 +143,60 @@ public class InteractableItem : MonoBehaviour, IInteractable
         }
     }
 
+    // --- Nowa metoda: efekt na podstawie bazy danych ScriptableObject ---
+    public void UseDatabaseEffect()
+    {
+        if (data == null) return;
+
+        switch (data.effectType)
+        {
+            case ItemEffectType.Heal:
+                Debug.Log($"Leczenie gracza o {data.effectValue} HP przez item: {itemName}");
+                // PlayerStats.Instance.Heal(data.effectValue); // Odkomentuj jeœli masz PlayerStats
+                break;
+            case ItemEffectType.Boost:
+                Debug.Log($"Dodano boost o wartoœci {data.effectValue} przez item: {itemName}");
+                // PlayerStats.Instance.AddBuff("speed", data.effectValue);
+                break;
+            case ItemEffectType.Key:
+                Debug.Log($"U¿yto klucza: {itemName}");
+                // Obs³u¿ klucz w innym miejscu jeœli potrzeba
+                break;
+            case ItemEffectType.Custom:
+                UseCustomEffect(data.customEffectID);
+                break;
+            case ItemEffectType.None:
+            default:
+                Debug.Log($"Przedmiot {itemName} nie ma przypisanego efektu.");
+                break;
+        }
+    }
+
+    // --- Customowe efekty obs³uguj tu ---
+    public virtual void UseCustomEffect(string effectID)
+    {
+        switch (effectID)
+        {
+            case "Teleport":
+                // np. Teleportuj gracza
+                // PlayerController.Instance.TeleportTo(someLocation);
+                Debug.Log("Teleportacja gracza!");
+                break;
+            case "SummonBoss":
+                // np. Przywo³aj bossa
+                // BossSpawner.Instance.SpawnBoss();
+                Debug.Log("Przywo³ano bossa!");
+                break;
+            case "MySpecialEffect":
+                // w³asna akcja
+                Debug.Log("W³asny efekt specjalny!");
+                break;
+            default:
+                Debug.LogWarning($"Nieznany custom effect: {effectID}");
+                break;
+        }
+    }
+
     public void Interact()
     {
         if (hasCooldown && isCooldownActive)
@@ -159,7 +231,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
 
                 if (hasCooldown)
                 {
-                    SetAllInteractablesInteracted(true); // Wy³¹cz wszystkie interakcje na czas cooldownu
+                    SetAllInteractablesInteracted(true);
                     StartCoroutine(CooldownCoroutine());
                 }
             }
@@ -172,21 +244,9 @@ public class InteractableItem : MonoBehaviour, IInteractable
 
     private bool IsSceneActive()
     {
-        if (!UsingSceneSystem)
-        {
-            return true;
-        }
-
-        if (SceneMain && SceneManager.GetActiveScene().name == "Main")
-        {
-            return true;
-        }
-
-        if (SceneHome && SceneManager.GetActiveScene().name == "Home")
-        {
-            return true;
-        }
-
+        if (!UsingSceneSystem) return true;
+        if (SceneMain && SceneManager.GetActiveScene().name == "Main") return true;
+        if (SceneHome && SceneManager.GetActiveScene().name == "Home") return true;
         return false;
     }
 
@@ -253,7 +313,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
         isCooldownActive = true;
         yield return new WaitForSeconds(cooldownTime);
         isCooldownActive = false;
-        SetAllInteractablesInteracted(false); // Odblokuj wszystkie interakcje po cooldownie
+        SetAllInteractablesInteracted(false);
     }
 
     private void SetAllInteractablesInteracted(bool state)
