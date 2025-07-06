@@ -59,6 +59,16 @@ public class InventoryUI : MonoBehaviour
     public GameObject leftArrowIndicator;
     public GameObject rightArrowIndicator;
 
+    // --- BOOST TIMER UI ---
+    [Header("Boost Timer UI")]
+    public GameObject boostTimerPanel;        // Panel (całość, do ukrywania)
+    public Image boostTimerFillImage;         // Koło z FillMethod=Radial360
+    public TextMeshProUGUI boostValueText;    // Na środku, wartości I/II/III/IV
+
+    private float boostTimerDuration;
+    private float boostTimerElapsed;
+    private bool boostTimerActive;
+
     private void Awake()
     {
         if (Instance == null)
@@ -89,6 +99,11 @@ public class InventoryUI : MonoBehaviour
         weaponBackgroundImage.gameObject.SetActive(false);
 
         UpdateCategoryIndicatorSprite();
+
+        // BOOST TIMER UI
+        if (boostTimerPanel != null) boostTimerPanel.SetActive(false);
+        if (boostTimerFillImage != null) boostTimerFillImage.fillAmount = 0f;
+        if (boostValueText != null) boostValueText.text = "";
     }
 
     public void Update()
@@ -189,6 +204,9 @@ public class InventoryUI : MonoBehaviour
         }
 
         UpdateInventoryUI(inventory.weapons, inventory.items, inventory.usableItems, inventory.currentWeaponName);
+
+        // BOOST TIMER UI update
+        UpdateBoostTimerUI();
     }
 
     public void TryUseSelectedUsableItem()
@@ -240,6 +258,12 @@ public class InventoryUI : MonoBehaviour
                 Debug.LogWarning("ItemEffectManager.Instance is null!");
                 return;
             }
+            // BOOST TIMER UI --- wyświetl jeśli to boost
+            if (interactable.data.effectType == ItemEffectType.Boost)
+            {
+                ShowBoostTimerUI(interactable.data.effectValue, interactable.data.effectDuration);
+            }
+
             ItemEffectManager.Instance.UseItem(interactable.data, itemObj);
         }
         else if (interactable.onInteract != null)
@@ -481,9 +505,6 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Pokazuje/ukrywa wskaźniki strzałek UI, gdy poza slotami są jeszcze itemy.
-    /// </summary>
     private void UpdateArrowIndicators(int itemCount, int windowStart)
     {
         if (leftArrowIndicator != null)
@@ -595,6 +616,10 @@ public class InventoryUI : MonoBehaviour
         // SCHOWAJ wskaźnik kategorii
         if (categoryIndicatorImage != null)
             categoryIndicatorImage.gameObject.SetActive(false);
+
+        // BOOST TIMER UI
+        if (boostTimerPanel != null)
+            boostTimerPanel.SetActive(false);
     }
 
     public void ShowItemUI(List<GameObject> items)
@@ -684,5 +709,45 @@ public class InventoryUI : MonoBehaviour
     public void SetSelectedItemIndex_Normal(int value)
     {
         selectedItemIndex_Normal = Mathf.Clamp(value, 0, Mathf.Max(0, Inventory.Instance.items.Count - 1));
+    }
+
+    public void ShowBoostTimerUI(float boostValue, float duration)
+    {
+        boostTimerDuration = duration;
+        boostTimerElapsed = 0f;
+        boostTimerActive = true;
+        if (boostTimerFillImage != null)
+            boostTimerFillImage.fillAmount = 1f;
+        if (boostValueText != null)
+            boostValueText.text = BoostValueToRoman(boostValue);
+        if (boostTimerPanel != null)
+            boostTimerPanel.SetActive(true);
+    }
+
+    private void UpdateBoostTimerUI()
+    {
+        if (!boostTimerActive || boostTimerPanel == null || boostTimerFillImage == null)
+            return;
+
+        boostTimerElapsed += Time.deltaTime;
+        float left = Mathf.Clamp01(1f - (boostTimerElapsed / boostTimerDuration));
+        boostTimerFillImage.fillAmount = left;
+
+        if (left <= 0f)
+        {
+            boostTimerActive = false;
+            boostTimerPanel.SetActive(false);
+            if (boostValueText != null)
+                boostValueText.text = "";
+        }
+    }
+
+    private string BoostValueToRoman(float value)
+    {
+        if (value >= 100) return "IV";
+        if (value >= 75) return "III";
+        if (value >= 50) return "II";
+        if (value >= 25) return "I";
+        return value.ToString("0");
     }
 }

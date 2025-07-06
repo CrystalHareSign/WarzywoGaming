@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9633f0deceb89574184e605a4ba6dbba, type: 3}
+  m_Name: EnergyDrink75
+  m_EditorClassIdentifier: 
+  prefab: {fileID: 7235949906439536277, guid: c1fdb5653fcedc040beab0c5babe28c2, type: 3}
+  itemName: EnergyDrink75
+  effectType: 2
+  effectValue: 75
+  effectDuration: 10
+  customEffectID: 

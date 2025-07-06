@@ -7,7 +7,7 @@ public class PlayerStats : MonoBehaviour
 
     [Header("Health")]
     public float maxHealth = 100f;
-    public float currentHealth =100f;
+    public float currentHealth = 100f;
 
     [Header("Stamina")]
     public float maxStamina = 100f;
@@ -25,9 +25,6 @@ public class PlayerStats : MonoBehaviour
 
     private Coroutine staminaBonusCoroutine;
 
-    /// <summary>
-    /// Maksymalna stamina, uwzglêdniaj¹c bonus.
-    /// </summary>
     public float TotalMaxStamina => maxStamina + staminaBonus;
 
     void Awake()
@@ -68,9 +65,6 @@ public class PlayerStats : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// U¿yj staminy (np. podczas sprintu). Zwraca true, jeœli stamina zosta³a u¿yta, false jeœli stamina wyczerpana.
-    /// </summary>
     public bool UseStamina(float amount)
     {
         if (amount <= 0f || staminaExhausted) return false;
@@ -102,9 +96,6 @@ public class PlayerStats : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// U¿yj Energy Drink: daje bonus do max staminy na czas trwania efektu.
-    /// </summary>
     public void UseEnergyDrink(float bonusAmount, float duration)
     {
         if (staminaBonusCoroutine != null)
@@ -132,5 +123,12 @@ public class PlayerStats : MonoBehaviour
     private void Die()
     {
         Debug.Log("Gracz zgin¹³!");
+        // Mo¿esz tu dodaæ dodatkow¹ logikê œmierci gracza, np. animacje, UI itp.
+    }
+
+    public void ResetStaminaExhaustion()
+    {
+        if (currentStamina > 0f)
+            staminaExhausted = false;
     }
 }
