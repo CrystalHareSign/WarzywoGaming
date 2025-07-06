@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &2978588738764525441
+--- !u!1 &4409697090503272974
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,50 +8,50 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 285695525161724386}
-  - component: {fileID: 1942265645692739912}
-  - component: {fileID: 6540238695756598066}
-  - component: {fileID: 1592207634367702082}
-  - component: {fileID: -7529488833718952589}
-  - component: {fileID: -4749726544465919495}
-  - component: {fileID: 4265895888411768413}
+  - component: {fileID: 2633003202325281027}
+  - component: {fileID: 8767695652813917343}
+  - component: {fileID: 4808381506486955188}
+  - component: {fileID: 535869188676534134}
+  - component: {fileID: 713309915171533266}
+  - component: {fileID: 6149472028009433705}
+  - component: {fileID: 5842860137033086727}
   m_Layer: 7
-  m_Name: Medkit
+  m_Name: MedKit400
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &285695525161724386
+--- !u!4 &2633003202325281027
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2978588738764525441}
+  m_GameObject: {fileID: 4409697090503272974}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.806798, y: 1.64, z: -21.9}
+  m_LocalPosition: {x: -31.568619, y: 4.94, z: 4.11}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &1942265645692739912
+--- !u!33 &8767695652813917343
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2978588738764525441}
+  m_GameObject: {fileID: 4409697090503272974}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &6540238695756598066
+--- !u!23 &4808381506486955188
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2978588738764525441}
+  m_GameObject: {fileID: 4409697090503272974}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -90,13 +90,13 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &1592207634367702082
+--- !u!65 &535869188676534134
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2978588738764525441}
+  m_GameObject: {fileID: 4409697090503272974}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -111,38 +111,38 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &-7529488833718952589
+--- !u!114 &713309915171533266
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2978588738764525441}
+  m_GameObject: {fileID: 4409697090503272974}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c67910c76a1db1d4eb32d13ba078b292, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   resourceCategories:
-  - name: MedKit
+  - name: MedKit400
     isActive: 1
     resourceCount: 1
     minResourceCount: 1
     maxResourceCount: 1
---- !u!114 &-4749726544465919495
+--- !u!114 &6149472028009433705
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2978588738764525441}
+  m_GameObject: {fileID: 4409697090503272974}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4a232f88565b95744a8035c4ec583243, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   hoverMessage: {fileID: 0}
-  itemName: MedKit
+  itemName: MedKit400
   category: 
   quantity: 0
   startAsNonInteractive: 0
@@ -152,6 +152,7 @@ MonoBehaviour:
   isLoot: 0
   isUsableItem: 1
   usableType: 0
+  data: {fileID: 11400000, guid: d1308fead2676fc48964ea668e9e8967, type: 2}
   isNPC: 0
   npcDialogues: []
   currentDialogueIndex: 0
@@ -174,13 +175,13 @@ MonoBehaviour:
   wheelHealthUI: {fileID: 0}
   wheelManager: {fileID: 0}
   dialogueManager: {fileID: 0}
---- !u!114 &4265895888411768413
+--- !u!114 &5842860137033086727
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2978588738764525441}
+  m_GameObject: {fileID: 4409697090503272974}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b9c10a544bb40ac40ba2b7fe60df5b57, type: 3}

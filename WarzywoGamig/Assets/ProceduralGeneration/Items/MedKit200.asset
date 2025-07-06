@@ -10,10 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9633f0deceb89574184e605a4ba6dbba, type: 3}
-  m_Name: Medkits
+  m_Name: MedKit200
   m_EditorClassIdentifier: 
-  prefab: {fileID: 2978588738764525441, guid: 51945fce4a1b5f644bed26f922163096, type: 3}
-  itemName: Medkit
+  prefab: {fileID: 7208079598093670341, guid: 5d29cac90f08f904abee788a001b86a8, type: 3}
+  itemName: Medkit200
   effectType: 1
   effectValue: 200
+  effectDuration: 0
   customEffectID: 

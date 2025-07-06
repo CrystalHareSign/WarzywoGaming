@@ -19,6 +19,8 @@ public class PlayerStats : MonoBehaviour
 
     [Header("Bonus Stamina")]
     public float staminaBonus = 0f; // aktywny bonus (np. +50)
+    [Header("Bonus Stamina Regen")]
+    public float staminaRegenBonus = 0f; // tymczasowy bonus do regen (np. +5)
 
     [Header("Stamina Usage")]
     public float staminaUsage; // Mo¿esz ustawiæ w Inspectorze, np. 10f
@@ -90,12 +92,17 @@ public class PlayerStats : MonoBehaviour
             }
             else
             {
-                currentStamina = Mathf.Clamp(currentStamina + staminaRegenPerSecond * Time.deltaTime, 0f, TotalMaxStamina);
+                float regen = staminaRegenPerSecond + staminaRegenBonus;
+                currentStamina = Mathf.Clamp(currentStamina + regen * Time.deltaTime, 0f, TotalMaxStamina);
                 // staminaExhausted resetowane w PlayerMovement po puszczeniu sprintu
             }
         }
     }
 
+    /// <summary>
+    /// Dodaje bonus do max staminy ORAZ taki sam procentowy bonus do regen staminy na czas trwania boosta.
+    /// Np. +25% max stamina => +25% regen (bazuj¹c na staminaRegenPerSecond)
+    /// </summary>
     public void UseEnergyDrink(float bonusAmount, float duration)
     {
         if (staminaBonusCoroutine != null)
@@ -106,15 +113,20 @@ public class PlayerStats : MonoBehaviour
     private IEnumerator StaminaBonusRoutine(float bonus, float duration)
     {
         staminaBonus = bonus;
+
+        // Wylicz procent bonusu wzglêdem bazowej staminy
+        float percent = (maxStamina > 0f) ? (bonus / maxStamina) : 0f;
+        staminaRegenBonus = staminaRegenPerSecond * percent;
+
         // Jeœli stamina jest poni¿ej nowego limitu, nie zmieniamy jej;
         // Jeœli jest równa maxStamina, podbijamy do maxStamina+bonus
         if (currentStamina < maxStamina)
             currentStamina = Mathf.Min(currentStamina + bonus, TotalMaxStamina);
-        // W przeciwnym razie staminaBaseBar i staminaBonusBar poka¿¹ odpowiednie wartoœci
 
         yield return new WaitForSeconds(duration);
 
         staminaBonus = 0f;
+        staminaRegenBonus = 0f;
         // Przytnij currentStamina do maxStamina, jeœli trzeba
         currentStamina = Mathf.Min(currentStamina, maxStamina);
         staminaBonusCoroutine = null;

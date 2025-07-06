@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9633f0deceb89574184e605a4ba6dbba, type: 3}
-  m_Name: EnergyDrink25
+  m_Name: MedKit400
   m_EditorClassIdentifier: 
-  prefab: {fileID: 6041756049560652714, guid: e324d8f47d1570749857c6ebb544b207, type: 3}
-  itemName: EnergyDrink25
-  effectType: 2
-  effectValue: 25
-  effectDuration: 20
+  prefab: {fileID: 4409697090503272974, guid: 82c71d6c23d5af84ba3d420ec906dd38, type: 3}
+  itemName: MedKit400
+  effectType: 1
+  effectValue: 400
+  effectDuration: 0
   customEffectID: 

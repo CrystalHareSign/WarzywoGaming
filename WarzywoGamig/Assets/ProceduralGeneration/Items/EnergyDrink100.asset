@@ -16,5 +16,5 @@ MonoBehaviour:
   itemName: EnergyDrink100
   effectType: 2
   effectValue: 100
-  effectDuration: 10
+  effectDuration: 20
   customEffectID: 
