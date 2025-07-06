@@ -196,36 +196,80 @@ public class InventoryUI : MonoBehaviour
         if (activeCategory != ItemCategory.Usable)
             return;
 
-        if (Inventory.Instance == null) return;
+        if (Inventory.Instance == null)
+        {
+            Debug.LogWarning("Inventory.Instance is null!");
+            return;
+        }
         int idx = selectedItemIndex_Usable;
-        if (idx < 0 || idx >= Inventory.Instance.usableItems.Count) return;
+        if (Inventory.Instance.usableItems == null)
+        {
+            Debug.LogWarning("usableItems is null!");
+            return;
+        }
+        if (idx < 0 || idx >= Inventory.Instance.usableItems.Count)
+        {
+            Debug.LogWarning($"idx out of range: {idx}");
+            return;
+        }
 
         GameObject itemObj = Inventory.Instance.usableItems[idx];
-        if (itemObj == null) return;
+        if (itemObj == null)
+        {
+            Debug.LogWarning($"itemObj at idx {idx} is null!");
+            return;
+        }
 
         var interactable = itemObj.GetComponent<InteractableItem>();
-        if (interactable != null && interactable.isUsableItem && interactable.usableType == UsableType.Quick)
+        if (interactable == null)
         {
-            // Nowość: wywołanie przez managera efektów
-            if (interactable.data != null)
-            {
-                ItemEffectManager.Instance.UseItem(interactable.data, itemObj);
-            }
-            else if (interactable.onInteract != null)
-            {
-                interactable.onInteract.Invoke();
-            }
-
-            Inventory.Instance.usableItems.RemoveAt(idx);
-            Destroy(itemObj);
-
-            UpdateInventoryUI(
-                Inventory.Instance.weapons,
-                Inventory.Instance.items,
-                Inventory.Instance.usableItems,
-                Inventory.Instance.currentWeaponName
-            );
+            Debug.LogWarning("InteractableItem component missing!");
+            return;
         }
+        if (!interactable.isUsableItem || interactable.usableType != UsableType.Quick)
+        {
+            Debug.LogWarning("Item is not usable or not quick usable!");
+            return;
+        }
+
+        // Nowość: wywołanie przez managera efektów
+        if (interactable.data != null)
+        {
+            if (ItemEffectManager.Instance == null)
+            {
+                Debug.LogWarning("ItemEffectManager.Instance is null!");
+                return;
+            }
+            ItemEffectManager.Instance.UseItem(interactable.data, itemObj);
+        }
+        else if (interactable.onInteract != null)
+        {
+            interactable.onInteract.Invoke();
+        }
+        else
+        {
+            Debug.LogWarning("No data or onInteract found!");
+        }
+
+        // Po usunięciu itema
+        Inventory.Instance.usableItems.RemoveAt(idx);
+        Destroy(itemObj);
+
+        // Cofnij kursor jeśli był poza końcem listy
+        if (selectedItemIndex_Usable >= Inventory.Instance.usableItems.Count)
+        {
+            if (Inventory.Instance.usableItems.Count > 0)
+                selectedItemIndex_Usable = Inventory.Instance.usableItems.Count - 1;
+            else
+                selectedItemIndex_Usable = 0;
+        }
+
+        UpdateInventoryUI(
+            Inventory.Instance.weapons,
+            Inventory.Instance.items,
+            Inventory.Instance.usableItems,
+            Inventory.Instance.currentWeaponName
+        );
     }
 
     private void CalculateCarousel(int itemCount, ref int itemWindowStartIndex, ref int selectedSlotIndex, ref int selectedItemIndex)

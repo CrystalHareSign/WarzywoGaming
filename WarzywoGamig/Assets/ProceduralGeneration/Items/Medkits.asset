@@ -14,3 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prefab: {fileID: 2978588738764525441, guid: 51945fce4a1b5f644bed26f922163096, type: 3}
   itemName: Medkit
+  effectType: 1
+  effectValue: 200
+  customEffectID: 
