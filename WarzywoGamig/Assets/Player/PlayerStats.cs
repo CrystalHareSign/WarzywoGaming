@@ -27,6 +27,10 @@ public class PlayerStats : MonoBehaviour
 
     private Coroutine staminaBonusCoroutine;
 
+    // --- NEW: Boost timer for UI sync ---
+    public float staminaBonusTimeLeft { get; private set; }
+    public float staminaBonusDuration { get; private set; }
+
     public float TotalMaxStamina => maxStamina + staminaBonus;
 
     void Awake()
@@ -51,6 +55,10 @@ public class PlayerStats : MonoBehaviour
         }
 
         RegenStamina();
+
+        // --- NEW: Update boost timer if active ---
+        if (staminaBonus > 0f && staminaBonusTimeLeft > 0f)
+            staminaBonusTimeLeft = Mathf.Max(0f, staminaBonusTimeLeft - Time.unscaledDeltaTime);
     }
 
     public void Heal(float amount)
@@ -72,7 +80,6 @@ public class PlayerStats : MonoBehaviour
         if (amount <= 0f || staminaExhausted) return false;
         if (currentStamina > 0f)
         {
-            // Odejmujemy staminê wzglêdem aktualnego limitu (max + bonus jeœli aktywny)
             currentStamina = Mathf.Clamp(currentStamina - amount, 0f, TotalMaxStamina);
             staminaRegenTimer = staminaRegenDelay;
             if (currentStamina == 0f)
@@ -113,22 +120,28 @@ public class PlayerStats : MonoBehaviour
     private IEnumerator StaminaBonusRoutine(float bonus, float duration)
     {
         staminaBonus = bonus;
+        staminaBonusDuration = duration;
+        staminaBonusTimeLeft = duration;
 
-        // Wylicz procent bonusu wzglêdem bazowej staminy
         float percent = (maxStamina > 0f) ? (bonus / maxStamina) : 0f;
         staminaRegenBonus = staminaRegenPerSecond * percent;
 
-        // Jeœli stamina jest poni¿ej nowego limitu, nie zmieniamy jej;
-        // Jeœli jest równa maxStamina, podbijamy do maxStamina+bonus
-        if (currentStamina < maxStamina)
-            currentStamina = Mathf.Min(currentStamina + bonus, TotalMaxStamina);
+        // NIE zmieniaj currentStamina przy starcie bonusu!
 
-        yield return new WaitForSeconds(duration);
+        float timer = 0f;
+        while (timer < duration)
+        {
+            yield return null;
+            timer += Time.unscaledDeltaTime;
+            staminaBonusTimeLeft = Mathf.Max(0, duration - timer);
+        }
 
         staminaBonus = 0f;
         staminaRegenBonus = 0f;
-        // Przytnij currentStamina do maxStamina, jeœli trzeba
         currentStamina = Mathf.Min(currentStamina, maxStamina);
+
+        staminaBonusTimeLeft = 0f;
+        staminaBonusDuration = 0f;
         staminaBonusCoroutine = null;
     }
 

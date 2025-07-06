@@ -22,6 +22,7 @@ public class PlayerInteraction : MonoBehaviour
     private TreasureRefiner treasureRefiner;
     private CameraToMonitor cameraToMonitor;
     private AudioChanger audioChanger;
+    private PlayerStatsUI playerStatsUI;
     private bool hasRefinerBeenUsed = false;
     private bool wasHoldingLoot = false;
 
@@ -52,6 +53,10 @@ public class PlayerInteraction : MonoBehaviour
         cameraToMonitor = Object.FindFirstObjectByType<CameraToMonitor>();
         if (cameraToMonitor == null)
             Debug.LogError("Brak obiektu CameraToMonitor w scenie.");
+
+        playerStatsUI = Object.FindFirstObjectByType<PlayerStatsUI>();
+        if (playerStatsUI == null)
+            Debug.LogError("Brak obiektu playerStatsUI w scenie.");
 
         if (progressCircle != null)
         {
@@ -97,9 +102,12 @@ public class PlayerInteraction : MonoBehaviour
         bool justDroppedLoot = wasHoldingLoot && !isHoldingLoot;
         wasHoldingLoot = isHoldingLoot;
 
+        // --- Ukryj boost panel oraz wszystkie paski staminy podczas lootowania ---
         if (isHoldingLoot)
         {
             HideUI();
+            HideBoostPanel();
+            HideStaminaBars();
             if (inventoryUI != null)
             {
                 Transform loot = playerInventory.lootParent.GetChild(0);
@@ -115,7 +123,6 @@ public class PlayerInteraction : MonoBehaviour
                     inventoryUI.reloadingText.gameObject.SetActive(false);
                     inventoryUI.weaponImage.gameObject.SetActive(false);
                     inventoryUI.HideItemUI();
-                    // Hide arrow indicators
                     if (inventoryUI.leftArrowIndicator != null)
                         inventoryUI.leftArrowIndicator.SetActive(false);
                     if (inventoryUI.rightArrowIndicator != null)
@@ -148,7 +155,23 @@ public class PlayerInteraction : MonoBehaviour
                 }
             }
             inventoryUI.ShowItemUI(inventory.items);
-            // Show arrow indicators will be handled in ShowItemUI
+            ShowBoostPanelIfActive();
+            ShowStaminaBars();
+            return;
+        }
+
+        // --- Ukryj boost panel i paski staminy podczas trybu monitor/turret ---
+        if ((isAnyMonitorActive || isTurretActive) && inventoryUI != null)
+        {
+            inventoryUI.HideWeaponUI();
+            inventoryUI.HideItemUI();
+            HideUI();
+            HideBoostPanel();
+            HideStaminaBars();
+            if (inventoryUI.leftArrowIndicator != null)
+                inventoryUI.leftArrowIndicator.SetActive(false);
+            if (inventoryUI.rightArrowIndicator != null)
+                inventoryUI.rightArrowIndicator.SetActive(false);
             return;
         }
 
@@ -166,6 +189,8 @@ public class PlayerInteraction : MonoBehaviour
                 }
             }
             inventoryUI.ShowItemUI(inventory.items);
+            ShowBoostPanelIfActive();
+            ShowStaminaBars();
         }
 
         RaycastHit hit;
@@ -205,7 +230,8 @@ public class PlayerInteraction : MonoBehaviour
                                 UseDriverSeat(interactableItem);
                                 interactionTimer = 0f;
                                 HideUI();
-                                // Hide arrow indicators
+                                HideBoostPanel();
+                                HideStaminaBars();
                                 if (inventoryUI != null)
                                 {
                                     if (inventoryUI.leftArrowIndicator != null)
@@ -236,6 +262,8 @@ public class PlayerInteraction : MonoBehaviour
                 if (isWheel && audioChanger != null && audioChanger.isPlayerInside)
                 {
                     HideUI();
+                    HideBoostPanel();
+                    HideStaminaBars();
                     if (inventoryUI != null)
                     {
                         if (inventoryUI.leftArrowIndicator != null)
@@ -249,6 +277,8 @@ public class PlayerInteraction : MonoBehaviour
                 if (isBusMonitor && audioChanger != null && !audioChanger.isPlayerInside)
                 {
                     HideUI();
+                    HideBoostPanel();
+                    HideStaminaBars();
                     if (inventoryUI != null)
                     {
                         if (inventoryUI.leftArrowIndicator != null)
@@ -299,6 +329,8 @@ public class PlayerInteraction : MonoBehaviour
                                     inventoryUI.leftArrowIndicator.SetActive(false);
                                 if (inventoryUI.rightArrowIndicator != null)
                                     inventoryUI.rightArrowIndicator.SetActive(false);
+                                HideBoostPanel();
+                                HideStaminaBars();
                             }
                         }
 
@@ -330,6 +362,8 @@ public class PlayerInteraction : MonoBehaviour
                                         inventoryUI.leftArrowIndicator.SetActive(false);
                                     if (inventoryUI.rightArrowIndicator != null)
                                         inventoryUI.rightArrowIndicator.SetActive(false);
+                                    HideBoostPanel();
+                                    HideStaminaBars();
                                 }
                             }
 
@@ -354,6 +388,8 @@ public class PlayerInteraction : MonoBehaviour
                                         inventoryUI.leftArrowIndicator.SetActive(false);
                                     if (inventoryUI.rightArrowIndicator != null)
                                         inventoryUI.rightArrowIndicator.SetActive(false);
+                                    HideBoostPanel();
+                                    HideStaminaBars();
                                 }
                             }
 
@@ -379,6 +415,8 @@ public class PlayerInteraction : MonoBehaviour
                                         inventoryUI.leftArrowIndicator.SetActive(false);
                                     if (inventoryUI.rightArrowIndicator != null)
                                         inventoryUI.rightArrowIndicator.SetActive(false);
+                                    HideBoostPanel();
+                                    HideStaminaBars();
                                 }
                             }
                             // -----------------------------
@@ -396,6 +434,8 @@ public class PlayerInteraction : MonoBehaviour
 
                             interactionTimer = 0f;
                             HideUI();
+                            HideBoostPanel();
+                            HideStaminaBars();
                             if (inventoryUI != null)
                             {
                                 if (inventoryUI.leftArrowIndicator != null)
@@ -448,7 +488,6 @@ public class PlayerInteraction : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // --- DODAJ TO: wymuœ ukrycie UI i broni jeœli nadal trwa podró¿ fotelowa ---
         if (DriverSeatInteraction.IsAnyDriverSeatActive)
         {
             if (inventory != null && inventory.currentWeaponPrefab != null)
@@ -462,8 +501,11 @@ public class PlayerInteraction : MonoBehaviour
                     inventoryUI.leftArrowIndicator.SetActive(false);
                 if (inventoryUI.rightArrowIndicator != null)
                     inventoryUI.rightArrowIndicator.SetActive(false);
+                HideBoostPanel();
+                HideStaminaBars();
             }
             HideUI();
+            HideStaminaBars();
         }
     }
 
@@ -526,7 +568,6 @@ public class PlayerInteraction : MonoBehaviour
             messageText.gameObject.SetActive(false);
         if (keyText != null)
             keyText.gameObject.SetActive(false);
-        // Hide arrow indicators as well
         if (inventoryUI != null)
         {
             if (inventoryUI.leftArrowIndicator != null)
@@ -534,6 +575,31 @@ public class PlayerInteraction : MonoBehaviour
             if (inventoryUI.rightArrowIndicator != null)
                 inventoryUI.rightArrowIndicator.SetActive(false);
         }
+    }
+
+    private void HideStaminaBars()
+    {
+        if (playerStatsUI != null)
+            playerStatsUI.staminaBarsVisible = false;
+    }
+
+    private void ShowStaminaBars()
+    {
+        if (playerStatsUI != null)
+            playerStatsUI.staminaBarsVisible = true;
+    }
+
+    private void HideBoostPanel()
+    {
+        if (inventoryUI != null && inventoryUI.boostTimerPanel != null)
+            inventoryUI.boostTimerPanel.SetActive(false);
+    }
+
+    private void ShowBoostPanelIfActive()
+    {
+        if (inventoryUI != null && inventoryUI.boostTimerPanel != null &&
+            inventoryUI.boostTimerFillImage != null && inventoryUI.boostTimerFillImage.fillAmount > 0f)
+            inventoryUI.boostTimerPanel.SetActive(true);
     }
 
     private void ResetInteraction()
@@ -551,7 +617,6 @@ public class PlayerInteraction : MonoBehaviour
 
         currentInteractableItem = null;
 
-        // --- Blokada przywracania UI/broni gdy aktywny MissionDefiner lub DriverSeat ---
         if (MissionDefiner.IsAnyDefinerActive || DriverSeatInteraction.IsAnyDriverSeatActive)
             return;
 
@@ -579,6 +644,9 @@ public class PlayerInteraction : MonoBehaviour
             Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
             if (gunScript != null)
                 gunScript.EquipWeapon();
+
+            ShowBoostPanelIfActive();
+            ShowStaminaBars();
         }
     }
 
@@ -607,5 +675,7 @@ public class PlayerInteraction : MonoBehaviour
                     inventoryUI.HideWeaponUI();
             }
         }
+        ShowBoostPanelIfActive();
+        ShowStaminaBars();
     }
 }

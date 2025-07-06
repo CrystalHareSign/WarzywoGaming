@@ -23,6 +23,10 @@ public class PlayerStatsUI : MonoBehaviour
     [Tooltip("Alfa dla overlaya na ka¿dym progu, np. 0.0, 0.1, 0.2, 0.35, 0.5")]
     public float[] overlayAlphas = new float[5] { 0f, 0.1f, 0.2f, 0.35f, 0.5f };
 
+    // Flaga do globalnego ukrywania pasków staminy
+    [HideInInspector]
+    public bool staminaBarsVisible = true;
+
     // RectTransformy s¹ automatycznie pobierane!
     private RectTransform staminaBaseRectL, staminaBonusRectL, staminaBaseRectR, staminaBonusRectR;
 
@@ -43,6 +47,16 @@ public class PlayerStatsUI : MonoBehaviour
 
     private void Update()
     {
+        // --- Globalna kontrola widocznoœci pasków (zielone + ¿ó³te) ---
+        if (!staminaBarsVisible)
+        {
+            if (staminaBaseBarL) staminaBaseBarL.gameObject.SetActive(false);
+            if (staminaBonusBarL) staminaBonusBarL.gameObject.SetActive(false);
+            if (staminaBaseBarR) staminaBaseBarR.gameObject.SetActive(false);
+            if (staminaBonusBarR) staminaBonusBarR.gameObject.SetActive(false);
+            return;
+        }
+
         if (playerStats == null) return;
 
         float max = Mathf.Max(1f, playerStats.maxStamina);
@@ -52,6 +66,7 @@ public class PlayerStatsUI : MonoBehaviour
         // ----------- LEWA PO£ÓWKA (od œrodka w lewo) -----------
         if (staminaBaseBarL != null && staminaBaseRectL != null)
         {
+            staminaBaseBarL.gameObject.SetActive(true);
             staminaBaseBarL.fillAmount = Mathf.Clamp01(Mathf.Min(current, max) / max);
         }
 
@@ -79,6 +94,7 @@ public class PlayerStatsUI : MonoBehaviour
         // ----------- PRAWA PO£ÓWKA (od œrodka w prawo, lustrzanie) -----------
         if (staminaBaseBarR != null && staminaBaseRectR != null)
         {
+            staminaBaseBarR.gameObject.SetActive(true);
             staminaBaseBarR.fillAmount = Mathf.Clamp01(Mathf.Min(current, max) / max);
         }
 

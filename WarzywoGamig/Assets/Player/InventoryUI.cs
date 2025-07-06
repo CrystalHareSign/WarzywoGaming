@@ -65,9 +65,17 @@ public class InventoryUI : MonoBehaviour
     public Image boostTimerFillImage;         // Koło z FillMethod=Radial360
     public TextMeshProUGUI boostValueText;    // Na środku, wartości I/II/III/IV
 
-    private float boostTimerDuration;
-    private float boostTimerElapsed;
-    private bool boostTimerActive;
+    // --- HOLD TO USE UI ---
+    [Header("Hold To Use UI")]
+    public Image holdToUseProgressImage;      // Obrazek w centrum ekranu/celownika (type Filled)
+    public float requiredHoldTime = 2f;
+    public KeyCode useKey = KeyCode.F;
+    public float slowPercent = 0.5f; // 0.5 = 50% normalnej prędkości
+
+    // --- Hold logic ---
+    private bool isHoldingUse = false;
+    private float holdTimer = 0f;
+    private float originalMoveSpeed = 0f;
 
     private void Awake()
     {
@@ -104,6 +112,13 @@ public class InventoryUI : MonoBehaviour
         if (boostTimerPanel != null) boostTimerPanel.SetActive(false);
         if (boostTimerFillImage != null) boostTimerFillImage.fillAmount = 0f;
         if (boostValueText != null) boostValueText.text = "";
+
+        // HOLD TO USE UI
+        if (holdToUseProgressImage != null)
+        {
+            holdToUseProgressImage.fillAmount = 0f;
+            holdToUseProgressImage.gameObject.SetActive(false);
+        }
     }
 
     public void Update()
@@ -198,9 +213,109 @@ public class InventoryUI : MonoBehaviour
         // Ustal okno i slot kursora dla tej kategorii
         CalculateCarousel(itemCount, ref itemWindowStartIndex, ref selectedSlotIndex, ref selectedItemIndex);
 
-        if (activeCategory == ItemCategory.Usable && Input.GetKeyDown(KeyCode.F))
+        // --- HOLD TO USE LOGIC ---
+        if (activeCategory == ItemCategory.Usable)
         {
-            TryUseSelectedUsableItem();
+            if (!isHoldingUse && Input.GetKeyDown(useKey))
+            {
+                isHoldingUse = true;
+                holdTimer = 0f;
+
+                // Przerywaj sprint, spowolnij gracza i zablokuj sprint
+                var player = UnityEngine.Object.FindFirstObjectByType<PlayerMovement>();
+                if (player != null)
+                {
+                    if (!player.isSlowedByItemUse)
+                    {
+                        originalMoveSpeed = player.moveSpeed;
+                        player.moveSpeed *= slowPercent;
+                        player.isSlowedByItemUse = true;
+                    }
+                    player.isSprintBlockedByUI = true;
+                    player.StopSprinting();
+                }
+
+                // Aktywuj UI progress
+                if (holdToUseProgressImage != null)
+                {
+                    holdToUseProgressImage.fillAmount = 0f;
+                    holdToUseProgressImage.gameObject.SetActive(true);
+                }
+            }
+
+            if (isHoldingUse)
+            {
+                if (Input.GetKey(useKey))
+                {
+                    holdTimer += Time.unscaledDeltaTime;
+                    float prog = Mathf.Clamp01(holdTimer / requiredHoldTime);
+
+                    if (holdToUseProgressImage != null)
+                    {
+                        holdToUseProgressImage.fillAmount = prog;
+                        holdToUseProgressImage.gameObject.SetActive(true);
+                    }
+
+                    if (holdTimer >= requiredHoldTime)
+                    {
+                        isHoldingUse = false;
+                        holdTimer = 0f;
+
+                        // Przywróć prędkość i odblokuj sprint
+                        var player = UnityEngine.Object.FindFirstObjectByType<PlayerMovement>();
+                        if (player != null)
+                        {
+                            if (player.isSlowedByItemUse)
+                            {
+                                player.moveSpeed = originalMoveSpeed;
+                                player.isSlowedByItemUse = false;
+                            }
+                            player.isSprintBlockedByUI = false;
+                        }
+
+                        if (holdToUseProgressImage != null)
+                        {
+                            holdToUseProgressImage.fillAmount = 0f;
+                            holdToUseProgressImage.gameObject.SetActive(false);
+                        }
+
+                        TryUseSelectedUsableItem();
+                    }
+                }
+                else // puścił klawisz przed czasem
+                {
+                    isHoldingUse = false;
+                    holdTimer = 0f;
+
+                    // Przywróć prędkość i odblokuj sprint
+                    var player = UnityEngine.Object.FindFirstObjectByType<PlayerMovement>();
+                    if (player != null)
+                    {
+                        if (player.isSlowedByItemUse)
+                        {
+                            player.moveSpeed = originalMoveSpeed;
+                            player.isSlowedByItemUse = false;
+                        }
+                        player.isSprintBlockedByUI = false;
+                    }
+
+                    if (holdToUseProgressImage != null)
+                    {
+                        holdToUseProgressImage.fillAmount = 0f;
+                        holdToUseProgressImage.gameObject.SetActive(false);
+                    }
+                }
+            }
+        }
+        else // nie w kategorii usable, wyłącz UI hold
+        {
+            if (holdToUseProgressImage != null)
+            {
+                holdToUseProgressImage.fillAmount = 0f;
+                holdToUseProgressImage.gameObject.SetActive(false);
+            }
+            isHoldingUse = false;
+            holdTimer = 0f;
         }
 
         UpdateInventoryUI(inventory.weapons, inventory.items, inventory.usableItems, inventory.currentWeaponName);
@@ -620,6 +735,13 @@ public class InventoryUI : MonoBehaviour
         // BOOST TIMER UI
         if (boostTimerPanel != null)
             boostTimerPanel.SetActive(false);
+
+        // HOLD TO USE UI
+        if (holdToUseProgressImage != null)
+        {
+            holdToUseProgressImage.fillAmount = 0f;
+            holdToUseProgressImage.gameObject.SetActive(false);
+        }
     }
 
     public void ShowItemUI(List<GameObject> items)
@@ -713,9 +835,6 @@ public class InventoryUI : MonoBehaviour
 
     public void ShowBoostTimerUI(float boostValue, float duration)
     {
-        boostTimerDuration = duration;
-        boostTimerElapsed = 0f;
-        boostTimerActive = true;
         if (boostTimerFillImage != null)
             boostTimerFillImage.fillAmount = 1f;
         if (boostValueText != null)
@@ -726,19 +845,28 @@ public class InventoryUI : MonoBehaviour
 
     private void UpdateBoostTimerUI()
     {
-        if (!boostTimerActive || boostTimerPanel == null || boostTimerFillImage == null)
+        var stats = PlayerStats.Instance;
+        if (stats == null || stats.staminaBonus <= 0f || stats.staminaBonusDuration <= 0f)
+        {
+            if (boostTimerPanel != null) boostTimerPanel.SetActive(false);
+            if (boostValueText != null) boostValueText.text = "";
             return;
+        }
 
-        boostTimerElapsed += Time.deltaTime;
-        float left = Mathf.Clamp01(1f - (boostTimerElapsed / boostTimerDuration));
-        boostTimerFillImage.fillAmount = left;
+        if (boostTimerPanel != null) boostTimerPanel.SetActive(true);
+
+        float left = Mathf.Clamp01(stats.staminaBonusTimeLeft / stats.staminaBonusDuration);
+
+        if (boostTimerFillImage != null)
+            boostTimerFillImage.fillAmount = left;
+
+        if (boostValueText != null)
+            boostValueText.text = BoostValueToRoman(stats.staminaBonus);
 
         if (left <= 0f)
         {
-            boostTimerActive = false;
-            boostTimerPanel.SetActive(false);
-            if (boostValueText != null)
-                boostValueText.text = "";
+            if (boostTimerPanel != null) boostTimerPanel.SetActive(false);
+            if (boostValueText != null) boostValueText.text = "";
         }
     }
 
