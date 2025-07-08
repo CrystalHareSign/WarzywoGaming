@@ -460,6 +460,14 @@ public class Inventory : MonoBehaviour
         }
     }
 
+    public bool IsHoldingLoot
+    {
+        get
+        {
+            return lootParent != null && lootParent.childCount > 0;
+        }
+    }
+
     void DropItemFromInventory()
     {
         if (isLootBeingDropped) return;

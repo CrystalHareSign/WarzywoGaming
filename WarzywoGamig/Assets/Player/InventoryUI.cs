@@ -216,6 +216,19 @@ public class InventoryUI : MonoBehaviour
         // --- HOLD TO USE LOGIC ---
         if (activeCategory == ItemCategory.Usable)
         {
+            // BLOKADA użycia itema jeśli gracz trzyma loot:
+            if (Inventory.Instance != null && Inventory.Instance.IsHoldingLoot)
+            {
+                if (holdToUseProgressImage != null)
+                {
+                    holdToUseProgressImage.fillAmount = 0f;
+                    holdToUseProgressImage.gameObject.SetActive(false);
+                }
+                isHoldingUse = false;
+                holdTimer = 0f;
+                return; // Całkowita blokada UI i efektu użycia
+            }
+
             if (!isHoldingUse && Input.GetKeyDown(useKey))
             {
                 isHoldingUse = true;

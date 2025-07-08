@@ -313,24 +313,37 @@ public class PlayerInteraction : MonoBehaviour
                         requiredHoldTime = currentInteractableItem.requiredHoldTime;
                         interactionTimer += Time.deltaTime;
 
+                        // UWAGA: TUTAJ NAPRAWKA – chowaj boost/staminê TYLKO gdy to monitor/turret/driverSeat/missionDefiner
                         if (requiredHoldTime > 0f && interactionTimer == Time.deltaTime)
                         {
-                            if (inventory != null && inventory.currentWeaponPrefab != null)
+                            if (currentInteractableItem.isMonitor || currentInteractableItem.isTurret || currentInteractableItem.isDriverSeat || currentInteractableItem.isMissionDefiner)
                             {
-                                Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
-                                if (gunScript != null)
-                                    gunScript.CancelReload();
+                                if (inventory != null && inventory.currentWeaponPrefab != null)
+                                {
+                                    Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
+                                    if (gunScript != null)
+                                        gunScript.CancelReload();
 
-                                inventory.currentWeaponPrefab.SetActive(false);
-                                inventory.enabled = false;
-                                inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
-                                inventoryUI.HideWeaponUI();
-                                if (inventoryUI.leftArrowIndicator != null)
-                                    inventoryUI.leftArrowIndicator.SetActive(false);
-                                if (inventoryUI.rightArrowIndicator != null)
-                                    inventoryUI.rightArrowIndicator.SetActive(false);
-                                HideBoostPanel();
-                                HideStaminaBars();
+                                    inventory.currentWeaponPrefab.SetActive(false);
+                                    inventory.enabled = false;
+                                    inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
+                                    inventoryUI.HideWeaponUI();
+                                    if (inventoryUI.leftArrowIndicator != null)
+                                        inventoryUI.leftArrowIndicator.SetActive(false);
+                                    if (inventoryUI.rightArrowIndicator != null)
+                                        inventoryUI.rightArrowIndicator.SetActive(false);
+                                    HideBoostPanel();
+                                    HideStaminaBars();
+                                }
+                            }
+                            else
+                            {
+                                if (inventory != null && inventory.currentWeaponPrefab != null)
+                                {
+                                    Gun gunScript = inventory.currentWeaponPrefab.GetComponent<Gun>();
+                                    if (gunScript != null)
+                                        gunScript.CancelReload();
+                                }
                             }
                         }
 
@@ -366,8 +379,7 @@ public class PlayerInteraction : MonoBehaviour
                                     HideStaminaBars();
                                 }
                             }
-
-                            if (currentInteractableItem.isMonitor)
+                            else if (currentInteractableItem.isMonitor)
                             {
                                 UseMonitor(interactableItem);
 
@@ -392,9 +404,8 @@ public class PlayerInteraction : MonoBehaviour
                                     HideStaminaBars();
                                 }
                             }
-
                             // --- MissionDefiner obs³uga ---
-                            if (currentInteractableItem.isMissionDefiner)
+                            else if (currentInteractableItem.isMissionDefiner)
                             {
                                 UseMissionDefiner(interactableItem);
 
@@ -420,8 +431,7 @@ public class PlayerInteraction : MonoBehaviour
                                 }
                             }
                             // -----------------------------
-
-                            if (currentInteractableItem.isRefiner && !hasRefinerBeenUsed)
+                            else if (currentInteractableItem.isRefiner && !hasRefinerBeenUsed)
                             {
                                 RemoveOldestItemFromInventory(interactableItem);
                                 inventory.RefreshItemListChronologically();
@@ -430,12 +440,12 @@ public class PlayerInteraction : MonoBehaviour
                             else if (!currentInteractableItem.isTurret && !currentInteractableItem.isMonitor && !currentInteractableItem.isMissionDefiner && !currentInteractableItem.isRefiner)
                             {
                                 InteractWithObject(currentInteractableItem);
+                                // DLA ZWYK£YCH INTERAKCJI NIE CHOWAJ UI boost/staminy itp!
                             }
 
                             interactionTimer = 0f;
                             HideUI();
-                            HideBoostPanel();
-                            HideStaminaBars();
+                            // HideBoostPanel i HideStaminaBars s¹ wywo³ywane TYLKO dla monitor/turret/driverSeat/missionDefiner powy¿ej
                             if (inventoryUI != null)
                             {
                                 if (inventoryUI.leftArrowIndicator != null)

@@ -93,6 +93,18 @@ public class PlayerMovement : MonoBehaviour
         // BLOKADA SPRINTU PRZEZ UI
         bool sprintBlocked = isSprintBlockedByUI;
 
+        // BLOKADA SPRINTU JEŚLI GRACZ TRZYMA LOOT
+        bool isHoldingLoot = false;
+        if (Inventory.Instance != null && Inventory.Instance.lootParent != null)
+        {
+            isHoldingLoot = Inventory.Instance.lootParent.childCount > 0;
+        }
+        if (isHoldingLoot)
+        {
+            isSprintKeyPressed = false;
+            sprintBlocked = true;
+        }
+
         // Obsługa staminaExhausted: sprint dostępny tylko, gdy stamina nie jest wyczerpana I NIE jest zablokowany przez UI
         bool canSprint = playerStats != null && playerStats.currentStamina > 0f && !playerStats.staminaExhausted && !sprintBlocked;
 
