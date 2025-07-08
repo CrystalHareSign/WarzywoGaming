@@ -209,7 +209,12 @@ public class SceneChanger : MonoBehaviour
     {
         isSceneChanging = false;
 
-        // Ustaw tryb colliderów
+        // --- TU CZYŒCIMY WSZYSTKIE BONUSY ---
+        PlayerStats stats = PlayerStats.Instance;
+        if (stats != null)
+            stats.ClearAllBonuses();
+
+        // Ustaw tryb colliderów busa
         UpdateCollidersForScene(scene.name);
 
         if (bus != null)

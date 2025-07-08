@@ -155,6 +155,10 @@ public class PlayerInteraction : MonoBehaviour
                 }
             }
             inventoryUI.ShowItemUI(inventory.items);
+
+            // KLUCZOWE: odœwie¿ boost timer UI po od³o¿eniu loot
+            inventoryUI.UpdateBoostTimerUI();
+
             ShowBoostPanelIfActive();
             ShowStaminaBars();
             return;
@@ -607,9 +611,8 @@ public class PlayerInteraction : MonoBehaviour
 
     private void ShowBoostPanelIfActive()
     {
-        if (inventoryUI != null && inventoryUI.boostTimerPanel != null &&
-            inventoryUI.boostTimerFillImage != null && inventoryUI.boostTimerFillImage.fillAmount > 0f)
-            inventoryUI.boostTimerPanel.SetActive(true);
+        if (inventoryUI != null)
+            inventoryUI.UpdateBoostTimerUI();
     }
 
     private void ResetInteraction()

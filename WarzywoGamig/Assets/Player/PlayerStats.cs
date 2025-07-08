@@ -156,4 +156,12 @@ public class PlayerStats : MonoBehaviour
         if (currentStamina > 0f)
             staminaExhausted = false;
     }
+
+    public void ClearAllBonuses()
+    {
+        staminaBonus = 0f;
+        staminaBonusDuration = 0f;
+        staminaBonusTimeLeft = 0f;
+        // Dodaj tu inne efekty jeœli masz (np. speedBoost, shield, itp.)
+    }
 }

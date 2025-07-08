@@ -856,7 +856,7 @@ public class InventoryUI : MonoBehaviour
             boostTimerPanel.SetActive(true);
     }
 
-    private void UpdateBoostTimerUI()
+    public void UpdateBoostTimerUI()
     {
         var stats = PlayerStats.Instance;
         if (stats == null || stats.staminaBonus <= 0f || stats.staminaBonusDuration <= 0f)
