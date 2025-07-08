@@ -2,16 +2,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-[System.Serializable]
-public class ItemEntry
-{
-    public ItemPrefabData itemData;
-    [Range(0f, 1f)]
-    public float spawnChance = 0.2f;
-    [Tooltip("Maksymalna liczba tego itemu na mapie (0 = wyliczana automatycznie)")]
-    public int maxCount = 0;
-}
-
 public class ProceduralLevelGenerator : MonoBehaviour
 {
     [Header("Room Prefabs")]
@@ -48,10 +38,21 @@ public class ProceduralLevelGenerator : MonoBehaviour
     [Header("Item Spawning")]
     public List<ItemEntry> items;
 
+    [Header("Szanse pojawienia siê kategorii lootu (suma powinna byæ 1.0)")]
+    public List<LootCategoryChance> lootCategoryChances;
+
     [Header("Loot Enrichment")]
     [Range(1, 5)]
     [Tooltip("Poziom wzbogacenia poziomu w loot: 1 = bardzo ma³o, 5 = bardzo du¿o")]
     public int lootLevel = 3;
+
+    [Header("Loot Rarity Control")]
+    [Range(1, 5)]
+    [Tooltip("Poziom rzadkoœci lootu (1 = tylko Common, 5 = szansa na Legendary)")]
+    public int lootRarityLevel = 3;
+
+    [Header("Szanse rarity dla ka¿dego poziomu loot enrichment (poziomy: 1-5)")]
+    public LootRarityChanceRow[] lootRarityChancesTable = new LootRarityChanceRow[5];
 
     [Tooltip("Dodatkowy mno¿nik szansy na pojawienie siê przedmiotu za ka¿dy pokój oddalony od pokoju startowego.")]
     public float distanceBonusPerRoom = 0.15f;
@@ -117,18 +118,12 @@ public class ProceduralLevelGenerator : MonoBehaviour
         roomSpawnPenalty = Mathf.Lerp(0.5f, 0.85f, Mathf.InverseLerp(5, 30, rooms));
 
         // --- Automatyczne, lekko losowe maxCount dla itemów ---
-        float sumChances = 0f;
-        foreach (var it in items)
-            sumChances += Mathf.Max(0f, it.spawnChance);
-
         foreach (var it in items)
         {
-            // Jeœli maxCount <= 0, licz automatycznie. Pozostaw wartoœæ jeœli ustawiono w Inspectorze.
             if (it.maxCount <= 0)
             {
-                float softLimit = maxItemsOnMap * it.spawnChance / sumChances;
                 float boost = Random.Range(1.10f, 1.25f); // 10–25% nadwy¿ki
-                it.maxCount = Mathf.Max(1, Mathf.RoundToInt(softLimit * boost));
+                it.maxCount = Mathf.Max(1, Mathf.RoundToInt(maxItemsOnMap / (float)items.Count * boost));
             }
         }
     }
@@ -611,13 +606,6 @@ public class ProceduralLevelGenerator : MonoBehaviour
         return new Bounds(roomGO.transform.position, Vector3.one * 5f);
     }
 
-    Quaternion GetRandomYRotation()
-    {
-        int[] yAngles = { 0, 90, 180, 270 };
-        int angle = yAngles[Random.Range(0, yAngles.Length)];
-        return Quaternion.Euler(0, angle, 0);
-    }
-
     public static Vector3 GetDirectionVector(DoorDirection dir)
     {
         switch (dir)
@@ -690,7 +678,6 @@ public class ProceduralLevelGenerator : MonoBehaviour
         }
     }
 
-    // ---- SPAWN ITEMÓW ----
     void SpawnItemsInRooms()
     {
         var allSpawnPoints = new List<(PlacedRoom room, Vector3 localPos)>();
@@ -730,11 +717,35 @@ public class ProceduralLevelGenerator : MonoBehaviour
 
             if (Random.value > finalChance) continue;
 
-            var entry = PickWeightedItem(items, itemTypeCounter);
-            if (entry == null || entry.itemData == null || entry.itemData.prefab == null) continue;
+            // 1. Losuj kategoriê
+            LootCategory pickedCategory = PickWeightedCategory(lootCategoryChances);
 
-            if (entry.maxCount > 0 && itemTypeCounter[entry] >= entry.maxCount)
-                continue; // respektuj limit typu
+            // 2. Losuj rarity
+            LootRarity rarity = PickLootRarity(lootRarityLevel);
+
+            // 3. Fallback – wybierz najwy¿szy dostêpny wariant itemu w danej kategorii
+            var rarityLevels = new[] { rarity, LootRarity.Legendary, LootRarity.Epic, LootRarity.Rare, LootRarity.Uncommon, LootRarity.Common }
+                .Distinct()
+                .OrderByDescending(r => (int)r)
+                .ToArray();
+
+            ItemEntry entry = null;
+            foreach (var r in rarityLevels)
+            {
+                var possibleItems = items.Where(e =>
+                    e.itemData != null &&
+                    e.itemData.lootCategory == pickedCategory &&
+                    e.itemData.lootRarity == (int)r &&
+                    (e.maxCount == 0 || itemTypeCounter[e] < e.maxCount)
+                ).ToList();
+
+                if (possibleItems.Count > 0)
+                {
+                    entry = WeightedRandomItem(possibleItems);
+                    break;
+                }
+            }
+            if (entry == null || entry.itemData == null || entry.itemData.prefab == null) continue;
 
             Vector3 worldPos = room.room.transform.TransformPoint(localPos);
             Instantiate(entry.itemData.prefab, worldPos, Quaternion.identity, room.room.transform);
@@ -743,6 +754,79 @@ public class ProceduralLevelGenerator : MonoBehaviour
             itemsInRoom[room]++;
             itemTypeCounter[entry]++;
         }
+    }
+
+    LootCategory PickWeightedCategory(List<LootCategoryChance> categoryChances)
+    {
+        float sum = categoryChances.Sum(c => c.spawnChance);
+        float roll = Random.value * sum, acc = 0f;
+        foreach (var cat in categoryChances)
+        {
+            acc += cat.spawnChance;
+            if (roll <= acc) return cat.category;
+        }
+        return categoryChances.Last().category;
+    }
+
+    // Pomocnicza: losuje item z wag¹ spawnChance z danej listy
+    ItemEntry WeightedRandomItem(List<ItemEntry> list)
+    {
+        if (list == null || list.Count == 0) return null;
+        return list[Random.Range(0, list.Count)];
+    }
+
+    LootRarity PickLootRarity(int rarityLevel)
+    {
+        int idx = Mathf.Clamp(rarityLevel, 1, 5) - 1;
+
+        float[] row = new float[5] {
+        lootRarityChancesTable[idx].Common,
+        lootRarityChancesTable[idx].Uncommon,
+        lootRarityChancesTable[idx].Rare,
+        lootRarityChancesTable[idx].Epic,
+        lootRarityChancesTable[idx].Legendary
+    };
+
+        float sum = 0f;
+        for (int i = 0; i < 5; i++)
+            sum += row[i];
+
+        float roll = Random.value * sum;
+        float acc = 0f;
+        for (int i = 0; i < 5; i++)
+        {
+            acc += row[i];
+            if (roll <= acc)
+                return (LootRarity)(i + 1);
+        }
+        return LootRarity.Common;
+    }
+
+    [ContextMenu("Ustaw domyœlne loot rarity chances")]
+    public void SetDefaultLootRarityChances()
+    {
+        float[,] defaults = new float[5, 5] {
+        {0.95f, 0.045f, 0.004f, 0.001f, 0f},      // poziom 1
+        {0.8f, 0.15f, 0.045f, 0.004f, 0.001f},    // poziom 2
+        {0.7f, 0.2f, 0.08f, 0.015f, 0.005f},      // poziom 3
+        {0.5f, 0.3f, 0.15f, 0.04f, 0.01f},        // poziom 4
+        {0.25f, 0.25f, 0.25f, 0.15f, 0.10f}       // poziom 5
+    };
+        lootRarityChancesTable = new LootRarityChanceRow[5];
+        for (int i = 0; i < 5; i++)
+        {
+            lootRarityChancesTable[i] = new LootRarityChanceRow
+            {
+                Common = defaults[i, 0],
+                Uncommon = defaults[i, 1],
+                Rare = defaults[i, 2],
+                Epic = defaults[i, 3],
+                Legendary = defaults[i, 4]
+            };
+        }
+#if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this);
+#endif
     }
 
     Dictionary<PlacedRoom, int> ComputeRoomDistances(List<PlacedRoom> placedRooms)
@@ -780,25 +864,6 @@ public class ProceduralLevelGenerator : MonoBehaviour
                         neighbors.Add(other);
         }
         return neighbors;
-    }
-
-    ItemEntry PickWeightedItem(List<ItemEntry> list, Dictionary<ItemEntry, int> counters)
-    {
-        var eligible = new List<ItemEntry>();
-        foreach (var i in list)
-            if (i.maxCount == 0 || counters[i] < i.maxCount)
-                eligible.Add(i);
-        if (eligible.Count == 0) return null;
-        float sum = 0f;
-        foreach (var i in eligible) sum += Mathf.Max(0f, i.spawnChance);
-        if (sum <= 0f) return null;
-        float roll = Random.value * sum, acc = 0f;
-        foreach (var i in eligible)
-        {
-            acc += Mathf.Max(0f, i.spawnChance);
-            if (roll <= acc) return i;
-        }
-        return eligible[eligible.Count - 1];
     }
 
     void ValidateDoorwaysNoWall()
@@ -892,4 +957,30 @@ public class PlacedDoorway
     public Vector3 localPosition;
     public Vector3 position;
     public Vector3 direction;
+}
+
+[System.Serializable]
+public class LootRarityChanceRow
+{
+    public float Common;
+    public float Uncommon;
+    public float Rare;
+    public float Epic;
+    public float Legendary;
+}
+
+[System.Serializable]
+public class ItemEntry
+{
+    public ItemPrefabData itemData;
+    [Tooltip("Maksymalna liczba tego itemu na mapie (0 = wyliczana automatycznie)")]
+    public int maxCount = 0;
+}
+
+[System.Serializable]
+public class LootCategoryChance
+{
+    public LootCategory category;
+    [Range(0f, 1f)]
+    public float spawnChance;
 }

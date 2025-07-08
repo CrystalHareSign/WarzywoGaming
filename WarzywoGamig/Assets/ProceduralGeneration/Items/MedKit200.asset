@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prefab: {fileID: 7208079598093670341, guid: 5d29cac90f08f904abee788a001b86a8, type: 3}
   itemName: Medkit200
+  lootRarity: 1
+  lootCategory: 2
   effectType: 1
   effectValue: 200
   effectDuration: 0

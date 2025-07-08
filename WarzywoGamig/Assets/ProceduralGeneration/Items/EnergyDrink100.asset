@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prefab: {fileID: 8047544130592169205, guid: 1d974b68ba4bcf747a768dd3aa4661e6, type: 3}
   itemName: EnergyDrink100
+  lootRarity: 4
+  lootCategory: 3
   effectType: 2
   effectValue: 100
   effectDuration: 20

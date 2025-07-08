@@ -14,6 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prefab: {fileID: 3406396607772121200, guid: aa5bfe830df7f7a4eb9219c7fb773a23, type: 3}
   itemName: Ammo
+  lootRarity: 1
+  lootCategory: 1
   effectType: 0
   effectValue: 0
+  effectDuration: 0
   customEffectID: 

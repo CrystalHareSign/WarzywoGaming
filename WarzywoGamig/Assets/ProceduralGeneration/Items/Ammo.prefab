@@ -152,6 +152,7 @@ MonoBehaviour:
   isLoot: 0
   isUsableItem: 1
   usableType: 0
+  data: {fileID: 11400000, guid: cbbde137b88c5534e9c6a9b8a7dc07a8, type: 2}
   isNPC: 0
   npcDialogues: []
   currentDialogueIndex: 0

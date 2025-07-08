@@ -14,3 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prefab: {fileID: 3070864060014540926, guid: fa7361376c139db4880abd1f3d37a6f1, type: 3}
   itemName: SpecialItem
+  lootRarity: 1
+  lootCategory: 4
+  effectType: 0
+  effectValue: 0
+  effectDuration: 0
+  customEffectID: 
