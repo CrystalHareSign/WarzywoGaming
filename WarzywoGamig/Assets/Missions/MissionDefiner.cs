@@ -20,9 +20,12 @@ public class MissionDefiner : MonoBehaviour
 
     [Header("Loot Level UI")]
     public Transform summaryLootLevelContainer;
-    [Tooltip("Kolor aktywnej ikonki loot level")]
+
+    [Header("Loot Rarity UI")]
+    public Transform summaryLootRarityContainer;
+
+    [Tooltip("Kolor aktywnej ikonki loot level/rarity")]
     public Color lootLevelActiveColor = Color.yellow;
-    [Tooltip("Kolor nieaktywnej ikonki loot level")]
     public Color lootLevelInactiveColor = Color.gray;
 
     [Header("UI Przycisków")]
@@ -55,6 +58,7 @@ public class MissionDefiner : MonoBehaviour
     private float pendingTotalDistanceKm = 0f;
     private float pendingDangerZoneKm = 0f;
     private int pendingLootLevel = 1;
+    private int pendingLootRarity = 1;
 
     public static bool IsAnyDefinerActive = false;
 
@@ -157,6 +161,7 @@ public class MissionDefiner : MonoBehaviour
         pendingTotalDistanceKm = icon.totalDistanceKm;
         pendingDangerZoneKm = icon.dangerZoneKm;
         pendingLootLevel = icon.lootLevel;
+        pendingLootRarity = icon.lootRarity;
 
         ShowSummary(pendingLocationName, pendingRoomCount, pendingLocationType, pendingTotalDistanceKm, pendingDangerZoneKm);
 
@@ -183,25 +188,41 @@ public class MissionDefiner : MonoBehaviour
             summaryDistanceText.text = $"Dystans: {totalDistanceKm:0.0} km";
         if (summaryDangerZoneText != null)
             summaryDangerZoneText.text = $"Danger zone: {dangerZoneKm:0.0} km";
-        ShowLootLevel(pendingLootLevel, locationType);
+        ShowLootLevel(pendingLootLevel, pendingLootRarity, locationType);
     }
 
-    private void ShowLootLevel(int lootLevel, MissionLocationType locationType)
+    private void ShowLootLevel(int lootLevel, int lootRarity, MissionLocationType locationType)
     {
-        // Loot level TYLKO dla ProceduralRaid
-        if (summaryLootLevelContainer == null) return;
-        if (locationType != MissionLocationType.ProceduralRaid || lootLevel <= 0)
-        {
-            summaryLootLevelContainer.gameObject.SetActive(false);
-            return;
-        }
+        // Loot level i rarity TYLKO dla ProceduralRaid
+        bool showStars = locationType == MissionLocationType.ProceduralRaid;
 
-        summaryLootLevelContainer.gameObject.SetActive(true);
-        for (int i = 0; i < summaryLootLevelContainer.childCount; i++)
+        // Level stars
+        if (summaryLootLevelContainer != null)
         {
-            var icon = summaryLootLevelContainer.GetChild(i).GetComponent<Image>();
-            if (icon == null) continue;
-            icon.color = i < lootLevel ? lootLevelActiveColor : lootLevelInactiveColor;
+            summaryLootLevelContainer.gameObject.SetActive(showStars);
+            if (showStars)
+            {
+                for (int i = 0; i < summaryLootLevelContainer.childCount; i++)
+                {
+                    var icon = summaryLootLevelContainer.GetChild(i).GetComponent<Image>();
+                    if (icon == null) continue;
+                    icon.color = i < lootLevel ? lootLevelActiveColor : lootLevelInactiveColor;
+                }
+            }
+        }
+        // Rarity stars
+        if (summaryLootRarityContainer != null)
+        {
+            summaryLootRarityContainer.gameObject.SetActive(showStars);
+            if (showStars)
+            {
+                for (int i = 0; i < summaryLootRarityContainer.childCount; i++)
+                {
+                    var icon = summaryLootRarityContainer.GetChild(i).GetComponent<Image>();
+                    if (icon == null) continue;
+                    icon.color = i < lootRarity ? lootLevelActiveColor : lootLevelInactiveColor;
+                }
+            }
         }
     }
 
@@ -214,6 +235,8 @@ public class MissionDefiner : MonoBehaviour
         if (summaryDangerZoneText != null) summaryDangerZoneText.text = "";
         if (summaryLootLevelContainer != null)
             summaryLootLevelContainer.gameObject.SetActive(false);
+        if (summaryLootRarityContainer != null)
+            summaryLootRarityContainer.gameObject.SetActive(false);
     }
 
     public void OnConfirmClicked()
@@ -228,6 +251,7 @@ public class MissionDefiner : MonoBehaviour
             MissionSettings.totalDistanceKm = pendingTotalDistanceKm;
             MissionSettings.dangerZoneKm = pendingDangerZoneKm;
             MissionSettings.lootLevel = pendingLootLevel;
+            MissionSettings.lootRarity = pendingLootRarity;
 
             if (MissionMonitor.Instance != null)
                 MissionMonitor.Instance.SetSummary(pendingLocationName, pendingRoomCount, pendingLocationType, pendingTotalDistanceKm, pendingDangerZoneKm);
@@ -248,6 +272,7 @@ public class MissionDefiner : MonoBehaviour
         pendingTotalDistanceKm = 0f;
         pendingDangerZoneKm = 0f;
         pendingLootLevel = 1;
+        pendingLootRarity = 1;
 
         ClearSummary();
 

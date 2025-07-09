@@ -5,10 +5,17 @@ public class ItemEffectManager : MonoBehaviour
 {
     public static ItemEffectManager Instance;
 
-    private void Awake()
+    void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(this.gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
     public void UseItem(ItemPrefabData data, GameObject itemObj)

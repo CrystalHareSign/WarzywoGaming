@@ -3,7 +3,6 @@ using UnityEngine.EventSystems;
 
 public class MissionLocationIcon : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
-    [Header("5 min = 6.0 km\n10 min = 12.0 km\n15 min = 18.0 km")]
     [Header("Dane lokacji")]
     public MissionLocationType locationType = MissionLocationType.ProceduralRaid;
     public string locationName;
@@ -16,13 +15,16 @@ public class MissionLocationIcon : MonoBehaviour, IPointerEnterHandler, IPointer
 
     [Header("Loot Level (1-5)")]
     [Range(1, 5)]
-    public int lootLevel = 3; // Dodaj to pole, jeœli chcesz przekazywaæ lootLevel do tooltipa
+    public int lootLevel = 3; // enrichment
+
+    [Header("Loot Rarity (1-5)")]
+    [Range(1, 5)]
+    public int lootRarity = 2;
 
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (missionDefiner != null && missionDefiner.tooltipPanel != null)
         {
-            // Przekazujemy lootLevel równie¿ do tooltipa, pamiêtaj o dostosowaniu funkcji ShowTooltip!
             missionDefiner.tooltipPanel.ShowTooltip(
                 locationName,
                 roomCount,
@@ -30,6 +32,7 @@ public class MissionLocationIcon : MonoBehaviour, IPointerEnterHandler, IPointer
                 totalDistanceKm,
                 dangerZoneKm,
                 lootLevel,
+                lootRarity,
                 GetComponent<RectTransform>()
             );
         }

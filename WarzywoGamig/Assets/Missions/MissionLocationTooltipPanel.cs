@@ -11,16 +11,18 @@ public class MissionLocationTooltipPanel : MonoBehaviour
     public TMP_Text tooltipDangerZoneText;
 
     [Header("Loot level stars (5 images, left to right)")]
-    public Image[] lootLevelStars; // Przypnij 5 images w Inspectorze
+    public Image[] lootLevelStars; // enrichment
 
-    [Header("Kolory gwiazdek loot level")]
+    [Header("Loot rarity stars (5 images, left to right)")]
+    public Image[] lootRarityStars; // rarity
+
+    [Header("Kolory gwiazdek loot level/rarity")]
     public Color filledStarColor = Color.yellow;
     public Color emptyStarColor = Color.gray;
 
     [Header("0.01 +-")]
     public float margin = 0.01f;
 
-    // Obs³uguje oba dystanse: totalDistanceKm i dangerZoneKm osobno + lootLevel
     public void ShowTooltip(
         string locationName,
         int roomCount,
@@ -28,6 +30,7 @@ public class MissionLocationTooltipPanel : MonoBehaviour
         float totalDistanceKm,
         float dangerZoneKm,
         int lootLevel,
+        int lootRarity,
         RectTransform targetRect)
     {
         if (typeText != null)
@@ -56,14 +59,26 @@ public class MissionLocationTooltipPanel : MonoBehaviour
             tooltipDangerZoneText.text = $"Danger zone: {dangerZoneKm:0.0} km";
 
         // Pokazuj gwiazdki tylko dla typu RAID, koloruj zamiast sprite
+        bool showStars = locationType == MissionLocationType.ProceduralRaid;
+
+        // Loot Level
         if (lootLevelStars != null && lootLevelStars.Length == 5)
         {
-            bool showStars = locationType == MissionLocationType.ProceduralRaid;
             for (int i = 0; i < lootLevelStars.Length; i++)
             {
                 lootLevelStars[i].enabled = showStars;
                 if (showStars)
                     lootLevelStars[i].color = (i < lootLevel) ? filledStarColor : emptyStarColor;
+            }
+        }
+        // Loot Rarity
+        if (lootRarityStars != null && lootRarityStars.Length == 5)
+        {
+            for (int i = 0; i < lootRarityStars.Length; i++)
+            {
+                lootRarityStars[i].enabled = showStars;
+                if (showStars)
+                    lootRarityStars[i].color = (i < lootRarity) ? filledStarColor : emptyStarColor;
             }
         }
 
