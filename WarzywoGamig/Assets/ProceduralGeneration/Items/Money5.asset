@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9633f0deceb89574184e605a4ba6dbba, type: 3}
-  m_Name: Ammo
+  m_Name: Money5
   m_EditorClassIdentifier: 
-  prefab: {fileID: 3406396607772121200, guid: aa5bfe830df7f7a4eb9219c7fb773a23, type: 3}
-  itemName: Ammo
-  lootRarity: 1
-  lootCategory: 1
-  effectType: 1
-  effectValue: 0
+  prefab: {fileID: 1454955063196486815, guid: 7a92a7cc8550a0c408cb3b470c1a503b, type: 3}
+  itemName: Money5
+  lootRarity: 5
+  lootCategory: 0
+  effectType: 0
+  effectValue: 50
   effectDuration: 0
   autoUseOnPickup: 1
   customEffectID: 

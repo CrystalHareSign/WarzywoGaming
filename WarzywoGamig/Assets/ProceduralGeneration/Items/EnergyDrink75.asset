@@ -16,7 +16,8 @@ MonoBehaviour:
   itemName: EnergyDrink75
   lootRarity: 3
   lootCategory: 3
-  effectType: 2
+  effectType: 3
   effectValue: 75
   effectDuration: 20
+  autoUseOnPickup: 0
   customEffectID: 

@@ -152,6 +152,13 @@ public class Inventory : MonoBehaviour
                 return;
             }
 
+            // --- AUTO PICKUP: jeśli przedmiot ma być używany automatycznie po podniesieniu ---
+            if (interactableItem.data != null && interactableItem.data.autoUseOnPickup)
+            {
+                interactableItem.OnPickupAutoUse();
+                return; // NIE dodawaj do ekwipunku!
+            }
+
             // ❌ Jeśli gracz trzyma loot, nie może podnosić broni
             if (lootParent != null && lootParent.childCount > 0 && interactableItem.isWeapon)
             {

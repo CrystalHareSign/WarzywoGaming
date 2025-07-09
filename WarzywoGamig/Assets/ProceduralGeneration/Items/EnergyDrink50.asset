@@ -16,7 +16,8 @@ MonoBehaviour:
   itemName: EnergyDrink50
   lootRarity: 2
   lootCategory: 3
-  effectType: 2
+  effectType: 3
   effectValue: 50
   effectDuration: 20
+  autoUseOnPickup: 0
   customEffectID: 

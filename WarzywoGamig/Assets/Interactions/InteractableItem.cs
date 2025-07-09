@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
-using System.Security.Cryptography.X509Certificates;
 
 public enum UsableType
 {
@@ -143,6 +142,32 @@ public class InteractableItem : MonoBehaviour, IInteractable
         }
     }
 
+    // --- Nowa metoda: automatyczne u¿ycie efektu po podniesieniu (np. currency, ammo, itd.) ---
+    public void OnPickupAutoUse()
+    {
+        if (data == null) return;
+
+        switch (data.effectType)
+        {
+            case ItemEffectType.Currency:
+                SaveManager.Instance.AddCurrency(data.effectValue);
+                InventoryUI ui = FindFirstObjectByType<InventoryUI>();
+                if (ui != null) ui.UpdatePlayerCurrency(SaveManager.Instance.playerCurrency);
+                Debug.Log($"Dodano {data.effectValue} waluty za podniesienie: {itemName}");
+                Destroy(gameObject); // Usuwa z mapy, nie trafia do ekwipunku
+                break;
+            case ItemEffectType.Ammunition:
+                // TODO: Dodaj obs³ugê amunicji (np. Inventory.Instance.AddAmmo(...) itp.)
+                Debug.Log($"Podniesiono amunicjê: {itemName}, value = {data.effectValue}");
+                Destroy(gameObject);
+                break;
+            // Mo¿esz dodaæ kolejne przypadki auto-efektów tutaj
+            default:
+                Debug.Log($"Podniesiono {itemName} o typie {data.effectType}, brak auto efektu.");
+                break;
+        }
+    }
+
     // --- Nowa metoda: efekt na podstawie bazy danych ScriptableObject ---
     public void UseDatabaseEffect()
     {
@@ -154,7 +179,7 @@ public class InteractableItem : MonoBehaviour, IInteractable
                 Debug.Log($"Leczenie gracza o {data.effectValue} HP przez item: {itemName}");
                 // PlayerStats.Instance.Heal(data.effectValue); // Odkomentuj jeœli masz PlayerStats
                 break;
-            case ItemEffectType.Boost:
+            case ItemEffectType.StaminaBoost:
                 Debug.Log($"Dodano boost o wartoœci {data.effectValue} przez item: {itemName}");
                 // PlayerStats.Instance.AddBuff("speed", data.effectValue);
                 break;

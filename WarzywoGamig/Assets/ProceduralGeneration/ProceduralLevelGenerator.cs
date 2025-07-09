@@ -678,13 +678,14 @@ public class ProceduralLevelGenerator : MonoBehaviour
         }
     }
 
+    // ... ca³a reszta Twojego kodu ...
+
     void SpawnItemsInRooms()
     {
         var allSpawnPoints = new List<(PlacedRoom room, Vector3 localPos)>();
         for (int idx = 0; idx < placedRooms.Count; idx++)
         {
             var room = placedRooms[idx];
-            // Pomijamy pokój startowy (zwykle jest pierwszy na liœcie)
             if (idx == 0)
                 continue;
             if (room.data.itemSpawnPoints == null) continue;
@@ -706,6 +707,11 @@ public class ProceduralLevelGenerator : MonoBehaviour
         Shuffle(allSpawnPoints);
 
         int spawned = 0;
+
+        // --- DODANE: S³owniki do liczenia rarity i kategorii ---
+        var rarityStats = new Dictionary<int, int>(); // rarity -> count
+        var categoryStats = new Dictionary<LootCategory, int>(); // category -> count
+
         foreach (var (room, localPos) in allSpawnPoints)
         {
             if (spawned >= maxItemsOnMap) break;
@@ -723,10 +729,11 @@ public class ProceduralLevelGenerator : MonoBehaviour
             // 2. Losuj rarity
             LootRarity rarity = PickLootRarity(lootRarityLevel);
 
-            // 3. Fallback – wybierz najwy¿szy dostêpny wariant itemu w danej kategorii
-            var rarityLevels = new[] { rarity, LootRarity.Legendary, LootRarity.Epic, LootRarity.Rare, LootRarity.Uncommon, LootRarity.Common }
-                .Distinct()
-                .OrderByDescending(r => (int)r)
+            // 3. Fallback – wybierz NAJNI¯SZY dostêpny wariant itemu w danej kategorii
+            // Tworzymy listê rarity od wylosowanego do Common (np. Rare -> Rare, Uncommon, Common)
+            var rarityLevels = Enumerable.Range(1, (int)rarity)
+                .Reverse() // od wylosowanego rarity do Common
+                .Select(i => (LootRarity)i)
                 .ToArray();
 
             ItemEntry entry = null;
@@ -745,6 +752,7 @@ public class ProceduralLevelGenerator : MonoBehaviour
                     break;
                 }
             }
+            // Jeœli nie znalaz³ ¿adnego – nie spawnuj
             if (entry == null || entry.itemData == null || entry.itemData.prefab == null) continue;
 
             Vector3 worldPos = room.room.transform.TransformPoint(localPos);
@@ -753,7 +761,35 @@ public class ProceduralLevelGenerator : MonoBehaviour
             spawned++;
             itemsInRoom[room]++;
             itemTypeCounter[entry]++;
+
+            // --- DODANE: Zliczanie rarity i kategorii + per-item log ---
+            int lootRarityValue = entry.itemData.lootRarity;
+            if (!rarityStats.ContainsKey(lootRarityValue)) rarityStats[lootRarityValue] = 0;
+            rarityStats[lootRarityValue]++;
+
+            LootCategory cat = entry.itemData.lootCategory;
+            if (!categoryStats.ContainsKey(cat)) categoryStats[cat] = 0;
+            categoryStats[cat]++;
+
+            Debug.Log($"[LOOT SPAWN] {entry.itemData.name} | Kategoria: {cat} | Rarity: {((LootRarity)lootRarityValue)} | Pokój: {room.room.name}");
         }
+
+        // --- DODANE: Podsumowanie rarity i kategorii ---
+        string raritySummary = "[LOOT SUMMARY] Wygenerowane rarity:\n";
+        foreach (var kv in rarityStats.OrderBy(kv => kv.Key))
+        {
+            raritySummary += $"- {((LootRarity)kv.Key)}: {kv.Value}\n";
+        }
+        Debug.Log(raritySummary);
+
+        string catSummary = "[LOOT SUMMARY] Wygenerowane kategorie:\n";
+        foreach (var kv in categoryStats.OrderBy(kv => kv.Key.ToString()))
+        {
+            catSummary += $"- {kv.Key}: {kv.Value}\n";
+        }
+        Debug.Log(catSummary);
+
+        Debug.Log($"[LOOT SUMMARY] W sumie zespawnowano {spawned} przedmiotów.");
     }
 
     LootCategory PickWeightedCategory(List<LootCategoryChance> categoryChances)

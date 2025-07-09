@@ -16,7 +16,8 @@ MonoBehaviour:
   itemName: Medkit200
   lootRarity: 1
   lootCategory: 2
-  effectType: 1
+  effectType: 2
   effectValue: 200
   effectDuration: 0
+  autoUseOnPickup: 0
   customEffectID: 

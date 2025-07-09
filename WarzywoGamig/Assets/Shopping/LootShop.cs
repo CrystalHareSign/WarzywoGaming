@@ -16,9 +16,6 @@ public class LootShop : MonoBehaviour
     [Header("Kategorie i ceny (przypisane w Inspektorze)")]
     [SerializeField] private List<CategoryPricePair> categoryPricePairs = new List<CategoryPricePair>(); // Lista par kategoria-cena
 
-    [Header("Tekst gracza – waluta")]
-    public TMP_Text playerCurrencyText;
-
     [Header("Ustawienia interakcji")]
     public Transform player;
     public float interactionRange = 5f;
@@ -74,7 +71,7 @@ public class LootShop : MonoBehaviour
         }
 
         // Inicjalizacja wartoœci waluty gracza z GameManager
-        playerCurrencyText.text = SaveManager.Instance.playerCurrency.ToString("0.##");
+        UpdatePlayerCurrencyUI(); // U¿ywamy InventoryUI
 
     }
 
@@ -93,10 +90,14 @@ public class LootShop : MonoBehaviour
         }
     }
 
+    // Nowa metoda: aktualizuje UI waluty przez InventoryUI
     public void UpdatePlayerCurrencyUI()
     {
-        //Debug.Log($"[LootShop] Odœwie¿am UI waluty: {SaveManager.Instance.playerCurrency}");
-        playerCurrencyText.text = SaveManager.Instance.playerCurrency.ToString("0.##");
+        InventoryUI inventoryUI = FindFirstObjectByType<InventoryUI>();
+        if (inventoryUI != null)
+            inventoryUI.UpdatePlayerCurrency(SaveManager.Instance.playerCurrency);
+        else
+            Debug.LogWarning("LootShop: Nie znaleziono InventoryUI do aktualizacji waluty!");
     }
 
     private void CollectLootValue()
@@ -133,8 +134,8 @@ public class LootShop : MonoBehaviour
         // Dodajemy totalValue do obecnej waluty gracza w GameManager
         SaveManager.Instance.AddCurrency(totalValue);
 
-        // Wyœwietlamy zaktualizowan¹ walutê gracza
-        playerCurrencyText.text = SaveManager.Instance.playerCurrency.ToString("0.##");
+        // Wyœwietlamy zaktualizowan¹ walutê gracza przez InventoryUI!
+        UpdatePlayerCurrencyUI();
 
         // Resetowanie iloœci i wartoœci w UI
         for (int i = 0; i < categories.Count; i++)

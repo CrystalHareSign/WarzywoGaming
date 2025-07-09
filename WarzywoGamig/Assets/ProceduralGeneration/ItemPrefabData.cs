@@ -1,7 +1,7 @@
 using UnityEngine;
-public enum LootCategory { Currency, Ammunition, Meds, StaminaBooster, Special }
+public enum LootCategory { Currency, Ammunition, Meds, StaminaBooster, key, Special }
 
-public enum ItemEffectType { None, Heal, Boost, Key, Custom }
+public enum ItemEffectType { Currency, Ammunition, Heal, StaminaBoost, Key, Custom, None}
 
 public enum LootRarity { Common = 1, Uncommon = 2, Rare = 3, Epic = 4, Legendary = 5 }
 
@@ -26,6 +26,9 @@ public class ItemPrefabData : ScriptableObject
 
     [Header("Czas trwania efektu (w sekundach, dla efektów czasowych)")]
     public float effectDuration = 0f;
+
+    [Header("Czy automatycznie u¿yæ po podniesieniu (nie trafia do ekwipunku)?")]
+    public bool autoUseOnPickup = false;
 
     [Header("Custom effect (dla niestandardowych zachowañ)")]
     public string customEffectID; // np. "Teleport", "SummonBoss", itp.

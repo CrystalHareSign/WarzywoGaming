@@ -5,6 +5,9 @@ using TMPro;
 
 public class InventoryUI : MonoBehaviour
 {
+    [Header("UI Waluty gracza")]
+    public TMP_Text playerCurrencyText;
+
     public Image weaponImage;
     public Image weaponBackgroundImage;
     public Image[] itemImages = new Image[5];
@@ -337,6 +340,14 @@ public class InventoryUI : MonoBehaviour
         UpdateBoostTimerUI();
     }
 
+    public void UpdatePlayerCurrency(float value)
+    {
+        if (playerCurrencyText != null)
+            playerCurrencyText.text = value.ToString("0.##");
+        else
+            Debug.LogWarning("InventoryUI: playerCurrencyText nie jest przypisany!");
+    }
+
     public void TryUseSelectedUsableItem()
     {
         if (activeCategory != ItemCategory.Usable)
@@ -387,7 +398,7 @@ public class InventoryUI : MonoBehaviour
                 return;
             }
             // BOOST TIMER UI --- wyświetl jeśli to boost
-            if (interactable.data.effectType == ItemEffectType.Boost)
+            if (interactable.data.effectType == ItemEffectType.StaminaBoost)
             {
                 ShowBoostTimerUI(interactable.data.effectValue, interactable.data.effectDuration);
             }

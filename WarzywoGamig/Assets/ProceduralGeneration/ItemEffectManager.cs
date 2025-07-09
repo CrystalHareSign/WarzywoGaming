@@ -21,12 +21,16 @@ public class ItemEffectManager : MonoBehaviour
                 PlayerStats.Instance.Heal(data.effectValue);
                 Debug.Log($"[ItemEffectManager] Heal: {data.effectValue}");
                 break;
-            case ItemEffectType.Boost:
+            case ItemEffectType.StaminaBoost:
                 PlayerStats.Instance.UseEnergyDrink(data.effectValue, data.effectDuration);
                 Debug.Log($"[ItemEffectManager] Boost: +{data.effectValue} bonus stamina na {data.effectDuration} s");
                 break;
             case ItemEffectType.Key:
                 Debug.Log($"[ItemEffectManager] U¿yto klucza: {data.itemName}");
+                break;
+            case ItemEffectType.Currency:
+                SaveManager.Instance.AddCurrency(data.effectValue);
+                Debug.Log($"[ItemEffectManager] Dodano {data.effectValue} waluty graczowi!");
                 break;
             case ItemEffectType.Custom:
                 var interactable = itemObj.GetComponent<InteractableItem>();
