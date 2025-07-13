@@ -104,6 +104,18 @@ public class SaveManager : MonoBehaviour
                     collectors = new List<TurretCollectorSaveData>() // <- DODANE!
                 };
 
+                // --- ZAPIS HP GRACZA ---
+                if (PlayerStats.Instance != null)
+                {
+                    data.currentHealth = PlayerStats.Instance.currentHealth;
+                    data.maxHealth = PlayerStats.Instance.maxHealth;
+                }
+                else
+                {
+                    data.currentHealth = 100f; // fallback
+                    data.maxHealth = 100f;
+                }
+
                 Inventory inventory = UnityEngine.Object.FindFirstObjectByType<Inventory>();
                 if (inventory != null)
                 {
@@ -381,6 +393,17 @@ public class SaveManager : MonoBehaviour
         {
             p.transform.position = data.playerPosition;
             p.transform.rotation = data.playerRotation;
+        }
+
+        // --- ODCZYT HP GRACZA ---
+        if (PlayerStats.Instance != null)
+        {
+            PlayerStats.Instance.maxHealth = data.maxHealth;
+            PlayerStats.Instance.currentHealth = data.currentHealth;
+        }
+        else
+        {
+            Debug.LogWarning("PlayerStats.Instance == null podczas wczytywania HP!");
         }
 
         this.playerCurrency = data.playerCurrency;
@@ -794,6 +817,8 @@ public class SaveManager : MonoBehaviour
 [Serializable]
 public class PlayerData
 {
+    public float currentHealth;
+    public float maxHealth;
     public float playerCurrency;
     public Vector3 playerPosition;
     public Quaternion playerRotation;
