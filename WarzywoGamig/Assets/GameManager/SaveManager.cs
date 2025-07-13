@@ -178,6 +178,51 @@ public class SaveManager : MonoBehaviour
                             }
                         }
                     }
+                    Debug.Log($"[SaveManager] SavePlayerData: zaczynam zapisywaæ usableItems, inventory.usableItems.Count = {inventory.usableItems.Count}");
+                    foreach (var usableObj in inventory.usableItems)
+                    {
+                        if (usableObj != null)
+                        {
+                            var interactable = usableObj.GetComponent<InteractableItem>();
+                            var treasure = usableObj.GetComponent<TreasureResources>();
+
+                            Debug.Log($"[SaveManager] usableObj: {usableObj.name}, interactable: {(interactable != null ? "OK" : "BRAK")}, treasure: {(treasure != null ? "OK" : "BRAK")}");
+
+                            if (interactable != null)
+                            {
+                                UsableItemSaveData usableSave = new UsableItemSaveData
+                                {
+                                    itemName = interactable.itemName,
+                                    usableType = interactable.usableType.ToString(),
+                                    resourceCategoriesData = new List<ResourceCategoryData>()
+                                };
+                                if (treasure != null)
+                                {
+                                    foreach (var cat in treasure.resourceCategories)
+                                    {
+                                        Debug.Log($"[SaveManager] Dodajê kategoriê do usableItem: {cat.name}, iloœæ: {cat.resourceCount}");
+                                        usableSave.resourceCategoriesData.Add(new ResourceCategoryData
+                                        {
+                                            name = cat.name,
+                                            resourceCount = cat.resourceCount
+                                        });
+                                    }
+                                }
+                                data.usableItemSaveDatas.Add(usableSave);
+
+                                Debug.Log($"[SaveManager] Zapisano usableItem: {usableSave.itemName}, typ: {usableSave.usableType}, kategorii: {usableSave.resourceCategoriesData.Count}");
+                            }
+                            else
+                            {
+                                Debug.LogWarning($"[SaveManager] usableObj bez InteractableItem! Nazwa: {usableObj.name}");
+                            }
+                        }
+                        else
+                        {
+                            Debug.LogWarning("[SaveManager] usableObj == null!");
+                        }
+                    }
+                    Debug.Log($"[SaveManager] SavePlayerData: zapisanych usableItemSaveDatas = {data.usableItemSaveDatas.Count}");
 
                     foreach (var loot in inventory.loot)
                         if (loot != null)
@@ -458,6 +503,71 @@ public class SaveManager : MonoBehaviour
                 }
             }
 
+            Debug.Log($"[SaveManager] LoadPlayerData: czyszczê inventory.usableItems. Przed czyszczeniem: {inventory.usableItems.Count}");
+            inventory.usableItems.Clear();
+
+            Debug.Log($"[SaveManager] LoadPlayerData: liczba usableItemSaveDatas do wczytania: {data.usableItemSaveDatas.Count}");
+
+            foreach (var usableSave in data.usableItemSaveDatas)
+            {
+                Debug.Log($"[SaveManager] Próbujê odtworzyæ usableItem: {usableSave.itemName}, typ: {usableSave.usableType}, kategorii: {usableSave.resourceCategoriesData?.Count ?? 0}");
+
+                if (inventory.itemPrefabs.TryGetValue(usableSave.itemName, out var prefab) && prefab != null)
+                {
+                    Debug.Log($"[SaveManager] Prefab znaleziony dla: {usableSave.itemName}");
+
+                    GameObject usableObj = UnityEngine.Object.Instantiate(prefab);
+                    DontDestroyOnLoad(usableObj);
+
+                    var definer = usableObj.GetComponent<TreasureDefiner>();
+                    if (definer != null)
+                    {
+                        Debug.Log($"[SaveManager] Usuwam TreasureDefiner z: {usableObj.name}");
+                        GameObject.Destroy(definer);
+                    }
+
+                    var treasure = usableObj.GetComponent<TreasureResources>();
+                    if (treasure != null && usableSave.resourceCategoriesData != null)
+                    {
+                        treasure.resourceCategories.Clear();
+                        foreach (var cat in usableSave.resourceCategoriesData)
+                        {
+                            var rc = new ResourceCategory();
+                            rc.name = cat.name;
+                            rc.resourceCount = cat.resourceCount;
+                            treasure.resourceCategories.Add(rc);
+                            Debug.Log($"[SaveManager] Dodano kategoriê: {rc.name}, iloœæ: {rc.resourceCount}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[SaveManager] usableObj bez TreasureResources! Nazwa: {usableObj.name}");
+                    }
+
+                    var interactable = usableObj.GetComponent<InteractableItem>();
+                    if (interactable != null)
+                    {
+                        // Odtwórz typ usable (jeœli trzeba)
+                        interactable.usableType = (UsableType)Enum.Parse(typeof(UsableType), usableSave.usableType);
+                        Debug.Log($"[SaveManager] Odtworzono typ usable: {interactable.usableType} dla {usableObj.name}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[SaveManager] usableObj bez InteractableItem! Nazwa: {usableObj.name}");
+                    }
+
+                    inventory.usableItems.Add(usableObj);
+                    usableObj.SetActive(false);
+                    Debug.Log($"[SaveManager] usableItem dodany do inventory: {usableObj.name}");
+                }
+                else
+                {
+                    Debug.LogError($"[SaveManager] NIE MA prefabu dla usableItem: {usableSave.itemName}!");
+                }
+            }
+
+            Debug.Log($"[SaveManager] LoadPlayerData: inventory.usableItems po load = {inventory.usableItems.Count}");
+
             //Debug.Log("Load: items loaded = " + string.Join(",", loadedItemNames));
             //Debug.Log("Load: items categories = " + string.Join(",", loadedItemCats));
             //Debug.Log("Load: items quantities = " + string.Join(",", loadedItemQuant));
@@ -696,6 +806,7 @@ public class PlayerData
     public List<string> lootNames = new List<string>();
     public List<WeaponSaveData> weaponSaveDatas = new List<WeaponSaveData>();
     public List<ItemSaveData> itemSaveDatas = new List<ItemSaveData>();
+    public List<UsableItemSaveData> usableItemSaveDatas = new List<UsableItemSaveData>();
 
     public List<TurretCollectorSaveData> collectors = new List<TurretCollectorSaveData>();
 
@@ -732,6 +843,17 @@ public class ItemSaveData
 {
     public string itemName;
     public List<ResourceCategoryData> resourceCategoriesData = new List<ResourceCategoryData>();
+}
+
+[Serializable]
+public class UsableItemSaveData
+{
+    public string itemName;
+    public string usableType;
+    public List<ResourceCategoryData> resourceCategoriesData = new List<ResourceCategoryData>();
+    public int cooldownLeft;
+    public int usesLeft;
+    public string customEffectID;
 }
 
 [Serializable]

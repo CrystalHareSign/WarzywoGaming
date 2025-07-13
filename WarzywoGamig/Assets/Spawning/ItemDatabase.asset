@@ -23,3 +23,21 @@ MonoBehaviour:
     itemPrefab: {fileID: 1591325824849679810, guid: b545e7e9cb910ee409a3cdee4069334a, type: 3}
   - itemName: TreasureSilver
     itemPrefab: {fileID: 1591325824849679810, guid: f86aca3f024ccbe43903eaf1edcad46c, type: 3}
+  - itemName: EnergyDrink25
+    itemPrefab: {fileID: 6041756049560652714, guid: e324d8f47d1570749857c6ebb544b207, type: 3}
+  - itemName: EnergyDrink50
+    itemPrefab: {fileID: 5023971515512352450, guid: f827bded81403e84c9a69f553ebced22, type: 3}
+  - itemName: EnergyDrink75
+    itemPrefab: {fileID: 7235949906439536277, guid: c1fdb5653fcedc040beab0c5babe28c2, type: 3}
+  - itemName: EnergyDrink100
+    itemPrefab: {fileID: 8047544130592169205, guid: 1d974b68ba4bcf747a768dd3aa4661e6, type: 3}
+  - itemName: MedKit200
+    itemPrefab: {fileID: 7208079598093670341, guid: 5d29cac90f08f904abee788a001b86a8, type: 3}
+  - itemName: MedKit400
+    itemPrefab: {fileID: 4409697090503272974, guid: 82c71d6c23d5af84ba3d420ec906dd38, type: 3}
+  - itemName: MedKit600
+    itemPrefab: {fileID: 4312166767047467297, guid: 3a64ea2821f33be49aeb91136e8838a6, type: 3}
+  - itemName: MedKit800
+    itemPrefab: {fileID: 1386059688466124437, guid: cfb04de05a0bc2c4884e5bf7f3307311, type: 3}
+  - itemName: SpecialItem
+    itemPrefab: {fileID: 3070864060014540926, guid: fa7361376c139db4880abd1f3d37a6f1, type: 3}
