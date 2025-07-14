@@ -37,6 +37,8 @@ public class ProceduralLevelGenerator : MonoBehaviour
     [Header("Szanse pojawienia siê kategorii lootu (suma powinna byæ 1.0)")]
     public List<LootCategoryChance> lootCategoryChances;
 
+    [Header("Monster Spawning")]
+    public List<MonsterEntry> monsters;
 
     [Header("Generation Settings")]
     [Tooltip("Ile pokoi ma byæ w poziomie")]
@@ -51,6 +53,11 @@ public class ProceduralLevelGenerator : MonoBehaviour
     [Range(1, 5)]
     [Tooltip("Poziom rzadkoœci lootu (1 = tylko Common, 5 = szansa na Legendary)")]
     public int lootRarityLevel = 3;
+
+    [Header("Monster Enrichment")]
+    [Tooltip("Poziom wzbogacenia poziomu w potwory: 1 = bardzo ma³o, 5 = bardzo du¿o")]
+    [Range(1, 5)]
+    public int monsterLevel = 3;
 
     [Header("Szanse rarity dla ka¿dego poziomu loot enrichment (poziomy: 1-5)")]
     public LootRarityChanceRow[] lootRarityChancesTable = new LootRarityChanceRow[5];
@@ -70,10 +77,31 @@ public class ProceduralLevelGenerator : MonoBehaviour
     [HideInInspector]
     public int maxItemsOnMap = 10;
 
+    [Header("Bazowa szansa na pojawienie siê potwora przed bonusami/karnami")]
+    [Tooltip("Dodatkowy mno¿nik szansy za dystans od pokoju startowego")]
+    public float monsterDistanceBonusPerRoom = 0.15f;
+
+    [Tooltip("Maksymalny bonus od dystansu")]
+    public float monsterMaxDistanceBonus = 2.0f;
+
+    [Tooltip("Kara za kolejnego potwora w tym samym pokoju")]
+    public float monsterRoomSpawnPenalty = 0.7f;
+
+    [Tooltip("Bazowa szansa na pojawienie siê potwora w danym miejscu przed uwzglêdnieniem wszystkich bonusów i kar.")]
+    public float baseMonsterSpawnChance = 0.6f;
+
+    [Tooltip("Automatycznie wyliczana maksymalna liczba potworów na mapie")]
+    [HideInInspector]
+    public int maxMonstersOnMap = 6;
+
+    private static readonly float[] MonsterLevelMultipliers = { 0.3f, 0.45f, 0.6f, 0.8f, 1.0f };
+
     private static readonly float[] LootLevelMultipliers = { 0.7f, 1.0f, 1.2f, 1.5f, 2.0f };
 
     private List<PlacedRoom> placedRooms = new List<PlacedRoom>();
     private Vector3 startRoomPosition;
+
+    public NavMeshBaker navMeshBaker;
 
     private class GenerationStep
     {
@@ -172,8 +200,36 @@ public class ProceduralLevelGenerator : MonoBehaviour
             if (success)
             {
                 AutoBalanceItemSpawnParameters();
+                AutoBalanceMonsterSpawnParameters();
                 SpawnDoors();
                 SpawnItemsInRooms();
+
+                // 1. BAKE NAVMESH!
+                Debug.Log("Przed bake NavMesh. navMeshBaker: " + navMeshBaker);
+                if (navMeshBaker == null)
+                {
+                    Debug.LogError("navMeshBaker is NULL!");
+                }
+                else
+                {
+                    Debug.Log("navMeshBaker.surface: " + navMeshBaker.surface);
+                    if (navMeshBaker.surface == null)
+                        Debug.LogError("navMeshBaker.surface is NULL!");
+
+                    navMeshBaker.BakeNavMesh();
+                    Debug.Log("Po wywo³aniu BakeNavMesh");
+
+                    // Debug sprawdzaj¹cy czy navMeshData siê pojawi³
+                    if (navMeshBaker.surface.navMeshData == null)
+                        Debug.LogError("NavMeshData is NULL po bake!");
+                    else
+                        Debug.Log("NavMeshData istnieje po bake!");
+                }
+
+                yield return null; // <- odczekaj jedn¹ klatkê
+
+                // 2. SPAWN POTWORY!
+                SpawnMonstersInRooms();
                 ValidateDoorwaysNoWall();
             }
         }
@@ -239,8 +295,36 @@ public class ProceduralLevelGenerator : MonoBehaviour
         if (success)
         {
             AutoBalanceItemSpawnParameters();
+            AutoBalanceMonsterSpawnParameters();
             SpawnDoors();
             SpawnItemsInRooms();
+
+            // 1. BAKE NAVMESH!
+            Debug.Log("Przed bake NavMesh. navMeshBaker: " + navMeshBaker);
+            if (navMeshBaker == null)
+            {
+                Debug.LogError("navMeshBaker is NULL!");
+            }
+            else
+            {
+                Debug.Log("navMeshBaker.surface: " + navMeshBaker.surface);
+                if (navMeshBaker.surface == null)
+                    Debug.LogError("navMeshBaker.surface is NULL!");
+
+                navMeshBaker.BakeNavMesh();
+                Debug.Log("Po wywo³aniu BakeNavMesh");
+
+                // Debug sprawdzaj¹cy czy navMeshData siê pojawi³
+                if (navMeshBaker.surface.navMeshData == null)
+                    Debug.LogError("NavMeshData is NULL po bake!");
+                else
+                    Debug.Log("NavMeshData istnieje po bake!");
+            }
+
+            yield return null; // <- odczekaj jedn¹ klatkê
+
+            // 2. SPAWN POTWORY!
+            SpawnMonstersInRooms();
             ValidateDoorwaysNoWall();
         }
     }
@@ -995,6 +1079,171 @@ public class ProceduralLevelGenerator : MonoBehaviour
 #endif
     }
 
+    void AutoBalanceMonsterSpawnParameters()
+    {
+        int rooms = roomCount;
+        int monsterIdx = Mathf.Clamp(monsterLevel, 1, 5) - 1;
+        float multiplier = MonsterLevelMultipliers[monsterIdx];
+
+        // Wylicz ile potworów na mapie (np. pokoje * ratio)
+        maxMonstersOnMap = Mathf.Clamp(Mathf.RoundToInt(rooms * multiplier), 1, 9999);
+
+        int maxDist = Mathf.Max(rooms - 1, 1);
+        monsterMaxDistanceBonus = 2.0f;
+        monsterDistanceBonusPerRoom = (monsterMaxDistanceBonus - 1f) / maxDist;
+
+        monsterRoomSpawnPenalty = Mathf.Lerp(0.5f, 0.85f, Mathf.InverseLerp(5, 30, rooms));
+
+        // Zbierz wszystkie spawn pointy na potwory
+        var allMonsterSpawnPoints = new List<(PlacedRoom room, Vector3 localPos)>();
+        foreach (var placed in placedRooms)
+        {
+            if (placed.data.monsterSpawnPoints == null) continue;
+            foreach (var pos in placed.data.monsterSpawnPoints)
+                allMonsterSpawnPoints.Add((placed, pos));
+        }
+        int monsterSpawnPointCount = allMonsterSpawnPoints.Count;
+
+        // Œredni bonus/karê
+        float avgBonusPenalty = 0f;
+        foreach (var (room, localPos) in allMonsterSpawnPoints)
+        {
+            int dist = 0;
+            float normDist = maxDist > 0 ? (float)dist / (float)maxDist : 0f;
+            float distanceBonus = 1.0f + Mathf.Min(normDist * monsterDistanceBonusPerRoom * maxDist, monsterMaxDistanceBonus - 1.0f);
+            float roomPenaltyValue = Mathf.Pow(monsterRoomSpawnPenalty, 0);
+
+            avgBonusPenalty += distanceBonus * roomPenaltyValue;
+        }
+        avgBonusPenalty = monsterSpawnPointCount > 0 ? avgBonusPenalty / monsterSpawnPointCount : 1f;
+
+        baseMonsterSpawnChance = monsterSpawnPointCount > 0
+            ? Mathf.Clamp01((float)maxMonstersOnMap / (monsterSpawnPointCount * avgBonusPenalty))
+            : 1.0f;
+
+        // Automatycznie maxCount dla typów potworów
+        foreach (var m in monsters)
+        {
+            if (m.maxCount <= 0)
+            {
+                float boost = Random.Range(1.10f, 1.25f);
+                m.maxCount = Mathf.Max(1, Mathf.RoundToInt(maxMonstersOnMap / (float)monsters.Count * boost));
+            }
+        }
+
+        Debug.Log($"[BALANCE-MONSTER] Pokoi: {rooms}, enrichment: {monsterLevel}, mno¿nik: {multiplier}, spawnPointów: {monsterSpawnPointCount}, œredni bonus/kar: {avgBonusPenalty:F2}, bazowa szansa: {baseMonsterSpawnChance:F2}, max potworów: {maxMonstersOnMap}");
+    }
+
+    void SpawnMonstersInRooms()
+    {
+        var allMonsterSpawnPoints = new List<(PlacedRoom room, Vector3 localPos)>();
+        for (int idx = 0; idx < placedRooms.Count; idx++)
+        {
+            var room = placedRooms[idx];
+            if (idx == 0) continue; // nie spawnuj w startowym
+            if (room.data.monsterSpawnPoints == null) continue;
+            foreach (var pos in room.data.monsterSpawnPoints)
+                allMonsterSpawnPoints.Add((room, pos));
+        }
+        if (allMonsterSpawnPoints.Count == 0 || monsters == null || monsters.Count == 0) return;
+
+        var roomDistances = ComputeRoomDistances(placedRooms);
+        int maxDist = roomDistances.Count > 0 ? roomDistances.Values.Max() : 1;
+
+        var monstersInRoom = new Dictionary<PlacedRoom, int>();
+        var monsterTypeCounter = new Dictionary<MonsterEntry, int>();
+        foreach (var r in placedRooms) monstersInRoom[r] = 0;
+        foreach (var m in monsters) monsterTypeCounter[m] = 0;
+
+        Shuffle(allMonsterSpawnPoints);
+
+        int spawned = 0;
+        var emptySpawnPoints = new List<(PlacedRoom room, Vector3 localPos)>();
+
+        // Pierwszy przebieg – losowanie potworów
+        foreach (var (room, localPos) in allMonsterSpawnPoints)
+        {
+            if (spawned >= maxMonstersOnMap) break;
+
+            int dist = roomDistances.TryGetValue(room, out int d) ? d : 0;
+            float normDist = maxDist > 0 ? (float)dist / (float)maxDist : 0f;
+            float distanceBonus = 1.0f + Mathf.Min(normDist * monsterDistanceBonusPerRoom * maxDist, monsterMaxDistanceBonus - 1.0f);
+            float roomPenalty = Mathf.Pow(monsterRoomSpawnPenalty, monstersInRoom[room]);
+            float finalChance = baseMonsterSpawnChance * distanceBonus * roomPenalty;
+
+            if (Random.value > finalChance)
+            {
+                emptySpawnPoints.Add((room, localPos));
+                continue;
+            }
+
+            MonsterEntry entry = WeightedRandomMonster(monsters.Where(e => e.maxCount == 0 || monsterTypeCounter[e] < e.maxCount).ToList());
+            if (entry == null || entry.prefab == null)
+            {
+                emptySpawnPoints.Add((room, localPos));
+                continue;
+            }
+
+            Vector3 worldPos = room.room.transform.TransformPoint(localPos);
+            Instantiate(entry.prefab, worldPos, Quaternion.identity, room.room.transform);
+
+            spawned++;
+            monstersInRoom[room]++;
+            monsterTypeCounter[entry]++;
+
+            Debug.Log($"[MONSTER SPAWN] {entry.prefab.name} | Pokój: {room.room.name}");
+        }
+
+        // DOGRYWKA – a¿ dobijesz do maxMonstersOnMap lub skoñcz¹ siê spawn pointy
+        while (spawned < maxMonstersOnMap && emptySpawnPoints.Count > 0)
+        {
+            var tryAgain = new List<(PlacedRoom room, Vector3 localPos)>();
+            Shuffle(emptySpawnPoints);
+            foreach (var (room, localPos) in emptySpawnPoints)
+            {
+                if (spawned >= maxMonstersOnMap) break;
+
+                int dist = roomDistances.TryGetValue(room, out int d) ? d : 0;
+                float normDist = maxDist > 0 ? (float)dist / (float)maxDist : 0f;
+                float distanceBonus = 1.0f + Mathf.Min(normDist * monsterDistanceBonusPerRoom * maxDist, monsterMaxDistanceBonus - 1.0f);
+                float roomPenalty = Mathf.Pow(monsterRoomSpawnPenalty, monstersInRoom[room]);
+                float finalChance = baseMonsterSpawnChance * distanceBonus * roomPenalty;
+
+                if (Random.value > finalChance)
+                {
+                    tryAgain.Add((room, localPos));
+                    continue;
+                }
+
+                MonsterEntry entry = WeightedRandomMonster(monsters.Where(e => e.maxCount == 0 || monsterTypeCounter[e] < e.maxCount).ToList());
+                if (entry == null || entry.prefab == null)
+                {
+                    tryAgain.Add((room, localPos));
+                    continue;
+                }
+
+                Vector3 worldPos = room.room.transform.TransformPoint(localPos);
+                Instantiate(entry.prefab, worldPos, Quaternion.identity, room.room.transform);
+
+                spawned++;
+                monstersInRoom[room]++;
+                monsterTypeCounter[entry]++;
+
+                Debug.Log($"[MONSTER SPAWN] {entry.prefab.name} | Pokój: {room.room.name}");
+            }
+            emptySpawnPoints = tryAgain;
+        }
+
+        Debug.Log($"[MONSTER SUMMARY] W sumie zespawnowano {spawned} potworów.");
+    }
+
+    // Pomocnicza: losuje typ potwora z listy z wag¹ spawnChance
+    MonsterEntry WeightedRandomMonster(List<MonsterEntry> list)
+    {
+        if (list == null || list.Count == 0) return null;
+        return list[Random.Range(0, list.Count)];
+    }
+
     Dictionary<PlacedRoom, int> ComputeRoomDistances(List<PlacedRoom> placedRooms)
     {
         var distances = new Dictionary<PlacedRoom, int>();
@@ -1149,4 +1398,13 @@ public class LootCategoryChance
     public LootCategory category;
     [Range(0f, 1f)]
     public float spawnChance;
+}
+
+// Typ dla potworów:
+[System.Serializable]
+public class MonsterEntry
+{
+    public GameObject prefab;
+    [Tooltip("Maksymalna liczba tego typu potwora na mapie (0 = wyliczana automatycznie)")]
+    public int maxCount = 0;
 }
