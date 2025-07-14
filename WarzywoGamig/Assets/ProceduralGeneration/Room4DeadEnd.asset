@@ -20,3 +20,6 @@ MonoBehaviour:
   itemSpawnPoints:
   - {x: -6, y: 2, z: 25}
   - {x: 10, y: 2, z: -1}
+  monsterSpawnPoints:
+  - {x: 0, y: 1, z: -15}
+  - {x: 0, y: 1, z: 15}

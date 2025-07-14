@@ -21,3 +21,10 @@ MonoBehaviour:
   - localPosition: {x: -15, y: 0, z: 5}
     direction: 3
   spawnChance: 20
+  itemSpawnPoints:
+  - {x: 20, y: 1, z: 0}
+  - {x: -20, y: 1, z: 0}
+  monsterSpawnPoints:
+  - {x: 0, y: 1, z: -20}
+  - {x: -20, y: 1, z: 5}
+  - {x: 20, y: 1, z: 5}

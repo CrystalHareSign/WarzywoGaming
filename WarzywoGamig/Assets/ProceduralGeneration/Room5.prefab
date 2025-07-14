@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 452745562437491175}
   - component: {fileID: 6935349121202494953}
   - component: {fileID: 2258549659420213086}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -120,7 +120,7 @@ GameObject:
   - component: {fileID: 9092549900172767284}
   - component: {fileID: 1779311568949237666}
   - component: {fileID: 6670180386138810382}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: WallC3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -228,7 +228,7 @@ GameObject:
   - component: {fileID: 1938597091836817402}
   - component: {fileID: 4507012142770452603}
   - component: {fileID: 634343111368731502}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -324,6 +324,68 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &1028452984076063380
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8509145681411759302}
+  m_Layer: 0
+  m_Name: MonsterSP3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8509145681411759302
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1028452984076063380}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 20, y: 1, z: 5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3807399503086722657}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2483298526960043549
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8018106833103678855}
+  m_Layer: 0
+  m_Name: MonsterSP1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8018106833103678855
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2483298526960043549}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 1, z: -20}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3807399503086722657}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2492351757061687560
 GameObject:
   m_ObjectHideFlags: 0
@@ -336,7 +398,7 @@ GameObject:
   - component: {fileID: 2667803571598434135}
   - component: {fileID: 3429312046603654880}
   - component: {fileID: 1423586834613334951}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: WallC5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -477,6 +539,9 @@ Transform:
   - {fileID: 6539206755981488071}
   - {fileID: 1907696408466600255}
   - {fileID: 1483658509574682919}
+  - {fileID: 8018106833103678855}
+  - {fileID: 655246822654054075}
+  - {fileID: 8509145681411759302}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2900388268196764584
@@ -491,7 +556,7 @@ GameObject:
   - component: {fileID: 5037823865386235987}
   - component: {fileID: 6150008488220928441}
   - component: {fileID: 4681724908428340691}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: WallS
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -599,7 +664,7 @@ GameObject:
   - component: {fileID: 7030914563364002704}
   - component: {fileID: 3323208107537203202}
   - component: {fileID: 6561059167086846566}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Floor2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -737,7 +802,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6539206755981488071}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: WallE
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -775,7 +840,7 @@ GameObject:
   - component: {fileID: 7093636033680257252}
   - component: {fileID: 7629180060086951052}
   - component: {fileID: 2243989161973364816}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -883,7 +948,7 @@ GameObject:
   - component: {fileID: 7693380211226427796}
   - component: {fileID: 2587004530617355791}
   - component: {fileID: 3949623119538463073}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: WallC1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1096,7 +1161,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6614942260726191855}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: WallN
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1166,7 +1231,7 @@ GameObject:
   - component: {fileID: 5127271500333566918}
   - component: {fileID: 2622938752209613225}
   - component: {fileID: 792695560077426996}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1336,7 +1401,7 @@ GameObject:
   - component: {fileID: 4098602765111281116}
   - component: {fileID: 4391930756286773801}
   - component: {fileID: 8002503278485563597}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1444,7 +1509,7 @@ GameObject:
   - component: {fileID: 1420668779912082327}
   - component: {fileID: 1569663450816256596}
   - component: {fileID: 4078432082659845585}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1583,7 +1648,7 @@ GameObject:
   - component: {fileID: 6456584736230909875}
   - component: {fileID: 3077136229831023610}
   - component: {fileID: 769008115439190807}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: WallC4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1691,7 +1756,7 @@ GameObject:
   - component: {fileID: 1789980096869936607}
   - component: {fileID: 1551543864472379764}
   - component: {fileID: 4462706510194698458}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1827,7 +1892,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7611490821424969458}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: WallW
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1865,7 +1930,7 @@ GameObject:
   - component: {fileID: 4032176350209794890}
   - component: {fileID: 2776945215808162177}
   - component: {fileID: 7117059612228991267}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: WallC2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1973,7 +2038,7 @@ GameObject:
   - component: {fileID: 981285456791584064}
   - component: {fileID: 4816565180187111166}
   - component: {fileID: 7402903047284289331}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2081,7 +2146,7 @@ GameObject:
   - component: {fileID: 6916336443335606732}
   - component: {fileID: 530885779828021367}
   - component: {fileID: 5986524685847332404}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Floor1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2189,7 +2254,7 @@ GameObject:
   - component: {fileID: 6729709841105780367}
   - component: {fileID: 127532126718270866}
   - component: {fileID: 6789621874919863121}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2297,7 +2362,7 @@ GameObject:
   - component: {fileID: 8383037023570738273}
   - component: {fileID: 1640536576294869570}
   - component: {fileID: 4593569291420832716}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2405,7 +2470,7 @@ GameObject:
   - component: {fileID: 5941242263734903392}
   - component: {fileID: 8444746617763067878}
   - component: {fileID: 5696419027578204815}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2501,6 +2566,37 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &9007614591915444185
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 655246822654054075}
+  m_Layer: 0
+  m_Name: MonsterSP2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &655246822654054075
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9007614591915444185}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -20, y: 1, z: 5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3807399503086722657}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &9014522736560432708
 GameObject:
   m_ObjectHideFlags: 0
@@ -2546,7 +2642,7 @@ GameObject:
   - component: {fileID: 489421788607236218}
   - component: {fileID: 831369607279147598}
   - component: {fileID: 1640412950841816793}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2762,7 +2858,7 @@ GameObject:
   - component: {fileID: 1956448240871355388}
   - component: {fileID: 736281177059812924}
   - component: {fileID: 8351531981913279301}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall3
   m_TagString: Untagged
   m_Icon: {fileID: 0}

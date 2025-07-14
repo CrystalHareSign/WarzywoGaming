@@ -18,6 +18,7 @@ TagManager:
   - Grass
   - PlayerBody
   - Crosshair
+  - Door
   layers:
   - Default
   - TransparentFX
@@ -39,8 +40,8 @@ TagManager:
   - 
   - 
   - 
-  - 
-  - 
+  - WalkableProcedural
+  - ObstacleProcedural
   - 
   - 
   - 

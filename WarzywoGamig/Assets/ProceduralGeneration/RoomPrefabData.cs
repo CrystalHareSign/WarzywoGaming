@@ -23,5 +23,6 @@ public class RoomPrefabData : ScriptableObject
     public List<Doorway> doorways;
     [Range(0, 100)]
     public int spawnChance = 100;
-    public List<Vector3> itemSpawnPoints; // Pozycje lokalne na itemy
+    public List<Vector3> itemSpawnPoints;      // Pozycje lokalne na itemy
+    public List<Vector3> monsterSpawnPoints;   // Pozycje lokalne na potwory
 }

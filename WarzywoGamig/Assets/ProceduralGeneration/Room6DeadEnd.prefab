@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 804569563467234927}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: WallW
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -41,7 +41,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1339252350450454785}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: WallN
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -78,7 +78,7 @@ GameObject:
   - component: {fileID: 2254636274470510851}
   - component: {fileID: 2811513567361304107}
   - component: {fileID: 5213798986994666751}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -186,7 +186,7 @@ GameObject:
   - component: {fileID: 4965270345075472053}
   - component: {fileID: 9215477408195746067}
   - component: {fileID: 193696955578260519}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -294,7 +294,7 @@ GameObject:
   - component: {fileID: 853471755071084626}
   - component: {fileID: 7770685331732845633}
   - component: {fileID: 2410786270353104099}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -510,7 +510,7 @@ GameObject:
   - component: {fileID: 6080538169170227179}
   - component: {fileID: 1592935961250685775}
   - component: {fileID: 8009191139308634576}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -615,7 +615,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1949640861895689066}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: WallE
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -675,6 +675,8 @@ Transform:
   - {fileID: 804569563467234927}
   - {fileID: 1949640861895689066}
   - {fileID: 288510701242143891}
+  - {fileID: 5186958037509485233}
+  - {fileID: 4290929053163456966}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5985522641274869911
@@ -689,7 +691,7 @@ GameObject:
   - component: {fileID: 3214273551912942183}
   - component: {fileID: 1693179143630489568}
   - component: {fileID: 2483978158568029651}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Wall2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -828,7 +830,7 @@ GameObject:
   - component: {fileID: 6724562969237168654}
   - component: {fileID: 5995356340914401705}
   - component: {fileID: 331361871901215122}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Floor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -924,6 +926,37 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &8039767956240463429
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4290929053163456966}
+  m_Layer: 0
+  m_Name: MonsterSP2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4290929053163456966
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8039767956240463429}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 5, y: 1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3370879039516056075}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8292084233986419994
 GameObject:
   m_ObjectHideFlags: 0
@@ -936,7 +969,7 @@ GameObject:
   - component: {fileID: 4599922495266834366}
   - component: {fileID: 6610779183289861039}
   - component: {fileID: 4790519592827846518}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: WallS
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1032,6 +1065,37 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &8766850523411093014
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5186958037509485233}
+  m_Layer: 0
+  m_Name: MonsterSP1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5186958037509485233
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8766850523411093014}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -5, y: 1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3370879039516056075}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &9075241409189303958
 GameObject:
   m_ObjectHideFlags: 0
