@@ -19,6 +19,7 @@ TagManager:
   - PlayerBody
   - Crosshair
   - Door
+  - ProceduralRoom
   layers:
   - Default
   - TransparentFX
@@ -29,7 +30,7 @@ TagManager:
   - Ground
   - InteractableLayer
   - Grass
-  - 
+  - Player
   - 
   - 
   - 
