@@ -129,14 +129,22 @@ MonoBehaviour:
   category: 
   quantity: 0
   startAsNonInteractive: 0
-  canBePickedUp: 0
-  canBeDropped: 1
+  canBePickedUp: 1
+  canBeDropped: 0
   isWeapon: 1
   isLoot: 0
+  isUsableItem: 0
+  usableType: 1
+  data: {fileID: 0}
+  isNPC: 0
+  npcDialogues: []
+  currentDialogueIndex: 0
   isTurret: 0
   isRefiner: 0
   isMonitor: 0
   busMonitor: 0
+  isDriverSeat: 0
+  isMissionDefiner: 0
   alwaysInteractive: 1
   hasCooldown: 0
   usesHealthSystem: 0
@@ -149,6 +157,7 @@ MonoBehaviour:
   SceneHome: 0
   wheelHealthUI: {fileID: 0}
   wheelManager: {fileID: 0}
+  dialogueManager: {fileID: 0}
 --- !u!114 &9007757771121226921
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -163,6 +172,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   messageEnglish: 
   messagePolish: 
+  infoEnglish: 
+  infoPolish: 
   keyText: '[E]'
   interactionDistance: 5
   isInteracted: 0
@@ -172,7 +183,10 @@ MonoBehaviour:
   SceneHome: 0
   messageFontSize: 20
   keyFontSize: 30
+  infoFontSize: 20
+  duration: 3
   message: "Wci\u015Bnij E aby podnie\u015B\u0107"
+  infoMessage: 
 --- !u!114 &-5088988975383692331
 MonoBehaviour:
   m_ObjectHideFlags: 0

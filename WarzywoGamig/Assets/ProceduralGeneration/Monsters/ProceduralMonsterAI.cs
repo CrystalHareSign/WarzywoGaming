@@ -42,6 +42,24 @@ public class ProceduralMonsterAI : MonoBehaviour
     [Tooltip("Ile sekund stoi w jednym punkcie podczas szukania")]
     public float searchWaitTime = 0.7f;
 
+    [Header("Atak - sto¿ek przed potworem")]
+    [Tooltip("Zasiêg ataku (jak daleko siêga potwór)")]
+    public float attackRange = 2.4f;
+    [Tooltip("K¹t ataku (w stopniach, np. 60 = tylko przed potworem)")]
+    [Range(0, 180)] public float attackAngle = 60f;
+    [Tooltip("Obra¿enia zadawane graczowi przez jeden atak")]
+    public float attackDamage = 20f;
+    [Tooltip("Czas oczekiwania przed atakiem (okienko na ucieczkê)")]
+    public float attackWindupTime = 0.6f;
+    [Tooltip("Cooldown pomiêdzy atakami")]
+    public float attackCooldown = 1.5f;
+    [Tooltip("Prêdkoœæ potwora gdy szykuje siê do ataku")]
+    public float attackSlowSpeed = 0.25f;
+
+    private float lastAttackTime = -999f;
+    private bool isAttackWindup = false;
+    private float attackWindupTimer = 0f;
+
     private Vector3 lastKnownPlayerPosition;
     private bool hasLastKnownPosition = false;
     private float searchTimer = 0f;
@@ -51,6 +69,7 @@ public class ProceduralMonsterAI : MonoBehaviour
     private float searchWaitTimer = 0f;
 
     private Transform player;
+    private PlayerStats playerStats;
     private NavMeshAgent agent;
     private Vector3 patrolTarget;
     private float patrolTimer;
@@ -66,7 +85,10 @@ public class ProceduralMonsterAI : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         GameObject playerObj = GameObject.FindWithTag("Player");
         if (playerObj != null)
+        {
             player = playerObj.transform;
+            playerStats = player.GetComponent<PlayerStats>();
+        }
 
         rend = GetComponentInChildren<Renderer>();
         if (rend != null)
@@ -90,6 +112,49 @@ public class ProceduralMonsterAI : MonoBehaviour
             // ZMIANA KOLORU
             if (rend != null)
                 rend.material.color = detected ? agroColor : calmColor;
+
+            // --- ATAKOWANIE ---
+            bool canAttack = detected && CanAttackPlayer();
+
+            // Zmienione: AI nie zatrzymuje siê w windupie, tylko zwalnia i goni gracza
+            if (canAttack)
+            {
+                if (!isAttackWindup && Time.time >= lastAttackTime + attackCooldown)
+                {
+                    agent.isStopped = false;
+                    agent.speed = attackSlowSpeed; // zwalnia, ale nie zatrzymuje siê
+                    isAttackWindup = true;
+                    attackWindupTimer = 0f;
+                }
+                if (isAttackWindup)
+                {
+                    attackWindupTimer += Time.deltaTime;
+                    agent.SetDestination(player.position); // zawsze goni gracza
+                    if (attackWindupTimer >= attackWindupTime)
+                    {
+                        // Na koñcu windupu sprawdzamy, czy gracz jest w zasiêgu
+                        if (CanAttackPlayer())
+                        {
+                            PerformAttack();
+                            lastAttackTime = Time.time;
+                        }
+                        isAttackWindup = false;
+                        attackWindupTimer = 0f;
+                    }
+                }
+                else
+                {
+                    // Jeœli skoñczy³ windup, wraca do poœcigu na szybkoœci AGRO
+                    agent.speed = agroSpeed;
+                    agent.isStopped = false;
+                    agent.SetDestination(player.position);
+                }
+                return;
+            }
+            // Je¿eli nie mo¿na zaatakowaæ, resetuj windup
+            isAttackWindup = false;
+            attackWindupTimer = 0f;
+
 
             if (detected)
             {
@@ -118,13 +183,12 @@ public class ProceduralMonsterAI : MonoBehaviour
             agent.isStopped = false;
             agent.speed = searchSpeed; // SZYBKOŒÆ SZUKANIA
 
-            // Jeœli dotar³ do celu szukania lub jeszcze nie ma celu
             if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
             {
                 searchWaitTimer += Time.deltaTime;
+
                 if (searchWaitTimer >= searchWaitTime)
                 {
-                    // Losuj nowy punkt wokó³ ostatniej pozycji gracza
                     Vector2 circle = Random.insideUnitCircle * searchRadius;
                     searchTarget = lastKnownPlayerPosition + new Vector3(circle.x, 0, circle.y);
                     agent.SetDestination(searchTarget);
@@ -146,6 +210,45 @@ public class ProceduralMonsterAI : MonoBehaviour
         PatrolBehaviour();
     }
 
+    /// <summary>
+    /// Czy gracz jest w zasiêgu ataku (sto¿ek przed potworem)?
+    /// </summary>
+    bool CanAttackPlayer()
+    {
+        if (player == null) return false;
+        Vector3 origin = transform.position + Vector3.up * eyeHeight;
+        Vector3 target = player.position + Vector3.up * playerEyeHeight;
+        Vector3 dirToPlayer = (target - origin).normalized;
+        float distance = Vector3.Distance(origin, target);
+
+        if (distance > attackRange)
+            return false;
+
+        float angle = Vector3.Angle(transform.forward, dirToPlayer);
+        if (angle > attackAngle / 2f)
+            return false;
+
+        // Raycast: czy nie ma przeszkody?
+        if (Physics.Raycast(origin, dirToPlayer, out RaycastHit hit, attackRange, detectionMask))
+        {
+            if (hit.transform.CompareTag("Player"))
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Zadaj obra¿enia graczowi jeœli nadal jest w zasiêgu ataku!
+    /// </summary>
+    private void PerformAttack()
+    {
+        if (playerStats != null && CanAttackPlayer())
+        {
+            playerStats.TakeDamage(attackDamage);
+            // Mo¿esz dodaæ animacje, dŸwiêki, efekty itp.
+        }
+    }
+
     bool IsPlayerInSight()
     {
         Vector3 origin = transform.position + Vector3.up * eyeHeight;
@@ -162,7 +265,6 @@ public class ProceduralMonsterAI : MonoBehaviour
 
         if (Physics.Raycast(origin, dirToPlayer, out RaycastHit hit, sightRange, detectionMask))
         {
-            Debug.Log("Raycast trafi³ w: " + hit.transform.name + " | tag: " + hit.transform.tag + " | warstwa: " + LayerMask.LayerToName(hit.transform.gameObject.layer));
             if (hit.transform.CompareTag("Player"))
                 return true;
         }
@@ -216,10 +318,11 @@ public class ProceduralMonsterAI : MonoBehaviour
         isPatrolling = true;
         patrolTimer = 0f;
 
-        // resetowanie zmiennych szukania na wszelki wypadek
         searching = false;
         searchTimer = 0f;
         searchWaitTimer = 0f;
+        isAttackWindup = false;
+        attackWindupTimer = 0f;
     }
 
     Vector3 GetRandomPatrolPoint()
@@ -274,6 +377,20 @@ public class ProceduralMonsterAI : MonoBehaviour
         {
             Gizmos.color = new Color(1f, 0.5f, 0.2f, 0.3f);
             Gizmos.DrawWireSphere(lastKnownPlayerPosition, searchRadius);
+        }
+
+        // Sto¿ek ataku przed potworem
+        Gizmos.color = new Color(1f, 0.2f, 0.2f, 0.4f);
+        Vector3 attackOrigin = transform.position + Vector3.up * eyeHeight;
+        float halfAttackAngle = attackAngle * 0.5f;
+        Vector3 attackForward = transform.forward;
+        int attackSegments = 16;
+        for (int i = 0; i <= attackSegments; i++)
+        {
+            float angle = Mathf.Lerp(-halfAttackAngle, halfAttackAngle, i / (float)attackSegments);
+            Quaternion rot = Quaternion.AngleAxis(angle, Vector3.up);
+            Vector3 dir = rot * attackForward;
+            Gizmos.DrawLine(attackOrigin, attackOrigin + dir * attackRange);
         }
     }
 }

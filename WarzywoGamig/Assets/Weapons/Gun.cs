@@ -16,7 +16,7 @@ public class Gun : MonoBehaviour
     public Transform shootingPoint;
 
     private bool isReloading = false;
-    private Coroutine reloadCoroutine = null; // <--- referencja do coroutine przeładowania
+    private Coroutine reloadCoroutine = null;
 
     [Header("Ammo Settings")]
     public bool unlimitedAmmo = false;
@@ -32,7 +32,6 @@ public class Gun : MonoBehaviour
 
     void Start()
     {
-
         inventoryUI = Object.FindFirstObjectByType<InventoryUI>();
     }
 
@@ -78,7 +77,23 @@ public class Gun : MonoBehaviour
             currentAmmo--;
         }
 
-        Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
+        // Wystrzeliwuje pocisk w miejsce kursora (środek ekranu lub pod myszą)
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+        Vector3 targetPoint;
+        if (Physics.Raycast(ray, out hit, 1000f))
+        {
+            targetPoint = hit.point;
+        }
+        else
+        {
+            targetPoint = ray.GetPoint(1000f);
+        }
+
+        Vector3 direction = (targetPoint - shootingPoint.position).normalized;
+        Quaternion lookRotation = Quaternion.LookRotation(direction);
+
+        Instantiate(bulletPrefab, shootingPoint.position, lookRotation);
 
         if (inventoryUI != null)
         {
@@ -94,9 +109,8 @@ public class Gun : MonoBehaviour
     public void StartReload()
     {
         if (isReloading) return;
-        if (!isWeaponEquipped) return; // <-- kluczowa linia, nie przeładowuj jeśli broń nie jest trzymana
+        if (!isWeaponEquipped) return;
 
-        // Jeśli coroutine już działa, nie uruchamiaj kolejnej
         reloadCoroutine = StartCoroutine(Reload());
     }
 
@@ -111,7 +125,6 @@ public class Gun : MonoBehaviour
 
         yield return new WaitForSeconds(reloadTime);
 
-        // Jeśli w trakcie reloadu broń została schowana, przerywamy!
         if (!isWeaponEquipped)
         {
             isReloading = false;
@@ -134,7 +147,6 @@ public class Gun : MonoBehaviour
         Debug.Log("Reloaded!");
     }
 
-    // Anulowanie przeładowania (np. przy chowaniu broni)
     public void CancelReload()
     {
         if (reloadCoroutine != null)
@@ -144,7 +156,7 @@ public class Gun : MonoBehaviour
         }
         isReloading = false;
 
-        if (inventoryUI != null) // schowaj info o przeładowaniu
+        if (inventoryUI != null)
         {
             inventoryUI.UpdateWeaponUI(this);
         }
@@ -152,7 +164,7 @@ public class Gun : MonoBehaviour
 
     void OnDisable()
     {
-        CancelReload(); // automatycznie kasuje przeładowanie przy Deactivate
+        CancelReload();
         isWeaponEquipped = false;
     }
 

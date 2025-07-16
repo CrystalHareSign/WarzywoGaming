@@ -4,40 +4,43 @@ public class Bullet : MonoBehaviour
 {
     [Header("Bullet Settings")]
     public float speed = 20f;
-    public int damage = 20; // Obrażenia zadawane przez pocisk
-    public float lifeTime = 5f; // Czas życia pocisku w sekundach
+    public int damage = 20;
+    public float lifeTime = 5f;
     public Rigidbody rb;
-    public GameObject impactEffect; // Efekt trafienia (przypisany w Inspectorze)
+    public GameObject impactEffect;
 
     void Start()
     {
         if (rb == null)
         {
-            rb = GetComponent<Rigidbody>(); // Pobranie Rigidbody, jeśli nie jest przypisane
+            rb = GetComponent<Rigidbody>();
         }
 
-        rb.linearVelocity = transform.forward * speed;  // ✅ Naprawione poruszanie się pocisku
+        rb.linearVelocity = transform.forward * speed;
 
-        // Zniszczenie pocisku po określonym czasie
         Destroy(gameObject, lifeTime);
     }
 
-    void OnCollisionEnter(Collision hit)
+    void OnCollisionEnter(Collision collision)
     {
-        if (hit.collider.CompareTag("Enemy")) // ✅ Upewniamy się, że trafiliśmy we wroga
+        Debug.Log("Bullet hit: " + collision.collider.name);
+
+        if (collision.collider.CompareTag("Enemy"))
         {
-            EnemyHealth enemy = hit.collider.GetComponent<EnemyHealth>(); // ✅ Zamieniamy `Zombie` na `EnemyHealth`
+            // Szukaj EnemyHealth na root obiekcie wroga
+            EnemyHealth enemy = collision.collider.GetComponentInParent<EnemyHealth>();
             if (enemy != null)
             {
-                enemy.TakeDamage(damage);  // Zadaj obrażenia wrogowi
+                Debug.Log("Dealing damage to enemy!");
+                enemy.TakeDamage(damage);
             }
         }
 
-        if (impactEffect != null) // ✅ Dodajemy efekt trafienia (jeśli przypisany)
+        if (impactEffect != null)
         {
             Instantiate(impactEffect, transform.position, Quaternion.identity);
         }
 
-        Destroy(gameObject); // ✅ Zniszczenie pocisku po trafieniu
+        Destroy(gameObject);
     }
 }

@@ -6,6 +6,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Movement Settings")]
     [SerializeField] public float moveSpeed = 5f; // public, by InventoryUI mógł spowalniać
     [SerializeField] private float sprintSpeed = 8f;
+    [SerializeField] private float backwardSpeed = 3f; // <--- NOWE POLE: prędkość do tyłu/po skosie
     [SerializeField] private float gravity = -9.81f;
     [SerializeField] private float jumpHeight = 1.5f;
     [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
@@ -87,6 +88,11 @@ public class PlayerMovement : MonoBehaviour
         if (move.magnitude > 1f)
             move = move.normalized;
 
+        // Kierunek względem transform.forward
+        float moveForwardDot = Vector3.Dot(move, transform.forward);
+        // Dot < 0 oznacza ruch z komponentem do tyłu (czyli także po skosie do tyłu)
+        bool isMovingBackwardDiagonal = moveForwardDot < 0f && move.magnitude > 0.1f;
+
         bool isSprintKeyPressed = Input.GetKey(sprintKey);
         bool isTryingToMove = move.magnitude > 0.1f;
 
@@ -105,6 +111,13 @@ public class PlayerMovement : MonoBehaviour
             sprintBlocked = true;
         }
 
+        // BLOKADA SPRINTU PRZY RUCHU DO TYŁU/PO SKOSIE DO TYŁU
+        if (isMovingBackwardDiagonal)
+        {
+            isSprintKeyPressed = false;
+            sprintBlocked = true;
+        }
+
         // Obsługa staminaExhausted: sprint dostępny tylko, gdy stamina nie jest wyczerpana I NIE jest zablokowany przez UI
         bool canSprint = playerStats != null && playerStats.currentStamina > 0f && !playerStats.staminaExhausted && !sprintBlocked;
 
@@ -116,7 +129,7 @@ public class PlayerMovement : MonoBehaviour
         isSprinting = ((isGrounded && isSprintKeyPressed && isTryingToMove && canSprint) ||
                        (!isGrounded && sprintingWhileAirborne && canSprint));
 
-        float currentSpeed = isSprinting ? sprintSpeed : moveSpeed;
+        float currentSpeed = isMovingBackwardDiagonal ? backwardSpeed : (isSprinting ? sprintSpeed : moveSpeed);
         float currentSoundDelay = isSprinting ? sprintSoundDelay : walkSoundDelay;
 
         if (isSprinting)
