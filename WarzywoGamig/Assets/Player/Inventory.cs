@@ -159,14 +159,20 @@ public class Inventory : MonoBehaviour
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
 
-        if (Physics.Raycast(ray, out hit, Mathf.Infinity, interactableLayer))
+        if (Physics.Raycast(ray, out hit, 10f, interactableLayer))
         {
+            HoverMessage hoverMessage = hit.collider.GetComponent<HoverMessage>();
             InteractableItem interactableItem = hit.collider.GetComponent<InteractableItem>();
 
-            if (interactableItem == null)
-            {
+            // WSTAW TEN LOG TUTAJ:
+            Debug.Log($"[Inventory] hit: {hit.collider.name}, hoverMsg: {hoverMessage}, interactDist: {(hoverMessage ? hoverMessage.interactionDistance : -1)}, hitDist: {hit.distance}");
+
+            if (hoverMessage == null || interactableItem == null)
                 return;
-            }
+
+            // WAŻNE: sprawdzenie dystansu!
+            if (hit.distance > hoverMessage.interactionDistance)
+                return;
 
 
             // --- AUTO PICKUP: jeśli przedmiot ma być używany automatycznie po podniesieniu ---
