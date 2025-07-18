@@ -124,6 +124,22 @@ public class Inventory : MonoBehaviour
             else
                 FlashlightOn();
         }
+
+        // --- przełączanie broni 1,2,3 ---
+        for (int i = 1; i <= 3; i++)
+        {
+            if (Input.GetKeyDown(KeyCode.Alpha0 + i))
+            {
+                if (i - 1 < weapons.Count)
+                {
+                    string weaponName = weapons[i - 1];
+                    if (currentWeaponName != weaponName)
+                    {
+                        EquipWeapon(weaponName);
+                    }
+                }
+            }
+        }
     }
 
     public void FlashlightOn()
@@ -151,6 +167,7 @@ public class Inventory : MonoBehaviour
             {
                 return;
             }
+
 
             // --- AUTO PICKUP: jeśli przedmiot ma być używany automatycznie po podniesieniu ---
             if (interactableItem.data != null && interactableItem.data.autoUseOnPickup)
@@ -526,6 +543,16 @@ public class Inventory : MonoBehaviour
     {
         if (currentWeaponName != null)
         {
+            if (currentWeaponPrefab != null)
+            {
+                var interactable = currentWeaponPrefab.GetComponent<InteractableItem>();
+                if (interactable != null && !interactable.canBeDropped)
+                {
+                    Debug.LogWarning("Nie możesz upuścić tej broni, ponieważ 'canBeDropped' jest ustawione na false.");
+                    return;
+                }
+            }
+
             // Usuwamy nazwę broni z listy
             weapons.Remove(currentWeaponName);
 
@@ -540,7 +567,8 @@ public class Inventory : MonoBehaviour
                 currentWeaponPrefab.transform.rotation = Quaternion.identity;
 
                 currentWeaponPrefab.SetActive(true);
-                Destroy(currentWeaponPrefab);
+                // NIE niszcz broni! Pozostaw ją w świecie gry do ponownego podniesienia.
+                // Destroy(currentWeaponPrefab);
 
                 currentWeaponPrefab = null;
             }
