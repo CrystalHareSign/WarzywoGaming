@@ -42,6 +42,11 @@ public class EnemyHealth : MonoBehaviour
     {
         currentHealth -= damage;
 
+        // AGRO NA GRACZA PO OTRZYMANIU OBRAŻEŃ
+        var ai = GetComponent<ProceduralMonsterAI>();
+        if (ai != null)
+            ai.AgroOnPlayer();
+
         if (currentHealth <= 0)
         {
             Die();

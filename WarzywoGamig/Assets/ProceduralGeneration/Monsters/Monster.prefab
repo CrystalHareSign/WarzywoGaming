@@ -654,6 +654,7 @@ MonoBehaviour:
   sightRange: 20
   sightAngle: 100
   hearingRange: 6
+  sprintHearingMultiplier: 2
   detectionMask:
     serializedVersion: 2
     m_Bits: 513

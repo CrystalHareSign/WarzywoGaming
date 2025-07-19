@@ -18,6 +18,9 @@ public class ProceduralMonsterAI : MonoBehaviour
 
     [Header("S³uch (Radius)")]
     public float hearingRange = 6f;
+    private float baseHearingRange;
+    [Tooltip("Mno¿nik zasiegu s³uchu gdy gracz sprintuje")]
+    public float sprintHearingMultiplier = 1.5f;
 
     [Header("Layer Mask")]
     public LayerMask detectionMask;
@@ -82,6 +85,8 @@ public class ProceduralMonsterAI : MonoBehaviour
 
     void Start()
     {
+        baseHearingRange = hearingRange;
+
         agent = GetComponent<NavMeshAgent>();
         GameObject playerObj = GameObject.FindWithTag("Player");
         if (playerObj != null)
@@ -277,10 +282,17 @@ public class ProceduralMonsterAI : MonoBehaviour
         Vector3 dirToPlayer = (player.position - origin).normalized;
         float distance = Vector3.Distance(origin, player.position);
 
-        if (distance > hearingRange)
+        float dynamicHearingRange = baseHearingRange;
+
+        // Sprawdzamy czy gracz sprintuje (zak³adamy, ¿e jest PlayerMovement z polem isSprinting)
+        var movement = player.GetComponent<PlayerMovement>();
+        if (movement != null && movement.isSprinting)
+            dynamicHearingRange *= sprintHearingMultiplier;
+
+        if (distance > dynamicHearingRange)
             return false;
 
-        if (Physics.Raycast(origin, dirToPlayer, out RaycastHit hit, hearingRange, detectionMask))
+        if (Physics.Raycast(origin, dirToPlayer, out RaycastHit hit, dynamicHearingRange, detectionMask))
         {
             if (hit.transform.CompareTag("Player"))
                 return true;
@@ -334,6 +346,25 @@ public class ProceduralMonsterAI : MonoBehaviour
             return hit.position;
         else
             return transform.position;
+    }
+
+    /// <summary>
+    /// Wywo³aj to, gdy potwór powinien zrobiæ agro na gracza (np. po otrzymaniu obra¿eñ).
+    /// </summary>
+    public void AgroOnPlayer()
+    {
+        if (player != null)
+        {
+            lastKnownPlayerPosition = player.position;
+            hasLastKnownPosition = true;
+            searching = false;
+            searchTimer = 0f;
+            searchWaitTimer = 0f;
+            agent.isStopped = false;
+            agent.speed = agroSpeed;
+            agent.SetDestination(player.position);
+            isPatrolling = false;
+        }
     }
 
     void OnDrawGizmosSelected()
