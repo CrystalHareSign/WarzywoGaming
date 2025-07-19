@@ -875,7 +875,7 @@ public class ProceduralLevelGenerator : MonoBehaviour
             }
 
             Vector3 worldPos = room.room.transform.TransformPoint(localPos);
-            Instantiate(entry.itemData.prefab, worldPos, Quaternion.identity, room.room.transform);
+            var go = Instantiate(entry.itemData.prefab, worldPos, Quaternion.identity);
 
             spawned++;
             itemsInRoom[room]++;
@@ -949,7 +949,7 @@ public class ProceduralLevelGenerator : MonoBehaviour
                 }
 
                 Vector3 worldPos = room.room.transform.TransformPoint(localPos);
-                Instantiate(entry.itemData.prefab, worldPos, Quaternion.identity, room.room.transform);
+                var go = Instantiate(entry.itemData.prefab, worldPos, Quaternion.identity);
 
                 spawned++;
                 itemsInRoom[room]++;
