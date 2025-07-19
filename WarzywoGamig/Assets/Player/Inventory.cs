@@ -93,10 +93,6 @@ public class Inventory : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            CollectItem();
-        }
         if (Input.GetKeyDown(KeyCode.Q))
         {
             if (isLootBeingDropped) return;
@@ -154,157 +150,139 @@ public class Inventory : MonoBehaviour
             flashlight.enabled = false;
     }
 
-    void CollectItem()
+    public void CollectItem(InteractableItem interactableItem)
     {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
+        if (interactableItem == null)
+            return;
 
-        if (Physics.Raycast(ray, out hit, 10f, interactableLayer))
+        // --- AUTO PICKUP: jeśli przedmiot ma być używany automatycznie po podniesieniu ---
+        if (interactableItem.data != null && interactableItem.data.autoUseOnPickup)
         {
-            HoverMessage hoverMessage = hit.collider.GetComponent<HoverMessage>();
-            InteractableItem interactableItem = hit.collider.GetComponent<InteractableItem>();
+            interactableItem.OnPickupAutoUse();
+            return; // NIE dodawaj do ekwipunku!
+        }
 
-            // WSTAW TEN LOG TUTAJ:
-            Debug.Log($"[Inventory] hit: {hit.collider.name}, hoverMsg: {hoverMessage}, interactDist: {(hoverMessage ? hoverMessage.interactionDistance : -1)}, hitDist: {hit.distance}");
+        // ❌ Jeśli gracz trzyma loot, nie może podnosić broni
+        if (lootParent != null && lootParent.childCount > 0 && interactableItem.isWeapon)
+        {
+            return;
+        }
 
-            if (hoverMessage == null || interactableItem == null)
-                return;
+        // ❌ Jeśli gracz trzyma loot, nie może podnosić innych przedmiotów (poza bronią, ale to już blokujemy powyżej)
+        if (lootParent != null && lootParent.childCount > 0 && !interactableItem.isWeapon)
+        {
+            return;
+        }
 
-            // WAŻNE: sprawdzenie dystansu!
-            if (hit.distance > hoverMessage.interactionDistance)
-                return;
+        if (interactableItem.canBePickedUp)
+        {
+            GameObject itemObject = interactableItem.gameObject;
 
-
-            // --- AUTO PICKUP: jeśli przedmiot ma być używany automatycznie po podniesieniu ---
-            if (interactableItem.data != null && interactableItem.data.autoUseOnPickup)
+            if (interactableItem.isWeapon)
             {
-                interactableItem.OnPickupAutoUse();
-                return; // NIE dodawaj do ekwipunku!
-            }
-
-            // ❌ Jeśli gracz trzyma loot, nie może podnosić broni
-            if (lootParent != null && lootParent.childCount > 0 && interactableItem.isWeapon)
-            {
-                return;
-            }
-
-            // ❌ Jeśli gracz trzyma loot, nie może podnosić innych przedmiotów (poza bronią, ale to już blokujemy powyżej)
-            if (lootParent != null && lootParent.childCount > 0 && !interactableItem.isWeapon)
-            {
-                return;
-            }
-
-            if (interactableItem.canBePickedUp)
-            {
-                if (interactableItem.isWeapon)
+                if (weapons.Count >= maxWeapons)
                 {
-                    if (weapons.Count >= maxWeapons)
-                    {
-                        ReplaceCurrentWeapon(interactableItem, hit.collider.gameObject);
-                    }
-                    else
-                    {
-                        // Dodajemy nazwę broni do ekwipunku!
-                        if (!weapons.Contains(interactableItem.itemName))
-                            weapons.Add(interactableItem.itemName);
-
-                        hit.collider.gameObject.SetActive(false);
-                        EquipWeapon(interactableItem.itemName); // Zmieniamy na przekazanie nazwy
-                    }
-                }
-                else if (interactableItem.isLoot)
-                {
-                    if (loot.Count < maxLoot)
-                    {
-                        Vector3 previousPosition = hit.collider.gameObject.transform.position;
-                        loot.Add(hit.collider.gameObject);
-
-                        // ZABEZPIECZENIE: nie usuwaj po zmianie sceny!
-                        DontDestroyOnLoad(hit.collider.gameObject);
-
-                        EquipLoot(hit.collider.gameObject);
-
-                        if (currentWeaponPrefab != null)
-                        {
-                            currentWeaponPrefab.SetActive(false);
-                        }
-
-                        if (GridManager.Instance != null)
-                        {
-                            PrefabSize prefabSize = hit.collider.gameObject.GetComponent<PrefabSize>();
-                            GridManager.Instance.UnmarkTilesAsOccupied(previousPosition, prefabSize);
-                            GridManager.Instance.AddToBuildingPrefabs(hit.collider.gameObject);
-                        }
-
-                        foreach (var playSoundOnObject in playSoundObjects)
-                        {
-                            if (playSoundOnObject == null) continue;
-
-                            playSoundOnObject.PlaySound("LootPick", 1.0f, false);
-                        }
-                    }
-                }
-                else if (interactableItem.isUsableItem)
-                {
-                    if (usableItems.Count < maxUsableItems)
-                    {
-                        usableItems.Add(hit.collider.gameObject);
-
-                        // ZABEZPIECZENIE: nie usuwaj po zmianie sceny!
-                        DontDestroyOnLoad(hit.collider.gameObject);
-
-                        hit.collider.gameObject.SetActive(false);
-                        TurretCollector turretCollector = Object.FindFirstObjectByType<TurretCollector>();
-                        if (turretCollector != null)
-                        {
-                            turretCollector.ResetSlotForItem(hit.collider.gameObject);
-                        }
-                        RefreshUsableItemListChronologically();
-
-                        foreach (var playSoundOnObject in playSoundObjects)
-                        {
-                            if (playSoundOnObject == null) continue;
-
-                            playSoundOnObject.PlaySound("PickUpLiquid", 0.8f, false);
-                            playSoundOnObject.PlaySound("PickUpSteam", 0.6f, false);
-                        }
-                    }
+                    ReplaceCurrentWeapon(interactableItem, itemObject);
                 }
                 else
                 {
-                    if (items.Count < maxItems)
+                    // Dodajemy nazwę broni do ekwipunku!
+                    if (!weapons.Contains(interactableItem.itemName))
+                        weapons.Add(interactableItem.itemName);
+
+                    itemObject.SetActive(false);
+                    EquipWeapon(interactableItem.itemName);
+                }
+            }
+            else if (interactableItem.isLoot)
+            {
+                if (loot.Count < maxLoot)
+                {
+                    Vector3 previousPosition = itemObject.transform.position;
+                    loot.Add(itemObject);
+
+                    // ZABEZPIECZENIE: nie usuwaj po zmianie sceny!
+                    DontDestroyOnLoad(itemObject);
+
+                    EquipLoot(itemObject);
+
+                    if (currentWeaponPrefab != null)
                     {
-                        items.Add(hit.collider.gameObject);
+                        currentWeaponPrefab.SetActive(false);
+                    }
 
-                        // ZABEZPIECZENIE: nie usuwaj po zmianie sceny!
-                        DontDestroyOnLoad(hit.collider.gameObject);
+                    if (GridManager.Instance != null)
+                    {
+                        PrefabSize prefabSize = itemObject.GetComponent<PrefabSize>();
+                        GridManager.Instance.UnmarkTilesAsOccupied(previousPosition, prefabSize);
+                        GridManager.Instance.AddToBuildingPrefabs(itemObject);
+                    }
 
-                        hit.collider.gameObject.SetActive(false);
-                        TurretCollector turretCollector = Object.FindFirstObjectByType<TurretCollector>();
-                        if (turretCollector != null)
-                        {
-                            turretCollector.ResetSlotForItem(hit.collider.gameObject);
-                        }
-                        RefreshItemListChronologically();
-
-                        foreach (var playSoundOnObject in playSoundObjects)
-                        {
-                            if (playSoundOnObject == null) continue;
-
-                            playSoundOnObject.PlaySound("PickUpLiquid", 0.8f, false);
-                            playSoundOnObject.PlaySound("PickUpSteam", 0.6f, false);
-                        }
+                    foreach (var playSoundOnObject in playSoundObjects)
+                    {
+                        if (playSoundOnObject == null) continue;
+                        playSoundOnObject.PlaySound("LootPick", 1.0f, false);
                     }
                 }
-
-                UpdateInventoryUI();
-                if (currentWeaponPrefab != null)
+            }
+            else if (interactableItem.isUsableItem)
+            {
+                if (usableItems.Count < maxUsableItems)
                 {
-                    Gun gunScript = currentWeaponPrefab.GetComponent<Gun>();
-                    if (gunScript != null)
+                    usableItems.Add(itemObject);
+
+                    // ZABEZPIECZENIE: nie usuwaj po zmianie scenie!
+                    DontDestroyOnLoad(itemObject);
+
+                    itemObject.SetActive(false);
+                    TurretCollector turretCollector = Object.FindFirstObjectByType<TurretCollector>();
+                    if (turretCollector != null)
                     {
-                        inventoryUI.UpdateWeaponUI(gunScript);
+                        turretCollector.ResetSlotForItem(itemObject);
                     }
+                    RefreshUsableItemListChronologically();
+
+                    foreach (var playSoundOnObject in playSoundObjects)
+                    {
+                        if (playSoundOnObject == null) continue;
+                        playSoundOnObject.PlaySound("PickUpLiquid", 0.8f, false);
+                        playSoundOnObject.PlaySound("PickUpSteam", 0.6f, false);
+                    }
+                }
+            }
+            else
+            {
+                if (items.Count < maxItems)
+                {
+                    items.Add(itemObject);
+
+                    // ZABEZPIECZENIE: nie usuwaj po zmianie scenie!
+                    DontDestroyOnLoad(itemObject);
+
+                    itemObject.SetActive(false);
+                    TurretCollector turretCollector = Object.FindFirstObjectByType<TurretCollector>();
+                    if (turretCollector != null)
+                    {
+                        turretCollector.ResetSlotForItem(itemObject);
+                    }
+                    RefreshItemListChronologically();
+
+                    foreach (var playSoundOnObject in playSoundObjects)
+                    {
+                        if (playSoundOnObject == null) continue;
+                        playSoundOnObject.PlaySound("PickUpLiquid", 0.8f, false);
+                        playSoundOnObject.PlaySound("PickUpSteam", 0.6f, false);
+                    }
+                }
+            }
+
+            UpdateInventoryUI();
+            if (currentWeaponPrefab != null)
+            {
+                Gun gunScript = currentWeaponPrefab.GetComponent<Gun>();
+                if (gunScript != null)
+                {
+                    inventoryUI.UpdateWeaponUI(gunScript);
                 }
             }
         }

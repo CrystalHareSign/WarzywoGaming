@@ -203,6 +203,15 @@ public class PlayerInteraction : MonoBehaviour
             InteractableItem interactableItem = hit.collider.GetComponent<InteractableItem>();
             if (interactableItem != null && !interactableItem.hoverMessage.isInteracted)
             {
+                if (interactableItem.canBePickedUp)
+                {
+                    if (Input.GetKeyDown(KeyCode.E))
+                    {
+                        inventory.CollectItem(interactableItem);
+                        // Mo¿esz dodaæ HideUI() itp. jeœli chcesz, ¿eby UI siê schowa³o po podniesieniu
+                        return; // jeœli chcesz zakoñczyæ Update po podniesieniu
+                    }
+                }
                 // --- FOTEL KIEROWCY: przytrzymaj E aby potwierdziæ podró¿ ---
                 if (interactableItem.isDriverSeat)
                 {
