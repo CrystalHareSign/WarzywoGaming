@@ -6,7 +6,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Movement Settings")]
     [SerializeField] public float moveSpeed = 5f; // public, by InventoryUI mógł spowalniać
     [SerializeField] private float sprintSpeed = 8f;
-    [SerializeField] private float backwardSpeed = 3f; // <--- NOWE POLE: prędkość do tyłu/po skosie
+    [SerializeField] private float backwardSpeed = 3f;
     [SerializeField] private float gravity = -9.81f;
     [SerializeField] private float jumpHeight = 1.5f;
     [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
@@ -31,16 +31,13 @@ public class PlayerMovement : MonoBehaviour
     private AudioChanger audioChanger;
     private PlayerStats playerStats;
 
-    // Nowe pola do obsługi staminaExhausted
     private bool shiftHeldLastFrame = false;
 
-    // POLA DLA SLOWDOWN PODCZAS UŻYWANIA ITEMU
     [HideInInspector] public bool isSlowedByItemUse = false;
-
-    // Flaga blokująca sprint przez UI (np. podczas używania itema)
     [HideInInspector] public bool isSprintBlockedByUI = false;
 
-    public bool isSprinting = false; // Dodatkowa flaga, jeśli chcesz obsłużyć stop sprinting z UI
+    public bool isSprinting = false;
+    private bool sprintLastFrame = false;
 
     private void Start()
     {
@@ -88,18 +85,14 @@ public class PlayerMovement : MonoBehaviour
         if (move.magnitude > 1f)
             move = move.normalized;
 
-        // Kierunek względem transform.forward
         float moveForwardDot = Vector3.Dot(move, transform.forward);
-        // Dot < 0 oznacza ruch z komponentem do tyłu (czyli także po skosie do tyłu)
         bool isMovingBackwardDiagonal = moveForwardDot < 0f && move.magnitude > 0.1f;
 
         bool isSprintKeyPressed = Input.GetKey(sprintKey);
         bool isTryingToMove = move.magnitude > 0.1f;
 
-        // BLOKADA SPRINTU PRZEZ UI
         bool sprintBlocked = isSprintBlockedByUI;
 
-        // BLOKADA SPRINTU JEŚLI GRACZ TRZYMA LOOT
         bool isHoldingLoot = false;
         if (Inventory.Instance != null && Inventory.Instance.lootParent != null)
         {
@@ -111,14 +104,12 @@ public class PlayerMovement : MonoBehaviour
             sprintBlocked = true;
         }
 
-        // BLOKADA SPRINTU PRZY RUCHU DO TYŁU/PO SKOSIE DO TYŁU
         if (isMovingBackwardDiagonal)
         {
             isSprintKeyPressed = false;
             sprintBlocked = true;
         }
 
-        // Obsługa staminaExhausted: sprint dostępny tylko, gdy stamina nie jest wyczerpana I NIE jest zablokowany przez UI
         bool canSprint = playerStats != null && playerStats.currentStamina > 0f && !playerStats.staminaExhausted && !sprintBlocked;
 
         if (isGrounded)
@@ -129,6 +120,13 @@ public class PlayerMovement : MonoBehaviour
         isSprinting = ((isGrounded && isSprintKeyPressed && isTryingToMove && canSprint) ||
                        (!isGrounded && sprintingWhileAirborne && canSprint));
 
+        // --- PRZERWIJ RELOAD JEŚLI GRACZ ZACZĄŁ SPRINTOWAĆ ---
+        if (isSprinting && !sprintLastFrame)
+        {
+            TryCancelWeaponReload();
+        }
+        sprintLastFrame = isSprinting;
+
         float currentSpeed = isMovingBackwardDiagonal ? backwardSpeed : (isSprinting ? sprintSpeed : moveSpeed);
         float currentSoundDelay = isSprinting ? sprintSoundDelay : walkSoundDelay;
 
@@ -137,7 +135,6 @@ public class PlayerMovement : MonoBehaviour
             playerStats.UseStamina(playerStats.staminaUsage * Time.deltaTime);
         }
 
-        // Jeśli stamina się skończyła, ustaw staminaExhausted
         if (playerStats != null && playerStats.currentStamina <= 0f)
         {
             playerStats.staminaExhausted = true;
@@ -164,10 +161,8 @@ public class PlayerMovement : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
 
-        // Odblokowanie sprintu po zregenerowaniu staminy:
         if (playerStats != null && playerStats.staminaExhausted)
         {
-            // stamina się odnowiła i shift NIE jest wciśnięty
             if (!isSprintKeyPressed && playerStats.currentStamina > 0.1f)
             {
                 playerStats.staminaExhausted = false;
@@ -175,6 +170,25 @@ public class PlayerMovement : MonoBehaviour
         }
 
         shiftHeldLastFrame = isSprintKeyPressed;
+    }
+
+    // Przerywa przeładowanie broni jeśli gracz zaczyna sprintować
+    private void TryCancelWeaponReload()
+    {
+        if (Inventory.Instance != null && Inventory.Instance.currentWeaponPrefab != null)
+        {
+            Gun gun = Inventory.Instance.currentWeaponPrefab.GetComponent<Gun>();
+            if (gun != null && gun.IsReloading())
+            {
+                gun.CancelReload();
+            }
+        }
+    }
+
+    public void StopSprinting()
+    {
+        isSprinting = false;
+        sprintLastFrame = false;
     }
 
     private void OnControllerColliderHit(ControllerColliderHit hit)
@@ -221,12 +235,5 @@ public class PlayerMovement : MonoBehaviour
             if (playSoundOnObject == null) continue;
             playSoundOnObject.PlaySound(randomSound, 0.5f, false);
         }
-    }
-
-    // Dodaj tę funkcję, by InventoryUI mogło przerwać sprint
-    public void StopSprinting()
-    {
-        isSprinting = false;
-        // Dodatkowe działania jeśli masz inną logikę sprintu
     }
 }

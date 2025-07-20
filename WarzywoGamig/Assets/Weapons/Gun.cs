@@ -111,6 +111,15 @@ public class Gun : MonoBehaviour
         if (isReloading) return;
         if (!isWeaponEquipped) return;
 
+        // Blokada przeładowania podczas używania itema (np. trzymania F)
+        if (InventoryUI.Instance != null && InventoryUI.Instance.isHoldingUse)
+            return;
+
+        // PRZERWIJ SPRINT NA GRACZU jeśli trwa
+        var player = Object.FindFirstObjectByType<PlayerMovement>();
+        if (player != null)
+            player.StopSprinting();
+
         reloadCoroutine = StartCoroutine(Reload());
     }
 

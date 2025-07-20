@@ -672,6 +672,7 @@ MonoBehaviour:
   attackWindupTime: 0.6
   attackCooldown: 1.5
   attackSlowSpeed: 8
+  stoppingDistanceMultiplier: 0.7
 --- !u!195 &5170584441819996596
 NavMeshAgent:
   m_ObjectHideFlags: 0

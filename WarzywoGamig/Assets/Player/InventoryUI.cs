@@ -76,7 +76,7 @@ public class InventoryUI : MonoBehaviour
     public float slowPercent = 0.5f; // 0.5 = 50% normalnej prędkości
 
     // --- Hold logic ---
-    private bool isHoldingUse = false;
+    public bool isHoldingUse = false;
     private float holdTimer = 0f;
     private float originalMoveSpeed = 0f;
 
@@ -234,6 +234,14 @@ public class InventoryUI : MonoBehaviour
 
             if (!isHoldingUse && Input.GetKeyDown(useKey))
             {
+                // PRZERWIJ przeładowanie broni jeśli trwa
+                if (Inventory.Instance != null && Inventory.Instance.currentWeaponPrefab != null)
+                {
+                    Gun gun = Inventory.Instance.currentWeaponPrefab.GetComponent<Gun>();
+                    if (gun != null && gun.IsReloading())
+                        gun.CancelReload();
+                }
+
                 isHoldingUse = true;
                 holdTimer = 0f;
 

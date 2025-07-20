@@ -58,6 +58,8 @@ public class ProceduralMonsterAI : MonoBehaviour
     public float attackCooldown = 1.5f;
     [Tooltip("Prêdkoœæ potwora gdy szykuje siê do ataku")]
     public float attackSlowSpeed = 0.25f;
+    [Tooltip("Mno¿nik dystansu zatrzymania (stoppingDistance) wzglêdem zasiêgu ataku")]
+    public float stoppingDistanceMultiplier = 0.8f;
 
     private float lastAttackTime = -999f;
     private bool isAttackWindup = false;
@@ -86,6 +88,9 @@ public class ProceduralMonsterAI : MonoBehaviour
     void Start()
     {
         baseHearingRange = hearingRange;
+
+        agent = GetComponent<NavMeshAgent>();
+        agent.stoppingDistance = attackRange * stoppingDistanceMultiplier;
 
         agent = GetComponent<NavMeshAgent>();
         GameObject playerObj = GameObject.FindWithTag("Player");
