@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -20,6 +21,9 @@ public class MissionLocationIcon : MonoBehaviour, IPointerEnterHandler, IPointer
     [Header("Loot Rarity (1-5)")]
     [Range(1, 5)]
     public int lootRarity = 2;
+
+    [Header("Dozwolone typy amunicji na tej lokacji")]
+    public List<AmmoType> allowedAmmoTypes; // <-- TO DODAJ
 
     public void OnPointerEnter(PointerEventData eventData)
     {

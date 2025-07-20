@@ -51,14 +51,14 @@ public class HoverMessageManager : MonoBehaviour
             HoverMessage hoverMessage = hit.collider.GetComponent<HoverMessage>();
 
             // Debug - trafienie w collider
-            Debug.Log($"[Prompt] hit: {hit.collider.name}, hoverMsg: {hoverMessage}, interactDist: {(hoverMessage ? hoverMessage.interactionDistance : -1)}, hitDist: {hit.distance}");
+            //Debug.Log($"[Prompt] hit: {hit.collider.name}, hoverMsg: {hoverMessage}, interactDist: {(hoverMessage ? hoverMessage.interactionDistance : -1)}, hitDist: {hit.distance}");
 
             if (hoverMessage != null && hit.distance <= hoverMessage.interactionDistance &&
                 !hoverMessage.isInteracted &&
                 InteractivityManager.Instance.IsInteractable(hit.collider.gameObject))
             {
                 // Debug - warunki promptu spe³nione
-                Debug.Log($"[Prompt] SHOW: {hit.collider.name}, hitDist: {hit.distance}, activeSelf: {messageText?.gameObject.activeSelf}, alpha: {messageText?.color.a}");
+                //Debug.Log($"[Prompt] SHOW: {hit.collider.name}, hitDist: {hit.distance}, activeSelf: {messageText?.gameObject.activeSelf}, alpha: {messageText?.color.a}");
 
                 // Pokazuj prompt...
                 if (messageText != null && keyText != null)
@@ -73,13 +73,13 @@ public class HoverMessageManager : MonoBehaviour
                     keyText.gameObject.SetActive(true);
 
                     // Debug - po aktywowaniu
-                    Debug.Log($"[Prompt] SetActive(true) called. messageText.activeSelf: {messageText.gameObject.activeSelf}, keyText.activeSelf: {keyText.gameObject.activeSelf}");
+                    //Debug.Log($"[Prompt] SetActive(true) called. messageText.activeSelf: {messageText.gameObject.activeSelf}, keyText.activeSelf: {keyText.gameObject.activeSelf}");
                 }
             }
             else
             {
                 // Debug - warunki promptu NIE spe³nione
-                Debug.Log($"[Prompt] HIDE: {hit.collider.name}");
+                //Debug.Log($"[Prompt] HIDE: {hit.collider.name}");
 
                 if (messageText != null && keyText != null)
                 {
@@ -87,14 +87,14 @@ public class HoverMessageManager : MonoBehaviour
                     keyText.gameObject.SetActive(false);
 
                     // Debug - po dezaktywowaniu
-                    Debug.Log($"[Prompt] SetActive(false) called. messageText.activeSelf: {messageText.gameObject.activeSelf}, keyText.activeSelf: {keyText.gameObject.activeSelf}");
+                    //Debug.Log($"[Prompt] SetActive(false) called. messageText.activeSelf: {messageText.gameObject.activeSelf}, keyText.activeSelf: {keyText.gameObject.activeSelf}");
                 }
             }
         }
         else
         {
             // Debug - raycast nie trafi³ w nic interaktywnego
-            Debug.Log("[Prompt] Raycast miss, hiding prompt.");
+            //Debug.Log("[Prompt] Raycast miss, hiding prompt.");
 
             if (messageText != null && keyText != null)
             {
@@ -102,7 +102,7 @@ public class HoverMessageManager : MonoBehaviour
                 keyText.gameObject.SetActive(false);
 
                 // Debug - po dezaktywowaniu (brak trafienia)
-                Debug.Log($"[Prompt] SetActive(false) (miss). messageText.activeSelf: {messageText.gameObject.activeSelf}, keyText.activeSelf: {keyText.gameObject.activeSelf}");
+                //Debug.Log($"[Prompt] SetActive(false) (miss). messageText.activeSelf: {messageText.gameObject.activeSelf}, keyText.activeSelf: {keyText.gameObject.activeSelf}");
             }
         }
     }
@@ -124,7 +124,7 @@ public class HoverMessageManager : MonoBehaviour
         messageTextInfo.gameObject.SetActive(true);
 
         // Debug - pokazanie popupu
-        Debug.Log($"[Popup] ShowInfoPopup: {text}");
+        //Debug.Log($"[Popup] ShowInfoPopup: {text}");
 
         infoFadeCoroutine = StartCoroutine(FadeOutInfo(duration));
     }
@@ -143,7 +143,7 @@ public class HoverMessageManager : MonoBehaviour
         messageTextInfo.gameObject.SetActive(true);
 
         // Debug - pokazanie popupu z rozmiarem
-        Debug.Log($"[Popup] ShowInfoPopup: {text} (fontSize: {fontSize})");
+        //Debug.Log($"[Popup] ShowInfoPopup: {text} (fontSize: {fontSize})");
 
         infoFadeCoroutine = StartCoroutine(FadeOutInfo(duration));
     }
@@ -162,7 +162,7 @@ public class HoverMessageManager : MonoBehaviour
             SetTextAlpha(messageTextInfo, alpha);
 
             // Debug - fadeout alpha
-            Debug.Log($"[Popup] FadeOut alpha: {alpha}");
+            //Debug.Log($"[Popup] FadeOut alpha: {alpha}");
 
             yield return null;
         }
@@ -172,7 +172,7 @@ public class HoverMessageManager : MonoBehaviour
         infoFadeCoroutine = null;
 
         // Debug - koniec popupu
-        Debug.Log("[Popup] FadeOutInfo complete, popup hidden.");
+        //Debug.Log("[Popup] FadeOutInfo complete, popup hidden.");
     }
 
     private void SetTextAlpha(TMP_Text text, float alpha)
@@ -183,6 +183,6 @@ public class HoverMessageManager : MonoBehaviour
         text.color = c;
 
         // Debug - ustawienie alpha
-        Debug.Log($"[Prompt] SetTextAlpha: {text.name}, alpha: {alpha}");
+        //Debug.Log($"[Prompt] SetTextAlpha: {text.name}, alpha: {alpha}");
     }
 }

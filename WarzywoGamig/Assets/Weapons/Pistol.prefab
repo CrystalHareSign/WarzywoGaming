@@ -201,7 +201,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxAmmo: 10
   currentAmmo: 10
-  totalAmmo: 30
+  totalAmmo: 10
   reloadTime: 2
   damage: 20
   bulletPrefab: {fileID: 8266724109241798289, guid: 5b0ad2da9c75cd246bffe94891b117b8, type: 3}
@@ -209,6 +209,7 @@ MonoBehaviour:
   unlimitedAmmo: 0
   isFullAuto: 0
   fireRate: 0.1
+  ammoType: 0
 --- !u!1 &4379155863926223087
 GameObject:
   m_ObjectHideFlags: 0

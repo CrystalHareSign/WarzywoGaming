@@ -30,6 +30,8 @@ public class Gun : MonoBehaviour
 
     private float nextFireTime = 0f;
 
+    public AmmoType ammoType;
+
     void Start()
     {
         inventoryUI = Object.FindFirstObjectByType<InventoryUI>();
@@ -145,6 +147,10 @@ public class Gun : MonoBehaviour
         currentAmmo += bulletsToReload;
         totalAmmo -= bulletsToReload;
 
+        // Synchronizuj globalny magazyn po przeładowaniu!
+        if (Inventory.Instance != null)
+            Inventory.Instance.totalAmmoDict[ammoType] = totalAmmo;
+
         isReloading = false;
 
         if (inventoryUI != null)
@@ -180,5 +186,20 @@ public class Gun : MonoBehaviour
     public bool IsReloading()
     {
         return isReloading;
+    }
+
+    public void AddAmmo(int amount)
+    {
+        totalAmmo += amount;
+
+        // Synchronizuj globalny magazyn po dodaniu amunicji!
+        if (Inventory.Instance != null)
+            Inventory.Instance.totalAmmoDict[ammoType] = totalAmmo;
+
+        Debug.Log($"[Gun] Dodano amunicję: {amount}, nowa ilość (totalAmmo): {this.totalAmmo}");
+        if (inventoryUI != null)
+        {
+            inventoryUI.UpdateWeaponUI(this);
+        }
     }
 }

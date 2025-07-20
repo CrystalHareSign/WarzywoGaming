@@ -38,6 +38,8 @@ public class Inventory : MonoBehaviour
 
     private GameObject currentWeaponItem; // Pozostawiam, jeśli jest wykorzystywane gdzieś dalej
 
+    public Dictionary<AmmoType, int> totalAmmoDict = new Dictionary<AmmoType, int>();
+
     public Vector3 weaponPositionOffset = new Vector3(0.5f, -0.3f, 1.0f);
     public Vector3 weaponRotationOffset = new Vector3(0, 90, 0);
 
@@ -324,7 +326,6 @@ public class Inventory : MonoBehaviour
         EquipWeapon(newWeapon.itemName);
     }
 
-    // Wyekwipowanie broni na podstawie NAZWY z zachowaniem amunicji
     public void EquipWeapon(string weaponName)
     {
         Debug.Log($"EquipWeapon: Trying to equip weapon '{weaponName}'");
@@ -338,9 +339,11 @@ public class Inventory : MonoBehaviour
                 if (!weaponAmmoStates.ContainsKey(currentWeaponName))
                     weaponAmmoStates[currentWeaponName] = new AmmoState();
                 weaponAmmoStates[currentWeaponName].currentAmmo = oldGun.currentAmmo;
-                weaponAmmoStates[currentWeaponName].totalAmmo = oldGun.totalAmmo;
 
-                oldGun.CancelReload(); // <--- TO DODAJ!
+                // ZAPISUJEMY GLOBALNĄ AMUNICJĘ DO totalAmmoDict!
+                totalAmmoDict[oldGun.ammoType] = oldGun.totalAmmo;
+
+                oldGun.CancelReload();
             }
         }
 
@@ -373,21 +376,18 @@ public class Inventory : MonoBehaviour
         if (gunScript != null)
         {
             Debug.Log("EquipWeapon: Gun component found, enabling and equipping.");
-            // PRZYWRÓĆ amunicję z zapamiętanego stanu, jeśli istnieje
+
+            // PRZYWRÓĆ currentAmmo z AmmoState jeśli istnieje, ale totalAmmo zawsze z totalAmmoDict!
             if (weaponAmmoStates.ContainsKey(weaponName))
-            {
                 gunScript.currentAmmo = weaponAmmoStates[weaponName].currentAmmo;
-                gunScript.totalAmmo = weaponAmmoStates[weaponName].totalAmmo;
-            }
             else
-            {
-                // Pierwsze podniesienie tej broni – zapisz domyślne wartości
-                weaponAmmoStates[weaponName] = new AmmoState
-                {
-                    currentAmmo = gunScript.currentAmmo,
-                    totalAmmo = gunScript.totalAmmo
-                };
-            }
+                gunScript.currentAmmo = gunScript.maxAmmo;
+
+            // Najważniejsze: totalAmmo z globalnego zapasu!
+            if (totalAmmoDict.ContainsKey(gunScript.ammoType))
+                gunScript.totalAmmo = totalAmmoDict[gunScript.ammoType];
+            else
+                gunScript.totalAmmo = 0;
 
             gunScript.enabled = true;
             gunScript.EquipWeapon();
@@ -635,6 +635,30 @@ public class Inventory : MonoBehaviour
 
         UpdateInventoryUI();
     }
+
+    public void AddAmmo(AmmoType type, int amount)
+    {
+        if (totalAmmoDict.ContainsKey(type))
+            totalAmmoDict[type] += amount;
+        else
+            totalAmmoDict[type] = amount;
+
+        Debug.Log($"[Inventory] Dodano amunicję typu {type}: {amount}, nowa ilość: {totalAmmoDict[type]}");
+
+        // --- DODAJ SYNCHRONIZACJĘ Z AKTUALNĄ BRONIĄ ---
+        if (currentWeaponPrefab != null)
+        {
+            Gun gun = currentWeaponPrefab.GetComponent<Gun>();
+            if (gun != null && gun.ammoType == type)
+            {
+                // Zaktualizuj totalAmmo w broni
+                gun.totalAmmo = totalAmmoDict[type];
+                // Zaktualizuj UI
+                if (inventoryUI != null)
+                    inventoryUI.UpdateWeaponUI(gun);
+            }
+        }
+    }
 }
 
 // Klasy pomocnicze zostają bez zmian
@@ -661,5 +685,5 @@ public class WeaponPrefabEntry
 public class AmmoState
 {
     public int currentAmmo;
-    public int totalAmmo;
+    // public int totalAmmo; // ← usunięte!
 }

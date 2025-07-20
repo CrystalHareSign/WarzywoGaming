@@ -137,11 +137,18 @@ public class SaveManager : MonoBehaviour
                                     totalAmmo = gun.totalAmmo;
                                 }
                             }
-                            // Dla pozosta³ych – pobierz ze s³ownika AmmoState
                             else if (inventory.weaponAmmoStates.ContainsKey(weaponName))
                             {
                                 currentAmmo = inventory.weaponAmmoStates[weaponName].currentAmmo;
-                                totalAmmo = inventory.weaponAmmoStates[weaponName].totalAmmo;
+                                // Zamiast: totalAmmo = inventory.weaponAmmoStates[weaponName].totalAmmo;
+                                Gun prefabGun = null;
+                                if (inventory.weaponPrefabs.TryGetValue(weaponName, out var prefab) && prefab != null)
+                                    prefabGun = prefab.GetComponent<Gun>();
+
+                                if (prefabGun != null && inventory.totalAmmoDict.TryGetValue(prefabGun.ammoType, out var total))
+                                    totalAmmo = total;
+                                else
+                                    totalAmmo = 0;
                             }
                             // Jeœli nie ma jeszcze w s³owniku (np. nowa broñ) – domyœlne wartoœci
                             else
@@ -419,8 +426,8 @@ public class SaveManager : MonoBehaviour
             {
                 inventory.weaponAmmoStates[weaponSave.weaponName] = new AmmoState
                 {
-                    currentAmmo = weaponSave.currentAmmo,
-                    totalAmmo = weaponSave.totalAmmo
+                    currentAmmo = weaponSave.currentAmmo
+                    // NIE MA totalAmmo!
                 };
             }
 
@@ -434,6 +441,18 @@ public class SaveManager : MonoBehaviour
                 else
                 {
                     Debug.LogWarning("Brak prefabu dla: " + weaponName);
+                }
+            }
+            inventory.totalAmmoDict.Clear();
+            foreach (var weaponSave in data.weaponSaveDatas)
+            {
+                if (inventory.weaponPrefabs.TryGetValue(weaponSave.weaponName, out var prefab) && prefab != null)
+                {
+                    Gun gun = prefab.GetComponent<Gun>();
+                    if (gun != null)
+                    {
+                        inventory.totalAmmoDict[gun.ammoType] = weaponSave.totalAmmo;
+                    }
                 }
             }
 

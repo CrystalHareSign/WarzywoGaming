@@ -1,9 +1,12 @@
 using UnityEngine;
+
 public enum LootCategory { Currency, Ammunition, Meds, StaminaBooster, key, Special }
 
-public enum ItemEffectType { Currency, Ammunition, Heal, StaminaBoost, Key, Custom, None}
+public enum ItemEffectType { Currency, Ammunition, Heal, StaminaBoost, Key, Custom, None }
 
 public enum LootRarity { Common = 1, Uncommon = 2, Rare = 3, Epic = 4, Legendary = 5 }
+
+public enum AmmoType { Pistol, Rifle, Shotgun, SMG, Sniper, Other }
 
 [CreateAssetMenu(menuName = "Procedural/ItemPrefabData")]
 public class ItemPrefabData : ScriptableObject
@@ -21,6 +24,9 @@ public class ItemPrefabData : ScriptableObject
     [Header("Efekt dzia³ania")]
     public ItemEffectType effectType = ItemEffectType.None;
 
+    [Header("Typ amunicji (jeœli effectType = Ammunition)")]
+    public AmmoType ammoType;                               
+
     [Header("Wartoœæ efektu (np. ile leczy, ile daje boosta)")]
     public int effectValue = 0;
 
@@ -33,5 +39,3 @@ public class ItemPrefabData : ScriptableObject
     [Header("Custom effect (dla niestandardowych zachowañ)")]
     public string customEffectID; // np. "Teleport", "SummonBoss", itp.
 }
-
-

@@ -142,30 +142,11 @@ public class InteractableItem : MonoBehaviour, IInteractable
         }
     }
 
-    // --- Nowa metoda: automatyczne u¿ycie efektu po podniesieniu (np. currency, ammo, itd.) ---
     public void OnPickupAutoUse()
     {
         if (data == null) return;
-
-        switch (data.effectType)
-        {
-            case ItemEffectType.Currency:
-                SaveManager.Instance.AddCurrency(data.effectValue);
-                InventoryUI ui = FindFirstObjectByType<InventoryUI>();
-                if (ui != null) ui.UpdatePlayerCurrency(SaveManager.Instance.playerCurrency);
-                Debug.Log($"Dodano {data.effectValue} waluty za podniesienie: {itemName}");
-                Destroy(gameObject); // Usuwa z mapy, nie trafia do ekwipunku
-                break;
-            case ItemEffectType.Ammunition:
-                // TODO: Dodaj obs³ugê amunicji (np. Inventory.Instance.AddAmmo(...) itp.)
-                Debug.Log($"Podniesiono amunicjê: {itemName}, value = {data.effectValue}");
-                Destroy(gameObject);
-                break;
-            // Mo¿esz dodaæ kolejne przypadki auto-efektów tutaj
-            default:
-                Debug.Log($"Podniesiono {itemName} o typie {data.effectType}, brak auto efektu.");
-                break;
-        }
+        ItemEffectManager.Instance.UseItem(data, gameObject);
+        Destroy(gameObject);
     }
 
     // --- Nowa metoda: efekt na podstawie bazy danych ScriptableObject ---

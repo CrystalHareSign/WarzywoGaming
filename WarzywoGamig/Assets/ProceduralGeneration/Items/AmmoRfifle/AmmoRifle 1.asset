@@ -10,14 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9633f0deceb89574184e605a4ba6dbba, type: 3}
-  m_Name: Ammo
+  m_Name: AmmoRifle 1
   m_EditorClassIdentifier: 
-  prefab: {fileID: 3406396607772121200, guid: aa5bfe830df7f7a4eb9219c7fb773a23, type: 3}
-  itemName: Ammo
+  prefab: {fileID: 552347329323753102, guid: af301d4bf4c9bd84b951595bca9f9886, type: 3}
+  itemName: AmmoRifle1
   lootRarity: 1
   lootCategory: 1
   effectType: 1
-  effectValue: 0
+  ammoType: 1
+  effectValue: 10
   effectDuration: 0
   autoUseOnPickup: 1
   customEffectID: 

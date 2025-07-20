@@ -62,6 +62,9 @@ public class ProceduralLevelGenerator : MonoBehaviour
     [Header("Szanse rarity dla ka¿dego poziomu loot enrichment (poziomy: 1-5)")]
     public LootRarityChanceRow[] lootRarityChancesTable = new LootRarityChanceRow[5];
 
+    [Header("Szanse typów amunicji dla ka¿dego poziomu rarity (poziomy: 1-5)")]
+    public AmmoTypeChanceRow[] ammoTypeChancesTable = new AmmoTypeChanceRow[5];
+
     [Tooltip("Dodatkowy mno¿nik szansy na pojawienie siê przedmiotu za ka¿dy pokój oddalony od pokoju startowego.")]
     public float distanceBonusPerRoom = 0.15f;
 
@@ -855,17 +858,62 @@ public class ProceduralLevelGenerator : MonoBehaviour
             ItemEntry entry = null;
             foreach (var r in rarityLevels)
             {
-                var possibleItems = items.Where(e =>
-                    e.itemData != null &&
-                    e.itemData.lootCategory == pickedCategory &&
-                    e.itemData.lootRarity == (int)r &&
-                    (e.maxCount == 0 || itemTypeCounter[e] < e.maxCount)
-                ).ToList();
-
-                if (possibleItems.Count > 0)
+                if (pickedCategory == LootCategory.Ammunition && MissionSettings.selectedLocation != null)
                 {
-                    entry = WeightedRandomItem(possibleItems);
-                    break;
+                    var allowedAmmoTypes = MissionSettings.selectedLocation.allowedAmmoTypes;
+                    int rarityIdx = Mathf.Clamp((int)r, 1, 5) - 1;
+                    var ammoRow = ammoTypeChancesTable[rarityIdx];
+
+                    // Lista szans tylko dla allowedAmmoTypes:
+                    var chances = new List<(AmmoType, float)>();
+                    if (allowedAmmoTypes.Contains(AmmoType.Pistol)) chances.Add((AmmoType.Pistol, ammoRow.Pistol));
+                    if (allowedAmmoTypes.Contains(AmmoType.Rifle)) chances.Add((AmmoType.Rifle, ammoRow.Rifle));
+                    if (allowedAmmoTypes.Contains(AmmoType.Shotgun)) chances.Add((AmmoType.Shotgun, ammoRow.Shotgun));
+                    // Dodaj kolejne typy jeœli masz!
+
+                    float sum = chances.Sum(x => x.Item2);
+                    if (sum <= 0f) continue;
+                    float roll = Random.value * sum;
+                    float acc = 0f;
+                    AmmoType drawnType = AmmoType.Pistol; // domyœlny
+                    foreach (var (type, val) in chances)
+                    {
+                        acc += val;
+                        if (roll <= acc)
+                        {
+                            drawnType = type;
+                            break;
+                        }
+                    }
+
+                    var possibleItems = items.Where(e =>
+                        e.itemData != null &&
+                        e.itemData.lootCategory == pickedCategory &&
+                        e.itemData.lootRarity == (int)r &&
+                        e.itemData.ammoType == drawnType &&
+                        (e.maxCount == 0 || itemTypeCounter[e] < e.maxCount)
+                    ).ToList();
+
+                    if (possibleItems.Count > 0)
+                    {
+                        entry = WeightedRandomItem(possibleItems);
+                        break;
+                    }
+                }
+                else
+                {
+                    var possibleItems = items.Where(e =>
+                        e.itemData != null &&
+                        e.itemData.lootCategory == pickedCategory &&
+                        e.itemData.lootRarity == (int)r &&
+                        (e.maxCount == 0 || itemTypeCounter[e] < e.maxCount)
+                    ).ToList();
+
+                    if (possibleItems.Count > 0)
+                    {
+                        entry = WeightedRandomItem(possibleItems);
+                        break;
+                    }
                 }
             }
             if (entry == null || entry.itemData == null || entry.itemData.prefab == null)
@@ -1072,6 +1120,34 @@ public class ProceduralLevelGenerator : MonoBehaviour
                 Rare = defaults[i, 2],
                 Epic = defaults[i, 3],
                 Legendary = defaults[i, 4]
+            };
+        }
+#if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this);
+#endif
+    }
+
+    [ContextMenu("Ustaw domyœlne ammo type chances")]
+    public void SetDefaultAmmoTypeChances()
+    {
+        // Przyk³ad: 3 typy ammo (Pistol, Rifle, Shotgun), 5 rarity (Common, Uncommon, Rare, Epic, Legendary)
+        float[,] defaults = new float[5, 3] {
+        //  Pistol, Rifle, Shotgun
+        {0.7f, 0.2f, 0.1f}, // Common
+        {0.5f, 0.4f, 0.1f}, // Uncommon
+        {0.3f, 0.5f, 0.2f}, // Rare
+        {0.15f, 0.5f, 0.35f}, // Epic
+        {0.05f, 0.5f, 0.45f}  // Legendary
+    };
+        ammoTypeChancesTable = new AmmoTypeChanceRow[5];
+        for (int i = 0; i < 5; i++)
+        {
+            ammoTypeChancesTable[i] = new AmmoTypeChanceRow
+            {
+                Pistol = defaults[i, 0],
+                Rifle = defaults[i, 1],
+                Shotgun = defaults[i, 2]
+                // Dodaj kolejne typy, jeœli masz!
             };
         }
 #if UNITY_EDITOR
@@ -1398,6 +1474,15 @@ public class LootCategoryChance
     public LootCategory category;
     [Range(0f, 1f)]
     public float spawnChance;
+}
+
+[System.Serializable]
+public class AmmoTypeChanceRow
+{
+    public float Pistol;
+    public float Rifle;
+    public float Shotgun;
+    // Dodaj kolejne typy amunicji jeœli masz np. public float Sniper;
 }
 
 // Typ dla potworów:

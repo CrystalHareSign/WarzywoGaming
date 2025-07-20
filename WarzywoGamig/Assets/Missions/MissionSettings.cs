@@ -14,6 +14,9 @@ public static class MissionSettings
     // S³ownik: klucz to itemName z ItemPrefabData, wartoœæ to maxCount
     public static Dictionary<string, int> itemMaxCounts = new();
 
+    // Dodane! Referencja do wybranej lokacji (np. z MissionLocationIcon)
+    public static MissionLocationIcon selectedLocation;
+
     public static bool IsRouteOnly => locationType == MissionLocationType.RouteOnly;
     public static bool IsProceduralRaid => locationType == MissionLocationType.ProceduralRaid;
 }

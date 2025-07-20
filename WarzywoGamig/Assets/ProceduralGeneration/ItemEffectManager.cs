@@ -39,6 +39,10 @@ public class ItemEffectManager : MonoBehaviour
                 SaveManager.Instance.AddCurrency(data.effectValue);
                 Debug.Log($"[ItemEffectManager] Dodano {data.effectValue} waluty graczowi!");
                 break;
+            case ItemEffectType.Ammunition:
+                Inventory.Instance.AddAmmo(data.ammoType, data.effectValue);
+                break;
+
             case ItemEffectType.Custom:
                 var interactable = itemObj.GetComponent<InteractableItem>();
                 if (interactable != null)
