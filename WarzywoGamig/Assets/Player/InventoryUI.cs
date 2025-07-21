@@ -411,7 +411,13 @@ public class InventoryUI : MonoBehaviour
                 ShowBoostTimerUI(interactable.data.effectValue, interactable.data.effectDuration);
             }
 
-            ItemEffectManager.Instance.UseItem(interactable.data, itemObj);
+            // POPRAWKA: sprawdzamy, czy item został faktycznie użyty
+            bool used = ItemEffectManager.Instance.UseItem(interactable.data, itemObj);
+            if (!used)
+            {
+                // Nie usuwaj itemu, jeśli nie został użyty!
+                return;
+            }
         }
         else if (interactable.onInteract != null)
         {

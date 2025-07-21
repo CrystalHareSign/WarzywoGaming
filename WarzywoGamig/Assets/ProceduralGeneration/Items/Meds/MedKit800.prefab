@@ -189,8 +189,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   messageEnglish: Pick
   messagePolish: "We\u017A"
-  infoEnglish: 
-  infoPolish: 
+  infoEnglish: You are at full health!
+  infoPolish: "Masz pe\u0142ne zdrowie!"
   keyText: '[E]'
   interactionDistance: 5
   isInteracted: 0

@@ -1,13 +1,23 @@
 using UnityEngine;
 using System.Collections;
+using TMPro; // U¿ywaj TMP_Text zamiast Text
 
 public class PlayerStats : MonoBehaviour
 {
     public static PlayerStats Instance;
 
     [Header("Health")]
-    public float maxHealth = 100f;
-    public float currentHealth = 100f;
+    public float maxHealth = 1000f;
+    public float currentHealth = 1000f;
+
+    [Header("Health Regen")]
+    public bool enableHealthRegen = true;
+    public float healthRegenDelay = 2f; // czas oczekiwania po otrzymaniu obra¿eñ
+    public float healthRegenPerSecond = 2f; // sta³a prêdkoœæ regeneracji HP
+    private float healthRegenTimer = 0f;
+
+    [Header("HP UI (Canvas)")]
+    public TMP_Text hpText; // Przypisz w Inspectorze TMP_Text z Canvasu
 
     [Header("Stamina")]
     public float maxStamina = 100f;
@@ -43,11 +53,17 @@ public class PlayerStats : MonoBehaviour
     {
         currentHealth = maxHealth;
         currentStamina = maxStamina;
+
+        UpdateHpUI();
     }
 
     void Update()
     {
-        // SprawdŸ, czy stamina zosta³a wyczerpana
+        // --- HP REGEN ---
+        if (enableHealthRegen)
+            HealthRegenTick();
+
+        // --- STAMINA ---
         if (currentStamina <= 0f)
         {
             currentStamina = 0f;
@@ -59,20 +75,56 @@ public class PlayerStats : MonoBehaviour
         // --- NEW: Update boost timer if active ---
         if (staminaBonus > 0f && staminaBonusTimeLeft > 0f)
             staminaBonusTimeLeft = Mathf.Max(0f, staminaBonusTimeLeft - Time.unscaledDeltaTime);
+
+        // --- Aktualizuj licznik HP na UI ---
+        UpdateHpUI();
     }
 
     public void Heal(float amount)
     {
         currentHealth = Mathf.Clamp(currentHealth + amount, 0f, maxHealth);
+        UpdateHpUI();
     }
 
     public void TakeDamage(float amount)
     {
         currentHealth = Mathf.Clamp(currentHealth - amount, 0f, maxHealth);
+        healthRegenTimer = healthRegenDelay;
+        UpdateHpUI();
         if (currentHealth == 0)
         {
             Die();
         }
+    }
+
+    private void HealthRegenTick()
+    {
+        if (currentHealth >= maxHealth || currentHealth <= 0f)
+            return;
+
+        if (healthRegenTimer > 0f)
+        {
+            healthRegenTimer -= Time.deltaTime;
+            return;
+        }
+
+        float regenLimit = GetRegenLimit();
+        currentHealth = Mathf.Clamp(currentHealth + healthRegenPerSecond * Time.deltaTime, 0f, regenLimit);
+    }
+
+    // Regen nie przekracza progów: 200, 400, 600, 800, 1000 (lub maxHealth)
+    private float GetRegenLimit()
+    {
+        if (currentHealth <= 200f)
+            return 200f;
+        else if (currentHealth <= 400f)
+            return 400f;
+        else if (currentHealth <= 600f)
+            return 600f;
+        else if (currentHealth <= 800f)
+            return 800f;
+        else
+            return maxHealth;
     }
 
     public bool UseStamina(float amount)
@@ -163,5 +215,13 @@ public class PlayerStats : MonoBehaviour
         staminaBonusDuration = 0f;
         staminaBonusTimeLeft = 0f;
         // Dodaj tu inne efekty jeœli masz (np. speedBoost, shield, itp.)
+    }
+
+    private void UpdateHpUI()
+    {
+        if (hpText != null)
+        {
+            hpText.text = Mathf.RoundToInt(currentHealth).ToString();
+        }
     }
 }
