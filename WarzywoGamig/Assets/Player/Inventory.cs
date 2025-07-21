@@ -97,9 +97,33 @@ public class Inventory : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Q))
         {
-            if (isLootBeingDropped) return;
+            if (isLootBeingDropped)
+            {
+                return;
+            }
+            // Jeśli masz więcej niż jedną broń, przełącz na następną
+            if (currentWeaponPrefab != null && weapons.Count > 1)
+            {
+                int currentIndex = weapons.IndexOf(currentWeaponName);
+
+                if (currentIndex == -1)
+                {
+                    currentIndex = 0;
+                }
+
+                int nextIndex = (currentIndex + 1) % weapons.Count;
+                string nextWeapon = weapons[nextIndex];
+
+                if (currentWeaponName != nextWeapon)
+                {
+                    EquipWeapon(nextWeapon);
+                }
+                return; // <- ważne, by nie upuszczać przedmiotu po zmianie broni
+            }
+            // Jeśli nie masz broni, upuść przedmiot jak dotychczas
             DropItemFromInventory();
         }
+
         if (Input.GetKeyDown(flashlightKey))
         {
             // Sprawdź WSZYSTKIE monitory

@@ -256,6 +256,11 @@ public class GridManager : MonoBehaviour
         if (oldController != null) Destroy(oldController);
         LootColliderController colliderController = lootItem.AddComponent<LootColliderController>();
         colliderController.Initialize(lootCollider);
+
+        if (inventory != null)
+        {
+            inventory.isLootBeingDropped = false;
+        }
     }
 
     private void CheckTiles()
