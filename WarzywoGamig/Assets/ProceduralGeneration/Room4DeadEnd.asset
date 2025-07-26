@@ -23,3 +23,6 @@ MonoBehaviour:
   monsterSpawnPoints:
   - {x: 0, y: 1, z: -15}
   - {x: 0, y: 1, z: 15}
+  lightSpawnPoints:
+  - localPosition: {x: 0, y: 11, z: 0}
+    lightPrefab: {fileID: 2378765687954633636, guid: fdbfeafaf6ed3c540b3d410867c0e8df, type: 3}

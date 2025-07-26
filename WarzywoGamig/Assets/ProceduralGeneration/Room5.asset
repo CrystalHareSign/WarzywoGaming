@@ -28,3 +28,6 @@ MonoBehaviour:
   - {x: 0, y: 1, z: -20}
   - {x: -20, y: 1, z: 5}
   - {x: 20, y: 1, z: 5}
+  lightSpawnPoints:
+  - localPosition: {x: 0, y: 11, z: 5}
+    lightPrefab: {fileID: 2378765687954633636, guid: fdbfeafaf6ed3c540b3d410867c0e8df, type: 3}

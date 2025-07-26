@@ -16,6 +16,13 @@ public class Doorway
     public DoorDirection direction;
 }
 
+[System.Serializable]
+public class LightSpawnPoint
+{
+    public Vector3 localPosition;
+    public GameObject lightPrefab; // Pozwala przypisaæ dowolny prefab œwiat³a do konkretnego miejsca
+}
+
 [CreateAssetMenu(menuName = "Procedural/RoomPrefabData")]
 public class RoomPrefabData : ScriptableObject
 {
@@ -25,4 +32,7 @@ public class RoomPrefabData : ScriptableObject
     public int spawnChance = 100;
     public List<Vector3> itemSpawnPoints;      // Pozycje lokalne na itemy
     public List<Vector3> monsterSpawnPoints;   // Pozycje lokalne na potwory
+
+    [Header("Light Spawn Points")]
+    public List<LightSpawnPoint> lightSpawnPoints; // Miejsca i typy œwiate³ do spawnowania w tym pokoju
 }

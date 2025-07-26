@@ -757,18 +757,23 @@ public class SaveManager : MonoBehaviour
     {
         playerCurrency += amount;
         Debug.Log($"Dodano {amount} waluty. Obecny stan: {playerCurrency}");
+        if (InventoryUI.Instance != null)
+            InventoryUI.Instance.UpdatePlayerCurrency(playerCurrency);
     }
-
     public void SubtractCurrency(float amount)
     {
         playerCurrency = Mathf.Max(playerCurrency - amount, 0);
         Debug.Log($"Odjêto {amount} waluty. Obecny stan: {playerCurrency}");
+        if (InventoryUI.Instance != null)
+            InventoryUI.Instance.UpdatePlayerCurrency(playerCurrency);
     }
 
     public void ResetCurrency()
     {
         playerCurrency = 0f;
-        //Debug.Log("Waluta gracza zosta³a zresetowana.");
+        Debug.Log($"Waluta gracza zosta³a zresetowana.Obecny stan: {playerCurrency}");
+        if (InventoryUI.Instance != null)
+            InventoryUI.Instance.UpdatePlayerCurrency(playerCurrency);
     }
 
     public void ResetSaveSlot(int slotIndex)

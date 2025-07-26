@@ -97,6 +97,14 @@ public class ProceduralLevelGenerator : MonoBehaviour
     [HideInInspector]
     public int maxMonstersOnMap = 6;
 
+    [Header("Œwiat³a - kontrola globalna")]
+    public bool lightsEnabled = true; // Globalny prze³¹cznik œwiate³ (np. "po uruchomieniu generatora")
+    [Range(0, 1)] public float flickerLightsPercent = 0.3f;   // Procent œwiate³, które bêd¹ migaæ
+    [Range(0, 1)] public float disabledLightsPercent = 0.2f;  // Procent wy³¹czonych, gdy œwiat³a OFF
+
+    private List<FlickerLight> allSpawnedLights = new List<FlickerLight>();
+
+
     private static readonly float[] MonsterLevelMultipliers = { 0.3f, 0.45f, 0.6f, 0.8f, 1.0f };
 
     private static readonly float[] LootLevelMultipliers = { 0.7f, 1.0f, 1.2f, 1.5f, 2.0f };
@@ -202,6 +210,15 @@ public class ProceduralLevelGenerator : MonoBehaviour
             bool success = TryGenerateLevelWithBacktracking();
             if (success)
             {
+                // --- SPAWN LIGHTS IN ALL ROOMS ---
+                allSpawnedLights.Clear(); // wa¿ne: czyœæ listê, jeœli mo¿esz powtarzaæ generacjê!
+
+                // Spawn œwiat³a w ka¿dym pokoju, zarówno startowym jak i kolejnych
+                foreach (var placedRoom in placedRooms)
+                {
+                    SpawnLightsInRoom(placedRoom);
+                }
+
                 AutoBalanceItemSpawnParameters();
                 AutoBalanceMonsterSpawnParameters();
                 SpawnDoors();
@@ -234,6 +251,9 @@ public class ProceduralLevelGenerator : MonoBehaviour
                 // 2. SPAWN POTWORY!
                 SpawnMonstersInRooms();
                 ValidateDoorwaysNoWall();
+
+                // --- USTAW STANY WSZYSTKICH ŒWIATE£ ---
+                SetAllLightsState();
             }
         }
         yield break;
@@ -243,13 +263,16 @@ public class ProceduralLevelGenerator : MonoBehaviour
     private System.Collections.IEnumerator GenerateLevelStepByStepCoroutine()
     {
         generationSteps.Clear();
+        allSpawnedLights.Clear();
 
+        // --- SPAWN POKOJU STARTOWEGO ---
         RoomPrefabData startRoomData = startRoomPrefab != null ? startRoomPrefab : GetRandomRoomPrefab();
         Quaternion yRot = Quaternion.identity;
         GameObject startRoomGO = Instantiate(startRoomData.prefab, startRoomPositionOverride, yRot);
         Bounds startBounds = GetRoomBounds(startRoomGO);
         var startRoom = new PlacedRoom(startRoomGO, startRoomData, GetDoorwaysWorld(startRoomGO, startRoomData), startBounds);
         placedRooms.Add(startRoom);
+        SpawnLightsInRoom(startRoom); // <- WYWO£ANIE dla pokoju startowego!
         generationSteps.Add(new GenerationStep { room = startRoom, parentRoomIndex = -1, parentDoorIndex = -1, thisDoorIndex = -1 });
         startRoomPosition = startRoomGO.transform.position;
 
@@ -263,9 +286,11 @@ public class ProceduralLevelGenerator : MonoBehaviour
             if (TryPlaceNextRoomWithTrace(out int parentRoomIdx, out int parentDoor, out int thisDoor))
             {
                 placed++;
+                var newRoom = placedRooms[placedRooms.Count - 1];
+                SpawnLightsInRoom(newRoom); // <- WYWO£ANIE dla ka¿dego nowego pokoju!
                 generationSteps.Add(new GenerationStep
                 {
-                    room = placedRooms[placedRooms.Count - 1],
+                    room = newRoom,
                     parentRoomIndex = parentRoomIdx,
                     parentDoorIndex = parentDoor,
                     thisDoorIndex = thisDoor
@@ -329,6 +354,9 @@ public class ProceduralLevelGenerator : MonoBehaviour
             // 2. SPAWN POTWORY!
             SpawnMonstersInRooms();
             ValidateDoorwaysNoWall();
+
+            // --- USTAW STAN WSZYSTKICH ŒWIATE£ ---
+            SetAllLightsState();
         }
     }
 
@@ -339,6 +367,7 @@ public class ProceduralLevelGenerator : MonoBehaviour
                 Destroy(room.room);
         placedRooms.Clear();
         generationSteps.Clear();
+        allSpawnedLights.Clear();
     }
 
     private bool TryGenerateLevelWithBacktracking()
@@ -797,7 +826,77 @@ public class ProceduralLevelGenerator : MonoBehaviour
         }
     }
 
-    // ... ca³a reszta Twojego kodu ...
+    void SpawnLightsInRoom(PlacedRoom placedRoom)
+    {
+        if (placedRoom.data.lightSpawnPoints == null)
+            return;
+
+        foreach (var sp in placedRoom.data.lightSpawnPoints)
+        {
+            if (sp.lightPrefab != null)
+            {
+                GameObject lightGO = Instantiate(
+                    sp.lightPrefab,
+                    placedRoom.room.transform.TransformPoint(sp.localPosition),
+                    Quaternion.identity,
+                    placedRoom.room.transform
+                );
+
+                FlickerLight flicker = lightGO.GetComponent<FlickerLight>();
+                if (flicker != null && !allSpawnedLights.Contains(flicker))
+                    allSpawnedLights.Add(flicker);
+            }
+        }
+    }
+
+    // --- USTAWIENIE STANU WSZYSTKICH ŒWIATE£ ---
+
+    void SetAllLightsState()
+    {
+        int total = allSpawnedLights.Count;
+        int flickerCount = Mathf.RoundToInt(flickerLightsPercent * total);
+        int disabledCount = Mathf.RoundToInt(disabledLightsPercent * total);
+
+        // Reset – wszystko na ON i bez migania
+        foreach (var light in allSpawnedLights)
+        {
+            light.SetFlicker(false);
+            light.SetEnabled(true);
+        }
+
+        // Losowe rozk³adanie stanów
+        var shuffled = allSpawnedLights.OrderBy(x => Random.value).ToList();
+
+        if (!lightsEnabled)
+        {
+            // Wy³¹czone œwiat³a
+            for (int i = 0; i < disabledCount && i < shuffled.Count; i++)
+                shuffled[i].SetEnabled(false);
+
+            // Migaj¹ce (tylko nie wy³¹czone)
+            for (int i = disabledCount; i < disabledCount + flickerCount && i < shuffled.Count; i++)
+            {
+                shuffled[i].SetEnabled(true);
+                shuffled[i].SetFlicker(true);
+            }
+        }
+        else
+        {
+            // Migaj¹ce (reszta normalne)
+            for (int i = 0; i < flickerCount && i < shuffled.Count; i++)
+                shuffled[i].SetFlicker(true);
+        }
+    }
+
+    // ---- WYWO£ANIE PO GENERACJI ----
+    // Po zespawnowaniu WSZYSTKICH pokoi (czyli po ka¿dej generacji poziomu!):
+
+    void AfterLevelGeneration()
+    {
+        // ... SpawnDoors, SpawnItemsInRooms, itp ...
+        SetAllLightsState();
+    }
+
 
     void SpawnItemsInRooms()
     {

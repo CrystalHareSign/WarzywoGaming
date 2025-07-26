@@ -61,7 +61,7 @@ public class Gun : MonoBehaviour
         {
             StartReload();
         }
-        else if (currentAmmo <= 0 && !unlimitedAmmo)
+        else if (currentAmmo <= 0 && !unlimitedAmmo && totalAmmo > 0)
         {
             StartReload();
         }
@@ -112,6 +112,9 @@ public class Gun : MonoBehaviour
     {
         if (isReloading) return;
         if (!isWeaponEquipped) return;
+
+        if (currentAmmo >= maxAmmo) return; // Magazynek pełny
+        if (totalAmmo <= 0) return;         // Brak amunicji do przeładowania
 
         // Blokada przeładowania podczas używania itema (np. trzymania F)
         if (InventoryUI.Instance != null && InventoryUI.Instance.isHoldingUse)
