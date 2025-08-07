@@ -785,11 +785,15 @@ public class ProceduralLevelGenerator : MonoBehaviour
 
     void SpawnDoors()
     {
+        var processedDoorways = new HashSet<Vector3>();
+
         foreach (var placed in placedRooms)
         {
             for (int i = 0; i < placed.doorways.Count; i++)
             {
                 var dw = placed.doorways[i];
+
+                // Sprawdzamy, czy ju¿ drzwi w tym miejscu by³y zespawnowane
                 bool hasExit = false;
                 foreach (var other in placedRooms)
                 {
@@ -802,25 +806,38 @@ public class ProceduralLevelGenerator : MonoBehaviour
                         )
                         {
                             hasExit = true;
+                            // Ustawiamy drzwi tylko raz – np. tylko dla pokoju z ni¿szym indeksem
+                            // lub tylko jeœli nie by³o ju¿ drzwi w tym miejscu
+                            if (placedRooms.IndexOf(placed) < placedRooms.IndexOf(other) &&
+                                !processedDoorways.Contains(dw.position))
+                            {
+                                GameObject prefab = doorActivePrefabs != null && doorActivePrefabs.Count > 0
+                                    ? doorActivePrefabs[Random.Range(0, doorActivePrefabs.Count)]
+                                    : null;
+
+                                if (prefab != null)
+                                {
+                                    GameObject go = GameObject.Instantiate(prefab, dw.position, Quaternion.LookRotation(dw.direction), placed.room.transform);
+                                    processedDoorways.Add(dw.position);
+                                }
+                            }
                             break;
                         }
                     }
                     if (hasExit) break;
                 }
 
-                GameObject prefab = null;
-                if (hasExit && doorActivePrefabs != null && doorActivePrefabs.Count > 0)
+                if (!hasExit && !processedDoorways.Contains(dw.position))
                 {
-                    prefab = doorActivePrefabs[Random.Range(0, doorActivePrefabs.Count)];
-                }
-                else if (!hasExit && doorClosedPrefabs != null && doorClosedPrefabs.Count > 0)
-                {
-                    prefab = doorClosedPrefabs[Random.Range(0, doorClosedPrefabs.Count)];
-                }
+                    GameObject prefab = doorClosedPrefabs != null && doorClosedPrefabs.Count > 0
+                        ? doorClosedPrefabs[Random.Range(0, doorClosedPrefabs.Count)]
+                        : null;
 
-                if (prefab != null)
-                {
-                    GameObject go = GameObject.Instantiate(prefab, dw.position, Quaternion.LookRotation(dw.direction), placed.room.transform);
+                    if (prefab != null)
+                    {
+                        GameObject go = GameObject.Instantiate(prefab, dw.position, Quaternion.LookRotation(dw.direction), placed.room.transform);
+                        processedDoorways.Add(dw.position);
+                    }
                 }
             }
         }
