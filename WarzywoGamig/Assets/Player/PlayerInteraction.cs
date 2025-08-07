@@ -212,6 +212,58 @@ public class PlayerInteraction : MonoBehaviour
                         return; // jeœli chcesz zakoñczyæ Update po podniesieniu
                     }
                 }
+                if (interactableItem.isDoor)
+                {
+                    DoorInteraction door = hit.collider.GetComponentInParent<DoorInteraction>();
+                    if (door != null)
+                    {
+                        // SprawdŸ, któr¹ klamkê klikniêto
+                        bool hitA = (door.handleA != null && hit.collider.transform == door.handleA);
+                        bool hitB = (door.handleB != null && hit.collider.transform == door.handleB);
+
+                        if (messageText != null && interactableItem.hoverMessage != null)
+                        {
+                            messageText.text = interactableItem.hoverMessage.message;
+                            messageText.fontSize = interactableItem.hoverMessage.messageFontSize;
+                            messageText.gameObject.SetActive(true);
+                        }
+                        if (keyText != null && interactableItem.hoverMessage != null)
+                        {
+                            keyText.text = interactableItem.hoverMessage.keyText;
+                            keyText.fontSize = interactableItem.hoverMessage.keyFontSize;
+                            keyText.gameObject.SetActive(true);
+                        }
+                        if (progressCircle != null)
+                        {
+                            progressCircle.gameObject.SetActive(true);
+                        }
+
+                        if (Input.GetKeyDown(KeyCode.E))
+                        {
+                            // Pobierz aktualny k¹t drzwi
+                            float angle = door.doorPivot.localRotation.eulerAngles.y;
+                            bool isClosed = Mathf.Abs(angle) < 1f || Mathf.Abs(angle - 360f) < 1f;
+
+                            if (isClosed)
+                            {
+                                // Zamkniête: A otwiera w prawo, B otwiera w lewo
+                                if (hitA)
+                                    door.OpenDoorA();
+                                else if (hitB)
+                                    door.OpenDoorB();
+                            }
+                            else
+                            {
+                                // Otwarte: ka¿da klamka zamyka drzwi
+                                if (hitA || hitB)
+                                    door.CloseDoor();
+                            }
+                            HideUI();
+                        }
+                        return;
+                    }
+                }
+
                 // --- FOTEL KIEROWCY: przytrzymaj E aby potwierdziæ podró¿ ---
                 if (interactableItem.isDriverSeat)
                 {

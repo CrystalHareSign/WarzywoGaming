@@ -58,6 +58,9 @@ public class InteractableItem : MonoBehaviour, IInteractable
     [Header("Driver Seat")]
     public bool isDriverSeat = false;
 
+    [Header("Door")]
+    public bool isDoor = false;
+
     [Header("Mission Definer")]
     public bool isMissionDefiner = false;
 
