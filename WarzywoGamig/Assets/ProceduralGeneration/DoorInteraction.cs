@@ -15,16 +15,11 @@ public class DoorInteraction : MonoBehaviour
     private bool isMoving = false;
     private float currentAngle = 0f;
 
-    // Stan: zamkniête, otwarte w prawo, otwarte w lewo
-    private enum DoorState { Closed, OpenRight, OpenLeft }
-    private DoorState state = DoorState.Closed;
-
     void Start()
     {
         currentAngle = 0f;
         doorPivot.localRotation = Quaternion.Euler(0, currentAngle, 0);
-        state = DoorState.Closed;
-        Debug.Log($"[START] Drzwi ustawione na k¹t: {currentAngle}");
+        //Debug.Log($"[START] Drzwi ustawione na k¹t: {currentAngle}");
     }
 
     void Update()
@@ -33,96 +28,127 @@ public class DoorInteraction : MonoBehaviour
 
         if (isMoving)
         {
+            // Jeœli gracz blokuje drzwi, zatrzymaj animacjê, pozwól na wznowienie przez interakcjê
+            if (IsPlayerBlockingDoor())
+            {
+                //Debug.Log("[Drzwi] Gracz blokuje drzwi! Animacja zatrzymana.");
+                isMoving = false; // zatrzymaj animacjê!
+                return;
+            }
+
             float nextAngle = Mathf.MoveTowards(currentAngle, targetAngle, openSpeed * Time.deltaTime);
             doorPivot.localRotation = Quaternion.Euler(0, nextAngle, 0);
             currentAngle = nextAngle;
 
             if (Mathf.Abs(currentAngle - targetAngle) < 0.01f)
             {
-                if (targetAngle == 0f)
-                {
-                    doorPivot.localRotation = Quaternion.Euler(0, 0, 0);
-                    currentAngle = 0f;
-                    state = DoorState.Closed;
-                    Debug.Log($"[ZAMKNIÊTE] K¹t koñcowy: {currentAngle} (powinno byæ 0)");
-                }
-                else if (targetAngle == openAngleA)
-                {
-                    doorPivot.localRotation = Quaternion.Euler(0, openAngleA, 0);
-                    currentAngle = openAngleA;
-                    state = DoorState.OpenRight;
-                    Debug.Log($"[OTWARTE PRAWO] K¹t koñcowy: {currentAngle} (powinno byæ 90)");
-                }
-                else if (targetAngle == openAngleB)
-                {
-                    doorPivot.localRotation = Quaternion.Euler(0, openAngleB, 0);
-                    currentAngle = openAngleB;
-                    state = DoorState.OpenLeft;
-                    Debug.Log($"[OTWARTE LEWO] K¹t koñcowy: {currentAngle} (powinno byæ -90)");
-                }
+                doorPivot.localRotation = Quaternion.Euler(0, targetAngle, 0);
+                currentAngle = targetAngle;
                 isMoving = false;
+                //Debug.Log($"[KONIEC RUCHU] K¹t koñcowy: {currentAngle}");
             }
         }
+    }
+
+    // Sprawdza czy gracz blokuje drzwi (przy ka¿dym kroku ruchu)
+    bool IsPlayerBlockingDoor()
+    {
+        if (doorLeaf == null) return false;
+        Collider doorCollider = doorLeaf.GetComponent<Collider>();
+        if (doorCollider == null) return false;
+
+        Collider[] hits = Physics.OverlapBox(
+            doorCollider.bounds.center,
+            doorCollider.bounds.extents,
+            doorLeaf.transform.rotation
+        );
+        foreach (var hit in hits)
+        {
+            if (hit.CompareTag("Player"))
+                return true;
+        }
+        return false;
+    }
+
+    // Sprawdza czy drzwi s¹ zamkniête (k¹t ~0 lub ~360)
+    bool IsDoorClosed()
+    {
+        float angle = doorPivot.localRotation.eulerAngles.y;
+        return Mathf.Abs(angle) < 1f || Mathf.Abs(angle - 360f) < 1f;
+    }
+
+    // Sprawdza czy drzwi s¹ otwarte w prawo (k¹t ~openAngleA)
+    bool IsDoorOpenRight()
+    {
+        float angle = doorPivot.localRotation.eulerAngles.y;
+        return Mathf.Abs(Mathf.DeltaAngle(angle, openAngleA)) < 1f;
+    }
+
+    // Sprawdza czy drzwi s¹ otwarte w lewo (k¹t ~openAngleB)
+    bool IsDoorOpenLeft()
+    {
+        float angle = doorPivot.localRotation.eulerAngles.y;
+        return Mathf.Abs(Mathf.DeltaAngle(angle, openAngleB)) < 1f;
     }
 
     public void OpenDoorA()
     {
         if (isMoving)
         {
-            Debug.Log("[OpenDoorA] Ruch w trakcie.");
+            //Debug.Log("[OpenDoorA] Ruch w trakcie.");
             return;
         }
-        if (state == DoorState.OpenRight)
+        if (IsDoorOpenRight())
         {
-            Debug.Log("[OpenDoorA] Drzwi ju¿ otwarte w prawo.");
+            //Debug.Log("[OpenDoorA] Drzwi ju¿ otwarte w prawo.");
             return;
         }
-        if (state == DoorState.OpenLeft)
+        if (IsDoorOpenLeft())
         {
-            Debug.Log("[OpenDoorA] Najpierw zamknij drzwi zanim otworzysz w prawo!");
+            //Debug.Log("[OpenDoorA] Najpierw zamknij drzwi zanim otworzysz w prawo!");
             return;
         }
         targetAngle = openAngleA;
         isMoving = true;
-        Debug.Log($"[OpenDoorA] Rozpoczynam otwieranie w prawo: z {currentAngle} do {targetAngle}");
+        //Debug.Log($"[OpenDoorA] Rozpoczynam otwieranie w prawo: z {currentAngle} do {targetAngle}");
     }
 
     public void OpenDoorB()
     {
         if (isMoving)
         {
-            Debug.Log("[OpenDoorB] Ruch w trakcie.");
+            //Debug.Log("[OpenDoorB] Ruch w trakcie.");
             return;
         }
-        if (state == DoorState.OpenLeft)
+        if (IsDoorOpenLeft())
         {
-            Debug.Log("[OpenDoorB] Drzwi ju¿ otwarte w lewo.");
+            //Debug.Log("[OpenDoorB] Drzwi ju¿ otwarte w lewo.");
             return;
         }
-        if (state == DoorState.OpenRight)
+        if (IsDoorOpenRight())
         {
-            Debug.Log("[OpenDoorB] Najpierw zamknij drzwi zanim otworzysz w lewo!");
+            //Debug.Log("[OpenDoorB] Najpierw zamknij drzwi zanim otworzysz w lewo!");
             return;
         }
         targetAngle = openAngleB;
         isMoving = true;
-        Debug.Log($"[OpenDoorB] Rozpoczynam otwieranie w lewo: z {currentAngle} do {targetAngle}");
+        //Debug.Log($"[OpenDoorB] Rozpoczynam otwieranie w lewo: z {currentAngle} do {targetAngle}");
     }
 
     public void CloseDoor()
     {
         if (isMoving)
         {
-            Debug.Log("[CloseDoor] Ruch w trakcie.");
+            //Debug.Log("[CloseDoor] Ruch w trakcie.");
             return;
         }
-        if (state == DoorState.Closed)
+        if (IsDoorClosed())
         {
-            Debug.Log("[CloseDoor] Drzwi ju¿ zamkniête.");
+            //Debug.Log("[CloseDoor] Drzwi ju¿ zamkniête.");
             return;
         }
         targetAngle = 0f;
         isMoving = true;
-        Debug.Log($"[CloseDoor] Rozpoczynam zamykanie: z {currentAngle} do 0");
+        //Debug.Log($"[CloseDoor] Rozpoczynam zamykanie: z {currentAngle} do 0");
     }
 }
