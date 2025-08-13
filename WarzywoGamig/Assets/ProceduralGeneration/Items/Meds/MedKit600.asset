@@ -14,9 +14,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prefab: {fileID: 4312166767047467297, guid: 3a64ea2821f33be49aeb91136e8838a6, type: 3}
   itemName: MedKit600
+  description:
+    english: 'Medkit 3
+
+
+      Effect:
+
+      Restores {amount} HP instantly.'
+    polish: "Apteczka 3\n\nEfekt:\nNatychmiastowo przywraca {amount} punkt\xF3w zdrowia."
+    german: 
+  hasDescription: 1
   lootRarity: 3
   lootCategory: 2
   effectType: 2
+  ammoType: 0
   effectValue: 600
   effectDuration: 0
   autoUseOnPickup: 0

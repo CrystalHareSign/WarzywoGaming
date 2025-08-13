@@ -74,7 +74,7 @@ public class PlayerStats : MonoBehaviour
 
         // --- NEW: Update boost timer if active ---
         if (staminaBonus > 0f && staminaBonusTimeLeft > 0f)
-            staminaBonusTimeLeft = Mathf.Max(0f, staminaBonusTimeLeft - Time.unscaledDeltaTime);
+            staminaBonusTimeLeft = Mathf.Max(0f, staminaBonusTimeLeft - Time.deltaTime);
 
         // --- Aktualizuj licznik HP na UI ---
         UpdateHpUI();
@@ -184,7 +184,7 @@ public class PlayerStats : MonoBehaviour
         while (timer < duration)
         {
             yield return null;
-            timer += Time.unscaledDeltaTime;
+            timer += Time.deltaTime;
             staminaBonusTimeLeft = Mathf.Max(0, duration - timer);
         }
 

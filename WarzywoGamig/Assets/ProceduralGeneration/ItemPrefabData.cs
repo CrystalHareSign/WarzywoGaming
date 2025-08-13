@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public enum LootCategory { Currency, Ammunition, Meds, StaminaBooster, key, Special }
+public enum LootCategory { Currency, Ammunition, Meds, StaminaBooster, key, Special, Loot }
 
 public enum ItemEffectType { Currency, Ammunition, Heal, StaminaBoost, Key, Custom, None }
 
@@ -8,11 +8,27 @@ public enum LootRarity { Common = 1, Uncommon = 2, Rare = 3, Epic = 4, Legendary
 
 public enum AmmoType { Pistol, Rifle, Shotgun, SMG, Sniper, Other }
 
+[System.Serializable]
+public class LocalizedDescription
+{
+    [TextArea]
+    public string english;
+    [TextArea]
+    public string polish;
+    [TextArea]
+    public string german;
+    // Dodaj kolejne jêzyki wg potrzeb
+}
+
 [CreateAssetMenu(menuName = "Procedural/ItemPrefabData")]
 public class ItemPrefabData : ScriptableObject
 {
     public GameObject prefab;
     public string itemName;
+
+    [Header("Opis przedmiotu (wielojêzykowy)")]
+    public LocalizedDescription description;
+    public bool hasDescription = false; // ten zostaje, jeœli go u¿ywasz
 
     [Header("Rzadkoœæ lootu (Common, Uncommon, Rare, Epic, Legendary)")]
     [Range(1, 5)]

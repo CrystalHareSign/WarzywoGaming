@@ -62,23 +62,61 @@ public class InventoryUI : MonoBehaviour
     public GameObject leftArrowIndicator;
     public GameObject rightArrowIndicator;
 
-    // --- BOOST TIMER UI ---
     [Header("Boost Timer UI")]
-    public GameObject boostTimerPanel;        // Panel (całość, do ukrywania)
-    public Image boostTimerFillImage;         // Koło z FillMethod=Radial360
-    public TextMeshProUGUI boostValueText;    // Na środku, wartości I/II/III/IV
+    public GameObject boostTimerPanel;
+    public Image boostTimerFillImage;
+    public TextMeshProUGUI boostValueText;
 
-    // --- HOLD TO USE UI ---
     [Header("Hold To Use UI")]
-    public Image holdToUseProgressImage;      // Obrazek w centrum ekranu/celownika (type Filled)
+    public Image holdToUseProgressImage;
     public float requiredHoldTime = 2f;
     public KeyCode useKey = KeyCode.F;
-    public float slowPercent = 0.5f; // 0.5 = 50% normalnej prędkości
-
-    // --- Hold logic ---
+    public float slowPercent = 0.5f;
     public bool isHoldingUse = false;
     private float holdTimer = 0f;
     private float originalMoveSpeed = 0f;
+
+    [Header("Hold Tab To Use Menu")]
+    public float menuHoldTime = 0.5f;
+    private float tabHoldTimer = 0f;
+    private bool tabPressed = false;
+    private bool menuToggledThisPress = false;
+
+    [Header("Inventory Menu Panel")]
+    public GameObject inventoryMenuPanel;
+
+    [Header("Statyczna lista zwykłych itemów (max 20)")]
+    public Image[] normalItemImages = new Image[20];
+    public Image[] normalItemBackgrounds = new Image[20];
+    public TMP_Text[] normalItemTexts = new TMP_Text[20];
+    public TMP_Text[] normalItemCategoryTexts = new TMP_Text[20];
+
+    [Header("Statyczna lista używalnych itemów (max 20)")]
+    public Image[] usableItemImages = new Image[20];
+    public Image[] usableItemBackgrounds = new Image[20];
+    public TMP_Text[] usableItemTexts = new TMP_Text[20];
+    public TMP_Text[] usableItemCategoryTexts = new TMP_Text[20];
+
+    [Header("Tab Buttons")]
+    public Button dataTabButton;
+    public Button notesTabButton;
+    public Button otherTabButton;
+
+    [Header("Tab Contents")]
+    public GameObject dataTabContent;
+    public GameObject notesTabContent;
+    public GameObject otherTabContent;
+
+    [Header("Item description")]
+    public TextMeshProUGUI itemDescriptionText;
+
+    public MouseLook mouseLook;
+    public PlayerInteraction playerInteraction;
+
+    private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
+
+    private int activeTabIndex = 0;
+    public bool isMenuActive = false;
 
     private void Awake()
     {
@@ -95,6 +133,11 @@ public class InventoryUI : MonoBehaviour
 
     private void Start()
     {
+        if (mouseLook == null)
+            mouseLook = UnityEngine.Object.FindFirstObjectByType<MouseLook>();
+
+        playSoundObjects.AddRange(Object.FindObjectsByType<PlaySoundOnObject>(FindObjectsSortMode.None));
+
         if (currentWeapon != null)
             UpdateWeaponUI(currentWeapon);
         else
@@ -122,26 +165,172 @@ public class InventoryUI : MonoBehaviour
             holdToUseProgressImage.fillAmount = 0f;
             holdToUseProgressImage.gameObject.SetActive(false);
         }
+
+        if (inventoryMenuPanel != null)
+            inventoryMenuPanel.SetActive(false);
+
+        if (dataTabButton != null) dataTabButton.onClick.AddListener(() => ShowTab(0));
+        if (notesTabButton != null) notesTabButton.onClick.AddListener(() => ShowTab(1));
+        if (otherTabButton != null) otherTabButton.onClick.AddListener(() => ShowTab(2));
+
+        ShowTab(0);
     }
 
     public void Update()
     {
         if (isInputBlocked)
             return;
+        if (DialogueManager.DialogueActive)
+            return;
+
+        // --- AUDIO PAUSE/RESUME SYSTEM ---
+        // (Zalecane: playSoundObjects jako pole w klasie, przypisanie w Start)
+        // Dodaj logikę pauzowania/restartowania dźwięków przy otwieraniu/zamykaniu menu
+
+        // Zamknij inventory ESC
+        if (isMenuActive && Input.GetKeyDown(KeyCode.Escape))
+        {
+            isMenuActive = false;
+            if (inventoryMenuPanel != null)
+                inventoryMenuPanel.SetActive(false);
+
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            Time.timeScale = 1f;
+            if (mouseLook == null)
+                mouseLook = UnityEngine.Object.FindFirstObjectByType<MouseLook>();
+            if (mouseLook != null)
+                mouseLook.enabled = true; // ODblokuj ruch kamerą
+
+            // Odblokuj interakcje gracza po zamknięciu menu
+            if (playerInteraction != null)
+                playerInteraction.enabled = true;
+
+            // --- WZNAWIANIE DŹWIĘKÓW ---
+            if (playSoundObjects != null)
+            {
+                foreach (var playSoundOnObject in playSoundObjects)
+                {
+                    if (playSoundOnObject == null) continue;
+                    playSoundOnObject.FadeOutSound("InventoryMenuMusic", 1f); // fade out muzyki menu
+                    playSoundOnObject.ResumeAllSoundsExcept(new string[] { "InventoryMenuMusic" }, 0.5f); // fade in pozostałe
+                }
+            }
+
+            tabPressed = false;
+            tabHoldTimer = 0f;
+            return;
+        }
+
+        // --- TAB obsługa ---
+        if (!isMenuActive) // MENU ZAMKNIĘTE
+        {
+            if (Input.GetKeyDown(KeyCode.Tab))
+            {
+                tabPressed = true;
+                tabHoldTimer = 0f;
+            }
+
+            if (tabPressed)
+            {
+                if (Input.GetKey(KeyCode.Tab))
+                {
+                    tabHoldTimer += Time.unscaledDeltaTime;
+                    if (tabHoldTimer >= menuHoldTime)
+                    {
+                        isMenuActive = true;
+                        if (inventoryMenuPanel != null)
+                            inventoryMenuPanel.SetActive(true);
+
+                        Cursor.lockState = CursorLockMode.None;
+                        Cursor.visible = true;
+                        Time.timeScale = 0f;
+                        ShowTab(activeTabIndex);
+
+                        if (mouseLook == null)
+                            mouseLook = UnityEngine.Object.FindFirstObjectByType<MouseLook>();
+                        if (mouseLook != null)
+                            mouseLook.enabled = false; // ZABLOKUJ ruch kamerą
+
+                        // Zablokuj interakcje gracza na czas menu
+                        if (playerInteraction != null)
+                            playerInteraction.enabled = false;
+
+                        // --- PAUZOWANIE DŹWIĘKÓW ---
+                        if (playSoundObjects != null)
+                        {
+                            foreach (var playSoundOnObject in playSoundObjects)
+                            {
+                                if (playSoundOnObject == null) continue;
+                                playSoundOnObject.PlaySound("InventoryMenuMusic", 1.0f, true); // jeśli masz osobną muzykę menu
+                                playSoundOnObject.PauseAllSoundsExcept(new string[] { "InventoryMenuMusic" }, 0.5f); // fade out inne
+                            }
+                        }
+
+                        tabPressed = false;
+                        tabHoldTimer = 0f;
+                        return;
+                    }
+                }
+                else
+                {
+                    if (tabHoldTimer < menuHoldTime)
+                    {
+                        if (activeCategory == ItemCategory.Normal)
+                            activeCategory = ItemCategory.Usable;
+                        else
+                            activeCategory = ItemCategory.Normal;
+
+                        UpdateCategoryIndicatorSprite();
+                    }
+                    tabPressed = false;
+                    tabHoldTimer = 0f;
+                }
+            }
+        }
+        else // MENU OTWARTE
+        {
+            if (Input.GetKeyDown(KeyCode.Tab))
+            {
+                isMenuActive = false;
+                if (inventoryMenuPanel != null)
+                    inventoryMenuPanel.SetActive(false);
+
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+                Time.timeScale = 1f;
+                if (mouseLook == null)
+                    mouseLook = UnityEngine.Object.FindFirstObjectByType<MouseLook>();
+                if (mouseLook != null)
+                    mouseLook.enabled = true; // ODblokuj ruch kamerą
+
+                // Odblokuj interakcje gracza po zamknięciu menu
+                if (playerInteraction != null)
+                    playerInteraction.enabled = true;
+
+                // --- WZNAWIANIE DŹWIĘKÓW ---
+                if (playSoundObjects != null)
+                {
+                    foreach (var playSoundOnObject in playSoundObjects)
+                    {
+                        if (playSoundOnObject == null) continue;
+                        playSoundOnObject.FadeOutSound("InventoryMenuMusic", 1f); // fade out muzyki menu
+                        playSoundOnObject.ResumeAllSoundsExcept(new string[] { "InventoryMenuMusic" }, 0.5f); // fade in pozostałe
+                    }
+                }
+
+                tabPressed = false;
+                tabHoldTimer = 0f;
+                return;
+            }
+        }
+
+        // Jeśli menu aktywne, blokuj resztę UI inventory
+        if (inventoryMenuPanel != null && inventoryMenuPanel.activeSelf)
+            return;
 
         var inventory = Inventory.Instance;
         int weaponSlots = Mathf.Min(inventory.weapons.Count, 3);
-
-        // Przełączanie kategorii TAB-em
-        if (Input.GetKeyDown(KeyCode.Tab))
-        {
-            if (activeCategory == ItemCategory.Normal)
-                activeCategory = ItemCategory.Usable;
-            else
-                activeCategory = ItemCategory.Normal;
-
-            UpdateCategoryIndicatorSprite();
-        }
 
         // Wybierz aktualną listę i wskaźniki
         List<GameObject> currentList;
@@ -229,12 +418,11 @@ public class InventoryUI : MonoBehaviour
                 }
                 isHoldingUse = false;
                 holdTimer = 0f;
-                return; // Całkowita blokada UI i efektu użycia
+                return;
             }
 
             if (!isHoldingUse && Input.GetKeyDown(useKey))
             {
-                // PRZERWIJ przeładowanie broni jeśli trwa
                 if (Inventory.Instance != null && Inventory.Instance.currentWeaponPrefab != null)
                 {
                     Gun gun = Inventory.Instance.currentWeaponPrefab.GetComponent<Gun>();
@@ -245,7 +433,6 @@ public class InventoryUI : MonoBehaviour
                 isHoldingUse = true;
                 holdTimer = 0f;
 
-                // Przerywaj sprint, spowolnij gracza i zablokuj sprint
                 var player = UnityEngine.Object.FindFirstObjectByType<PlayerMovement>();
                 if (player != null)
                 {
@@ -259,7 +446,6 @@ public class InventoryUI : MonoBehaviour
                     player.StopSprinting();
                 }
 
-                // Aktywuj UI progress
                 if (holdToUseProgressImage != null)
                 {
                     holdToUseProgressImage.fillAmount = 0f;
@@ -285,7 +471,6 @@ public class InventoryUI : MonoBehaviour
                         isHoldingUse = false;
                         holdTimer = 0f;
 
-                        // Przywróć prędkość i odblokuj sprint
                         var player = UnityEngine.Object.FindFirstObjectByType<PlayerMovement>();
                         if (player != null)
                         {
@@ -306,12 +491,11 @@ public class InventoryUI : MonoBehaviour
                         TryUseSelectedUsableItem();
                     }
                 }
-                else // puścił klawisz przed czasem
+                else
                 {
                     isHoldingUse = false;
                     holdTimer = 0f;
 
-                    // Przywróć prędkość i odblokuj sprint
                     var player = UnityEngine.Object.FindFirstObjectByType<PlayerMovement>();
                     if (player != null)
                     {
@@ -331,7 +515,7 @@ public class InventoryUI : MonoBehaviour
                 }
             }
         }
-        else // nie w kategorii usable, wyłącz UI hold
+        else
         {
             if (holdToUseProgressImage != null)
             {
@@ -554,7 +738,6 @@ public class InventoryUI : MonoBehaviour
 
     private void UpdateItemUI(List<GameObject> items, int windowStart, int slotCursor)
     {
-
         int itemCount = items != null ? items.Count : 0;
         int maxSlots = itemImages.Length;
 
@@ -915,5 +1098,290 @@ public class InventoryUI : MonoBehaviour
         if (value >= 50) return "II";
         if (value >= 25) return "I";
         return value.ToString("0");
+    }
+
+    // --- ZAKŁADKI MENU ---
+
+    public void ShowTab(int tabIndex)
+    {
+        activeTabIndex = tabIndex;
+        if (dataTabContent != null) dataTabContent.SetActive(tabIndex == 0);
+        if (notesTabContent != null) notesTabContent.SetActive(tabIndex == 1);
+        if (otherTabContent != null) otherTabContent.SetActive(tabIndex == 2);
+
+        if (tabIndex == 0)
+        {
+            UpdateDataTab();
+        }
+    }
+
+    public void UpdateDataTab()
+    {
+        // Zwykłe itemy
+        for (int i = 0; i < normalItemImages.Length; i++)
+        {
+            bool hasItem = Inventory.Instance.items != null && i < Inventory.Instance.items.Count;
+            var itemObj = hasItem ? Inventory.Instance.items[i] : null;
+            var item = hasItem && itemObj != null ? itemObj.GetComponent<InteractableItem>() : null;
+            var treasure = hasItem && itemObj != null ? itemObj.GetComponent<TreasureResources>() : null;
+
+            // Ikona slotu
+            if (normalItemImages[i] != null)
+            {
+                normalItemImages[i].enabled = hasItem;
+                if (hasItem && item != null && itemIcons.ContainsKey(item.itemName))
+                    normalItemImages[i].sprite = itemIcons[item.itemName];
+                else if (hasItem && item != null)
+                    normalItemImages[i].sprite = defaultItemSprite;
+                else
+                    normalItemImages[i].sprite = null;
+            }
+
+            // Tło slotu
+            if (normalItemBackgrounds[i] != null)
+                normalItemBackgrounds[i].enabled = hasItem;
+
+            // Tekst ilości
+            if (normalItemTexts[i] != null)
+            {
+                if (hasItem && treasure != null && treasure.resourceCategories != null && treasure.resourceCategories.Count > 0)
+                {
+                    int count = treasure.resourceCategories[0].resourceCount;
+                    normalItemTexts[i].text = count > 1 ? count.ToString() : "";
+                    normalItemTexts[i].gameObject.SetActive(true);
+                }
+                else
+                {
+                    normalItemTexts[i].text = "";
+                    normalItemTexts[i].gameObject.SetActive(false);
+                }
+            }
+            // Tekst kategorii
+            if (normalItemCategoryTexts[i] != null)
+            {
+                if (hasItem && treasure != null && treasure.resourceCategories != null && treasure.resourceCategories.Count > 0)
+                {
+                    normalItemCategoryTexts[i].text = treasure.resourceCategories[0].name;
+                    normalItemCategoryTexts[i].gameObject.SetActive(true);
+                }
+                else
+                {
+                    normalItemCategoryTexts[i].text = "";
+                    normalItemCategoryTexts[i].gameObject.SetActive(false);
+                }
+            }
+
+            // --- DYNAMICZNE EVENTY NA TLE SLOTU ---
+            if (normalItemBackgrounds[i] != null)
+            {
+                var trigger = normalItemBackgrounds[i].GetComponent<UnityEngine.EventSystems.EventTrigger>();
+                if (trigger == null)
+                    trigger = normalItemBackgrounds[i].gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+                trigger.triggers.Clear();
+
+                string desc = "";
+                if (hasItem && item != null && item.data != null && item.data.hasDescription)
+                    desc = GetItemDescription(item.data);
+
+                var entryEnter = new UnityEngine.EventSystems.EventTrigger.Entry();
+                entryEnter.eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter;
+                entryEnter.callback.AddListener((eventData) => ShowItemDescription(desc));
+                trigger.triggers.Add(entryEnter);
+
+                var entryExit = new UnityEngine.EventSystems.EventTrigger.Entry();
+                entryExit.eventID = UnityEngine.EventSystems.EventTriggerType.PointerExit;
+                entryExit.callback.AddListener((eventData) => HideItemDescription());
+                trigger.triggers.Add(entryExit);
+            }
+
+            // --- DYNAMICZNE EVENTY NA IKONIE ITEMU ---
+            if (normalItemImages[i] != null)
+            {
+                var trigger = normalItemImages[i].GetComponent<UnityEngine.EventSystems.EventTrigger>();
+                if (trigger == null)
+                    trigger = normalItemImages[i].gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+                trigger.triggers.Clear();
+
+                string desc = "";
+                if (hasItem && item != null && item.data != null && item.data.hasDescription)
+                    desc = GetItemDescription(item.data);
+
+                var entryEnter = new UnityEngine.EventSystems.EventTrigger.Entry();
+                entryEnter.eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter;
+                entryEnter.callback.AddListener((eventData) => ShowItemDescription(desc));
+                trigger.triggers.Add(entryEnter);
+
+                var entryExit = new UnityEngine.EventSystems.EventTrigger.Entry();
+                entryExit.eventID = UnityEngine.EventSystems.EventTriggerType.PointerExit;
+                entryExit.callback.AddListener((eventData) => HideItemDescription());
+                trigger.triggers.Add(entryExit);
+            }
+        }
+
+        // Używalne itemy
+        for (int i = 0; i < usableItemImages.Length; i++)
+        {
+            bool hasItem = Inventory.Instance.usableItems != null && i < Inventory.Instance.usableItems.Count;
+            var itemObj = hasItem ? Inventory.Instance.usableItems[i] : null;
+            var item = hasItem && itemObj != null ? itemObj.GetComponent<InteractableItem>() : null;
+            var treasure = hasItem && itemObj != null ? itemObj.GetComponent<TreasureResources>() : null;
+
+            // Ikona slotu
+            if (usableItemImages[i] != null)
+            {
+                usableItemImages[i].enabled = hasItem;
+                if (hasItem && item != null && itemIcons.ContainsKey(item.itemName))
+                    usableItemImages[i].sprite = itemIcons[item.itemName];
+                else if (hasItem && item != null)
+                    usableItemImages[i].sprite = defaultItemSprite;
+                else
+                    usableItemImages[i].sprite = null;
+            }
+
+            // Tło slotu
+            if (usableItemBackgrounds[i] != null)
+                usableItemBackgrounds[i].enabled = hasItem;
+
+            // Tekst ilości
+            if (usableItemTexts[i] != null)
+            {
+                if (hasItem && treasure != null && treasure.resourceCategories != null && treasure.resourceCategories.Count > 0)
+                {
+                    int count = treasure.resourceCategories[0].resourceCount;
+                    usableItemTexts[i].text = count > 1 ? count.ToString() : "";
+                    usableItemTexts[i].gameObject.SetActive(true);
+                }
+                else
+                {
+                    usableItemTexts[i].text = "";
+                    usableItemTexts[i].gameObject.SetActive(false);
+                }
+            }
+            // Tekst kategorii
+            if (usableItemCategoryTexts[i] != null)
+            {
+                if (hasItem && treasure != null && treasure.resourceCategories != null && treasure.resourceCategories.Count > 0)
+                {
+                    usableItemCategoryTexts[i].text = treasure.resourceCategories[0].name;
+                    usableItemCategoryTexts[i].gameObject.SetActive(true);
+                }
+                else
+                {
+                    usableItemCategoryTexts[i].text = "";
+                    usableItemCategoryTexts[i].gameObject.SetActive(false);
+                }
+            }
+
+            // --- DYNAMICZNE EVENTY NA TLE SLOTU ---
+            if (usableItemBackgrounds[i] != null)
+            {
+                var trigger = usableItemBackgrounds[i].GetComponent<UnityEngine.EventSystems.EventTrigger>();
+                if (trigger == null)
+                    trigger = usableItemBackgrounds[i].gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+                trigger.triggers.Clear();
+
+                string desc = "";
+                if (hasItem && item != null && item.data != null && item.data.hasDescription)
+                    desc = GetItemDescription(item.data);
+
+                var entryEnter = new UnityEngine.EventSystems.EventTrigger.Entry();
+                entryEnter.eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter;
+                entryEnter.callback.AddListener((eventData) => ShowItemDescription(desc));
+                trigger.triggers.Add(entryEnter);
+
+                var entryExit = new UnityEngine.EventSystems.EventTrigger.Entry();
+                entryExit.eventID = UnityEngine.EventSystems.EventTriggerType.PointerExit;
+                entryExit.callback.AddListener((eventData) => HideItemDescription());
+                trigger.triggers.Add(entryExit);
+            }
+
+            // --- DYNAMICZNE EVENTY NA IKONIE ITEMU ---
+            if (usableItemImages[i] != null)
+            {
+                var trigger = usableItemImages[i].GetComponent<UnityEngine.EventSystems.EventTrigger>();
+                if (trigger == null)
+                    trigger = usableItemImages[i].gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+                trigger.triggers.Clear();
+
+                string desc = "";
+                if (hasItem && item != null && item.data != null && item.data.hasDescription)
+                    desc = GetItemDescription(item.data);
+
+                var entryEnter = new UnityEngine.EventSystems.EventTrigger.Entry();
+                entryEnter.eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter;
+                entryEnter.callback.AddListener((eventData) => ShowItemDescription(desc));
+                trigger.triggers.Add(entryEnter);
+
+                var entryExit = new UnityEngine.EventSystems.EventTrigger.Entry();
+                entryExit.eventID = UnityEngine.EventSystems.EventTriggerType.PointerExit;
+                entryExit.callback.AddListener((eventData) => HideItemDescription());
+                trigger.triggers.Add(entryExit);
+            }
+        }
+    }
+
+    public string GetItemDescription(ItemPrefabData data)
+    {
+        if (data == null || data.description == null)
+            return "";
+
+        string desc;
+
+        switch (LanguageManager.Instance.currentLanguage)
+        {
+            case LanguageManager.Language.Polski:
+                desc = data.description.polish;
+                break;
+            case LanguageManager.Language.Deutsch:
+                desc = data.description.german;
+                break;
+            case LanguageManager.Language.English:
+            default:
+                desc = data.description.english;
+                break;
+        }
+
+        desc = desc.Replace("{amount}", $"<color=#FFD200>{data.effectValue}</color>");
+        desc = desc.Replace("{duration}", $"<color=#FFD200>{FormatTime(data.effectDuration)}</color>");
+        desc = desc.Replace("{itemName}", $"<color=#FFD200>{data.itemName}</color>");
+        desc = desc.Replace("{rarity}", $"<color=#FFD200>{data.lootRarity}</color>");
+
+        return desc;
+    }
+
+    // --- funkcja pomocnicza ---
+    public string FormatTime(float seconds)
+    {
+        int min = Mathf.FloorToInt(seconds / 60f);
+        int sec = Mathf.FloorToInt(seconds % 60f);
+        return $"{min}:{sec:00}";
+    }
+
+    public void ShowItemDescription(string desc)
+    {
+        if (itemDescriptionText != null)
+        {
+            itemDescriptionText.text = desc;
+            itemDescriptionText.gameObject.SetActive(true);
+            Debug.Log("[InventoryUI] Pokazuję opis: " + desc);
+        }
+        else
+        {
+            Debug.LogWarning("[InventoryUI] Próba pokazania opisu, ale itemDescriptionText == null!");
+        }
+    }
+
+    public void HideItemDescription()
+    {
+        if (itemDescriptionText != null)
+        {
+            Debug.Log("[InventoryUI] Ukrywam opis przedmiotu");
+            itemDescriptionText.text = "";
+            itemDescriptionText.gameObject.SetActive(false);
+        }
+        else
+        {
+            Debug.LogWarning("[InventoryUI] Próba ukrycia opisu, ale itemDescriptionText == null!");
+        }
     }
 }

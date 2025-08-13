@@ -14,9 +14,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prefab: {fileID: 6041756049560652714, guid: e324d8f47d1570749857c6ebb544b207, type: 3}
   itemName: EnergyDrink25
+  description:
+    english: 'Energy Drink 250 ml
+
+
+      Effect:
+
+      Increases the maximum stamina
+      limit by {amount} for {duration} seconds and additionally provides enhanced
+      stamina regeneration by {amount} %.'
+    polish: "Energy Drink 250 ml\n\nEfekt:\nZwi\u0119ksza maksymalny limit wytrzyma\u0142o\u015Bci
+      o {amount} na {duration} sekund oraz dodatkowo zapewnia wzmo\u017Con\u0105
+      regeneracj\u0119 wytrzyma\u0142o\u015Bci o {amount} %."
+    german: 
+  hasDescription: 1
   lootRarity: 1
   lootCategory: 3
   effectType: 3
+  ammoType: 0
   effectValue: 25
   effectDuration: 20
   autoUseOnPickup: 0

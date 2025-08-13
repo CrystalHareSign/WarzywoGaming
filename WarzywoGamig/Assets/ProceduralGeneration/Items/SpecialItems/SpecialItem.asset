@@ -14,9 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prefab: {fileID: 3070864060014540926, guid: fa7361376c139db4880abd1f3d37a6f1, type: 3}
   itemName: SpecialItem
+  description:
+    english: Special Item wow shit
+    polish: "Przedmiot specjalny \u0142a\u0142 kurwa"
+    german: 
+  hasDescription: 1
   lootRarity: 1
-  lootCategory: 4
-  effectType: 4
+  lootCategory: 5
+  effectType: 6
+  ammoType: 0
   effectValue: 0
   effectDuration: 0
   autoUseOnPickup: 0
