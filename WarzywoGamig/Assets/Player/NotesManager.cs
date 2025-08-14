@@ -6,14 +6,32 @@ using System.Collections.Generic;
 public class NotesManagerUI : MonoBehaviour
 {
     [System.Serializable]
+    public class LocalizedNoteText
+    {
+        // Tytu³y do wpisania – zostaw bez [TextArea]
+        public string english;
+        public string polish;
+        public string german;
+    }
+
+    [System.Serializable]
+    public class LocalizedNoteDescription
+    {
+        // OPISY – tu dajemy [TextArea], ¿eby by³y DU¯E OKNA w Inspectorze!
+        [TextArea] public string english;
+        [TextArea] public string polish;
+        [TextArea] public string german;
+    }
+
+    [System.Serializable]
     public class NoteEntry
     {
         public string Id;
-        public string Title;
-        [TextArea] public string Description;
+        public LocalizedNoteText Title;
+        public LocalizedNoteDescription Description;
         public Sprite Image;
         public bool IsUnlocked;
-        public bool IsRead; // Czy notatka zosta³a przeczytana
+        public bool IsRead;
     }
 
     [Header("Przyciski notatek w UI (dodaj rêcznie z Hierarchii)")]
@@ -32,21 +50,43 @@ public class NotesManagerUI : MonoBehaviour
     [Header("Lampka na HUDzie gracza (dodaj Image z Canvasu gracza)")]
     public Image inventoryIndicator;
 
+    [Header("Lampka przy zak³adce NOTES (dodaj Image z Hierarchii)")]
+    public Image notesTabIndicator;
+
     void Start()
     {
-        // Podpinamy obs³ugê klikniêæ do przycisków
         for (int i = 0; i < noteButtons.Count && i < notes.Count; i++)
         {
-            int index = i; // wa¿ne!
+            int index = i;
             noteButtons[index].onClick.AddListener(() => ShowNote(index));
         }
         UpdateButtons();
         UpdateNoteIndicators();
         UpdateInventoryIndicator();
-        ClearNoteDisplay(); // Po starcie nie pokazuj ¿adnej notatki
+        UpdateNotesTabIndicator();
+        ClearNoteDisplay();
     }
 
-    // Pokazuje opis i obrazek dla notatki o danym indeksie, oraz odhacza jako przeczytan¹
+    public string GetNoteTitle(NoteEntry entry)
+    {
+        switch (LanguageManager.Instance.currentLanguage)
+        {
+            case LanguageManager.Language.Polski: return entry.Title.polish;
+            case LanguageManager.Language.Deutsch: return entry.Title.german;
+            default: return entry.Title.english;
+        }
+    }
+
+    public string GetNoteDescription(NoteEntry entry)
+    {
+        switch (LanguageManager.Instance.currentLanguage)
+        {
+            case LanguageManager.Language.Polski: return entry.Description.polish;
+            case LanguageManager.Language.Deutsch: return entry.Description.german;
+            default: return entry.Description.english;
+        }
+    }
+
     public void ShowNote(int index)
     {
         if (index < 0 || index >= notes.Count) return;
@@ -57,37 +97,36 @@ public class NotesManagerUI : MonoBehaviour
         }
         if (noteDescriptionText != null)
         {
-            noteDescriptionText.text = notes[index].Description;
+            noteDescriptionText.text = GetNoteDescription(notes[index]);
         }
-        // Odhacz jako przeczytan¹, jeœli nie by³a
         if (!notes[index].IsRead)
         {
             notes[index].IsRead = true;
             UpdateNoteIndicators();
             UpdateInventoryIndicator();
+            UpdateNotesTabIndicator();
         }
     }
 
-    // Pokazuje lub ukrywa przyciski na podstawie IsUnlocked
     public void UpdateButtons()
     {
         for (int i = 0; i < noteButtons.Count && i < notes.Count; i++)
         {
             noteButtons[i].gameObject.SetActive(notes[i].IsUnlocked);
+            var txt = noteButtons[i].GetComponentInChildren<TMP_Text>();
+            if (txt != null)
+                txt.text = GetNoteTitle(notes[i]);
         }
     }
 
-    // Pokazuje lub ukrywa lampki przy nieprzeczytanych notatkach
     public void UpdateNoteIndicators()
     {
         for (int i = 0; i < noteIndicators.Count && i < notes.Count; i++)
         {
-            // Lampka widoczna tylko jeœli notatka jest odblokowana i nieprzeczytana
             noteIndicators[i].enabled = notes[i].IsUnlocked && !notes[i].IsRead;
         }
     }
 
-    // Pokazuje/ukrywa lampkê na HUDzie gracza jeœli s¹ nieprzeczytane notatki
     public void UpdateInventoryIndicator()
     {
         if (inventoryIndicator == null) return;
@@ -103,7 +142,21 @@ public class NotesManagerUI : MonoBehaviour
         inventoryIndicator.enabled = anyUnread;
     }
 
-    // Odblokowanie notatki po Id
+    public void UpdateNotesTabIndicator()
+    {
+        if (notesTabIndicator == null) return;
+        bool anyUnread = false;
+        for (int i = 0; i < notes.Count; i++)
+        {
+            if (notes[i].IsUnlocked && !notes[i].IsRead)
+            {
+                anyUnread = true;
+                break;
+            }
+        }
+        notesTabIndicator.enabled = anyUnread;
+    }
+
     public void UnlockNote(string id)
     {
         for (int i = 0; i < notes.Count; i++)
@@ -111,23 +164,22 @@ public class NotesManagerUI : MonoBehaviour
             if (notes[i].Id == id)
             {
                 notes[i].IsUnlocked = true;
-                // Po odblokowaniu notatka jest nieprzeczytana!
                 notes[i].IsRead = false;
                 UpdateButtons();
                 UpdateNoteIndicators();
                 UpdateInventoryIndicator();
+                UpdateNotesTabIndicator();
                 break;
             }
         }
     }
 
-    // Czyszczenie wyœwietlania notatki (nic nie wybrane)
     public void ClearNoteDisplay()
     {
         if (noteImage != null)
         {
             noteImage.sprite = null;
-            noteImage.enabled = false; // opcjonalnie, jeœli chcesz ukryæ ca³kowicie obrazek
+            noteImage.enabled = false;
         }
         if (noteDescriptionText != null)
         {
@@ -135,13 +187,13 @@ public class NotesManagerUI : MonoBehaviour
         }
     }
 
-    // Wywo³aj to z InventoryUI po prze³¹czeniu zak³adki
     public void ShowNotesTab()
     {
         UpdateButtons();
         UpdateNoteIndicators();
         UpdateInventoryIndicator();
-        ClearNoteDisplay(); // Po wejœciu w Notes nic nie wybrane
+        UpdateNotesTabIndicator();
+        ClearNoteDisplay();
     }
 }
 
