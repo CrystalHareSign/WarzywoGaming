@@ -80,7 +80,6 @@ public class InventoryUI : MonoBehaviour
     public float menuHoldTime = 0.5f;
     private float tabHoldTimer = 0f;
     private bool tabPressed = false;
-    private bool menuToggledThisPress = false;
 
     [Header("Inventory Menu Panel")]
     public GameObject inventoryMenuPanel;
@@ -112,6 +111,7 @@ public class InventoryUI : MonoBehaviour
 
     public MouseLook mouseLook;
     public PlayerInteraction playerInteraction;
+    public NotesManagerUI notesManagerUI;
 
     private List<PlaySoundOnObject> playSoundObjects = new List<PlaySoundOnObject>();
 
@@ -1112,6 +1112,10 @@ public class InventoryUI : MonoBehaviour
         if (tabIndex == 0)
         {
             UpdateDataTab();
+        }
+        else if (tabIndex == 1)
+        {
+            notesManagerUI.ShowNotesTab();
         }
     }
 
