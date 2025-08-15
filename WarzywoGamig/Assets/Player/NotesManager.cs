@@ -62,10 +62,14 @@ public class NotesManagerUI : MonoBehaviour
     [Header("Lampka przy zak³adce INFO (dodaj Image z Hierarchii)")]
     public Image infoTabIndicator;
 
-    // --- UI do opisu i obrazka (wspólne, prze³¹czane) ---
-    [Header("UI do opisu i obrazka")]
+    // --- UI do opisu i obrazka (OSOBNE dla ka¿dej zak³adki) ---
+    [Header("UI do opisu i obrazka dla NOTES")]
     public Image noteImage;
     public TMP_Text noteDescriptionText;
+
+    [Header("UI do opisu i obrazka dla INFO")]
+    public Image infoImage;
+    public TMP_Text infoDescriptionText;
 
     // --- Lampka globalna na HUDzie gracza ---
     [Header("Lampka na HUDzie gracza (dodaj Image z Canvasu gracza)")]
@@ -144,6 +148,8 @@ public class NotesManagerUI : MonoBehaviour
     {
         if (index < 0 || index >= notes.Count) return;
         currentTab = TabType.Notes;
+
+        // Poka¿ tylko UI dla NOTES, ukryj dla INFO
         if (noteImage != null)
         {
             noteImage.enabled = true;
@@ -153,6 +159,16 @@ public class NotesManagerUI : MonoBehaviour
         {
             noteDescriptionText.text = GetNoteDescription(notes[index]);
         }
+        if (infoImage != null)
+        {
+            infoImage.enabled = false;
+            infoImage.sprite = null;
+        }
+        if (infoDescriptionText != null)
+        {
+            infoDescriptionText.text = "";
+        }
+
         // Odhacz jako przeczytan¹
         if (!notes[index].IsRead)
         {
@@ -162,20 +178,33 @@ public class NotesManagerUI : MonoBehaviour
             UpdateNotesTabIndicator();
         }
     }
+
     // --- Pokazywanie info ---
     public void ShowInfo(int index)
     {
         if (index < 0 || index >= infos.Count) return;
         currentTab = TabType.Info;
+
+        // Poka¿ tylko UI dla INFO, ukryj dla NOTES
+        if (infoImage != null)
+        {
+            infoImage.enabled = true;
+            infoImage.sprite = infos[index].Image;
+        }
+        if (infoDescriptionText != null)
+        {
+            infoDescriptionText.text = GetInfoDescription(infos[index]);
+        }
         if (noteImage != null)
         {
-            noteImage.enabled = true;
-            noteImage.sprite = infos[index].Image;
+            noteImage.enabled = false;
+            noteImage.sprite = null;
         }
         if (noteDescriptionText != null)
         {
-            noteDescriptionText.text = GetInfoDescription(infos[index]);
+            noteDescriptionText.text = "";
         }
+
         // Odhacz jako przeczytan¹
         if (!infos[index].IsRead)
         {
@@ -330,6 +359,15 @@ public class NotesManagerUI : MonoBehaviour
         if (noteDescriptionText != null)
         {
             noteDescriptionText.text = "";
+        }
+        if (infoImage != null)
+        {
+            infoImage.sprite = null;
+            infoImage.enabled = false;
+        }
+        if (infoDescriptionText != null)
+        {
+            infoDescriptionText.text = "";
         }
     }
 
