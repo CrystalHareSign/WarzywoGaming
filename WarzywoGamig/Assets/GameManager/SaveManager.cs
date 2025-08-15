@@ -296,6 +296,19 @@ public class SaveManager : MonoBehaviour
                     }
                 }
 
+                // ---- ZAPIS NOTATEK NOTES I INFO ----
+                var notesManager = UnityEngine.Object.FindFirstObjectByType<NotesManagerUI > ();
+                if (notesManager != null)
+                {
+                    data.noteEntries.Clear();
+                    foreach (var entry in notesManager.notes)
+                        data.noteEntries.Add(new NoteSaveData { id = entry.Id, isUnlocked = entry.IsUnlocked, isRead = entry.IsRead });
+
+                    data.infoEntries.Clear();
+                    foreach (var entry in notesManager.infos)
+                        data.infoEntries.Add(new NoteSaveData { id = entry.Id, isUnlocked = entry.IsUnlocked, isRead = entry.IsRead });
+                }
+
                 string json = JsonUtility.ToJson(data, true);
                 File.WriteAllText(path, json);
                 lastSaveTime = DateTime.Now;
@@ -616,6 +629,45 @@ public class SaveManager : MonoBehaviour
 
             if (inventoryUI != null)
                 inventoryUI.UpdateInventoryUI(inventory.weapons, inventory.items, inventory.currentWeaponName);
+
+            var notesManager = UnityEngine.Object.FindFirstObjectByType<NotesManagerUI>();
+            if (notesManager != null)
+            {
+                // Odtwórz stan notes
+                if (data.noteEntries != null)
+                {
+                    foreach (var save in data.noteEntries)
+                    {
+                        var entry = notesManager.notes.Find(e => e.Id == save.id);
+                        if (entry != null)
+                        {
+                            entry.IsUnlocked = save.isUnlocked;
+                            entry.IsRead = save.isRead;
+                        }
+                    }
+                }
+                // Odtwórz stan info
+                if (data.infoEntries != null)
+                {
+                    foreach (var save in data.infoEntries)
+                    {
+                        var entry = notesManager.infos.Find(e => e.Id == save.id);
+                        if (entry != null)
+                        {
+                            entry.IsUnlocked = save.isUnlocked;
+                            entry.IsRead = save.isRead;
+                        }
+                    }
+                }
+                // Uaktualnij UI!
+                notesManager.UpdateButtons();
+                notesManager.UpdateInfoButtons();
+                notesManager.UpdateNoteIndicators();
+                notesManager.UpdateInfoIndicators();
+                notesManager.UpdateInventoryIndicator();
+                notesManager.UpdateNotesTabIndicator();
+                notesManager.UpdateInfoTabIndicator();
+            }
         }
 
         // --- WCZYTANIE KOLEKTORÓW (TurretCollector) ---
@@ -864,6 +916,9 @@ public class PlayerData
     public List<TyreHealthData> wheelHealths = new List<TyreHealthData>();
 
     public List<MonitorUnlockState> monitorUnlockStates = new List<MonitorUnlockState>();
+
+    public List<NoteSaveData> noteEntries = new List<NoteSaveData>();
+    public List<NoteSaveData> infoEntries = new List<NoteSaveData>();
 }
 
 [Serializable]
@@ -917,4 +972,12 @@ public class TyreHealthData
 {
     public string itemName;
     public int health;
+}
+
+[Serializable]
+public class NoteSaveData
+{
+    public string id;
+    public bool isUnlocked;
+    public bool isRead;
 }
