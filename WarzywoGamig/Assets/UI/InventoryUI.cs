@@ -99,11 +99,15 @@ public class InventoryUI : MonoBehaviour
     [Header("Tab Buttons")]
     public Button dataTabButton;
     public Button notesTabButton;
+    public Button infoTabButton;
+    public Button questsTabButton;
     public Button otherTabButton;
 
     [Header("Tab Contents")]
     public GameObject dataTabContent;
     public GameObject notesTabContent;
+    public GameObject infoTabContent;
+    public GameObject questsTabContent;
     public GameObject otherTabContent;
 
     [Header("Item description")]
@@ -171,7 +175,10 @@ public class InventoryUI : MonoBehaviour
 
         if (dataTabButton != null) dataTabButton.onClick.AddListener(() => ShowTab(0));
         if (notesTabButton != null) notesTabButton.onClick.AddListener(() => ShowTab(1));
-        if (otherTabButton != null) otherTabButton.onClick.AddListener(() => ShowTab(2));
+        if (infoTabButton != null) infoTabButton.onClick.AddListener(() => ShowTab(2));
+        if (questsTabButton != null) questsTabButton.onClick.AddListener(() => ShowTab(3));
+        if (otherTabButton != null) otherTabButton.onClick.AddListener(() => ShowTab(4));
+
 
         ShowTab(0);
     }
@@ -1101,21 +1108,38 @@ public class InventoryUI : MonoBehaviour
     }
 
     // --- ZAKŁADKI MENU ---
-
     public void ShowTab(int tabIndex)
     {
         activeTabIndex = tabIndex;
+
         if (dataTabContent != null) dataTabContent.SetActive(tabIndex == 0);
         if (notesTabContent != null) notesTabContent.SetActive(tabIndex == 1);
-        if (otherTabContent != null) otherTabContent.SetActive(tabIndex == 2);
+        if (infoTabContent != null) infoTabContent.SetActive(tabIndex == 2);
+        if (questsTabContent != null) questsTabContent.SetActive(tabIndex == 3);
+        if (otherTabContent != null) otherTabContent.SetActive(tabIndex == 4);
 
-        if (tabIndex == 0)
+        // Wszystko obsługuje jeden manager!
+        switch (tabIndex)
         {
-            UpdateDataTab();
-        }
-        else if (tabIndex == 1)
-        {
-            notesManagerUI.ShowNotesTab();
+            case 0: // Data
+                UpdateDataTab();
+                break;
+            case 1: // Notes
+                if (notesManagerUI != null)
+                    notesManagerUI.ShowNotesTab();
+                break;
+            case 2: // Info
+                if (notesManagerUI != null)
+                    notesManagerUI.ShowInfoTab();
+                break;
+            case 3: // Quests
+                if (notesManagerUI != null)
+                    notesManagerUI.ShowQuestsTab();
+                break;
+            //case 4: // Other
+            //    if (notesManagerUI != null)
+            //        notesManagerUI.ShowOtherTab(); // Dodaj metodę ShowOtherTab() w NotesManagerUI jeśli chcesz mieć osobną obsługę
+            //    break;
         }
     }
 

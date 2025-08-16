@@ -24,7 +24,6 @@ public class NotesManagerUI : MonoBehaviour
         public bool IsRead;
     }
 
-    // ---- NOWE DLA INFO ----
     [System.Serializable]
     public class InfoEntry
     {
@@ -36,47 +35,81 @@ public class NotesManagerUI : MonoBehaviour
         public bool IsRead;
     }
 
+    [System.Serializable]
+    public class QuestGoal
+    {
+        public LocalizedNoteText Name;
+        public LocalizedNoteText Description;
+        public bool IsOptional;
+        public bool IsCompleted;
+    }
+
+    [System.Serializable]
+    public class QuestEntry
+    {
+        public string Id;
+        public LocalizedNoteText Name;
+        public List<QuestGoal> Goals = new List<QuestGoal>();
+        public bool IsUnlocked;
+        public bool IsRead;
+        public bool IsCompleted => Goals.Count > 0 && Goals.FindAll(g => !g.IsOptional).TrueForAll(g => g.IsCompleted);
+    }
+
     // --- UI dla zak³adki Notes ---
     [Header("Przyciski notatek w UI (dodaj rêcznie z Hierarchii)")]
     public List<Button> noteButtons = new List<Button>();
-
     [Header("Lampki przy nieprzeczytanych notatkach (dodaj Image z Hierarchii)")]
     public List<Image> noteIndicators = new List<Image>();
-
     [Header("Dane notatek (parowane po indeksie z przyciskami)")]
     public List<NoteEntry> notes = new List<NoteEntry>();
-
     [Header("Lampka przy zak³adce NOTES (dodaj Image z Hierarchii)")]
     public Image notesTabIndicator;
 
     // --- UI dla zak³adki Info ---
     [Header("Przyciski info w UI (dodaj rêcznie z Hierarchii)")]
     public List<Button> infoButtons = new List<Button>();
-
     [Header("Lampki przy nieprzeczytanych info (dodaj Image z Hierarchii)")]
     public List<Image> infoIndicators = new List<Image>();
-
     [Header("Dane info (parowane po indeksie z przyciskami)")]
     public List<InfoEntry> infos = new List<InfoEntry>();
-
     [Header("Lampka przy zak³adce INFO (dodaj Image z Hierarchii)")]
     public Image infoTabIndicator;
+
+    // === QUESTS UI ===
+    [Header("Przyciski questów w UI (dodaj rêcznie z Hierarchii)")]
+    public List<Button> questButtons = new List<Button>();
+    [Header("Dane questów (parowane po indeksie z przyciskami)")]
+    public List<QuestEntry> quests = new List<QuestEntry>();
+    [Header("Lampka przy zak³adce QUESTS (dodaj Image z Hierarchii)")]
+    public Image questsTabIndicator;
+
+    // --- LAMPKI PRZY KA¯DYM QUEST BUTTONIE ---
+    [Header("Lampki nieodczytanych questów (dodaj Image z Hierarchii, po jednej dla ka¿dego questa)")]
+    public List<Image> questUnreadIndicators = new List<Image>();
+    [Header("Lampki ukoñczonych questów (dodaj Image z Hierarchii, po jednej dla ka¿dego questa)")]
+    public List<Image> questCompletedIndicators = new List<Image>();
 
     // --- UI do opisu i obrazka (OSOBNE dla ka¿dej zak³adki) ---
     [Header("UI do opisu i obrazka dla NOTES")]
     public Image noteImage;
     public TMP_Text noteDescriptionText;
-
     [Header("UI do opisu i obrazka dla INFO")]
     public Image infoImage;
     public TMP_Text infoDescriptionText;
+
+    // === QUESTS UI - szczegó³y questa ===
+    [Header("UI pole nazwy questa (TMP_Text)")]
+    public TMP_Text questNameText;
+
+    [Header("UI scrollowany obszar z celami questa (przypisz rêcznie, bez prefabów!)")]
+    public List<TMP_Text> questGoalNameTexts;
+    public List<TMP_Text> questGoalDescTexts;
 
     // --- Lampka globalna na HUDzie gracza ---
     [Header("Lampka na HUDzie gracza (dodaj Image z Canvasu gracza)")]
     public Image inventoryIndicator;
 
-    // --- Tryb zak³adki (1 = Notes, 2 = Info) ---
-    private enum TabType { None, Notes, Info }
+    private enum TabType { None, Notes, Info, Quests }
     private TabType currentTab = TabType.None;
 
     void Start()
@@ -87,14 +120,20 @@ public class NotesManagerUI : MonoBehaviour
             int index = i;
             noteButtons[index].onClick.AddListener(() => ShowNote(index));
         }
-
         // Info
         for (int i = 0; i < infoButtons.Count && i < infos.Count; i++)
         {
             int index = i;
             infoButtons[index].onClick.AddListener(() => ShowInfo(index));
         }
+        // Quests
+        for (int i = 0; i < questButtons.Count && i < quests.Count; i++)
+        {
+            int index = i;
+            questButtons[index].onClick.AddListener(() => ShowQuest(index));
+        }
 
+        SortQuests();
         UpdateButtons();
         UpdateInfoButtons();
         UpdateNoteIndicators();
@@ -102,7 +141,29 @@ public class NotesManagerUI : MonoBehaviour
         UpdateInventoryIndicator();
         UpdateNotesTabIndicator();
         UpdateInfoTabIndicator();
+        UpdateQuestButtons();
+        UpdateQuestIndicators();
+        UpdateQuestsTabIndicator();
         ClearNoteDisplay();
+        ClearQuestDisplay();
+    }
+
+    // --- SORTOWANIE QUESTÓW: ukoñczone na koniec, potem przeczytane ---
+    public void SortQuests()
+    {
+        quests.Sort((a, b) =>
+        {
+            // Najpierw nieukoñczone, potem ukoñczone
+            if (a.IsCompleted != b.IsCompleted)
+                return a.IsCompleted ? 1 : -1;
+            // W grupie nieukoñczonych: najpierw nieprzeczytane, potem przeczytane
+            if (!a.IsCompleted && !b.IsCompleted)
+            {
+                if (a.IsRead != b.IsRead)
+                    return a.IsRead ? 1 : -1;
+            }
+            return 0;
+        });
     }
 
     // -- Pobieranie tekstów w odpowiednim jêzyku --
@@ -142,6 +203,33 @@ public class NotesManagerUI : MonoBehaviour
             default: return entry.Description.english;
         }
     }
+    public string GetQuestName(QuestEntry entry)
+    {
+        switch (LanguageManager.Instance.currentLanguage)
+        {
+            case LanguageManager.Language.Polski: return entry.Name.polish;
+            case LanguageManager.Language.Deutsch: return entry.Name.german;
+            default: return entry.Name.english;
+        }
+    }
+    public string GetGoalName(QuestGoal goal)
+    {
+        switch (LanguageManager.Instance.currentLanguage)
+        {
+            case LanguageManager.Language.Polski: return goal.Name.polish;
+            case LanguageManager.Language.Deutsch: return goal.Name.german;
+            default: return goal.Name.english;
+        }
+    }
+    public string GetGoalDescription(QuestGoal goal)
+    {
+        switch (LanguageManager.Instance.currentLanguage)
+        {
+            case LanguageManager.Language.Polski: return goal.Description.polish;
+            case LanguageManager.Language.Deutsch: return goal.Description.german;
+            default: return goal.Description.english;
+        }
+    }
 
     // --- Pokazywanie notatki ---
     public void ShowNote(int index)
@@ -149,7 +237,6 @@ public class NotesManagerUI : MonoBehaviour
         if (index < 0 || index >= notes.Count) return;
         currentTab = TabType.Notes;
 
-        // Poka¿ tylko UI dla NOTES, ukryj dla INFO
         if (noteImage != null)
         {
             noteImage.enabled = true;
@@ -168,8 +255,8 @@ public class NotesManagerUI : MonoBehaviour
         {
             infoDescriptionText.text = "";
         }
+        ClearQuestDisplay();
 
-        // Odhacz jako przeczytan¹
         if (!notes[index].IsRead)
         {
             notes[index].IsRead = true;
@@ -185,7 +272,6 @@ public class NotesManagerUI : MonoBehaviour
         if (index < 0 || index >= infos.Count) return;
         currentTab = TabType.Info;
 
-        // Poka¿ tylko UI dla INFO, ukryj dla NOTES
         if (infoImage != null)
         {
             infoImage.enabled = true;
@@ -204,8 +290,8 @@ public class NotesManagerUI : MonoBehaviour
         {
             noteDescriptionText.text = "";
         }
+        ClearQuestDisplay();
 
-        // Odhacz jako przeczytan¹
         if (!infos[index].IsRead)
         {
             infos[index].IsRead = true;
@@ -213,6 +299,56 @@ public class NotesManagerUI : MonoBehaviour
             UpdateInventoryIndicator();
             UpdateInfoTabIndicator();
         }
+    }
+
+    // --- Pokazywanie questa ---
+    public void ShowQuest(int index)
+    {
+        if (index < 0 || index >= quests.Count) return;
+        currentTab = TabType.Quests;
+
+        if (noteImage != null) { noteImage.enabled = false; noteImage.sprite = null; }
+        if (noteDescriptionText != null) { noteDescriptionText.text = ""; }
+        if (infoImage != null) { infoImage.enabled = false; infoImage.sprite = null; }
+        if (infoDescriptionText != null) { infoDescriptionText.text = ""; }
+
+        if (questNameText != null)
+            questNameText.text = GetQuestName(quests[index]);
+
+        var goals = quests[index].Goals;
+        for (int i = 0; i < questGoalNameTexts.Count; i++)
+        {
+            if (i < goals.Count)
+            {
+                questGoalNameTexts[i].gameObject.SetActive(true);
+                questGoalNameTexts[i].text = GetGoalName(goals[i]);
+                questGoalDescTexts[i].gameObject.SetActive(true);
+                questGoalDescTexts[i].text = GetGoalDescription(goals[i]);
+            }
+            else
+            {
+                questGoalNameTexts[i].gameObject.SetActive(false);
+                questGoalDescTexts[i].gameObject.SetActive(false);
+            }
+        }
+
+        bool needSort = false;
+        if (!quests[index].IsRead)
+        {
+            quests[index].IsRead = true;
+            needSort = true;
+        }
+        if (quests[index].IsCompleted)
+        {
+            needSort = true;
+        }
+        if (needSort)
+        {
+            SortQuests();
+            UpdateQuestButtons();
+        }
+        UpdateQuestIndicators();
+        UpdateQuestsTabIndicator();
     }
 
     // --- Aktualizacja przycisków ---
@@ -236,6 +372,16 @@ public class NotesManagerUI : MonoBehaviour
                 txt.text = GetInfoTitle(infos[i]);
         }
     }
+    public void UpdateQuestButtons()
+    {
+        for (int i = 0; i < questButtons.Count && i < quests.Count; i++)
+        {
+            questButtons[i].gameObject.SetActive(quests[i].IsUnlocked);
+            var txt = questButtons[i].GetComponentInChildren<TMP_Text>();
+            if (txt != null)
+                txt.text = GetQuestName(quests[i]);
+        }
+    }
 
     // --- Kropki przy nieprzeczytanych ---
     public void UpdateNoteIndicators()
@@ -252,13 +398,25 @@ public class NotesManagerUI : MonoBehaviour
             infoIndicators[i].enabled = infos[i].IsUnlocked && !infos[i].IsRead;
         }
     }
+    public void UpdateQuestIndicators()
+    {
+        for (int i = 0; i < quests.Count; i++)
+        {
+            var quest = quests[i];
+            bool showCompleted = quest.IsUnlocked && quest.IsCompleted;
+            bool showUnread = quest.IsUnlocked && !quest.IsRead && !quest.IsCompleted;
+            if (i < questCompletedIndicators.Count && questCompletedIndicators[i] != null)
+                questCompletedIndicators[i].enabled = showCompleted;
+            if (i < questUnreadIndicators.Count && questUnreadIndicators[i] != null)
+                questUnreadIndicators[i].enabled = showUnread;
+        }
+    }
 
     // --- Lampka globalna na HUDzie gracza ---
     public void UpdateInventoryIndicator()
     {
         if (inventoryIndicator == null) return;
         bool anyUnread = false;
-        // Notes
         for (int i = 0; i < notes.Count; i++)
         {
             if (notes[i].IsUnlocked && !notes[i].IsRead)
@@ -267,7 +425,6 @@ public class NotesManagerUI : MonoBehaviour
                 break;
             }
         }
-        // Info
         if (!anyUnread)
         {
             for (int i = 0; i < infos.Count; i++)
@@ -312,6 +469,21 @@ public class NotesManagerUI : MonoBehaviour
         }
         infoTabIndicator.enabled = anyUnread;
     }
+    // --- Lampka nad zak³adk¹ Quests ---
+    public void UpdateQuestsTabIndicator()
+    {
+        if (questsTabIndicator == null) return;
+        bool anyUnreadActiveQuest = false;
+        for (int i = 0; i < quests.Count; i++)
+        {
+            if (quests[i].IsUnlocked && !quests[i].IsRead && !quests[i].IsCompleted)
+            {
+                anyUnreadActiveQuest = true;
+                break;
+            }
+        }
+        questsTabIndicator.enabled = anyUnreadActiveQuest;
+    }
 
     // --- Odblokowanie notatki po Id ---
     public void UnlockNote(string id)
@@ -347,6 +519,37 @@ public class NotesManagerUI : MonoBehaviour
             }
         }
     }
+    // --- Odblokowanie questa po Id ---
+    public void UnlockQuest(string id)
+    {
+        for (int i = 0; i < quests.Count; i++)
+        {
+            if (quests[i].Id == id)
+            {
+                quests[i].IsUnlocked = true;
+                quests[i].IsRead = false;
+                SortQuests();
+                UpdateQuestButtons();
+                UpdateQuestIndicators();
+                UpdateQuestsTabIndicator();
+                break;
+            }
+        }
+    }
+
+    // --- Metoda do obs³ugi ukoñczenia celu questa ---
+    public void OnQuestGoalCompleted(int questIndex, int goalIndex)
+    {
+        if (questIndex < 0 || questIndex >= quests.Count) return;
+        var quest = quests[questIndex];
+        if (goalIndex < 0 || goalIndex >= quest.Goals.Count) return;
+
+        quest.Goals[goalIndex].IsCompleted = true;
+        SortQuests();
+        UpdateQuestButtons();
+        UpdateQuestIndicators();
+        UpdateQuestsTabIndicator();
+    }
 
     // --- Czyszczenie wyœwietlania ---
     public void ClearNoteDisplay()
@@ -371,7 +574,18 @@ public class NotesManagerUI : MonoBehaviour
         }
     }
 
-    // --- Prze³¹czanie zak³adki Notes ---
+    // --- Czyszczenie szczegó³ów questa ---
+    public void ClearQuestDisplay()
+    {
+        if (questNameText != null)
+            questNameText.text = "";
+        for (int i = 0; i < questGoalNameTexts.Count; i++)
+        {
+            questGoalNameTexts[i].gameObject.SetActive(false);
+            questGoalDescTexts[i].gameObject.SetActive(false);
+        }
+    }
+
     public void ShowNotesTab()
     {
         currentTab = TabType.Notes;
@@ -380,8 +594,8 @@ public class NotesManagerUI : MonoBehaviour
         UpdateInventoryIndicator();
         UpdateNotesTabIndicator();
         ClearNoteDisplay();
+        ClearQuestDisplay();
     }
-    // --- Prze³¹czanie zak³adki Info ---
     public void ShowInfoTab()
     {
         currentTab = TabType.Info;
@@ -390,8 +604,23 @@ public class NotesManagerUI : MonoBehaviour
         UpdateInventoryIndicator();
         UpdateInfoTabIndicator();
         ClearNoteDisplay();
+        ClearQuestDisplay();
+    }
+    public void ShowQuestsTab()
+    {
+        currentTab = TabType.Quests;
+        SortQuests();
+        UpdateQuestButtons();
+        UpdateQuestIndicators();
+        UpdateInventoryIndicator();
+        UpdateQuestsTabIndicator();
+        ClearNoteDisplay();
+        ClearQuestDisplay();
     }
 }
 
-// np. w skrypcie InventoryUI, po zakoñczeniu tutoriala strzelania:
-//         notesManagerUI.UnlockNote("strzelanie");
+// Przyk³ad u¿ycia:
+// notesManagerUI.UnlockNote("strzelanie");
+// notesManagerUI.UnlockInfo("strzelanie");
+// notesManagerUI.UnlockQuest("quest_id");
+// notesManagerUI.OnQuestGoalCompleted(questIndex, goalIndex);
