@@ -27,7 +27,7 @@ MonoBehaviour:
       textPolish: Jasne
       textGerman: 
       nextNode: 1
-      action: 
+      action: unlock_quest:Kibel
       setDialogueIndex: -1
     - textEnglish: No thanks
       textPolish: "Nie dzi\u0119ki"

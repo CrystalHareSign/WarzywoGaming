@@ -112,6 +112,15 @@ public class NotesManagerUI : MonoBehaviour
     private enum TabType { None, Notes, Info, Quests }
     private TabType currentTab = TabType.None;
 
+    public static NotesManagerUI Instance { get; private set; }
+
+    private void Awake()
+    {
+        if (Instance == null)
+            Instance = this;
+        else
+            Destroy(gameObject);
+    }
     void Start()
     {
         // Notes
@@ -336,6 +345,7 @@ public class NotesManagerUI : MonoBehaviour
         if (!quests[index].IsRead)
         {
             quests[index].IsRead = true;
+            UpdateInventoryIndicator();
             needSort = true;
         }
         if (quests[index].IsCompleted)
@@ -412,11 +422,11 @@ public class NotesManagerUI : MonoBehaviour
         }
     }
 
-    // --- Lampka globalna na HUDzie gracza ---
     public void UpdateInventoryIndicator()
     {
         if (inventoryIndicator == null) return;
         bool anyUnread = false;
+        // Notatki
         for (int i = 0; i < notes.Count; i++)
         {
             if (notes[i].IsUnlocked && !notes[i].IsRead)
@@ -425,11 +435,24 @@ public class NotesManagerUI : MonoBehaviour
                 break;
             }
         }
+        // Info
         if (!anyUnread)
         {
             for (int i = 0; i < infos.Count; i++)
             {
                 if (infos[i].IsUnlocked && !infos[i].IsRead)
+                {
+                    anyUnread = true;
+                    break;
+                }
+            }
+        }
+        // QUESTY (nowe! dodaj to)
+        if (!anyUnread)
+        {
+            for (int i = 0; i < quests.Count; i++)
+            {
+                if (quests[i].IsUnlocked && !quests[i].IsRead && !quests[i].IsCompleted)
                 {
                     anyUnread = true;
                     break;
@@ -532,6 +555,25 @@ public class NotesManagerUI : MonoBehaviour
                 UpdateQuestButtons();
                 UpdateQuestIndicators();
                 UpdateQuestsTabIndicator();
+                UpdateInventoryIndicator();
+                break;
+            }
+        }
+    }
+
+    public void CompleteQuestById(string questId)
+    {
+        for (int i = 0; i < quests.Count; i++)
+        {
+            if (quests[i].Id == questId)
+            {
+                foreach (var goal in quests[i].Goals)
+                    goal.IsCompleted = true;
+                SortQuests();
+                UpdateQuestButtons();
+                UpdateQuestIndicators();
+                UpdateQuestsTabIndicator();
+                UpdateInventoryIndicator();
                 break;
             }
         }
@@ -549,6 +591,7 @@ public class NotesManagerUI : MonoBehaviour
         UpdateQuestButtons();
         UpdateQuestIndicators();
         UpdateQuestsTabIndicator();
+        UpdateInventoryIndicator();
     }
 
     // --- Czyszczenie wyœwietlania ---
