@@ -123,19 +123,13 @@ public class PlayerInteraction : MonoBehaviour
                     inventoryUI.reloadingText.gameObject.SetActive(false);
                     inventoryUI.weaponImage.gameObject.SetActive(false);
                     inventoryUI.HideItemUI();
-                    if (inventoryUI.leftArrowIndicator != null)
-                        inventoryUI.leftArrowIndicator.SetActive(false);
-                    if (inventoryUI.rightArrowIndicator != null)
-                        inventoryUI.rightArrowIndicator.SetActive(false);
+                    HideIndicatorsAndInventoryImages();
                 }
                 else
                 {
                     inventoryUI.HideWeaponUI();
                     inventoryUI.HideItemUI();
-                    if (inventoryUI.leftArrowIndicator != null)
-                        inventoryUI.leftArrowIndicator.SetActive(false);
-                    if (inventoryUI.rightArrowIndicator != null)
-                        inventoryUI.rightArrowIndicator.SetActive(false);
+                    HideIndicatorsAndInventoryImages();
                 }
             }
             return;
@@ -172,10 +166,7 @@ public class PlayerInteraction : MonoBehaviour
             HideUI();
             HideBoostPanel();
             HideStaminaBars();
-            if (inventoryUI.leftArrowIndicator != null)
-                inventoryUI.leftArrowIndicator.SetActive(false);
-            if (inventoryUI.rightArrowIndicator != null)
-                inventoryUI.rightArrowIndicator.SetActive(false);
+            HideIndicatorsAndInventoryImages();
             return;
         }
 
@@ -297,13 +288,7 @@ public class PlayerInteraction : MonoBehaviour
                                 HideUI();
                                 HideBoostPanel();
                                 HideStaminaBars();
-                                if (inventoryUI != null)
-                                {
-                                    if (inventoryUI.leftArrowIndicator != null)
-                                        inventoryUI.leftArrowIndicator.SetActive(false);
-                                    if (inventoryUI.rightArrowIndicator != null)
-                                        inventoryUI.rightArrowIndicator.SetActive(false);
-                                }
+                                HideIndicatorsAndInventoryImages();
                             }
                         }
                         else
@@ -329,13 +314,7 @@ public class PlayerInteraction : MonoBehaviour
                     HideUI();
                     HideBoostPanel();
                     HideStaminaBars();
-                    if (inventoryUI != null)
-                    {
-                        if (inventoryUI.leftArrowIndicator != null)
-                            inventoryUI.leftArrowIndicator.SetActive(false);
-                        if (inventoryUI.rightArrowIndicator != null)
-                            inventoryUI.rightArrowIndicator.SetActive(false);
-                    }
+                    HideIndicatorsAndInventoryImages();
                     return;
                 }
                 bool isBusMonitor = interactableItem.isMonitor && interactableItem.busMonitor;
@@ -344,13 +323,7 @@ public class PlayerInteraction : MonoBehaviour
                     HideUI();
                     HideBoostPanel();
                     HideStaminaBars();
-                    if (inventoryUI != null)
-                    {
-                        if (inventoryUI.leftArrowIndicator != null)
-                            inventoryUI.leftArrowIndicator.SetActive(false);
-                        if (inventoryUI.rightArrowIndicator != null)
-                            inventoryUI.rightArrowIndicator.SetActive(false);
-                    }
+                    HideIndicatorsAndInventoryImages();
                     return;
                 }
 
@@ -393,10 +366,7 @@ public class PlayerInteraction : MonoBehaviour
                                     inventory.enabled = false;
                                     inventoryUI.UpdateWeaponUI(inventory.currentWeaponPrefab.GetComponent<Gun>());
                                     inventoryUI.HideWeaponUI();
-                                    if (inventoryUI.leftArrowIndicator != null)
-                                        inventoryUI.leftArrowIndicator.SetActive(false);
-                                    if (inventoryUI.rightArrowIndicator != null)
-                                        inventoryUI.rightArrowIndicator.SetActive(false);
+                                    HideIndicatorsAndInventoryImages();
                                     HideBoostPanel();
                                     HideStaminaBars();
                                 }
@@ -436,10 +406,7 @@ public class PlayerInteraction : MonoBehaviour
                                 if (inventoryUI != null)
                                 {
                                     inventoryUI.HideItemUI();
-                                    if (inventoryUI.leftArrowIndicator != null)
-                                        inventoryUI.leftArrowIndicator.SetActive(false);
-                                    if (inventoryUI.rightArrowIndicator != null)
-                                        inventoryUI.rightArrowIndicator.SetActive(false);
+                                    HideIndicatorsAndInventoryImages();
                                     HideBoostPanel();
                                     HideStaminaBars();
                                 }
@@ -461,10 +428,7 @@ public class PlayerInteraction : MonoBehaviour
                                 if (inventoryUI != null)
                                 {
                                     inventoryUI.HideItemUI();
-                                    if (inventoryUI.leftArrowIndicator != null)
-                                        inventoryUI.leftArrowIndicator.SetActive(false);
-                                    if (inventoryUI.rightArrowIndicator != null)
-                                        inventoryUI.rightArrowIndicator.SetActive(false);
+                                    HideIndicatorsAndInventoryImages();
                                     HideBoostPanel();
                                     HideStaminaBars();
                                 }
@@ -487,10 +451,7 @@ public class PlayerInteraction : MonoBehaviour
                                 if (inventoryUI != null)
                                 {
                                     inventoryUI.HideItemUI();
-                                    if (inventoryUI.leftArrowIndicator != null)
-                                        inventoryUI.leftArrowIndicator.SetActive(false);
-                                    if (inventoryUI.rightArrowIndicator != null)
-                                        inventoryUI.rightArrowIndicator.SetActive(false);
+                                    HideIndicatorsAndInventoryImages();
                                     HideBoostPanel();
                                     HideStaminaBars();
                                 }
@@ -510,14 +471,14 @@ public class PlayerInteraction : MonoBehaviour
 
                             interactionTimer = 0f;
                             HideUI();
-                            // HideBoostPanel i HideStaminaBars s¹ wywo³ywane TYLKO dla monitor/turret/driverSeat/missionDefiner powy¿ej
-                            if (inventoryUI != null)
-                            {
-                                if (inventoryUI.leftArrowIndicator != null)
-                                    inventoryUI.leftArrowIndicator.SetActive(false);
-                                if (inventoryUI.rightArrowIndicator != null)
-                                    inventoryUI.rightArrowIndicator.SetActive(false);
-                            }
+                            //// HideBoostPanel i HideStaminaBars s¹ wywo³ywane TYLKO dla monitor/turret/driverSeat/missionDefiner powy¿ej
+                            //if (inventoryUI != null)
+                            //{
+                            //    if (inventoryUI.leftArrowIndicator != null)
+                            //        inventoryUI.leftArrowIndicator.SetActive(false);
+                            //    if (inventoryUI.rightArrowIndicator != null)
+                            //        inventoryUI.rightArrowIndicator.SetActive(false);
+                            //}
                         }
                     }
                     else
@@ -572,10 +533,7 @@ public class PlayerInteraction : MonoBehaviour
             {
                 inventoryUI.HideWeaponUI();
                 inventoryUI.HideItemUI();
-                if (inventoryUI.leftArrowIndicator != null)
-                    inventoryUI.leftArrowIndicator.SetActive(false);
-                if (inventoryUI.rightArrowIndicator != null)
-                    inventoryUI.rightArrowIndicator.SetActive(false);
+                HideIndicatorsAndInventoryImages();
                 HideBoostPanel();
                 HideStaminaBars();
             }
@@ -643,6 +601,17 @@ public class PlayerInteraction : MonoBehaviour
             messageText.gameObject.SetActive(false);
         if (keyText != null)
             keyText.gameObject.SetActive(false);
+        //if (inventoryUI != null)
+        //{
+        //    if (inventoryUI.leftArrowIndicator != null)
+        //        inventoryUI.leftArrowIndicator.SetActive(false);
+        //    if (inventoryUI.rightArrowIndicator != null)
+        //        inventoryUI.rightArrowIndicator.SetActive(false);
+        //}
+    }
+
+    private void HideIndicatorsAndInventoryImages()
+    {
         if (inventoryUI != null)
         {
             if (inventoryUI.leftArrowIndicator != null)
@@ -650,13 +619,30 @@ public class PlayerInteraction : MonoBehaviour
             if (inventoryUI.rightArrowIndicator != null)
                 inventoryUI.rightArrowIndicator.SetActive(false);
         }
-        // Wy³¹cz lampki z NotesManagerUI
         if (NotesManagerUI.Instance != null)
         {
             if (NotesManagerUI.Instance.inventoryIndicator != null)
                 NotesManagerUI.Instance.inventoryIndicator.gameObject.SetActive(false);
             if (NotesManagerUI.Instance.inventoryInventory != null)
                 NotesManagerUI.Instance.inventoryInventory.gameObject.SetActive(false);
+        }
+    }
+
+    private void ShowIndicatorsAndInventoryImages()
+    {
+        if (inventoryUI != null)
+        {
+            if (inventoryUI.leftArrowIndicator != null)
+                inventoryUI.leftArrowIndicator.SetActive(true);
+            if (inventoryUI.rightArrowIndicator != null)
+                inventoryUI.rightArrowIndicator.SetActive(true);
+        }
+        if (NotesManagerUI.Instance != null)
+        {
+            if (NotesManagerUI.Instance.inventoryIndicator != null)
+                NotesManagerUI.Instance.inventoryIndicator.gameObject.SetActive(true);
+            if (NotesManagerUI.Instance.inventoryInventory != null)
+                NotesManagerUI.Instance.inventoryInventory.gameObject.SetActive(true);
         }
     }
 
@@ -730,14 +716,7 @@ public class PlayerInteraction : MonoBehaviour
             ShowBoostPanelIfActive();
             ShowStaminaBars();
 
-            // --- TU DODAJ W£¥CZANIE INDICATORÓW ---
-            if (NotesManagerUI.Instance != null)
-            {
-                if (NotesManagerUI.Instance.inventoryIndicator != null)
-                    NotesManagerUI.Instance.inventoryIndicator.gameObject.SetActive(true);
-                if (NotesManagerUI.Instance.inventoryInventory != null)
-                    NotesManagerUI.Instance.inventoryInventory.gameObject.SetActive(true);
-            }
+            ShowIndicatorsAndInventoryImages();
         }
     }
 
@@ -769,13 +748,6 @@ public class PlayerInteraction : MonoBehaviour
         ShowBoostPanelIfActive();
         ShowStaminaBars();
 
-        // --- TU DODAJ W£¥CZANIE INDICATORÓW ---
-        if (NotesManagerUI.Instance != null)
-        {
-            if (NotesManagerUI.Instance.inventoryIndicator != null)
-                NotesManagerUI.Instance.inventoryIndicator.gameObject.SetActive(true);
-            if (NotesManagerUI.Instance.inventoryInventory != null)
-                NotesManagerUI.Instance.inventoryInventory.gameObject.SetActive(true);
-        }
+        ShowIndicatorsAndInventoryImages();
     }
 }
