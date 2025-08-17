@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using System.Collections;
 
 public class NotesManagerUI : MonoBehaviour
 {
@@ -108,6 +109,22 @@ public class NotesManagerUI : MonoBehaviour
     // --- Lampka globalna na HUDzie gracza ---
     [Header("Lampka na HUDzie gracza (dodaj Image z Canvasu gracza)")]
     public Image inventoryIndicator;
+    public Image inventoryInventory;
+
+    [Header("Quest Notification UI")]
+    public TMP_Text questNotificationText; // ju¿ masz!
+    public Image questNotificationImage;   // dodaj to pole!
+
+    private Coroutine notificationFadeCoroutine;
+
+    [Header("Quest Notifications Texts")]
+    public string newQuestTextPolish = "Nowe zadanie";
+    public string newQuestTextEnglish = "New quest";
+    public string newQuestTextGerman = "Neue Aufgabe";
+
+    public string completedQuestTextPolish = "Zadanie ukoñczone";
+    public string completedQuestTextEnglish = "Quest completed";
+    public string completedQuestTextGerman = "Aufgabe abgeschlossen";
 
     private enum TabType { None, Notes, Info, Quests }
     private TabType currentTab = TabType.None;
@@ -542,7 +559,93 @@ public class NotesManagerUI : MonoBehaviour
             }
         }
     }
-    // --- Odblokowanie questa po Id ---
+
+    public string GetQuestNotificationText(bool isCompleted)
+    {
+        switch (LanguageManager.Instance.currentLanguage)
+        {
+            case LanguageManager.Language.Polski:
+                return isCompleted ? completedQuestTextPolish : newQuestTextPolish;
+            case LanguageManager.Language.Deutsch:
+                return isCompleted ? completedQuestTextGerman : newQuestTextGerman;
+            default:
+                return isCompleted ? completedQuestTextEnglish : newQuestTextEnglish;
+        }
+    }
+
+    public void ShowQuestNotification(string message, float duration = 2f, float fadeDuration = 0.75f)
+    {
+        Debug.Log("ShowQuestNotification called with message: " + message);
+
+        if (questNotificationText == null)
+        {
+            Debug.LogWarning("questNotificationText is null!");
+            return;
+        }
+        if (questNotificationImage == null)
+        {
+            Debug.LogWarning("questNotificationImage is null!");
+            return;
+        }
+
+        if (notificationFadeCoroutine != null)
+        {
+            Debug.Log("Stopping previous notificationFadeCoroutine.");
+            StopCoroutine(notificationFadeCoroutine);
+        }
+
+        questNotificationText.text = message;
+        questNotificationText.gameObject.SetActive(true);
+        Debug.Log("questNotificationText set active.");
+
+        // Aktywuj obrazek
+        questNotificationImage.gameObject.SetActive(true);
+        Debug.Log("questNotificationImage set active.");
+
+        // Ustaw pe³n¹ widocznoœæ tekstu i obrazka
+        var col = questNotificationText.color;
+        col.a = 1f;
+        questNotificationText.color = col;
+
+        var imgCol = questNotificationImage.color;
+        imgCol.a = 1f;
+        questNotificationImage.color = imgCol;
+
+        Debug.Log("Starting FadeOutQuestNotification coroutine.");
+        notificationFadeCoroutine = StartCoroutine(FadeOutQuestNotification(fadeDuration, duration));
+    }
+
+    private IEnumerator FadeOutQuestNotification(float fadeDuration, float waitBeforeFade)
+    {
+        Debug.Log($"FadeOutQuestNotification will wait {waitBeforeFade} seconds before fading.");
+        yield return new WaitForSeconds(waitBeforeFade);
+
+        float elapsed = 0f;
+        Color startTextColor = questNotificationText.color;
+        Color startImageColor = questNotificationImage.color;
+
+        while (elapsed < fadeDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / fadeDuration);
+
+            // Fade tekstu
+            var col = startTextColor;
+            col.a = Mathf.Lerp(1f, 0f, t);
+            questNotificationText.color = col;
+
+            // Fade obrazka
+            var imgCol = startImageColor;
+            imgCol.a = Mathf.Lerp(1f, 0f, t);
+            questNotificationImage.color = imgCol;
+
+            yield return null;
+        }
+        Debug.Log("Fade out finished. Hiding questNotificationText and questNotificationImage.");
+        questNotificationText.gameObject.SetActive(false);
+        questNotificationImage.gameObject.SetActive(false);
+    }
+
     public void UnlockQuest(string id)
     {
         for (int i = 0; i < quests.Count; i++)
@@ -556,6 +659,7 @@ public class NotesManagerUI : MonoBehaviour
                 UpdateQuestIndicators();
                 UpdateQuestsTabIndicator();
                 UpdateInventoryIndicator();
+                ShowQuestNotification(GetQuestNotificationText(false)); // <-- tylko tekst!
                 break;
             }
         }
@@ -574,6 +678,7 @@ public class NotesManagerUI : MonoBehaviour
                 UpdateQuestIndicators();
                 UpdateQuestsTabIndicator();
                 UpdateInventoryIndicator();
+                ShowQuestNotification(GetQuestNotificationText(true)); // <-- tylko tekst!
                 break;
             }
         }

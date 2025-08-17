@@ -650,6 +650,14 @@ public class PlayerInteraction : MonoBehaviour
             if (inventoryUI.rightArrowIndicator != null)
                 inventoryUI.rightArrowIndicator.SetActive(false);
         }
+        // Wy³¹cz lampki z NotesManagerUI
+        if (NotesManagerUI.Instance != null)
+        {
+            if (NotesManagerUI.Instance.inventoryIndicator != null)
+                NotesManagerUI.Instance.inventoryIndicator.gameObject.SetActive(false);
+            if (NotesManagerUI.Instance.inventoryInventory != null)
+                NotesManagerUI.Instance.inventoryInventory.gameObject.SetActive(false);
+        }
     }
 
     private void HideStaminaBars()
@@ -721,6 +729,15 @@ public class PlayerInteraction : MonoBehaviour
 
             ShowBoostPanelIfActive();
             ShowStaminaBars();
+
+            // --- TU DODAJ W£¥CZANIE INDICATORÓW ---
+            if (NotesManagerUI.Instance != null)
+            {
+                if (NotesManagerUI.Instance.inventoryIndicator != null)
+                    NotesManagerUI.Instance.inventoryIndicator.gameObject.SetActive(true);
+                if (NotesManagerUI.Instance.inventoryInventory != null)
+                    NotesManagerUI.Instance.inventoryInventory.gameObject.SetActive(true);
+            }
         }
     }
 
@@ -751,5 +768,14 @@ public class PlayerInteraction : MonoBehaviour
         }
         ShowBoostPanelIfActive();
         ShowStaminaBars();
+
+        // --- TU DODAJ W£¥CZANIE INDICATORÓW ---
+        if (NotesManagerUI.Instance != null)
+        {
+            if (NotesManagerUI.Instance.inventoryIndicator != null)
+                NotesManagerUI.Instance.inventoryIndicator.gameObject.SetActive(true);
+            if (NotesManagerUI.Instance.inventoryInventory != null)
+                NotesManagerUI.Instance.inventoryInventory.gameObject.SetActive(true);
+        }
     }
 }
