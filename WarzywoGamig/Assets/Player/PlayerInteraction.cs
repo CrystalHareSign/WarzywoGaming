@@ -2,8 +2,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.SceneManagement;
+using FishNet.Object;
+using FishNet.Connection;
 
-public class PlayerInteraction : MonoBehaviour
+public class PlayerInteraction : NetworkBehaviour
 {
     public float interactionRange = 4f;
     public LayerMask interactableLayer;
@@ -66,6 +68,10 @@ public class PlayerInteraction : MonoBehaviour
 
     void Update()
     {
+        // Only allow input on local player
+        if (!base.IsOwner)
+            return;
+
         if (playerCamera == null)
         {
             Debug.LogError("PlayerCamera is not assigned in the Inspector.");
@@ -164,7 +170,7 @@ public class PlayerInteraction : MonoBehaviour
             InteractableItem interactableItem = hit.collider.GetComponent<InteractableItem>();
             if (interactableItem != null && !interactableItem.hoverMessage.isInteracted)
             {
-                // --- FOTEL KIEROWCY: przytrzymaj E aby potwierdziæ podró¿ ---
+                // --- FOTEL KIEROWCY: przytrzymaj E aby potwierdziï¿½ podrï¿½ ---
                 if (interactableItem.isDriverSeat)
                 {
                     requiredHoldTime = interactableItem.requiredHoldTime > 0f ? interactableItem.requiredHoldTime : 2f;
@@ -309,7 +315,7 @@ public class PlayerInteraction : MonoBehaviour
                                     inventoryUI.HideItemUI();
                             }
 
-                            // --- MissionDefiner obs³uga ---
+                            // --- MissionDefiner obsï¿½uga ---
                             if (currentInteractableItem.isMissionDefiner)
                             {
                                 UseMissionDefiner(interactableItem);
@@ -387,7 +393,7 @@ public class PlayerInteraction : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // --- DODAJ TO: wymuœ ukrycie UI i broni jeœli nadal trwa podró¿ fotelowa ---
+        // --- DODAJ TO: wymuï¿½ ukrycie UI i broni jeï¿½li nadal trwa podrï¿½ fotelowa ---
         if (DriverSeatInteraction.IsAnyDriverSeatActive)
         {
             if (inventory != null && inventory.currentWeaponPrefab != null)
@@ -535,4 +541,211 @@ public class PlayerInteraction : MonoBehaviour
             }
         }
     }
+
+    #region Networked Item Interaction Methods
+
+    /// <summary>
+    /// Request to pickup an item from the world and add it to inventory.
+    /// This is called on the client and executed on the server.
+    /// </summary>
+    /// <param name="itemObject">The item GameObject to pickup</param>
+    public void RequestPickupItem(GameObject itemObject)
+    {
+        if (!base.IsOwner) return;
+
+        PickupItemPhysics itemPhysics = itemObject.GetComponent<PickupItemPhysics>();
+        if (itemPhysics != null)
+        {
+            // Use PickupItemPhysics for networked items
+            Transform handTransform = GetHandTransform();
+            if (handTransform != null)
+            {
+                itemPhysics.RequestPickup(handTransform);
+            }
+        }
+        
+        // Notify server about inventory change
+        ServerPickupItemRpc(itemObject);
+    }
+
+    /// <summary>
+    /// Request to drop an item from inventory.
+    /// </summary>
+    /// <param name="itemObject">The item GameObject to drop</param>
+    /// <param name="dropPosition">World position to drop at</param>
+    public void RequestDropItem(GameObject itemObject, Vector3 dropPosition)
+    {
+        if (!base.IsOwner) return;
+
+        PickupItemPhysics itemPhysics = itemObject.GetComponent<PickupItemPhysics>();
+        if (itemPhysics != null)
+        {
+            itemPhysics.RequestDrop(dropPosition, Quaternion.identity);
+        }
+
+        // Notify server about inventory change
+        ServerDropItemRpc(itemObject, dropPosition);
+    }
+
+    /// <summary>
+    /// Request to move an item from hand to backpack.
+    /// </summary>
+    /// <param name="itemObject">The item to move</param>
+    public void RequestMoveToBackpack(GameObject itemObject)
+    {
+        if (!base.IsOwner) return;
+
+        PickupItemPhysics itemPhysics = itemObject.GetComponent<PickupItemPhysics>();
+        if (itemPhysics != null)
+        {
+            Transform backpackTransform = GetBackpackTransform();
+            if (backpackTransform != null)
+            {
+                itemPhysics.RequestAttach(backpackTransform, useJoint: true);
+            }
+        }
+
+        ServerMoveToBackpackRpc(itemObject);
+    }
+
+    /// <summary>
+    /// Request to move an item from backpack to hand.
+    /// </summary>
+    /// <param name="itemObject">The item to move</param>
+    public void RequestMoveToHand(GameObject itemObject)
+    {
+        if (!base.IsOwner) return;
+
+        PickupItemPhysics itemPhysics = itemObject.GetComponent<PickupItemPhysics>();
+        if (itemPhysics != null)
+        {
+            // First detach from backpack
+            itemPhysics.RequestDetach();
+            
+            // Then pickup in hand
+            Transform handTransform = GetHandTransform();
+            if (handTransform != null)
+            {
+                itemPhysics.RequestPickup(handTransform);
+            }
+        }
+
+        ServerMoveToHandRpc(itemObject);
+    }
+
+    [ServerRpc]
+    private void ServerPickupItemRpc(GameObject itemObject)
+    {
+        // Server-side inventory management logic
+        // This is where you would update server-side inventory state
+        ObserversPickupItem(itemObject);
+    }
+
+    [ServerRpc]
+    private void ServerDropItemRpc(GameObject itemObject, Vector3 dropPosition)
+    {
+        // Server-side inventory management logic
+        ObserversDropItem(itemObject, dropPosition);
+    }
+
+    [ServerRpc]
+    private void ServerMoveToBackpackRpc(GameObject itemObject)
+    {
+        // Server-side backpack management logic
+        ObserversMoveToBackpack(itemObject);
+    }
+
+    [ServerRpc]
+    private void ServerMoveToHandRpc(GameObject itemObject)
+    {
+        // Server-side hand management logic
+        ObserversMoveToHand(itemObject);
+    }
+
+    [ObserversRpc(BufferLast = true)]
+    private void ObserversPickupItem(GameObject itemObject)
+    {
+        // Update visual state for all clients
+        if (!base.IsOwner && itemObject != null)
+        {
+            // Apply visual changes for remote players
+            itemObject.SetActive(false); // Hide for remote players if needed
+        }
+    }
+
+    [ObserversRpc(BufferLast = true)]
+    private void ObserversDropItem(GameObject itemObject, Vector3 dropPosition)
+    {
+        // Update visual state for all clients
+        if (!base.IsOwner && itemObject != null)
+        {
+            itemObject.SetActive(true);
+            itemObject.transform.position = dropPosition;
+        }
+    }
+
+    [ObserversRpc(BufferLast = true)]
+    private void ObserversMoveToBackpack(GameObject itemObject)
+    {
+        // Update visual state for all clients
+    }
+
+    [ObserversRpc(BufferLast = true)]
+    private void ObserversMoveToHand(GameObject itemObject)
+    {
+        // Update visual state for all clients
+    }
+
+    /// <summary>
+    /// Get the transform representing the player's hand.
+    /// Override or modify this to match your player rig.
+    /// </summary>
+    private Transform GetHandTransform()
+    {
+        // Try to find hand transform
+        // You may need to adjust this based on your player hierarchy
+        Transform hand = transform.Find("PlayerRig/Hand");
+        if (hand == null)
+        {
+            // Fallback: create a hand point if it doesn't exist
+            GameObject handObj = new GameObject("Hand");
+            handObj.transform.SetParent(transform);
+            handObj.transform.localPosition = new Vector3(0.5f, -0.3f, 1.0f);
+            hand = handObj.transform;
+            
+            // Add NetworkObject if needed
+            if (hand.GetComponent<NetworkObject>() == null)
+            {
+                hand.gameObject.AddComponent<NetworkObject>();
+            }
+        }
+        return hand;
+    }
+
+    /// <summary>
+    /// Get the transform representing the player's backpack.
+    /// Override or modify this to match your player rig.
+    /// </summary>
+    private Transform GetBackpackTransform()
+    {
+        // Try to find backpack transform
+        Transform backpack = transform.Find("PlayerRig/Backpack");
+        if (backpack == null)
+        {
+            // Fallback: create a backpack point if it doesn't exist
+            GameObject backpackObj = new GameObject("Backpack");
+            backpackObj.transform.SetParent(transform);
+            backpackObj.transform.localPosition = new Vector3(0f, 0.5f, -0.5f);
+            backpack = backpackObj.transform;
+            
+            // Add NetworkObject if needed
+            if (backpack.GetComponent<NetworkObject>() == null)
+            {
+                backpack.gameObject.AddComponent<NetworkObject>();
+            }
+        }
+        return backpack;
+    }
+
+    #endregion
 }
